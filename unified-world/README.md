@@ -36,6 +36,19 @@ python3 unified-world/extract_levels.py           # niveles de líderes, Alto Ma
 Salida: `out/gates_<fuente>.json` (evidencia por evento) y `out/GATES.md` (resumen). Es
 determinista: ejecutarlo dos veces da los mismos archivos.
 
+## Etapas de gimnasio (`extract_stages.py`)
+
+Parte de `out/levels.json` (ejecutar antes `extract_levels.py`). Regla: con **N** medallas, el as del líder
+sale de la **escalera natural** de los 24 aces originales ordenados por nivel (11, 14, 15 … 50); las etapas
+agrupan N en 0–3, 4–7, 8–15 y 16–23. Para cada líder y etapa devuelve un equipo **real** (original o
+revancha de cualquier fuente cuyo as encaja) o un **draft**: el equipo real más cercano desplazado de nivel,
+con tamaño medido de la escalera, líneas evolutivas reajustadas (datos de FireRed) y miembros prestados de otros
+equipos del mismo líder. Salida: `out/stages.json` y `out/STAGES.md`.
+
+Los drafts son mecánicos y **no están revisados**: sin movimientos, objetos ni estrategia. Supuestos propios,
+como constantes en el script: `NON_LEVEL_EVO_FLOOR`, `ADDED_LEVEL_OFFSET` y `REAL_TOLERANCE`. Las especies de
+generaciones posteriores de HnS no tienen datos de evolución y se dejan como están.
+
 ## Niveles reales (`extract_levels.py`)
 
 Lee los equipos de líderes, Alto Mando y campeones donde ya estaban extraídos (no repite extracciones):

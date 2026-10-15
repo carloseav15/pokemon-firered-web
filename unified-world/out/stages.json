@@ -1,0 +1,3418 @@
+{
+ "_meta": {
+  "assumptions": {
+   "ADDED_LEVEL_OFFSET": -2,
+   "NON_LEVEL_EVO_FLOOR": 30,
+   "REAL_TOLERANCE": 2
+  },
+  "generator": "unified-world/extract_stages.py",
+  "ladder": [
+   11,
+   14,
+   15,
+   16,
+   19,
+   21,
+   21,
+   24,
+   24,
+   25,
+   29,
+   29,
+   31,
+   31,
+   33,
+   33,
+   36,
+   42,
+   43,
+   43,
+   45,
+   46,
+   47,
+   50
+  ],
+  "note": "drafts are mechanical and unreviewed; no moves, items or strategy are designed; draft levels use each stage's mid ace, the runtime level would follow the ladder",
+  "stages": [
+   [
+    1,
+    0,
+    3
+   ],
+   [
+    2,
+    4,
+    7
+   ],
+   [
+    3,
+    8,
+    15
+   ],
+   [
+    4,
+    16,
+    23
+   ]
+  ]
+ },
+ "leaders": [
+  {
+   "name": "ROXANNE",
+   "naturalAce": 15,
+   "region": "hoenn",
+   "slot": 1,
+   "stages": [
+    {
+     "ace": 15,
+     "from": {
+      "const": "TRAINER_ROXANNE_1",
+      "source": "emerald"
+     },
+     "kind": "real",
+     "party": [
+      {
+       "level": 12,
+       "species": "SPECIES_GEODUDE"
+      },
+      {
+       "level": 12,
+       "species": "SPECIES_GEODUDE"
+      },
+      {
+       "level": 15,
+       "species": "SPECIES_NOSEPASS"
+      }
+     ],
+     "stage": 1
+    },
+    {
+     "ace": 22,
+     "flags": [],
+     "from": {
+      "const": "TRAINER_ROXANNE_1",
+      "levelDelta": 7,
+      "source": "emerald"
+     },
+     "kind": "draft",
+     "party": [
+      {
+       "level": 19,
+       "notes": [],
+       "species": "SPECIES_GEODUDE"
+      },
+      {
+       "level": 19,
+       "notes": [],
+       "species": "SPECIES_GEODUDE"
+      },
+      {
+       "level": 22,
+       "notes": [
+        "sin datos de evoluci\u00f3n (especie fuera de FireRed)"
+       ],
+       "species": "SPECIES_NOSEPASS"
+      }
+     ],
+     "stage": 2
+    },
+    {
+     "ace": 28,
+     "flags": [],
+     "from": {
+      "const": "TRAINER_ROXANNE_2",
+      "levelDelta": -9,
+      "source": "emerald"
+     },
+     "kind": "draft",
+     "party": [
+      {
+       "level": 23,
+       "notes": [
+        "SPECIES_GOLEM \u2192 SPECIES_GEODUDE"
+       ],
+       "species": "SPECIES_GEODUDE"
+      },
+      {
+       "level": 26,
+       "notes": [],
+       "species": "SPECIES_KABUTO"
+      },
+      {
+       "level": 26,
+       "notes": [],
+       "species": "SPECIES_ONIX"
+      },
+      {
+       "level": 28,
+       "notes": [
+        "sin datos de evoluci\u00f3n (especie fuera de FireRed)"
+       ],
+       "species": "SPECIES_NOSEPASS"
+      }
+     ],
+     "stage": 3
+    },
+    {
+     "ace": 42,
+     "from": {
+      "const": "TRAINER_ROXANNE_3",
+      "source": "emerald"
+     },
+     "kind": "real",
+     "party": [
+      {
+       "level": 37,
+       "species": "SPECIES_OMANYTE"
+      },
+      {
+       "level": 37,
+       "species": "SPECIES_GOLEM"
+      },
+      {
+       "level": 40,
+       "species": "SPECIES_KABUTOPS"
+      },
+      {
+       "level": 40,
+       "species": "SPECIES_ONIX"
+      },
+      {
+       "level": 42,
+       "species": "SPECIES_NOSEPASS"
+      }
+     ],
+     "stage": 4
+    }
+   ],
+   "teamsAvailable": 5
+  },
+  {
+   "name": "BRAWLY",
+   "naturalAce": 19,
+   "region": "hoenn",
+   "slot": 2,
+   "stages": [
+    {
+     "ace": 14,
+     "flags": [],
+     "from": {
+      "const": "TRAINER_BRAWLY_1",
+      "levelDelta": -5,
+      "source": "emerald"
+     },
+     "kind": "draft",
+     "party": [
+      {
+       "level": 11,
+       "notes": [],
+       "species": "SPECIES_MACHOP"
+      },
+      {
+       "level": 11,
+       "notes": [],
+       "species": "SPECIES_MEDITITE"
+      },
+      {
+       "level": 14,
+       "notes": [],
+       "species": "SPECIES_MAKUHITA"
+      }
+     ],
+     "stage": 1
+    },
+    {
+     "ace": 19,
+     "from": {
+      "const": "TRAINER_BRAWLY_1",
+      "source": "emerald"
+     },
+     "kind": "real",
+     "party": [
+      {
+       "level": 16,
+       "species": "SPECIES_MACHOP"
+      },
+      {
+       "level": 16,
+       "species": "SPECIES_MEDITITE"
+      },
+      {
+       "level": 19,
+       "species": "SPECIES_MAKUHITA"
+      }
+     ],
+     "stage": 2
+    },
+    {
+     "ace": 28,
+     "flags": [],
+     "from": {
+      "const": "TRAINER_BRAWLY_1",
+      "levelDelta": 9,
+      "source": "emerald"
+     },
+     "kind": "draft",
+     "party": [
+      {
+       "level": 25,
+       "notes": [],
+       "species": "SPECIES_MACHOP"
+      },
+      {
+       "level": 25,
+       "notes": [],
+       "species": "SPECIES_MEDITITE"
+      },
+      {
+       "level": 28,
+       "notes": [
+        "SPECIES_MAKUHITA \u2192 SPECIES_HARIYAMA"
+       ],
+       "species": "SPECIES_HARIYAMA"
+      },
+      {
+       "level": 26,
+       "notes": [
+        "a\u00f1adido de otro equipo del l\u00edder",
+        "SPECIES_HITMONTOP \u2192 SPECIES_TYROGUE"
+       ],
+       "species": "SPECIES_TYROGUE"
+      }
+     ],
+     "stage": 3
+    },
+    {
+     "ace": 42,
+     "from": {
+      "const": "TRAINER_BRAWLY_3",
+      "source": "emerald"
+     },
+     "kind": "real",
+     "party": [
+      {
+       "level": 38,
+       "species": "SPECIES_MACHAMP"
+      },
+      {
+       "level": 38,
+       "species": "SPECIES_MEDICHAM"
+      },
+      {
+       "level": 40,
+       "species": "SPECIES_HITMONTOP"
+      },
+      {
+       "level": 42,
+       "species": "SPECIES_HARIYAMA"
+      }
+     ],
+     "stage": 4
+    }
+   ],
+   "teamsAvailable": 5
+  },
+  {
+   "name": "WATTSON",
+   "naturalAce": 24,
+   "region": "hoenn",
+   "slot": 3,
+   "stages": [
+    {
+     "ace": 14,
+     "flags": [],
+     "from": {
+      "const": "TRAINER_WATTSON_1",
+      "levelDelta": -10,
+      "source": "emerald"
+     },
+     "kind": "draft",
+     "party": [
+      {
+       "level": 14,
+       "notes": [
+        "SPECIES_MANECTRIC \u2192 SPECIES_ELECTRIKE"
+       ],
+       "species": "SPECIES_ELECTRIKE"
+      },
+      {
+       "level": 12,
+       "notes": [
+        "SPECIES_MAGNETON \u2192 SPECIES_MAGNEMITE"
+       ],
+       "species": "SPECIES_MAGNEMITE"
+      },
+      {
+       "level": 10,
+       "notes": [],
+       "species": "SPECIES_VOLTORB"
+      }
+     ],
+     "stage": 1
+    },
+    {
+     "ace": 24,
+     "from": {
+      "const": "TRAINER_WATTSON_1",
+      "source": "emerald"
+     },
+     "kind": "real",
+     "party": [
+      {
+       "level": 20,
+       "species": "SPECIES_VOLTORB"
+      },
+      {
+       "level": 20,
+       "species": "SPECIES_ELECTRIKE"
+      },
+      {
+       "level": 22,
+       "species": "SPECIES_MAGNETON"
+      },
+      {
+       "level": 24,
+       "species": "SPECIES_MANECTRIC"
+      }
+     ],
+     "stage": 2
+    },
+    {
+     "ace": 24,
+     "from": {
+      "const": "TRAINER_WATTSON_1",
+      "source": "emerald"
+     },
+     "kind": "real",
+     "party": [
+      {
+       "level": 20,
+       "species": "SPECIES_VOLTORB"
+      },
+      {
+       "level": 20,
+       "species": "SPECIES_ELECTRIKE"
+      },
+      {
+       "level": 22,
+       "species": "SPECIES_MAGNETON"
+      },
+      {
+       "level": 24,
+       "species": "SPECIES_MANECTRIC"
+      }
+     ],
+     "stage": 3
+    },
+    {
+     "ace": 45,
+     "from": {
+      "const": "TRAINER_WATTSON_3",
+      "source": "emerald"
+     },
+     "kind": "real",
+     "party": [
+      {
+       "level": 39,
+       "species": "SPECIES_PIKACHU"
+      },
+      {
+       "level": 41,
+       "species": "SPECIES_FLAAFFY"
+      },
+      {
+       "level": 41,
+       "species": "SPECIES_ELECTRODE"
+      },
+      {
+       "level": 43,
+       "species": "SPECIES_MAGNETON"
+      },
+      {
+       "level": 45,
+       "species": "SPECIES_MANECTRIC"
+      }
+     ],
+     "stage": 4
+    }
+   ],
+   "teamsAvailable": 5
+  },
+  {
+   "name": "FLANNERY",
+   "naturalAce": 29,
+   "region": "hoenn",
+   "slot": 4,
+   "stages": [
+    {
+     "ace": 14,
+     "flags": [],
+     "from": {
+      "const": "TRAINER_FLANNERY_1",
+      "levelDelta": -15,
+      "source": "emerald"
+     },
+     "kind": "draft",
+     "party": [
+      {
+       "level": 14,
+       "notes": [
+        "sin datos de evoluci\u00f3n (especie fuera de FireRed)"
+       ],
+       "species": "SPECIES_TORKOAL"
+      },
+      {
+       "level": 11,
+       "notes": [
+        "SPECIES_CAMERUPT \u2192 SPECIES_NUMEL"
+       ],
+       "species": "SPECIES_NUMEL"
+      },
+      {
+       "level": 9,
+       "notes": [],
+       "species": "SPECIES_NUMEL"
+      }
+     ],
+     "stage": 1
+    },
+    {
+     "ace": 22,
+     "flags": [],
+     "from": {
+      "const": "TRAINER_FLANNERY_1",
+      "levelDelta": -7,
+      "source": "emerald"
+     },
+     "kind": "draft",
+     "party": [
+      {
+       "level": 22,
+       "notes": [
+        "sin datos de evoluci\u00f3n (especie fuera de FireRed)"
+       ],
+       "species": "SPECIES_TORKOAL"
+      },
+      {
+       "level": 19,
+       "notes": [
+        "SPECIES_CAMERUPT \u2192 SPECIES_NUMEL"
+       ],
+       "species": "SPECIES_NUMEL"
+      },
+      {
+       "level": 17,
+       "notes": [],
+       "species": "SPECIES_NUMEL"
+      }
+     ],
+     "stage": 2
+    },
+    {
+     "ace": 29,
+     "from": {
+      "const": "TRAINER_FLANNERY_1",
+      "source": "emerald"
+     },
+     "kind": "real",
+     "party": [
+      {
+       "level": 24,
+       "species": "SPECIES_NUMEL"
+      },
+      {
+       "level": 24,
+       "species": "SPECIES_SLUGMA"
+      },
+      {
+       "level": 26,
+       "species": "SPECIES_CAMERUPT"
+      },
+      {
+       "level": 29,
+       "species": "SPECIES_TORKOAL"
+      }
+     ],
+     "stage": 3
+    },
+    {
+     "ace": 45,
+     "from": {
+      "const": "TRAINER_FLANNERY_3",
+      "source": "emerald"
+     },
+     "kind": "real",
+     "party": [
+      {
+       "level": 41,
+       "species": "SPECIES_GROWLITHE"
+      },
+      {
+       "level": 43,
+       "species": "SPECIES_MAGCARGO"
+      },
+      {
+       "level": 41,
+       "species": "SPECIES_PONYTA"
+      },
+      {
+       "level": 43,
+       "species": "SPECIES_CAMERUPT"
+      },
+      {
+       "level": 45,
+       "species": "SPECIES_TORKOAL"
+      }
+     ],
+     "stage": 4
+    }
+   ],
+   "teamsAvailable": 5
+  },
+  {
+   "name": "NORMAN",
+   "naturalAce": 31,
+   "region": "hoenn",
+   "slot": 5,
+   "stages": [
+    {
+     "ace": 14,
+     "flags": [],
+     "from": {
+      "const": "TRAINER_NORMAN_1",
+      "levelDelta": -17,
+      "source": "emerald"
+     },
+     "kind": "draft",
+     "party": [
+      {
+       "level": 14,
+       "notes": [
+        "SPECIES_SLAKING \u2192 SPECIES_SLAKOTH"
+       ],
+       "species": "SPECIES_SLAKOTH"
+      },
+      {
+       "level": 12,
+       "notes": [
+        "SPECIES_LINOONE \u2192 SPECIES_ZIGZAGOON"
+       ],
+       "species": "SPECIES_ZIGZAGOON"
+      },
+      {
+       "level": 10,
+       "notes": [
+        "sin datos de evoluci\u00f3n (especie fuera de FireRed)"
+       ],
+       "species": "SPECIES_SPINDA"
+      }
+     ],
+     "stage": 1
+    },
+    {
+     "ace": 22,
+     "flags": [],
+     "from": {
+      "const": "TRAINER_NORMAN_1",
+      "levelDelta": -9,
+      "source": "emerald"
+     },
+     "kind": "draft",
+     "party": [
+      {
+       "level": 22,
+       "notes": [
+        "SPECIES_SLAKING \u2192 SPECIES_VIGOROTH"
+       ],
+       "species": "SPECIES_VIGOROTH"
+      },
+      {
+       "level": 20,
+       "notes": [],
+       "species": "SPECIES_LINOONE"
+      },
+      {
+       "level": 18,
+       "notes": [
+        "sin datos de evoluci\u00f3n (especie fuera de FireRed)"
+       ],
+       "species": "SPECIES_SPINDA"
+      }
+     ],
+     "stage": 2
+    },
+    {
+     "ace": 31,
+     "from": {
+      "const": "TRAINER_NORMAN_1",
+      "source": "emerald"
+     },
+     "kind": "real",
+     "party": [
+      {
+       "level": 27,
+       "species": "SPECIES_SPINDA"
+      },
+      {
+       "level": 27,
+       "species": "SPECIES_VIGOROTH"
+      },
+      {
+       "level": 29,
+       "species": "SPECIES_LINOONE"
+      },
+      {
+       "level": 31,
+       "species": "SPECIES_SLAKING"
+      }
+     ],
+     "stage": 3
+    },
+    {
+     "ace": 45,
+     "from": {
+      "const": "TRAINER_NORMAN_2",
+      "source": "emerald"
+     },
+     "kind": "real",
+     "party": [
+      {
+       "level": 42,
+       "species": "SPECIES_CHANSEY"
+      },
+      {
+       "level": 42,
+       "species": "SPECIES_SLAKING"
+      },
+      {
+       "level": 43,
+       "species": "SPECIES_SPINDA"
+      },
+      {
+       "level": 45,
+       "species": "SPECIES_SLAKING"
+      }
+     ],
+     "stage": 4
+    }
+   ],
+   "teamsAvailable": 5
+  },
+  {
+   "name": "WINONA",
+   "naturalAce": 33,
+   "region": "hoenn",
+   "slot": 6,
+   "stages": [
+    {
+     "ace": 14,
+     "flags": [],
+     "from": {
+      "const": "TRAINER_WINONA_1",
+      "levelDelta": -19,
+      "source": "emerald"
+     },
+     "kind": "draft",
+     "party": [
+      {
+       "level": 14,
+       "notes": [
+        "SPECIES_ALTARIA \u2192 SPECIES_SWABLU"
+       ],
+       "species": "SPECIES_SWABLU"
+      },
+      {
+       "level": 12,
+       "notes": [
+        "sin datos de evoluci\u00f3n (especie fuera de FireRed)"
+       ],
+       "species": "SPECIES_SKARMORY"
+      },
+      {
+       "level": 11,
+       "notes": [
+        "SPECIES_PELIPPER \u2192 SPECIES_WINGULL"
+       ],
+       "species": "SPECIES_WINGULL"
+      }
+     ],
+     "stage": 1
+    },
+    {
+     "ace": 22,
+     "flags": [],
+     "from": {
+      "const": "TRAINER_WINONA_1",
+      "levelDelta": -11,
+      "source": "emerald"
+     },
+     "kind": "draft",
+     "party": [
+      {
+       "level": 22,
+       "notes": [
+        "SPECIES_ALTARIA \u2192 SPECIES_SWABLU"
+       ],
+       "species": "SPECIES_SWABLU"
+      },
+      {
+       "level": 20,
+       "notes": [
+        "sin datos de evoluci\u00f3n (especie fuera de FireRed)"
+       ],
+       "species": "SPECIES_SKARMORY"
+      },
+      {
+       "level": 19,
+       "notes": [
+        "SPECIES_PELIPPER \u2192 SPECIES_WINGULL"
+       ],
+       "species": "SPECIES_WINGULL"
+      }
+     ],
+     "stage": 2
+    },
+    {
+     "ace": 33,
+     "from": {
+      "const": "TRAINER_WINONA_1",
+      "source": "emerald"
+     },
+     "kind": "real",
+     "party": [
+      {
+       "level": 29,
+       "species": "SPECIES_SWABLU"
+      },
+      {
+       "level": 29,
+       "species": "SPECIES_TROPIUS"
+      },
+      {
+       "level": 30,
+       "species": "SPECIES_PELIPPER"
+      },
+      {
+       "level": 31,
+       "species": "SPECIES_SKARMORY"
+      },
+      {
+       "level": 33,
+       "species": "SPECIES_ALTARIA"
+      }
+     ],
+     "stage": 3
+    },
+    {
+     "ace": 45,
+     "from": {
+      "const": "TRAINER_WINONA_2",
+      "source": "emerald"
+     },
+     "kind": "real",
+     "party": [
+      {
+       "level": 40,
+       "species": "SPECIES_DRATINI"
+      },
+      {
+       "level": 38,
+       "species": "SPECIES_TROPIUS"
+      },
+      {
+       "level": 41,
+       "species": "SPECIES_PELIPPER"
+      },
+      {
+       "level": 43,
+       "species": "SPECIES_SKARMORY"
+      },
+      {
+       "level": 45,
+       "species": "SPECIES_ALTARIA"
+      }
+     ],
+     "stage": 4
+    }
+   ],
+   "teamsAvailable": 5
+  },
+  {
+   "name": "TATE_LIZA",
+   "naturalAce": 42,
+   "region": "hoenn",
+   "slot": 7,
+   "stages": [
+    {
+     "ace": 14,
+     "flags": [],
+     "from": {
+      "const": "TRAINER_TATE_AND_LIZA_1",
+      "levelDelta": -28,
+      "source": "emerald"
+     },
+     "kind": "draft",
+     "party": [
+      {
+       "level": 14,
+       "notes": [
+        "sin datos de evoluci\u00f3n (especie fuera de FireRed)"
+       ],
+       "species": "SPECIES_LUNATONE"
+      },
+      {
+       "level": 14,
+       "notes": [
+        "sin datos de evoluci\u00f3n (especie fuera de FireRed)"
+       ],
+       "species": "SPECIES_SOLROCK"
+      },
+      {
+       "level": 13,
+       "notes": [
+        "SPECIES_CLAYDOL \u2192 SPECIES_BALTOY"
+       ],
+       "species": "SPECIES_BALTOY"
+      }
+     ],
+     "stage": 1
+    },
+    {
+     "ace": 22,
+     "flags": [],
+     "from": {
+      "const": "TRAINER_TATE_AND_LIZA_1",
+      "levelDelta": -20,
+      "source": "emerald"
+     },
+     "kind": "draft",
+     "party": [
+      {
+       "level": 22,
+       "notes": [
+        "sin datos de evoluci\u00f3n (especie fuera de FireRed)"
+       ],
+       "species": "SPECIES_LUNATONE"
+      },
+      {
+       "level": 22,
+       "notes": [
+        "sin datos de evoluci\u00f3n (especie fuera de FireRed)"
+       ],
+       "species": "SPECIES_SOLROCK"
+      },
+      {
+       "level": 21,
+       "notes": [
+        "SPECIES_CLAYDOL \u2192 SPECIES_BALTOY"
+       ],
+       "species": "SPECIES_BALTOY"
+      }
+     ],
+     "stage": 2
+    },
+    {
+     "ace": 28,
+     "flags": [],
+     "from": {
+      "const": "TRAINER_TATE_AND_LIZA_1",
+      "levelDelta": -14,
+      "source": "emerald"
+     },
+     "kind": "draft",
+     "party": [
+      {
+       "level": 27,
+       "notes": [
+        "SPECIES_CLAYDOL \u2192 SPECIES_BALTOY"
+       ],
+       "species": "SPECIES_BALTOY"
+      },
+      {
+       "level": 27,
+       "notes": [],
+       "species": "SPECIES_XATU"
+      },
+      {
+       "level": 28,
+       "notes": [
+        "sin datos de evoluci\u00f3n (especie fuera de FireRed)"
+       ],
+       "species": "SPECIES_LUNATONE"
+      },
+      {
+       "level": 28,
+       "notes": [
+        "sin datos de evoluci\u00f3n (especie fuera de FireRed)"
+       ],
+       "species": "SPECIES_SOLROCK"
+      }
+     ],
+     "stage": 3
+    },
+    {
+     "ace": 42,
+     "from": {
+      "const": "TRAINER_TATE_AND_LIZA_1",
+      "source": "emerald"
+     },
+     "kind": "real",
+     "party": [
+      {
+       "level": 41,
+       "species": "SPECIES_CLAYDOL"
+      },
+      {
+       "level": 41,
+       "species": "SPECIES_XATU"
+      },
+      {
+       "level": 42,
+       "species": "SPECIES_LUNATONE"
+      },
+      {
+       "level": 42,
+       "species": "SPECIES_SOLROCK"
+      }
+     ],
+     "stage": 4
+    }
+   ],
+   "teamsAvailable": 5
+  },
+  {
+   "name": "JUAN",
+   "naturalAce": 46,
+   "region": "hoenn",
+   "slot": 8,
+   "stages": [
+    {
+     "ace": 14,
+     "flags": [],
+     "from": {
+      "const": "TRAINER_JUAN_1",
+      "levelDelta": -32,
+      "source": "emerald"
+     },
+     "kind": "draft",
+     "party": [
+      {
+       "level": 14,
+       "notes": [
+        "SPECIES_KINGDRA \u2192 SPECIES_HORSEA"
+       ],
+       "species": "SPECIES_HORSEA"
+      },
+      {
+       "level": 11,
+       "notes": [
+        "SPECIES_SEALEO \u2192 SPECIES_SPHEAL"
+       ],
+       "species": "SPECIES_SPHEAL"
+      },
+      {
+       "level": 11,
+       "notes": [
+        "SPECIES_CRAWDAUNT \u2192 SPECIES_CORPHISH"
+       ],
+       "species": "SPECIES_CORPHISH"
+      }
+     ],
+     "stage": 1
+    },
+    {
+     "ace": 22,
+     "flags": [],
+     "from": {
+      "const": "TRAINER_JUAN_1",
+      "levelDelta": -24,
+      "source": "emerald"
+     },
+     "kind": "draft",
+     "party": [
+      {
+       "level": 22,
+       "notes": [
+        "SPECIES_KINGDRA \u2192 SPECIES_HORSEA"
+       ],
+       "species": "SPECIES_HORSEA"
+      },
+      {
+       "level": 19,
+       "notes": [
+        "SPECIES_SEALEO \u2192 SPECIES_SPHEAL"
+       ],
+       "species": "SPECIES_SPHEAL"
+      },
+      {
+       "level": 19,
+       "notes": [
+        "SPECIES_CRAWDAUNT \u2192 SPECIES_CORPHISH"
+       ],
+       "species": "SPECIES_CORPHISH"
+      }
+     ],
+     "stage": 2
+    },
+    {
+     "ace": 28,
+     "flags": [],
+     "from": {
+      "const": "TRAINER_JUAN_1",
+      "levelDelta": -18,
+      "source": "emerald"
+     },
+     "kind": "draft",
+     "party": [
+      {
+       "level": 28,
+       "notes": [
+        "SPECIES_KINGDRA \u2192 SPECIES_HORSEA"
+       ],
+       "species": "SPECIES_HORSEA"
+      },
+      {
+       "level": 25,
+       "notes": [
+        "SPECIES_SEALEO \u2192 SPECIES_SPHEAL"
+       ],
+       "species": "SPECIES_SPHEAL"
+      },
+      {
+       "level": 25,
+       "notes": [
+        "SPECIES_CRAWDAUNT \u2192 SPECIES_CORPHISH"
+       ],
+       "species": "SPECIES_CORPHISH"
+      },
+      {
+       "level": 23,
+       "notes": [
+        "sin datos de evoluci\u00f3n (especie fuera de FireRed)"
+       ],
+       "species": "SPECIES_LUVDISC"
+      }
+     ],
+     "stage": 3
+    },
+    {
+     "ace": 46,
+     "from": {
+      "const": "TRAINER_JUAN_1",
+      "source": "emerald"
+     },
+     "kind": "real",
+     "party": [
+      {
+       "level": 41,
+       "species": "SPECIES_LUVDISC"
+      },
+      {
+       "level": 41,
+       "species": "SPECIES_WHISCASH"
+      },
+      {
+       "level": 43,
+       "species": "SPECIES_SEALEO"
+      },
+      {
+       "level": 43,
+       "species": "SPECIES_CRAWDAUNT"
+      },
+      {
+       "level": 46,
+       "species": "SPECIES_KINGDRA"
+      }
+     ],
+     "stage": 4
+    }
+   ],
+   "teamsAvailable": 5
+  },
+  {
+   "name": "FALKNER",
+   "naturalAce": 11,
+   "region": "johto",
+   "slot": 1,
+   "stages": [
+    {
+     "ace": 11,
+     "from": {
+      "const": "TRAINER_FALKNER_1",
+      "source": "hns"
+     },
+     "kind": "real",
+     "party": [
+      {
+       "level": 8,
+       "species": "SPECIES_PIDGEY"
+      },
+      {
+       "level": 11,
+       "species": "SPECIES_NOCTOWL"
+      }
+     ],
+     "stage": 1
+    },
+    {
+     "ace": 22,
+     "flags": [],
+     "from": {
+      "const": "TRAINERCLASS_LEADER_FALKNER#20",
+      "levelDelta": 9,
+      "source": "heartgold"
+     },
+     "kind": "draft",
+     "party": [
+      {
+       "level": 18,
+       "notes": [
+        "SPECIES_PIDGEY \u2192 SPECIES_PIDGEOTTO"
+       ],
+       "species": "SPECIES_PIDGEOTTO"
+      },
+      {
+       "level": 22,
+       "notes": [],
+       "species": "SPECIES_PIDGEOTTO"
+      },
+      {
+       "level": 20,
+       "notes": [
+        "a\u00f1adido de otro equipo del l\u00edder",
+        "SPECIES_PELIPPER \u2192 SPECIES_WINGULL"
+       ],
+       "species": "SPECIES_WINGULL"
+      }
+     ],
+     "stage": 2
+    },
+    {
+     "ace": 28,
+     "flags": [],
+     "from": {
+      "const": "TRAINERCLASS_LEADER_FALKNER#20",
+      "levelDelta": 15,
+      "source": "heartgold"
+     },
+     "kind": "draft",
+     "party": [
+      {
+       "level": 24,
+       "notes": [
+        "SPECIES_PIDGEY \u2192 SPECIES_PIDGEOTTO"
+       ],
+       "species": "SPECIES_PIDGEOTTO"
+      },
+      {
+       "level": 28,
+       "notes": [],
+       "species": "SPECIES_PIDGEOTTO"
+      },
+      {
+       "level": 26,
+       "notes": [
+        "a\u00f1adido de otro equipo del l\u00edder"
+       ],
+       "species": "SPECIES_PELIPPER"
+      },
+      {
+       "level": 26,
+       "notes": [
+        "a\u00f1adido de otro equipo del l\u00edder"
+       ],
+       "species": "SPECIES_NOCTOWL"
+      }
+     ],
+     "stage": 3
+    },
+    {
+     "ace": 43,
+     "flags": [],
+     "from": {
+      "const": "TRAINERCLASS_LEADER_FALKNER#712",
+      "levelDelta": -13,
+      "source": "heartgold"
+     },
+     "kind": "draft",
+     "party": [
+      {
+       "level": 43,
+       "notes": [],
+       "species": "SPECIES_PIDGEOT"
+      },
+      {
+       "level": 41,
+       "notes": [
+        "sin datos de evoluci\u00f3n (especie fuera de FireRed)"
+       ],
+       "species": "SPECIES_HONCHKROW"
+      },
+      {
+       "level": 39,
+       "notes": [],
+       "species": "SPECIES_NOCTOWL"
+      },
+      {
+       "level": 39,
+       "notes": [],
+       "species": "SPECIES_SWELLOW"
+      },
+      {
+       "level": 37,
+       "notes": [
+        "sin datos de evoluci\u00f3n (especie fuera de FireRed)"
+       ],
+       "species": "SPECIES_STARAPTOR"
+      }
+     ],
+     "stage": 4
+    }
+   ],
+   "teamsAvailable": 4
+  },
+  {
+   "name": "BUGSY",
+   "naturalAce": 16,
+   "region": "johto",
+   "slot": 2,
+   "stages": [
+    {
+     "ace": 16,
+     "from": {
+      "const": "TRAINER_BUGSY_1",
+      "source": "hns"
+     },
+     "kind": "real",
+     "party": [
+      {
+       "level": 15,
+       "species": "SPECIES_PINECO"
+      },
+      {
+       "level": 15,
+       "species": "SPECIES_LEDIAN"
+      },
+      {
+       "level": 16,
+       "species": "SPECIES_SCYTHER"
+      }
+     ],
+     "stage": 1
+    },
+    {
+     "ace": 17,
+     "from": {
+      "const": "TRAINERCLASS_LEADER_BUGSY#21",
+      "source": "heartgold"
+     },
+     "kind": "real",
+     "party": [
+      {
+       "level": 17,
+       "species": "SPECIES_SCYTHER"
+      },
+      {
+       "level": 15,
+       "species": "SPECIES_KAKUNA"
+      },
+      {
+       "level": 15,
+       "species": "SPECIES_METAPOD"
+      }
+     ],
+     "stage": 2
+    },
+    {
+     "ace": 28,
+     "flags": [],
+     "from": {
+      "const": "TRAINERCLASS_LEADER_BUGSY#21",
+      "levelDelta": 11,
+      "source": "heartgold"
+     },
+     "kind": "draft",
+     "party": [
+      {
+       "level": 28,
+       "notes": [],
+       "species": "SPECIES_SCYTHER"
+      },
+      {
+       "level": 26,
+       "notes": [
+        "SPECIES_KAKUNA \u2192 SPECIES_BEEDRILL"
+       ],
+       "species": "SPECIES_BEEDRILL"
+      },
+      {
+       "level": 26,
+       "notes": [
+        "SPECIES_METAPOD \u2192 SPECIES_BUTTERFREE"
+       ],
+       "species": "SPECIES_BUTTERFREE"
+      },
+      {
+       "level": 26,
+       "notes": [
+        "a\u00f1adido de otro equipo del l\u00edder",
+        "SPECIES_SHEDINJA \u2192 SPECIES_NINCADA"
+       ],
+       "species": "SPECIES_NINCADA"
+      }
+     ],
+     "stage": 3
+    },
+    {
+     "ace": 43,
+     "flags": [],
+     "from": {
+      "const": "TRAINERCLASS_LEADER_BUGSY#713",
+      "levelDelta": -13,
+      "source": "heartgold"
+     },
+     "kind": "draft",
+     "party": [
+      {
+       "level": 43,
+       "notes": [],
+       "species": "SPECIES_SCIZOR"
+      },
+      {
+       "level": 42,
+       "notes": [
+        "sin datos de evoluci\u00f3n (especie fuera de FireRed)"
+       ],
+       "species": "SPECIES_PINSIR"
+      },
+      {
+       "level": 41,
+       "notes": [
+        "sin datos de evoluci\u00f3n (especie fuera de FireRed)"
+       ],
+       "species": "SPECIES_HERACROSS"
+      },
+      {
+       "level": 39,
+       "notes": [
+        "sin datos de evoluci\u00f3n (especie fuera de FireRed)"
+       ],
+       "species": "SPECIES_YANMEGA"
+      },
+      {
+       "level": 39,
+       "notes": [
+        "sin datos de evoluci\u00f3n (especie fuera de FireRed)"
+       ],
+       "species": "SPECIES_VESPIQUEN"
+      }
+     ],
+     "stage": 4
+    }
+   ],
+   "teamsAvailable": 4
+  },
+  {
+   "name": "WHITNEY",
+   "naturalAce": 21,
+   "region": "johto",
+   "slot": 3,
+   "stages": [
+    {
+     "ace": 14,
+     "flags": [],
+     "from": {
+      "const": "TRAINERCLASS_LEADER_WHITNEY#30",
+      "levelDelta": -5,
+      "source": "heartgold"
+     },
+     "kind": "draft",
+     "party": [
+      {
+       "level": 12,
+       "notes": [
+        "SPECIES_CLEFAIRY \u2192 SPECIES_CLEFFA"
+       ],
+       "species": "SPECIES_CLEFFA"
+      },
+      {
+       "level": 14,
+       "notes": [
+        "sin datos de evoluci\u00f3n (especie fuera de FireRed)"
+       ],
+       "species": "SPECIES_MILTANK"
+      },
+      {
+       "level": 12,
+       "notes": [
+        "a\u00f1adido de otro equipo del l\u00edder",
+        "sin datos de evoluci\u00f3n (especie fuera de FireRed)"
+       ],
+       "species": "SPECIES_LICKILICKY"
+      }
+     ],
+     "stage": 1
+    },
+    {
+     "ace": 21,
+     "from": {
+      "const": "TRAINER_WHITNEY_1",
+      "source": "hns"
+     },
+     "kind": "real",
+     "party": [
+      {
+       "level": 20,
+       "species": "SPECIES_CLEFAIRY"
+      },
+      {
+       "level": 20,
+       "species": "SPECIES_TEDDIURSA"
+      },
+      {
+       "level": 21,
+       "species": "SPECIES_MILTANK"
+      }
+     ],
+     "stage": 2
+    },
+    {
+     "ace": 28,
+     "flags": [],
+     "from": {
+      "const": "TRAINER_WHITNEY_1",
+      "levelDelta": 7,
+      "source": "hns"
+     },
+     "kind": "draft",
+     "party": [
+      {
+       "level": 27,
+       "notes": [
+        "SPECIES_CLEFAIRY \u2192 SPECIES_CLEFFA"
+       ],
+       "species": "SPECIES_CLEFFA"
+      },
+      {
+       "level": 27,
+       "notes": [],
+       "species": "SPECIES_TEDDIURSA"
+      },
+      {
+       "level": 28,
+       "notes": [
+        "sin datos de evoluci\u00f3n (especie fuera de FireRed)"
+       ],
+       "species": "SPECIES_MILTANK"
+      },
+      {
+       "level": 26,
+       "notes": [
+        "a\u00f1adido de otro equipo del l\u00edder",
+        "sin datos de evoluci\u00f3n (especie fuera de FireRed)"
+       ],
+       "species": "SPECIES_LICKILICKY"
+      }
+     ],
+     "stage": 3
+    },
+    {
+     "ace": 43,
+     "flags": [],
+     "from": {
+      "const": "TRAINERCLASS_LEADER_WHITNEY#714",
+      "levelDelta": -15,
+      "source": "heartgold"
+     },
+     "kind": "draft",
+     "party": [
+      {
+       "level": 43,
+       "notes": [
+        "sin datos de evoluci\u00f3n (especie fuera de FireRed)"
+       ],
+       "species": "SPECIES_MILTANK"
+      },
+      {
+       "level": 39,
+       "notes": [
+        "sin datos de evoluci\u00f3n (especie fuera de FireRed)"
+       ],
+       "species": "SPECIES_BIBAREL"
+      },
+      {
+       "level": 39,
+       "notes": [],
+       "species": "SPECIES_DELCATTY"
+      },
+      {
+       "level": 37,
+       "notes": [
+        "sin datos de evoluci\u00f3n (especie fuera de FireRed)"
+       ],
+       "species": "SPECIES_GIRAFARIG"
+      },
+      {
+       "level": 37,
+       "notes": [],
+       "species": "SPECIES_CLEFABLE"
+      }
+     ],
+     "stage": 4
+    }
+   ],
+   "teamsAvailable": 4
+  },
+  {
+   "name": "MORTY",
+   "naturalAce": 25,
+   "region": "johto",
+   "slot": 4,
+   "stages": [
+    {
+     "ace": 14,
+     "flags": [],
+     "from": {
+      "const": "TRAINERCLASS_LEADER_MORTY#31",
+      "levelDelta": -11,
+      "source": "heartgold"
+     },
+     "kind": "draft",
+     "party": [
+      {
+       "level": 14,
+       "notes": [
+        "SPECIES_GENGAR \u2192 SPECIES_GASTLY"
+       ],
+       "species": "SPECIES_GASTLY"
+      },
+      {
+       "level": 12,
+       "notes": [
+        "SPECIES_HAUNTER \u2192 SPECIES_GASTLY"
+       ],
+       "species": "SPECIES_GASTLY"
+      },
+      {
+       "level": 10,
+       "notes": [],
+       "species": "SPECIES_GASTLY"
+      }
+     ],
+     "stage": 1
+    },
+    {
+     "ace": 25,
+     "from": {
+      "const": "TRAINER_MORTY_1",
+      "source": "hns"
+     },
+     "kind": "real",
+     "party": [
+      {
+       "level": 24,
+       "species": "SPECIES_HAUNTER"
+      },
+      {
+       "level": 23,
+       "species": "SPECIES_STANTLER"
+      },
+      {
+       "level": 24,
+       "species": "SPECIES_MISDREAVUS"
+      },
+      {
+       "level": 25,
+       "species": "SPECIES_GENGAR"
+      }
+     ],
+     "stage": 2
+    },
+    {
+     "ace": 25,
+     "from": {
+      "const": "TRAINERCLASS_LEADER_MORTY#31",
+      "source": "heartgold"
+     },
+     "kind": "real",
+     "party": [
+      {
+       "level": 21,
+       "species": "SPECIES_GASTLY"
+      },
+      {
+       "level": 21,
+       "species": "SPECIES_HAUNTER"
+      },
+      {
+       "level": 25,
+       "species": "SPECIES_GENGAR"
+      },
+      {
+       "level": 23,
+       "species": "SPECIES_HAUNTER"
+      }
+     ],
+     "stage": 3
+    },
+    {
+     "ace": 43,
+     "flags": [],
+     "from": {
+      "const": "TRAINERCLASS_LEADER_MORTY#715",
+      "levelDelta": -14,
+      "source": "heartgold"
+     },
+     "kind": "draft",
+     "party": [
+      {
+       "level": 43,
+       "notes": [],
+       "species": "SPECIES_GENGAR"
+      },
+      {
+       "level": 43,
+       "notes": [],
+       "species": "SPECIES_GENGAR"
+      },
+      {
+       "level": 40,
+       "notes": [
+        "sin datos de evoluci\u00f3n (especie fuera de FireRed)"
+       ],
+       "species": "SPECIES_MISMAGIUS"
+      },
+      {
+       "level": 38,
+       "notes": [
+        "sin datos de evoluci\u00f3n (especie fuera de FireRed)"
+       ],
+       "species": "SPECIES_DRIFBLIM"
+      },
+      {
+       "level": 38,
+       "notes": [
+        "sin datos de evoluci\u00f3n (especie fuera de FireRed)"
+       ],
+       "species": "SPECIES_DUSKNOIR"
+      }
+     ],
+     "stage": 4
+    }
+   ],
+   "teamsAvailable": 4
+  },
+  {
+   "name": "CHUCK",
+   "naturalAce": 31,
+   "region": "johto",
+   "slot": 5,
+   "stages": [
+    {
+     "ace": 14,
+     "flags": [],
+     "from": {
+      "const": "TRAINERCLASS_LEADER_CHUCK#34",
+      "levelDelta": -17,
+      "source": "heartgold"
+     },
+     "kind": "draft",
+     "party": [
+      {
+       "level": 12,
+       "notes": [
+        "SPECIES_PRIMEAPE \u2192 SPECIES_MANKEY"
+       ],
+       "species": "SPECIES_MANKEY"
+      },
+      {
+       "level": 14,
+       "notes": [
+        "SPECIES_POLIWRATH \u2192 SPECIES_POLIWAG"
+       ],
+       "species": "SPECIES_POLIWAG"
+      },
+      {
+       "level": 12,
+       "notes": [
+        "a\u00f1adido de otro equipo del l\u00edder",
+        "SPECIES_BRELOOM \u2192 SPECIES_SHROOMISH"
+       ],
+       "species": "SPECIES_SHROOMISH"
+      }
+     ],
+     "stage": 1
+    },
+    {
+     "ace": 22,
+     "flags": [],
+     "from": {
+      "const": "TRAINERCLASS_LEADER_CHUCK#34",
+      "levelDelta": -9,
+      "source": "heartgold"
+     },
+     "kind": "draft",
+     "party": [
+      {
+       "level": 20,
+       "notes": [
+        "SPECIES_PRIMEAPE \u2192 SPECIES_MANKEY"
+       ],
+       "species": "SPECIES_MANKEY"
+      },
+      {
+       "level": 22,
+       "notes": [
+        "SPECIES_POLIWRATH \u2192 SPECIES_POLIWAG"
+       ],
+       "species": "SPECIES_POLIWAG"
+      },
+      {
+       "level": 20,
+       "notes": [
+        "a\u00f1adido de otro equipo del l\u00edder",
+        "SPECIES_BRELOOM \u2192 SPECIES_SHROOMISH"
+       ],
+       "species": "SPECIES_SHROOMISH"
+      }
+     ],
+     "stage": 2
+    },
+    {
+     "ace": 31,
+     "from": {
+      "const": "TRAINER_CHUCK_1",
+      "source": "hns"
+     },
+     "kind": "real",
+     "party": [
+      {
+       "level": 30,
+       "species": "SPECIES_HITMONTOP"
+      },
+      {
+       "level": 29,
+       "species": "SPECIES_PRIMEAPE"
+      },
+      {
+       "level": 30,
+       "species": "SPECIES_SUDOWOODO"
+      },
+      {
+       "level": 31,
+       "species": "SPECIES_POLIWRATH"
+      }
+     ],
+     "stage": 3
+    },
+    {
+     "ace": 38,
+     "from": {
+      "const": "TRAINER_CHUCK_1_3",
+      "source": "hns"
+     },
+     "kind": "real",
+     "party": [
+      {
+       "level": 37,
+       "species": "SPECIES_HITMONTOP"
+      },
+      {
+       "level": 37,
+       "species": "SPECIES_SUDOWOODO"
+      },
+      {
+       "level": 37,
+       "species": "SPECIES_ANNIHILAPE"
+      },
+      {
+       "level": 37,
+       "species": "SPECIES_PINSIR"
+      },
+      {
+       "level": 38,
+       "species": "SPECIES_POLIWRATH"
+      }
+     ],
+     "stage": 4
+    }
+   ],
+   "teamsAvailable": 6
+  },
+  {
+   "name": "JASMINE",
+   "naturalAce": 36,
+   "region": "johto",
+   "slot": 6,
+   "stages": [
+    {
+     "ace": 14,
+     "flags": [],
+     "from": {
+      "const": "TRAINERCLASS_LEADER_JASMINE#33",
+      "levelDelta": -21,
+      "source": "heartgold"
+     },
+     "kind": "draft",
+     "party": [
+      {
+       "level": 9,
+       "notes": [],
+       "species": "SPECIES_MAGNEMITE"
+      },
+      {
+       "level": 9,
+       "notes": [],
+       "species": "SPECIES_MAGNEMITE"
+      },
+      {
+       "level": 14,
+       "notes": [
+        "SPECIES_STEELIX \u2192 SPECIES_ONIX"
+       ],
+       "species": "SPECIES_ONIX"
+      }
+     ],
+     "stage": 1
+    },
+    {
+     "ace": 22,
+     "flags": [],
+     "from": {
+      "const": "TRAINERCLASS_LEADER_JASMINE#33",
+      "levelDelta": -13,
+      "source": "heartgold"
+     },
+     "kind": "draft",
+     "party": [
+      {
+       "level": 17,
+       "notes": [],
+       "species": "SPECIES_MAGNEMITE"
+      },
+      {
+       "level": 17,
+       "notes": [],
+       "species": "SPECIES_MAGNEMITE"
+      },
+      {
+       "level": 22,
+       "notes": [
+        "SPECIES_STEELIX \u2192 SPECIES_ONIX"
+       ],
+       "species": "SPECIES_ONIX"
+      }
+     ],
+     "stage": 2
+    },
+    {
+     "ace": 35,
+     "from": {
+      "const": "TRAINERCLASS_LEADER_JASMINE#33",
+      "source": "heartgold"
+     },
+     "kind": "real",
+     "party": [
+      {
+       "level": 30,
+       "species": "SPECIES_MAGNEMITE"
+      },
+      {
+       "level": 30,
+       "species": "SPECIES_MAGNEMITE"
+      },
+      {
+       "level": 35,
+       "species": "SPECIES_STEELIX"
+      }
+     ],
+     "stage": 3
+    },
+    {
+     "ace": 38,
+     "from": {
+      "const": "TRAINER_JASMINE_1_3",
+      "source": "hns"
+     },
+     "kind": "real",
+     "party": [
+      {
+       "level": 37,
+       "species": "SPECIES_SKARMORY"
+      },
+      {
+       "level": 37,
+       "species": "SPECIES_CORSOLA"
+      },
+      {
+       "level": 37,
+       "species": "SPECIES_MAGNEZONE"
+      },
+      {
+       "level": 38,
+       "species": "SPECIES_SCIZOR"
+      },
+      {
+       "level": 38,
+       "species": "SPECIES_STEELIX"
+      }
+     ],
+     "stage": 4
+    }
+   ],
+   "teamsAvailable": 6
+  },
+  {
+   "name": "PRYCE",
+   "naturalAce": 33,
+   "region": "johto",
+   "slot": 7,
+   "stages": [
+    {
+     "ace": 14,
+     "flags": [],
+     "from": {
+      "const": "TRAINER_PRYCE_1",
+      "levelDelta": -19,
+      "source": "hns"
+     },
+     "kind": "draft",
+     "party": [
+      {
+       "level": 14,
+       "notes": [
+        "SPECIES_PILOSWINE \u2192 SPECIES_SWINUB"
+       ],
+       "species": "SPECIES_SWINUB"
+      },
+      {
+       "level": 13,
+       "notes": [
+        "sin datos de evoluci\u00f3n (especie fuera de FireRed)"
+       ],
+       "species": "SPECIES_SNEASEL"
+      },
+      {
+       "level": 12,
+       "notes": [
+        "SPECIES_DEWGONG \u2192 SPECIES_SEEL"
+       ],
+       "species": "SPECIES_SEEL"
+      }
+     ],
+     "stage": 1
+    },
+    {
+     "ace": 22,
+     "flags": [],
+     "from": {
+      "const": "TRAINER_PRYCE_1",
+      "levelDelta": -11,
+      "source": "hns"
+     },
+     "kind": "draft",
+     "party": [
+      {
+       "level": 22,
+       "notes": [
+        "SPECIES_PILOSWINE \u2192 SPECIES_SWINUB"
+       ],
+       "species": "SPECIES_SWINUB"
+      },
+      {
+       "level": 21,
+       "notes": [
+        "sin datos de evoluci\u00f3n (especie fuera de FireRed)"
+       ],
+       "species": "SPECIES_SNEASEL"
+      },
+      {
+       "level": 20,
+       "notes": [
+        "SPECIES_DEWGONG \u2192 SPECIES_SEEL"
+       ],
+       "species": "SPECIES_SEEL"
+      }
+     ],
+     "stage": 2
+    },
+    {
+     "ace": 33,
+     "from": {
+      "const": "TRAINER_PRYCE_1",
+      "source": "hns"
+     },
+     "kind": "real",
+     "party": [
+      {
+       "level": 31,
+       "species": "SPECIES_DEWGONG"
+      },
+      {
+       "level": 32,
+       "species": "SPECIES_SNEASEL"
+      },
+      {
+       "level": 31,
+       "species": "SPECIES_JYNX"
+      },
+      {
+       "level": 33,
+       "species": "SPECIES_PILOSWINE"
+      }
+     ],
+     "stage": 3
+    },
+    {
+     "ace": 38,
+     "from": {
+      "const": "TRAINER_PRYCE_1_3",
+      "source": "hns"
+     },
+     "kind": "real",
+     "party": [
+      {
+       "level": 37,
+       "species": "SPECIES_CLOYSTER"
+      },
+      {
+       "level": 37,
+       "species": "SPECIES_SNEASEL"
+      },
+      {
+       "level": 37,
+       "species": "SPECIES_JYNX"
+      },
+      {
+       "level": 37,
+       "species": "SPECIES_DEWGONG"
+      },
+      {
+       "level": 38,
+       "species": "SPECIES_MAMOSWINE"
+      }
+     ],
+     "stage": 4
+    }
+   ],
+   "teamsAvailable": 6
+  },
+  {
+   "name": "CLAIR",
+   "naturalAce": 45,
+   "region": "johto",
+   "slot": 8,
+   "stages": [
+    {
+     "ace": 14,
+     "flags": [],
+     "from": {
+      "const": "TRAINERCLASS_LEADER_CLAIR#35",
+      "levelDelta": -27,
+      "source": "heartgold"
+     },
+     "kind": "draft",
+     "party": [
+      {
+       "level": 14,
+       "notes": [
+        "SPECIES_KINGDRA \u2192 SPECIES_HORSEA"
+       ],
+       "species": "SPECIES_HORSEA"
+      },
+      {
+       "level": 11,
+       "notes": [
+        "SPECIES_GYARADOS \u2192 SPECIES_MAGIKARP"
+       ],
+       "species": "SPECIES_MAGIKARP"
+      },
+      {
+       "level": 11,
+       "notes": [
+        "SPECIES_DRAGONAIR \u2192 SPECIES_DRATINI"
+       ],
+       "species": "SPECIES_DRATINI"
+      }
+     ],
+     "stage": 1
+    },
+    {
+     "ace": 22,
+     "flags": [],
+     "from": {
+      "const": "TRAINERCLASS_LEADER_CLAIR#35",
+      "levelDelta": -19,
+      "source": "heartgold"
+     },
+     "kind": "draft",
+     "party": [
+      {
+       "level": 22,
+       "notes": [
+        "SPECIES_KINGDRA \u2192 SPECIES_HORSEA"
+       ],
+       "species": "SPECIES_HORSEA"
+      },
+      {
+       "level": 19,
+       "notes": [
+        "SPECIES_GYARADOS \u2192 SPECIES_MAGIKARP"
+       ],
+       "species": "SPECIES_MAGIKARP"
+      },
+      {
+       "level": 19,
+       "notes": [
+        "SPECIES_DRAGONAIR \u2192 SPECIES_DRATINI"
+       ],
+       "species": "SPECIES_DRATINI"
+      }
+     ],
+     "stage": 2
+    },
+    {
+     "ace": 28,
+     "flags": [],
+     "from": {
+      "const": "TRAINERCLASS_LEADER_CLAIR#35",
+      "levelDelta": -13,
+      "source": "heartgold"
+     },
+     "kind": "draft",
+     "party": [
+      {
+       "level": 25,
+       "notes": [],
+       "species": "SPECIES_GYARADOS"
+      },
+      {
+       "level": 25,
+       "notes": [
+        "SPECIES_DRAGONAIR \u2192 SPECIES_DRATINI"
+       ],
+       "species": "SPECIES_DRATINI"
+      },
+      {
+       "level": 25,
+       "notes": [
+        "SPECIES_DRAGONAIR \u2192 SPECIES_DRATINI"
+       ],
+       "species": "SPECIES_DRATINI"
+      },
+      {
+       "level": 28,
+       "notes": [
+        "SPECIES_KINGDRA \u2192 SPECIES_HORSEA"
+       ],
+       "species": "SPECIES_HORSEA"
+      }
+     ],
+     "stage": 3
+    },
+    {
+     "ace": 45,
+     "from": {
+      "const": "TRAINER_CLAIR_1",
+      "source": "hns"
+     },
+     "kind": "real",
+     "party": [
+      {
+       "level": 42,
+       "species": "SPECIES_DRAGONAIR"
+      },
+      {
+       "level": 43,
+       "species": "SPECIES_GYARADOS"
+      },
+      {
+       "level": 43,
+       "species": "SPECIES_LAPRAS"
+      },
+      {
+       "level": 44,
+       "species": "SPECIES_DUDUNSPARCE"
+      },
+      {
+       "level": 45,
+       "species": "SPECIES_KINGDRA"
+      }
+     ],
+     "stage": 4
+    }
+   ],
+   "teamsAvailable": 5
+  },
+  {
+   "name": "BROCK",
+   "naturalAce": 14,
+   "region": "kanto",
+   "slot": 1,
+   "stages": [
+    {
+     "ace": 14,
+     "from": {
+      "const": "TRAINER_LEADER_BROCK",
+      "source": "firered"
+     },
+     "kind": "real",
+     "party": [
+      {
+       "level": 12,
+       "species": "SPECIES_GEODUDE"
+      },
+      {
+       "level": 14,
+       "species": "SPECIES_ONIX"
+      }
+     ],
+     "stage": 1
+    },
+    {
+     "ace": 22,
+     "flags": [],
+     "from": {
+      "const": "TRAINER_LEADER_BROCK",
+      "levelDelta": 8,
+      "source": "firered"
+     },
+     "kind": "draft",
+     "party": [
+      {
+       "level": 20,
+       "notes": [],
+       "species": "SPECIES_GEODUDE"
+      },
+      {
+       "level": 22,
+       "notes": [],
+       "species": "SPECIES_ONIX"
+      },
+      {
+       "level": 20,
+       "notes": [
+        "a\u00f1adido de otro equipo del l\u00edder",
+        "sin datos de evoluci\u00f3n (especie fuera de FireRed)"
+       ],
+       "species": "SPECIES_AERODACTYL"
+      }
+     ],
+     "stage": 2
+    },
+    {
+     "ace": 28,
+     "flags": [],
+     "from": {
+      "const": "TRAINER_LEADER_BROCK",
+      "levelDelta": 14,
+      "source": "firered"
+     },
+     "kind": "draft",
+     "party": [
+      {
+       "level": 26,
+       "notes": [
+        "SPECIES_GEODUDE \u2192 SPECIES_GRAVELER"
+       ],
+       "species": "SPECIES_GRAVELER"
+      },
+      {
+       "level": 28,
+       "notes": [],
+       "species": "SPECIES_ONIX"
+      },
+      {
+       "level": 26,
+       "notes": [
+        "a\u00f1adido de otro equipo del l\u00edder",
+        "sin datos de evoluci\u00f3n (especie fuera de FireRed)"
+       ],
+       "species": "SPECIES_AERODACTYL"
+      },
+      {
+       "level": 26,
+       "notes": [
+        "a\u00f1adido de otro equipo del l\u00edder",
+        "SPECIES_KABUTOPS \u2192 SPECIES_KABUTO"
+       ],
+       "species": "SPECIES_KABUTO"
+      }
+     ],
+     "stage": 3
+    },
+    {
+     "ace": 43,
+     "flags": [],
+     "from": {
+      "const": "TRAINERCLASS_LEADER_BROCK#253",
+      "levelDelta": -11,
+      "source": "heartgold"
+     },
+     "kind": "draft",
+     "party": [
+      {
+       "level": 40,
+       "notes": [],
+       "species": "SPECIES_GRAVELER"
+      },
+      {
+       "level": 40,
+       "notes": [],
+       "species": "SPECIES_RHYHORN"
+      },
+      {
+       "level": 42,
+       "notes": [],
+       "species": "SPECIES_OMASTAR"
+      },
+      {
+       "level": 43,
+       "notes": [],
+       "species": "SPECIES_ONIX"
+      },
+      {
+       "level": 41,
+       "notes": [],
+       "species": "SPECIES_KABUTOPS"
+      }
+     ],
+     "stage": 4
+    }
+   ],
+   "teamsAvailable": 4
+  },
+  {
+   "name": "MISTY",
+   "naturalAce": 21,
+   "region": "kanto",
+   "slot": 2,
+   "stages": [
+    {
+     "ace": 14,
+     "flags": [],
+     "from": {
+      "const": "TRAINER_LEADER_MISTY",
+      "levelDelta": -7,
+      "source": "firered"
+     },
+     "kind": "draft",
+     "party": [
+      {
+       "level": 11,
+       "notes": [],
+       "species": "SPECIES_STARYU"
+      },
+      {
+       "level": 14,
+       "notes": [
+        "SPECIES_STARMIE \u2192 SPECIES_STARYU"
+       ],
+       "species": "SPECIES_STARYU"
+      },
+      {
+       "level": 12,
+       "notes": [
+        "a\u00f1adido de otro equipo del l\u00edder",
+        "SPECIES_GOLDUCK \u2192 SPECIES_PSYDUCK"
+       ],
+       "species": "SPECIES_PSYDUCK"
+      }
+     ],
+     "stage": 1
+    },
+    {
+     "ace": 21,
+     "from": {
+      "const": "TRAINER_LEADER_MISTY",
+      "source": "firered"
+     },
+     "kind": "real",
+     "party": [
+      {
+       "level": 18,
+       "species": "SPECIES_STARYU"
+      },
+      {
+       "level": 21,
+       "species": "SPECIES_STARMIE"
+      }
+     ],
+     "stage": 2
+    },
+    {
+     "ace": 28,
+     "flags": [],
+     "from": {
+      "const": "TRAINER_LEADER_MISTY",
+      "levelDelta": 7,
+      "source": "firered"
+     },
+     "kind": "draft",
+     "party": [
+      {
+       "level": 25,
+       "notes": [],
+       "species": "SPECIES_STARYU"
+      },
+      {
+       "level": 28,
+       "notes": [
+        "SPECIES_STARMIE \u2192 SPECIES_STARYU"
+       ],
+       "species": "SPECIES_STARYU"
+      },
+      {
+       "level": 26,
+       "notes": [
+        "a\u00f1adido de otro equipo del l\u00edder",
+        "SPECIES_GOLDUCK \u2192 SPECIES_PSYDUCK"
+       ],
+       "species": "SPECIES_PSYDUCK"
+      },
+      {
+       "level": 26,
+       "notes": [
+        "a\u00f1adido de otro equipo del l\u00edder"
+       ],
+       "species": "SPECIES_QUAGSIRE"
+      }
+     ],
+     "stage": 3
+    },
+    {
+     "ace": 43,
+     "flags": [],
+     "from": {
+      "const": "TRAINERCLASS_LEADER_MISTY#254",
+      "levelDelta": -11,
+      "source": "heartgold"
+     },
+     "kind": "draft",
+     "party": [
+      {
+       "level": 38,
+       "notes": [],
+       "species": "SPECIES_GOLDUCK"
+      },
+      {
+       "level": 38,
+       "notes": [],
+       "species": "SPECIES_QUAGSIRE"
+      },
+      {
+       "level": 41,
+       "notes": [
+        "sin datos de evoluci\u00f3n (especie fuera de FireRed)"
+       ],
+       "species": "SPECIES_LAPRAS"
+      },
+      {
+       "level": 43,
+       "notes": [],
+       "species": "SPECIES_STARMIE"
+      },
+      {
+       "level": 41,
+       "notes": [
+        "a\u00f1adido de otro equipo del l\u00edder"
+       ],
+       "species": "SPECIES_VAPOREON"
+      }
+     ],
+     "stage": 4
+    }
+   ],
+   "teamsAvailable": 4
+  },
+  {
+   "name": "LT_SURGE",
+   "naturalAce": 24,
+   "region": "kanto",
+   "slot": 3,
+   "stages": [
+    {
+     "ace": 14,
+     "flags": [],
+     "from": {
+      "const": "TRAINER_LEADER_LT_SURGE",
+      "levelDelta": -10,
+      "source": "firered"
+     },
+     "kind": "draft",
+     "party": [
+      {
+       "level": 11,
+       "notes": [],
+       "species": "SPECIES_VOLTORB"
+      },
+      {
+       "level": 8,
+       "notes": [
+        "SPECIES_PIKACHU \u2192 SPECIES_PICHU"
+       ],
+       "species": "SPECIES_PICHU"
+      },
+      {
+       "level": 14,
+       "notes": [
+        "SPECIES_RAICHU \u2192 SPECIES_PICHU"
+       ],
+       "species": "SPECIES_PICHU"
+      }
+     ],
+     "stage": 1
+    },
+    {
+     "ace": 24,
+     "from": {
+      "const": "TRAINER_LEADER_LT_SURGE",
+      "source": "firered"
+     },
+     "kind": "real",
+     "party": [
+      {
+       "level": 21,
+       "species": "SPECIES_VOLTORB"
+      },
+      {
+       "level": 18,
+       "species": "SPECIES_PIKACHU"
+      },
+      {
+       "level": 24,
+       "species": "SPECIES_RAICHU"
+      }
+     ],
+     "stage": 2
+    },
+    {
+     "ace": 24,
+     "from": {
+      "const": "TRAINER_LEADER_LT_SURGE",
+      "source": "firered"
+     },
+     "kind": "real",
+     "party": [
+      {
+       "level": 21,
+       "species": "SPECIES_VOLTORB"
+      },
+      {
+       "level": 18,
+       "species": "SPECIES_PIKACHU"
+      },
+      {
+       "level": 24,
+       "species": "SPECIES_RAICHU"
+      }
+     ],
+     "stage": 3
+    },
+    {
+     "ace": 43,
+     "flags": [],
+     "from": {
+      "const": "TRAINERCLASS_LEADER_LT_SURGE#255",
+      "levelDelta": -10,
+      "source": "heartgold"
+     },
+     "kind": "draft",
+     "party": [
+      {
+       "level": 41,
+       "notes": [],
+       "species": "SPECIES_RAICHU"
+      },
+      {
+       "level": 37,
+       "notes": [],
+       "species": "SPECIES_ELECTRODE"
+      },
+      {
+       "level": 37,
+       "notes": [],
+       "species": "SPECIES_MAGNETON"
+      },
+      {
+       "level": 37,
+       "notes": [],
+       "species": "SPECIES_ELECTRODE"
+      },
+      {
+       "level": 43,
+       "notes": [],
+       "species": "SPECIES_ELECTABUZZ"
+      }
+     ],
+     "stage": 4
+    }
+   ],
+   "teamsAvailable": 4
+  },
+  {
+   "name": "ERIKA",
+   "naturalAce": 29,
+   "region": "kanto",
+   "slot": 4,
+   "stages": [
+    {
+     "ace": 14,
+     "flags": [],
+     "from": {
+      "const": "TRAINER_LEADER_ERIKA",
+      "levelDelta": -15,
+      "source": "firered"
+     },
+     "kind": "draft",
+     "party": [
+      {
+       "level": 14,
+       "notes": [
+        "SPECIES_VICTREEBEL \u2192 SPECIES_BELLSPROUT"
+       ],
+       "species": "SPECIES_BELLSPROUT"
+      },
+      {
+       "level": 9,
+       "notes": [
+        "sin datos de evoluci\u00f3n (especie fuera de FireRed)"
+       ],
+       "species": "SPECIES_TANGELA"
+      },
+      {
+       "level": 14,
+       "notes": [
+        "SPECIES_VILEPLUME \u2192 SPECIES_ODDISH"
+       ],
+       "species": "SPECIES_ODDISH"
+      }
+     ],
+     "stage": 1
+    },
+    {
+     "ace": 22,
+     "flags": [],
+     "from": {
+      "const": "TRAINER_LEADER_ERIKA",
+      "levelDelta": -7,
+      "source": "firered"
+     },
+     "kind": "draft",
+     "party": [
+      {
+       "level": 22,
+       "notes": [
+        "SPECIES_VICTREEBEL \u2192 SPECIES_WEEPINBELL"
+       ],
+       "species": "SPECIES_WEEPINBELL"
+      },
+      {
+       "level": 17,
+       "notes": [
+        "sin datos de evoluci\u00f3n (especie fuera de FireRed)"
+       ],
+       "species": "SPECIES_TANGELA"
+      },
+      {
+       "level": 22,
+       "notes": [
+        "SPECIES_VILEPLUME \u2192 SPECIES_GLOOM"
+       ],
+       "species": "SPECIES_GLOOM"
+      }
+     ],
+     "stage": 2
+    },
+    {
+     "ace": 29,
+     "from": {
+      "const": "TRAINER_LEADER_ERIKA",
+      "source": "firered"
+     },
+     "kind": "real",
+     "party": [
+      {
+       "level": 29,
+       "species": "SPECIES_VICTREEBEL"
+      },
+      {
+       "level": 24,
+       "species": "SPECIES_TANGELA"
+      },
+      {
+       "level": 29,
+       "species": "SPECIES_VILEPLUME"
+      }
+     ],
+     "stage": 3
+    },
+    {
+     "ace": 43,
+     "flags": [],
+     "from": {
+      "const": "TRAINERCLASS_LEADER_ERIKA#256",
+      "levelDelta": -13,
+      "source": "heartgold"
+     },
+     "kind": "draft",
+     "party": [
+      {
+       "level": 38,
+       "notes": [],
+       "species": "SPECIES_JUMPLUFF"
+      },
+      {
+       "level": 39,
+       "notes": [
+        "sin datos de evoluci\u00f3n (especie fuera de FireRed)"
+       ],
+       "species": "SPECIES_TANGELA"
+      },
+      {
+       "level": 43,
+       "notes": [],
+       "species": "SPECIES_VICTREEBEL"
+      },
+      {
+       "level": 43,
+       "notes": [],
+       "species": "SPECIES_BELLOSSOM"
+      },
+      {
+       "level": 41,
+       "notes": [
+        "a\u00f1adido de otro equipo del l\u00edder"
+       ],
+       "species": "SPECIES_VENUSAUR"
+      }
+     ],
+     "stage": 4
+    }
+   ],
+   "teamsAvailable": 4
+  },
+  {
+   "name": "KOGA",
+   "naturalAce": 43,
+   "region": "kanto",
+   "slot": 5,
+   "stages": [
+    {
+     "ace": 14,
+     "flags": [],
+     "from": {
+      "const": "TRAINER_LEADER_KOGA",
+      "levelDelta": -29,
+      "source": "firered"
+     },
+     "kind": "draft",
+     "party": [
+      {
+       "level": 14,
+       "notes": [
+        "SPECIES_WEEZING \u2192 SPECIES_KOFFING"
+       ],
+       "species": "SPECIES_KOFFING"
+      },
+      {
+       "level": 10,
+       "notes": [
+        "SPECIES_MUK \u2192 SPECIES_GRIMER"
+       ],
+       "species": "SPECIES_GRIMER"
+      },
+      {
+       "level": 8,
+       "notes": [],
+       "species": "SPECIES_KOFFING"
+      }
+     ],
+     "stage": 1
+    },
+    {
+     "ace": 22,
+     "flags": [],
+     "from": {
+      "const": "TRAINER_LEADER_KOGA",
+      "levelDelta": -21,
+      "source": "firered"
+     },
+     "kind": "draft",
+     "party": [
+      {
+       "level": 22,
+       "notes": [
+        "SPECIES_WEEZING \u2192 SPECIES_KOFFING"
+       ],
+       "species": "SPECIES_KOFFING"
+      },
+      {
+       "level": 18,
+       "notes": [
+        "SPECIES_MUK \u2192 SPECIES_GRIMER"
+       ],
+       "species": "SPECIES_GRIMER"
+      },
+      {
+       "level": 16,
+       "notes": [],
+       "species": "SPECIES_KOFFING"
+      }
+     ],
+     "stage": 2
+    },
+    {
+     "ace": 28,
+     "flags": [],
+     "from": {
+      "const": "TRAINER_LEADER_KOGA",
+      "levelDelta": -15,
+      "source": "firered"
+     },
+     "kind": "draft",
+     "party": [
+      {
+       "level": 22,
+       "notes": [],
+       "species": "SPECIES_KOFFING"
+      },
+      {
+       "level": 24,
+       "notes": [
+        "SPECIES_MUK \u2192 SPECIES_GRIMER"
+       ],
+       "species": "SPECIES_GRIMER"
+      },
+      {
+       "level": 22,
+       "notes": [],
+       "species": "SPECIES_KOFFING"
+      },
+      {
+       "level": 28,
+       "notes": [
+        "SPECIES_WEEZING \u2192 SPECIES_KOFFING"
+       ],
+       "species": "SPECIES_KOFFING"
+      }
+     ],
+     "stage": 3
+    },
+    {
+     "ace": 43,
+     "from": {
+      "const": "TRAINER_LEADER_KOGA",
+      "source": "firered"
+     },
+     "kind": "real",
+     "party": [
+      {
+       "level": 37,
+       "species": "SPECIES_KOFFING"
+      },
+      {
+       "level": 39,
+       "species": "SPECIES_MUK"
+      },
+      {
+       "level": 37,
+       "species": "SPECIES_KOFFING"
+      },
+      {
+       "level": 43,
+       "species": "SPECIES_WEEZING"
+      }
+     ],
+     "stage": 4
+    }
+   ],
+   "teamsAvailable": 1
+  },
+  {
+   "name": "SABRINA",
+   "naturalAce": 43,
+   "region": "kanto",
+   "slot": 6,
+   "stages": [
+    {
+     "ace": 14,
+     "flags": [],
+     "from": {
+      "const": "TRAINER_LEADER_SABRINA",
+      "levelDelta": -29,
+      "source": "firered"
+     },
+     "kind": "draft",
+     "party": [
+      {
+       "level": 14,
+       "notes": [
+        "SPECIES_ALAKAZAM \u2192 SPECIES_ABRA"
+       ],
+       "species": "SPECIES_ABRA"
+      },
+      {
+       "level": 9,
+       "notes": [
+        "SPECIES_KADABRA \u2192 SPECIES_ABRA"
+       ],
+       "species": "SPECIES_ABRA"
+      },
+      {
+       "level": 9,
+       "notes": [
+        "SPECIES_VENOMOTH \u2192 SPECIES_VENONAT"
+       ],
+       "species": "SPECIES_VENONAT"
+      }
+     ],
+     "stage": 1
+    },
+    {
+     "ace": 22,
+     "flags": [],
+     "from": {
+      "const": "TRAINER_LEADER_SABRINA",
+      "levelDelta": -21,
+      "source": "firered"
+     },
+     "kind": "draft",
+     "party": [
+      {
+       "level": 22,
+       "notes": [
+        "SPECIES_ALAKAZAM \u2192 SPECIES_KADABRA"
+       ],
+       "species": "SPECIES_KADABRA"
+      },
+      {
+       "level": 17,
+       "notes": [],
+       "species": "SPECIES_KADABRA"
+      },
+      {
+       "level": 17,
+       "notes": [
+        "SPECIES_VENOMOTH \u2192 SPECIES_VENONAT"
+       ],
+       "species": "SPECIES_VENONAT"
+      }
+     ],
+     "stage": 2
+    },
+    {
+     "ace": 28,
+     "flags": [],
+     "from": {
+      "const": "TRAINER_LEADER_SABRINA",
+      "levelDelta": -15,
+      "source": "firered"
+     },
+     "kind": "draft",
+     "party": [
+      {
+       "level": 23,
+       "notes": [],
+       "species": "SPECIES_KADABRA"
+      },
+      {
+       "level": 22,
+       "notes": [
+        "sin datos de evoluci\u00f3n (especie fuera de FireRed)"
+       ],
+       "species": "SPECIES_MR_MIME"
+      },
+      {
+       "level": 23,
+       "notes": [
+        "SPECIES_VENOMOTH \u2192 SPECIES_VENONAT"
+       ],
+       "species": "SPECIES_VENONAT"
+      },
+      {
+       "level": 28,
+       "notes": [
+        "SPECIES_ALAKAZAM \u2192 SPECIES_KADABRA"
+       ],
+       "species": "SPECIES_KADABRA"
+      }
+     ],
+     "stage": 3
+    },
+    {
+     "ace": 43,
+     "from": {
+      "const": "TRAINER_LEADER_SABRINA",
+      "source": "firered"
+     },
+     "kind": "real",
+     "party": [
+      {
+       "level": 38,
+       "species": "SPECIES_KADABRA"
+      },
+      {
+       "level": 37,
+       "species": "SPECIES_MR_MIME"
+      },
+      {
+       "level": 38,
+       "species": "SPECIES_VENOMOTH"
+      },
+      {
+       "level": 43,
+       "species": "SPECIES_ALAKAZAM"
+      }
+     ],
+     "stage": 4
+    }
+   ],
+   "teamsAvailable": 4
+  },
+  {
+   "name": "BLAINE",
+   "naturalAce": 47,
+   "region": "kanto",
+   "slot": 7,
+   "stages": [
+    {
+     "ace": 14,
+     "flags": [],
+     "from": {
+      "const": "TRAINER_LEADER_BLAINE",
+      "levelDelta": -33,
+      "source": "firered"
+     },
+     "kind": "draft",
+     "party": [
+      {
+       "level": 14,
+       "notes": [
+        "SPECIES_ARCANINE \u2192 SPECIES_GROWLITHE"
+       ],
+       "species": "SPECIES_GROWLITHE"
+      },
+      {
+       "level": 9,
+       "notes": [],
+       "species": "SPECIES_GROWLITHE"
+      },
+      {
+       "level": 9,
+       "notes": [
+        "SPECIES_RAPIDASH \u2192 SPECIES_PONYTA"
+       ],
+       "species": "SPECIES_PONYTA"
+      }
+     ],
+     "stage": 1
+    },
+    {
+     "ace": 22,
+     "flags": [],
+     "from": {
+      "const": "TRAINER_LEADER_BLAINE",
+      "levelDelta": -25,
+      "source": "firered"
+     },
+     "kind": "draft",
+     "party": [
+      {
+       "level": 22,
+       "notes": [
+        "SPECIES_ARCANINE \u2192 SPECIES_GROWLITHE"
+       ],
+       "species": "SPECIES_GROWLITHE"
+      },
+      {
+       "level": 17,
+       "notes": [],
+       "species": "SPECIES_GROWLITHE"
+      },
+      {
+       "level": 17,
+       "notes": [
+        "SPECIES_RAPIDASH \u2192 SPECIES_PONYTA"
+       ],
+       "species": "SPECIES_PONYTA"
+      }
+     ],
+     "stage": 2
+    },
+    {
+     "ace": 28,
+     "flags": [],
+     "from": {
+      "const": "TRAINER_LEADER_BLAINE",
+      "levelDelta": -19,
+      "source": "firered"
+     },
+     "kind": "draft",
+     "party": [
+      {
+       "level": 23,
+       "notes": [],
+       "species": "SPECIES_GROWLITHE"
+      },
+      {
+       "level": 21,
+       "notes": [],
+       "species": "SPECIES_PONYTA"
+      },
+      {
+       "level": 23,
+       "notes": [
+        "SPECIES_RAPIDASH \u2192 SPECIES_PONYTA"
+       ],
+       "species": "SPECIES_PONYTA"
+      },
+      {
+       "level": 28,
+       "notes": [
+        "SPECIES_ARCANINE \u2192 SPECIES_GROWLITHE"
+       ],
+       "species": "SPECIES_GROWLITHE"
+      }
+     ],
+     "stage": 3
+    },
+    {
+     "ace": 47,
+     "from": {
+      "const": "TRAINER_LEADER_BLAINE",
+      "source": "firered"
+     },
+     "kind": "real",
+     "party": [
+      {
+       "level": 42,
+       "species": "SPECIES_GROWLITHE"
+      },
+      {
+       "level": 40,
+       "species": "SPECIES_PONYTA"
+      },
+      {
+       "level": 42,
+       "species": "SPECIES_RAPIDASH"
+      },
+      {
+       "level": 47,
+       "species": "SPECIES_ARCANINE"
+      }
+     ],
+     "stage": 4
+    }
+   ],
+   "teamsAvailable": 4
+  },
+  {
+   "name": "GIOVANNI",
+   "naturalAce": 50,
+   "region": "kanto",
+   "slot": 8,
+   "stages": [
+    {
+     "ace": 14,
+     "flags": [],
+     "from": {
+      "const": "TRAINER_LEADER_GIOVANNI",
+      "levelDelta": -36,
+      "source": "firered"
+     },
+     "kind": "draft",
+     "party": [
+      {
+       "level": 14,
+       "notes": [],
+       "species": "SPECIES_RHYHORN"
+      },
+      {
+       "level": 9,
+       "notes": [],
+       "species": "SPECIES_RHYHORN"
+      },
+      {
+       "level": 9,
+       "notes": [
+        "SPECIES_NIDOKING \u2192 SPECIES_NIDORAN_M"
+       ],
+       "species": "SPECIES_NIDORAN_M"
+      }
+     ],
+     "stage": 1
+    },
+    {
+     "ace": 22,
+     "flags": [],
+     "from": {
+      "const": "TRAINER_LEADER_GIOVANNI",
+      "levelDelta": -28,
+      "source": "firered"
+     },
+     "kind": "draft",
+     "party": [
+      {
+       "level": 22,
+       "notes": [],
+       "species": "SPECIES_RHYHORN"
+      },
+      {
+       "level": 17,
+       "notes": [],
+       "species": "SPECIES_RHYHORN"
+      },
+      {
+       "level": 17,
+       "notes": [
+        "SPECIES_NIDOKING \u2192 SPECIES_NIDORINO"
+       ],
+       "species": "SPECIES_NIDORINO"
+      }
+     ],
+     "stage": 2
+    },
+    {
+     "ace": 28,
+     "flags": [],
+     "from": {
+      "const": "TRAINER_LEADER_GIOVANNI",
+      "levelDelta": -22,
+      "source": "firered"
+     },
+     "kind": "draft",
+     "party": [
+      {
+       "level": 28,
+       "notes": [],
+       "species": "SPECIES_RHYHORN"
+      },
+      {
+       "level": 23,
+       "notes": [],
+       "species": "SPECIES_RHYHORN"
+      },
+      {
+       "level": 23,
+       "notes": [
+        "SPECIES_NIDOKING \u2192 SPECIES_NIDORINO"
+       ],
+       "species": "SPECIES_NIDORINO"
+      },
+      {
+       "level": 22,
+       "notes": [
+        "SPECIES_NIDOQUEEN \u2192 SPECIES_NIDORINA"
+       ],
+       "species": "SPECIES_NIDORINA"
+      }
+     ],
+     "stage": 3
+    },
+    {
+     "ace": 50,
+     "from": {
+      "const": "TRAINER_LEADER_GIOVANNI",
+      "source": "firered"
+     },
+     "kind": "real",
+     "party": [
+      {
+       "level": 45,
+       "species": "SPECIES_RHYHORN"
+      },
+      {
+       "level": 42,
+       "species": "SPECIES_DUGTRIO"
+      },
+      {
+       "level": 44,
+       "species": "SPECIES_NIDOQUEEN"
+      },
+      {
+       "level": 45,
+       "species": "SPECIES_NIDOKING"
+      },
+      {
+       "level": 50,
+       "species": "SPECIES_RHYHORN"
+      }
+     ],
+     "stage": 4
+    }
+   ],
+   "teamsAvailable": 1
+  }
+ ],
+ "stageInfo": [
+  {
+   "aceBand": [
+    11,
+    16
+   ],
+   "aceMid": 14,
+   "medals": [
+    0,
+    3
+   ],
+   "partySize": 3,
+   "partySizeMeasured": {
+    "max": 3,
+    "min": 2
+   },
+   "stage": 1
+  },
+  {
+   "aceBand": [
+    19,
+    24
+   ],
+   "aceMid": 22,
+   "medals": [
+    4,
+    7
+   ],
+   "partySize": 3,
+   "partySizeMeasured": {
+    "max": 4,
+    "min": 2
+   },
+   "stage": 2
+  },
+  {
+   "aceBand": [
+    24,
+    33
+   ],
+   "aceMid": 28,
+   "medals": [
+    8,
+    15
+   ],
+   "partySize": 4,
+   "partySizeMeasured": {
+    "max": 5,
+    "min": 3
+   },
+   "stage": 3
+  },
+  {
+   "aceBand": [
+    36,
+    50
+   ],
+   "aceMid": 43,
+   "medals": [
+    16,
+    23
+   ],
+   "partySize": 5,
+   "partySizeMeasured": {
+    "max": 5,
+    "min": 4
+   },
+   "stage": 4
+  }
+ ]
+}
