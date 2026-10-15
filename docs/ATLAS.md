@@ -372,9 +372,29 @@ node .decomp-build/checks/viewerAvatar.mjs
 PW_BASE=http://127.0.0.1:5173/ PW_TIMEOUT_MS=180000 node tools/playtest/pw.mjs tools/playtest/smoke/viewer-avatar.job.mjs output/playwright/avatar-review
 ```
 
-Límite de esta revisión: avatar de locomoción base. Soporte/balanceo de SurfBlob, sombras,
-reflejos, huellas, ondas, máscaras de hierba/profundidad y terreno animado se revisan en el punto
-de efectos; NPC/objetos, terrenos especiales (escaleras/puentes/rails), interiores, animaciones de
+Soporte de surf (entrega aa4279a8): `render/surf.ts` conecta SurfBlob desde fieldfx.json
+con el intérprete Sprite compartido. La geometría visible viene del OAM (32×32); los
+argumentos 2×8 de overworld_frame reservan la misma cantidad de bytes, no definen el recorte PNG.
+Usa las cuatro animaciones originales, incluidos los espejados, y el desplazamiento de un píxel
+del jinete según animCmdIndex de CreateBobbingEffect. La dirección vertical del soporte empieza
+en cero en FireRed y permanece cero; no se añade una oscilación sinusoidal. El reloj común pausa
+el efecto y el menú; al salir a tierra o abandonar Explorar se oculta. En reposo solo actualiza
+el soporte y la posición del jinete, sin recalcular sectores/cámara.
+
+Revisión focal: tablas C, Sprite, tipos, honesty y build PASS. El job de avatar conserva las
+32 combinaciones y añade ocho comprobaciones Rojo/Hoja×dirección con los dos fotogramas,
+el desplazamiento relativo y pausa; capturas sur/surfeando al este inspeccionadas. Movimiento
+con teclado confirma entrada, recarga y retirada al desembarcar. Hierba/huellas pasan el harness
+PREPARED existente (terreno y RAF sintéticos, recursos reales). Regresión real de 62 pasos:
+~59–60 FPS, p95 ≤16,8 ms; hubo una tarea de 54 ms y una muestra con intervalo máximo de 33,3 ms.
+Estas medidas locales no garantizan 60 FPS constantes ni rendimiento en todos los dispositivos.
+
+Sigue pendiente el soporte durante el salto de orilla (se oculta en esa transición), su profundidad
+con elevaciones/puentes, sombras, reflejos y máscaras de terreno. No cierra la familia de efectos.
+
+Límite de la revisión base: avatar de locomoción. El soporte normal se añadió en aa4279a8;
+el soporte durante salto de orilla, sombras, reflejos, huellas/ondas en navegación real, máscaras
+de hierba/profundidad y terreno animado siguen en el punto de efectos; NPC/objetos, terrenos especiales (escaleras/puentes/rails), interiores, animaciones de
 escenas/acciones especiales, recorrido exhaustivo y comparación ROM/dispositivos siguen pendientes.
 Los jobs UI históricos C7/huellas necesitan adaptarse al modo inmersivo antes de servir de prueba
 actual; no se ejecutaron ni se presentan como validación vigente en esta entrega.
