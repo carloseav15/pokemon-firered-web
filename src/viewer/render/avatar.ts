@@ -32,11 +32,11 @@ export class AvatarAnimator {
       if (!gfx) throw new Error(`Missing avatar graphics ${id}`);
       const anims = this.data.animTables[gfx.anims];
       if (!anims) throw new Error(`Missing avatar animation table ${gfx.anims}`);
-      for (const [file] of gfx.frames) urls.add(`/fr/${file}`);
+      for (const [file] of [...gfx.frames, ...gfx.reflectionFrames]) urls.add(`/fr/${file}`);
     }
     await Promise.all([...urls].map(async url => { const image = await loadImage(url); await image.decode(); }));
     for (const gfx of Object.values(this.data.gfx).filter(gfx => /OBJ_EVENT_GFX_(RED|GREEN)_(NORMAL|BIKE|SURF)$/.test(gfx.name))) {
-      for (const [file, index] of gfx.frames) {
+      for (const [file, index] of [...gfx.frames, ...gfx.reflectionFrames]) {
         const image = await loadImage(`/fr/${file}`);
         if (image.naturalHeight !== gfx.height || !Number.isInteger(image.naturalWidth / gfx.width) || index >= image.naturalWidth / gfx.width)
           throw new Error(`Unsupported avatar sheet packing ${file}/${index}`);
@@ -108,7 +108,7 @@ export class AvatarAnimator {
     this.advance(tick);
     const [file, index] = this.gfx.frames[this.sprite.imageValue]!;
     return { url: `/fr/${file}`, index, width: this.gfx.width, height: this.gfx.height, hFlip: this.sprite.hFlip, vFlip: this.sprite.vFlip,
-      shadowSize: this.gfx.shadowSize, image: this.sprite.imageValue, command: this.sprite.animCmdIndex, delay: this.sprite.animDelayCounter, animation: this.sprite.animNum, action: this.action, direction: this.direction, graphics: this.gfx.name, moving: this.moving };
+      reflection: this.gfx.reflectionFrames[this.sprite.imageValue], shadowSize: this.gfx.shadowSize, image: this.sprite.imageValue, command: this.sprite.animCmdIndex, delay: this.sprite.animDelayCounter, animation: this.sprite.animNum, action: this.action, direction: this.direction, graphics: this.gfx.name, moving: this.moving };
   }
   /** NpcTakeStep tables, not macOS timing or a guessed ms duration. */
   offsets(action: AvatarAction): number[] {
