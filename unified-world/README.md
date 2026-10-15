@@ -47,7 +47,7 @@ determinista: ejecutarlo dos veces da los mismos archivos.
 | `progress/progress.ts` | – | Modelo de progreso en tres capas (regional, derivada, exploración) |
 | `progress/progress.check.ts` | – | Comprobación con los IDs reales; ver el comando abajo |
 
-Resultados e interpretación: [PROGRESO.md](PROGRESO.md).
+Resultados e interpretación: [PROGRESO.md](PROGRESO.md). Diseño del cambio de categoría y de Hada: [DISENO-REGLAS.md](DISENO-REGLAS.md).
 
 ```bash
 npx esbuild unified-world/progress/progress.check.ts --bundle --platform=node --format=esm \
