@@ -3,6 +3,7 @@
 // Mirror Coat bookkeeping). See unified-world/DISENO-REGLAS.md, steps 0 to 2.
 // Steps 0-1: the default (gen3) profile is pinned to a reference recorded before the refactor.
 // Step 2: the unified profile (Gen 4 per-move category) is checked against the data files and the damage formula.
+// Step 3: the Fairy type (chart, species, moves, name) is checked against Showdown's Gen 6 data, independently of the generator.
 //
 // What this proves: the behaviour of those functions over a fixed grid of inputs is unchanged by a refactor.
 // What it does NOT prove: that the behaviour matches the GBA. The reference was recorded from this port, not from
@@ -26,7 +27,8 @@ import { setBattleRulesProfile } from '../../src/core/battle/rules.ts';
 import { GetWhoStrikesFirst } from '../../src/core/battle/main.ts';
 import { flagSet, flagClear, setSave, newSaveData } from '../../src/games/firered/save.ts';
 import { MOVE_CATEGORIES_GEN4 } from '../../src/core/battle/data/moveCategoriesGen4.ts';
-import { Cmd_accuracycheck, Cmd_datahpupdate } from '../../src/core/battle/cmds/part1.ts';
+import { Cmd_accuracycheck, Cmd_datahpupdate, Cmd_typecalc } from '../../src/core/battle/cmds/part1.ts';
+import { Cmd_hiddenpowercalc } from '../../src/core/battle/cmds/part4.ts';
 import { gBattleScriptingCommandsTable } from '../../src/core/battle/cmds/index.ts';
 import {
   G, gBattleMons, gBattleStruct, gProtectStructs, gSpecialStatuses, gBattlerPositions, resetBattleStructs,
@@ -66,6 +68,7 @@ async function initData(): Promise<void> {
   rom.natures = movesRaw.natures;
   rom.trainerClasses = movesRaw.trainerClasses;
   rom.types = movesRaw.types;
+  rom.typeNames = movesRaw.types; // src/core/rom.ts loads the type names into typeNames
   rom.typeEffectiveness = movesRaw.typeEffectiveness;
   rom.trainers = JSON.parse(readFileSync(fr + 'data/trainers.json', 'utf8'));
   const itemsRaw = JSON.parse(readFileSync(fr + 'data/items.json', 'utf8'));
@@ -216,18 +219,52 @@ function hpUpdateRun(): string[] {
   return lines;
 }
 
+/**
+ * Type chart through the engine's own Cmd_typecalc: every attacking type against every single and dual defending
+ * type, with and without Foresight. The move's type is forced through dynamicMoveType, as Hidden Power does.
+ */
+function typecalcRun(types: number[]): string[] {
+  const addr = findDataHpUpdate(); // any valid script address: typecalc only advances the pointer
+  const lines: string[] = [];
+  const base = 1000;
+  for (const foresight of [0, C.STATUS2_FORESIGHT]) {
+    for (const atk of types) {
+      for (const d1 of types) {
+        for (const d2 of types) {
+          if (d2 < d1) continue;
+          resetBattleStructs();
+          G.gBattleTypeFlags = 0; G.gBattlersCount = 2; G.gBattlerAttacker = 0; G.gBattlerTarget = 1;
+          setMon(0, { ability: 0 }); setMon(1, {});
+          const t = gBattleMons[1] as any;
+          t.type1 = d1; t.type2 = d2; t.status2 = foresight;
+          const a = gBattleMons[0] as any;
+          a.type1 = C.TYPE_MYSTERY; a.type2 = C.TYPE_MYSTERY; // no STAB, so the multiplier is the chart alone
+          G.gCurrentMove = C.MOVE_TACKLE; gBattleStruct.dynamicMoveType = atk | (1 << 7);
+          G.gMoveResultFlags = 0; G.gBattleMoveDamage = base; G.gBattlescriptCurrInstr = addr;
+          Cmd_typecalc();
+          lines.push(`a${atk}|d${d1}/${d2}|f${foresight ? 1 : 0}|${G.gBattleMoveDamage}|r${G.gMoveResultFlags}`);
+        }
+      }
+    }
+  }
+  return lines;
+}
+
 // ------------------------------------------------------------------------------------------------ main
 
 await initData();
 const damage = damageCases();
 const accuracy = accuracyRun();
 const hpupdate = hpUpdateRun();
+const GEN3_TYPES = [0, 1, 2, 3, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14, 15, 16, 17];
+const typecalc = typecalcRun(GEN3_TYPES);
 
 const result = {
   note: 'recorded from the TypeScript port (not from the C); see header of tools/checks/battleCategory.ts',
   damage: { cases: damage.length, sha256: digest(damage) },
   accuracy: { cases: accuracy.length, sha256: digest(accuracy) },
   hpupdate: { cases: hpupdate.length, sha256: digest(hpupdate) },
+  typecalc: { cases: typecalc.length, sha256: digest(typecalc) },
 };
 
 // Sanity: the grid must actually exercise both branches and both bookkeeping paths, or it proves nothing.
@@ -235,6 +272,7 @@ const dmgNonZero = damage.filter((l) => !l.endsWith('|2')).length;
 assert.ok(damage.length > 20000, `damage grid too small: ${damage.length}`);
 assert.ok(dmgNonZero > 0);
 assert.ok(accuracy.some((l) => l.includes('miss1')) && accuracy.some((l) => l.includes('miss0')), 'accuracy grid never varies');
+assert.ok(typecalc.some((l) => l.includes('|2000|')) && typecalc.some((l) => l.includes('|500|')) && typecalc.some((l) => l.includes('|0|')), 'typecalc grid must hit weak, resisted and immune');
 assert.ok(hpupdate.some((l) => /\|\d+,0,/.test(l)) && hpupdate.some((l) => /\|0,\d+,/.test(l)), 'hpupdate grid must hit both physical and special');
 
 if (WRITE) {
@@ -242,10 +280,10 @@ if (WRITE) {
   console.log('reference written:', JSON.stringify(result));
 } else {
   const ref = JSON.parse(readFileSync(REFERENCE, 'utf8'));
-  for (const k of ['damage', 'accuracy', 'hpupdate'] as const) {
+  for (const k of ['damage', 'accuracy', 'hpupdate', 'typecalc'] as const) {
     assert.deepEqual(result[k], ref[k], `${k}: behaviour differs from the recorded reference`);
   }
-  console.log(`battle category characterization PASS (${damage.length} damage, ${accuracy.length} accuracy, ${hpupdate.length} hpupdate cases)`);
+  console.log(`battle category characterization PASS (${damage.length} damage, ${accuracy.length} accuracy, ${hpupdate.length} hpupdate, ${typecalc.length} typecalc cases)`);
 }
 
 // ------------------------------------------------------------------------------------------------ unified profile
@@ -446,8 +484,145 @@ function unifiedChecks(): void {
   console.log(`unified profile PASS (53 Gen 4 category changes + Hidden Power; badge boosts off; ${insideDiff} damage cases differ, 0 outside the set)`);
 }
 
+
+// ------------------------------------------------------------------------------------------------ Fairy
+
+function fairyChecks(): void {
+  const sdAll = JSON.parse(readFileSync('refs/showdown/gen_changes.json', 'utf8'));
+  const sd = sdAll.data ?? sdAll;
+  const ID: Record<string, number> = { Normal: 0, Fighting: 1, Flying: 2, Poison: 3, Ground: 4, Rock: 5, Bug: 6, Ghost: 7, Steel: 8,
+    Fire: 10, Water: 11, Grass: 12, Electric: 13, Psychic: 14, Ice: 15, Dragon: 16, Dark: 17, Fairy: 18 };
+  const NAME = Object.fromEntries(Object.entries(ID).map(([n, i]) => [i, n])) as Record<number, string>;
+  const MULT: Record<number, number> = { 0: 10, 1: 20, 2: 5, 3: 0 };
+  const TYPES = [...GEN3_TYPES, 18];
+
+  const before = {
+    chart: [...rom.typeEffectiveness], names: [...rom.typeNames],
+    species: rom.species.map((x: any) => [...x.types]), moves: rom.moves.map((m: any) => m.type),
+  };
+  const gen3Typecalc = typecalcRun(GEN3_TYPES);
+  setBattleRulesProfile('unified');
+  const chartAfterFirst = rom.typeEffectiveness.length;
+  setBattleRulesProfile('unified'); // idempotent
+  assert.equal(rom.typeEffectiveness.length, chartAfterFirst, 'applying the unified data twice must not add rows twice');
+
+  // 1. The chart, through the engine, against Showdown's Gen 6 chart (independent expectation).
+  const mult = (atk: number, def: number): number => {
+    const rec = sd.types[NAME[def].toLowerCase()];
+    const code = def === 18 ? rec.gen3[NAME[atk]] : (rec.changes.gen6?.[NAME[atk]] ?? rec.gen3[NAME[atk]]);
+    return MULT[code];
+  };
+  // The engine applies chart rows in table order and keeps the original quirk that a damage of 0 becomes 1 before a
+  // later non-immune row, so the damage of an immune matchup is not meaningful: an immunity is expected as "immune"
+  // (MOVE_RESULT_DOESNT_AFFECT_FOE) and the damage is compared only for the other matchups, where it is exact.
+  const expected: string[] = [];
+  for (const foresight of [0, 1]) {
+    for (const atk of TYPES) for (const d1 of TYPES) for (const d2 of TYPES) {
+      if (d2 < d1) continue;
+      const m = (def: number): number => (foresight && def === 7 && (atk === 0 || atk === 1)) ? 10 : mult(atk, def);
+      const ms = d2 === d1 ? [m(d1)] : [m(d1), m(d2)];
+      let outcome: string;
+      if (ms.includes(0)) outcome = 'immune';
+      else outcome = String(ms.reduce((dmg, x) => Math.trunc((dmg * x) / 10), 1000));
+      expected.push(`a${atk}|d${d1}/${d2}|f${foresight}|${outcome}`);
+    }
+  }
+  const actual = typecalcRun(TYPES).map((l) => {
+    const p = l.split('|');
+    const immune = (Number(p[4].slice(1)) & C.MOVE_RESULT_DOESNT_AFFECT_FOE) !== 0;
+    return `${p[0]}|${p[1]}|${p[2]}|${immune ? 'immune' : p[3]}`;
+  });
+  assert.equal(actual.length, expected.length);
+  const bad = actual.map((l, i) => (l === expected[i] ? null : `${l} (expected ${expected[i]})`)).filter(Boolean);
+  assert.deepEqual(bad.slice(0, 5), [], `unified chart differs from Showdown's Gen 6 chart in ${bad.length} cases`);
+  // Fairy must actually matter, and Steel must have stopped resisting Dark and Ghost.
+  assert.equal(actual.find((l) => l.startsWith('a18|d16/16|f0')), 'a18|d16/16|f0|2000');
+  assert.equal(actual.find((l) => l.startsWith('a16|d18/18|f0')), 'a16|d18/18|f0|immune');
+  assert.equal(actual.find((l) => l.startsWith('a17|d8/8|f0')), 'a17|d8/8|f0|1000');
+  assert.equal(actual.find((l) => l.startsWith('a7|d8/8|f0')), 'a7|d8/8|f0|1000');
+  // The original 17 types differ from gen3 in exactly the Steel rows (and the Fairy rows are not in the gen3 grid).
+  const unifiedOld = typecalcRun(GEN3_TYPES);
+  const changedLines = unifiedOld.filter((l, i) => l !== gen3Typecalc[i]);
+  assert.ok(changedLines.length > 0 && changedLines.every((l) => /^a(7|17)\|d[^|]*\b8\b/.test(l) || /\|d8\//.test(l) || /\/8\|/.test(l)),
+    'only attacks of Ghost and Dark against Steel may differ from gen3 among the original types');
+
+  // 2. Species: exactly Showdown's 18 retyped species change; everything else is as before.
+  const norm = (s: string): string => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+  const speciesIds = new Map<string, number>();
+  for (const [k, v] of Object.entries(rom.constants as Record<string, number>)) {
+    if (k.startsWith('SPECIES_') && !k.startsWith('SPECIES_OLD_') && v > 0 && v < rom.species.length) speciesIds.set(norm(k.slice(8)), v);
+  }
+  const expectedSpecies = new Map<number, number[]>();
+  for (const [key, rec] of Object.entries(sd.species as Record<string, any>)) {
+    const t = rec.changes.gen6?.types as string[] | undefined;
+    if (!t) continue;
+    const id = speciesIds.get(norm(key));
+    assert.ok(id !== undefined, `no FireRed species for ${key}`);
+    const ids = t.map((n) => ID[n]);
+    expectedSpecies.set(id!, [ids[0], ids[1] ?? ids[0]]);
+  }
+  assert.equal(expectedSpecies.size, 18);
+  for (let i = 0; i < rom.species.length; i++) {
+    assert.deepEqual([...(rom.species[i] as any).types], expectedSpecies.get(i) ?? before.species[i], `species ${i} types`);
+  }
+
+  // 3. Moves: the three Showdown retypes, nothing else.
+  const moveIds = new Map<string, number>();
+  for (const [k, v] of Object.entries(rom.constants as Record<string, number>)) {
+    if (k.startsWith('MOVE_') && !/^MOVE_(EFFECT|RESULT|TARGET)_/.test(k) && v > 0 && v < rom.moves.length) moveIds.set(norm(k.slice(5)), v);
+  }
+  const expectedMoves = new Map<number, number>();
+  for (const [key, rec] of Object.entries(sd.moves as Record<string, any>)) {
+    const t = rec.changes.gen6?.type as string | undefined;
+    if (t) expectedMoves.set(moveIds.get(norm(key))!, ID[t]);
+  }
+  assert.equal(expectedMoves.size, 3);
+  for (let m = 0; m < rom.moves.length; m++) {
+    assert.equal((rom.moves[m] as any).type, expectedMoves.get(m) ?? before.moves[m], `move ${m} type`);
+  }
+
+  // 4. The 19th type name reads "FAIRY".
+  assert.equal(rom.typeNames.length, before.names.length + 1);
+  const reverse = new Map<number, string>();
+  for (const [ch, code] of Object.entries((rom.charmap as any).chars as Record<string, number>)) if (!reverse.has(code)) reverse.set(code, ch);
+  const bytes = [...Buffer.from(rom.typeNames[18], 'base64')];
+  assert.equal(bytes[bytes.length - 1], 0xff);
+  assert.equal(bytes.slice(0, -1).map((b) => reverse.get(b)).join(''), 'FAIRY');
+
+  // 5. Hidden Power never becomes Fairy and picks the same types as gen3 for every IV pattern.
+  const addr = findDataHpUpdate();
+  const hpTypes = (): number[] => {
+    const out: number[] = [];
+    for (let bits = 0; bits < 64; bits++) {
+      resetBattleStructs();
+      G.gBattlersCount = 2; G.gBattlerAttacker = 0; G.gBattlerTarget = 1;
+      setMon(0, {});
+      const m = gBattleMons[0] as any;
+      m.hpIV = bits & 1; m.attackIV = (bits >> 1) & 1; m.defenseIV = (bits >> 2) & 1;
+      m.speedIV = (bits >> 3) & 1; m.spAttackIV = (bits >> 4) & 1; m.spDefenseIV = (bits >> 5) & 1;
+      gBattleStruct.dynamicMoveType = 0; G.gBattlescriptCurrInstr = addr;
+      Cmd_hiddenpowercalc();
+      out.push(gBattleStruct.dynamicMoveType & 63);
+    }
+    return out;
+  };
+  const hpUnified = hpTypes();
+  assert.ok(!hpUnified.includes(18), 'Hidden Power produced Fairy');
+  setBattleRulesProfile('gen3');
+  assert.deepEqual(hpUnified, hpTypes(), 'Hidden Power types must not depend on the profile');
+
+  // 6. Back to gen3: every patched table is exactly as it was.
+  assert.deepEqual(rom.typeEffectiveness, before.chart);
+  assert.deepEqual(rom.typeNames, before.names);
+  assert.deepEqual(rom.species.map((x: any) => [...x.types]), before.species);
+  assert.deepEqual(rom.moves.map((m: any) => m.type), before.moves);
+  assert.deepEqual(typecalcRun(GEN3_TYPES), gen3Typecalc, 'gen3 type chart changed after using the unified profile');
+  console.log(`fairy PASS (${actual.length} chart cases vs Showdown Gen 6; 18 species, 3 moves, name, Hidden Power, restore)`);
+}
+
 try {
   unifiedChecks();
+  fairyChecks();
 } finally {
   setBattleRulesProfile('gen3');
 }

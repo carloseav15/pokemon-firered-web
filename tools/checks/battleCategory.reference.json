@@ -11,5 +11,9 @@
   "hpupdate": {
     "cases": 3540,
     "sha256": "1740c636e7cd5c5f9009e80abb4356b8a200105aac96d783d17bb83aed161892"
+  },
+  "typecalc": {
+    "cases": 5202,
+    "sha256": "aa77d4a4ea7391d94feb9d5ba3609ff8dfd8e617b92ac7d1800afb7e8b98208d"
   }
 }
