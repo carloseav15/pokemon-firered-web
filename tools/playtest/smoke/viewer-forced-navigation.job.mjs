@@ -16,7 +16,9 @@ export default async function run(ctx){
  const idle=()=>p.waitForFunction(()=>window.forcedProbe?.positions.length&&!document.body.hasAttribute('aria-busy')&&!JSON.parse(document.querySelector('#player-sprite').dataset.animation).moving);
  const cases=[
   {map:'MAP_POKEMON_LEAGUE_HALL_OF_FAME',x:5,y:11,key:'ArrowUp',direction:'north',action:'ice',duration:8,path:Array.from({length:9},(_,i)=>[5,10-i]),stop:'collision'},
-  {map:'MAP_ROCKET_HIDEOUT_B2F',x:13,y:5,key:'ArrowLeft',direction:'west',action:'spin',duration:8,path:[[12,5],[12,6],[12,7],[13,7]],stop:'spin-stop'},
+  {map:'MAP_ROCKET_HIDEOUT_B2F',x:13,y:5,key:'ArrowLeft',direction:'west',action:'spin',duration:8,path:[[12,5],[12,6],[12,7],[13,7]],stop:'spin-stop',stopAt:[13,7],leave:'ArrowUp',left:[13,6]},
+  {map:'MAP_FOUR_ISLAND_ICEFALL_CAVE_B1F',x:20,y:7,key:'ArrowLeft',direction:'west',action:'ice',duration:8,path:Array.from({length:6},(_,i)=>[19-i,7]),stop:'collision'},
+  {map:'MAP_VIRIDIAN_CITY_GYM',x:4,y:17,key:'ArrowRight',direction:'east',action:'spin',duration:8,path:Array.from({length:9},(_,i)=>[5+i,17]),stop:'spin-stop',stopAt:[13,17],leave:'ArrowDown',left:[13,18]},
   {map:'MAP_SEAFOAM_ISLANDS_B4F',x:9,y:13,key:'ArrowDown',direction:'south',action:'current',duration:6,path:[[9,14],[10,14],[11,14],[12,14],[12,13]],stop:'plain-water'},
  ];
  const results=[];
@@ -41,10 +43,10 @@ export default async function run(ctx){
   }
   if(result.final.moving)throw Error('Forced movement did not stop');
   if(c.stop==='spin-stop'){
-   const stop=await p.evaluate(()=>window.forcedProbe.grid.behaviorAt(13,7));if(stop!==88)throw Error('Fixture is not source STOP_SPINNING');
+   const stop=await p.evaluate(([x,y])=>window.forcedProbe.grid.behaviorAt(x,y),c.stopAt);if(stop!==88)throw Error('Fixture is not source STOP_SPINNING');
    // Leave the stop tile with ordinary input: source forced flag must have been released.
-   await p.keyboard.press('ArrowUp');await idle();await p.keyboard.down('ArrowUp');await p.waitForTimeout(25);await p.keyboard.up('ArrowUp');
-   await p.waitForFunction(()=>window.forcedProbe.positions.at(-1).x===13&&window.forcedProbe.positions.at(-1).y===6);await idle();
+   await p.keyboard.press(c.leave);await idle();await p.keyboard.down(c.leave);await p.waitForTimeout(25);await p.keyboard.up(c.leave);
+   await p.waitForFunction(([x,y])=>window.forcedProbe.positions.at(-1).x===x&&window.forcedProbe.positions.at(-1).y===y,c.left);await idle();
   }
   await ctx.shot(`forced-${c.action}-${character}`);
   results.push({map:c.map,path:landed.map(a=>[a.x,a.y]),ticks:result.steps.map((a,i)=>landed[i].tick-a.tick),frames:result.frames.length,final:result.final,stop:c.stop});
