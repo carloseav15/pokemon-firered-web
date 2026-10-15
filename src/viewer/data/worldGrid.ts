@@ -11,6 +11,7 @@ export class WorldGrid {
   readonly sand: Uint8Array;
   readonly npc: Uint8Array;
   readonly behaviors: Uint8Array;
+  readonly elevations: Uint8Array;
   readonly metatiles: Int16Array;
 
   private readonly sectors = new Map<string, WorldGrid>();
@@ -29,6 +30,7 @@ export class WorldGrid {
     this.sand = new Uint8Array(size);
     this.npc = new Uint8Array(size);
     this.behaviors = new Uint8Array(size);
+    this.elevations = new Uint8Array(size);
     this.metatiles = new Int16Array(size).fill(-1);
   }
 
@@ -37,7 +39,7 @@ export class WorldGrid {
   removeSector(id: string): void { this.sectors.delete(id); }
   get retainedBytes(): number {
     return this.solid.byteLength + this.water.byteLength + this.ledge.byteLength + this.grass.byteLength
-      + this.sand.byteLength + this.npc.byteLength + this.behaviors.byteLength + this.metatiles.byteLength
+      + this.sand.byteLength + this.npc.byteLength + this.behaviors.byteLength + this.elevations.byteLength + this.metatiles.byteLength
       + [...this.sectors.values()].reduce((sum, grid) => sum + grid.retainedBytes, 0);
   }
   private sectorAt(gx: number, gy: number): WorldGrid | undefined {
@@ -50,6 +52,12 @@ export class WorldGrid {
   behaviorAt(gx: number, gy: number): number {
     if (this.sectorMode) return this.sectorAt(gx, gy)?.behaviorAt(gx, gy) ?? 0;
     return this.inBounds(gx, gy) ? this.behaviors[this.idx(gx, gy)]! : 0;
+  }
+
+  /** MapGridGetElevationAt: 0 is neutral, 15 preserves the actor's previous elevation. */
+  elevationAt(gx: number, gy: number): number {
+    if (this.sectorMode) return this.sectorAt(gx, gy)?.elevationAt(gx, gy) ?? 15;
+    return this.inBounds(gx, gy) ? this.elevations[this.idx(gx, gy)]! : 15;
   }
 
   inBounds(gx: number, gy: number): boolean {

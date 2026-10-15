@@ -686,7 +686,7 @@ function processPlayerStep(): void {
     return;
   }
 
-  const plan = planStep(worldGrid, playerX, playerY, playerDir, playerMode);
+  const plan = planStep(worldGrid, playerX, playerY, playerDir, playerMode, playerElevation);
   const targetX = plan.x, targetY = plan.y;
   const isLedgeJump = plan.jump;
   if (plan.status === "loading" && findMapAt(targetX, targetY)) {
@@ -1058,6 +1058,7 @@ async function build(): Promise<void> {
         if (grid.inBounds(gwx, gwy)) {
           const idx = grid.idx(gwx, gwy);
           grid.behaviors[idx] = beh;
+          grid.elevations[idx] = block >>> 12;
           grid.solid[idx] = hasCollision ? 1 : 0;
           if (isWater) grid.water[idx] = 1;
           if (isGrass) grid.grass[idx] = 1;
