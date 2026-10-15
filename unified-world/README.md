@@ -30,10 +30,27 @@ Fuentes: `pokefirered/` (repositorio), `../refs-src/pokeemerald` y `../refs-src/
 ```bash
 python3 unified-world/extract_gates.py            # las tres fuentes
 python3 unified-world/extract_gates.py firered    # una sola
+python3 unified-world/extract_levels.py           # niveles de líderes, Alto Mando y campeones
 ```
 
 Salida: `out/gates_<fuente>.json` (evidencia por evento) y `out/GATES.md` (resumen). Es
 determinista: ejecutarlo dos veces da los mismos archivos.
+
+## Niveles reales (`extract_levels.py`)
+
+Lee los equipos de líderes, Alto Mando y campeones donde ya estaban extraídos (no repite extracciones):
+
+| Fuente | Entrada |
+|---|---|
+| FireRed | `public/fr/data/trainers.json` + `public/fr/constants.json` |
+| Emerald | `refs/emerald/trainers.json` |
+| HeartGold | `refs/heartgold/trainers.json` |
+| Heart & Soul | `../refs-src/pokemon-hns/src/data/trainers.h` y `trainer_parties.h`, con lector propio: el de `tools/refs/emerald_trainers.py` es estricto y rechaza sus equipos |
+
+Salida: `out/levels.json` y `out/LEVELS.md` (tablas por región, Alto Mando, revanchas y los 24 gimnasios
+entrelazados por nivel del as). **Crystal no está**: el checkout fijado de pokecrystal es parcial y no trae
+los equipos; Johto se compara con HnS y HeartGold. El orden canónico de gimnasios está escrito a mano en
+`GYM_ORDER` y el script falla si un nombre no aparece en los datos.
 
 ## Verificado
 
