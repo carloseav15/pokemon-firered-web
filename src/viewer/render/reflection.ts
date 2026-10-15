@@ -31,7 +31,7 @@ export class PlayerReflection {
     this.lastTick=tick;
     this.canvas.width=this.canvas.height=64;
     this.canvas.className="field-fx player-reflection";
-    this.canvas.style.zIndex="23";
+    this.canvas.style.zIndex="22";
     this.hide(); content.appendChild(this.canvas);
     const refs=cdata<unknown[]>("event_object_movement","sAffineAnims_ReflectionDistortion");
     for(let i=0;i<2;i++) {

@@ -1,3 +1,4 @@
+import { AvatarDepth } from "./render/depth";
 import { PlayerReflection } from "./render/reflection";
 import { JumpShadow } from "./render/shadow";
 import { SurfSupport } from "./render/surf";
@@ -148,6 +149,7 @@ function resetExploreSession(): void {
   shoreAnchor = null;
   stepTarget = null;
   playerReflection?.hide();
+  avatarDepth?.hide();
   jumpShadow?.hide();
   surfSupport?.hide();
   playerMoving = false;
@@ -184,6 +186,8 @@ let avatarAnimator: AvatarAnimator | null = null;
 let surfSupport: SurfSupport | null = null;
 let jumpShadow: JumpShadow | null = null;
 let playerReflection: PlayerReflection | null = null;
+let avatarDepth: AvatarDepth | null = null;
+let playerElevation = 0;
 let stepTarget: {x:number;y:number} | null = null;
 let groundVisualY = 0;
 let jumpBehaviors: readonly number[] = [];
@@ -398,8 +402,9 @@ function updatePlayerDisplay(): void {
   }
 
   const airborne = !!avatarAnimator && isStepping && (shoreAnchor !== null || avatarAnimator.frame(state.playerChar, playerMode, playerDir, viewerClock.tick).action === "jump");
-  const inGrass = !airborne && worldGrid.isGrassTile(playerX, playerY) && playerMode !== "surf" && !isBike;
-  playerEl.style.clipPath = inGrass ? "inset(0 0 4px 0)" : "none";
+  // Tall grass is covered by source BG/field-effect pixels, not a fixed foot crop.
+  const legacyGrass = !avatarDepth && !airborne && worldGrid.isGrassTile(playerX, playerY) && playerMode !== "surf" && !isBike;
+  playerEl.style.clipPath = legacyGrass ? "inset(0 0 4px 0)" : "none";
 
   if (avatarAnimator) {
     const frame = avatarAnimator.frame(state.playerChar, playerMode, playerDir, viewerClock.tick);
@@ -413,6 +418,7 @@ function updatePlayerDisplay(): void {
       px, groundVisualY, frame.height, frame.shadowSize);
     const riderOffset = shoreJump ? 0 : bob;
     const groundY = airborne ? groundVisualY : py;
+    avatarDepth?.update(px,groundY,minX,minY,playerElevation);
     playerReflection?.update(frame,worldGrid,stepTarget ?? {x:playerX,y:playerY},{x:playerX,y:playerY},px,groundY,py-groundY+riderOffset,minX,minY,viewerClock.tick);
     playerEl.style.top = `${py - (frame.height - TILE) + riderOffset}px`;
     playerEl.style.backgroundImage = `url(${frame.url})`;
@@ -588,6 +594,8 @@ async function startExploration(targetGx?: number, targetGy?: number): Promise<v
     if (animBox) animBox.checked = true;
     updateMeta();
   }
+  playerElevation=avatarDepth?.elevationAt(playerX,playerY)??0;
+  if(playerElevation===15)playerElevation=0;
   playerVisualX = (playerX - minX) * TILE;
   playerVisualY = (playerY - minY) * TILE;
   updatePlayerDisplay();
@@ -614,6 +622,7 @@ function stopExploration(): void {
   surfSupport?.hide();
   jumpShadow?.hide();
   playerReflection?.hide();
+  avatarDepth?.hide();
   shoreAnchor = null;
   entityManager.hideAll();
   dialogManager.close();
@@ -713,6 +722,9 @@ function processPlayerStep(): void {
     const action: AvatarAction = transition ? playerMode === "surf" ? "board" : "dismount" : isLedgeJump ? "jump" : playerMode === "bike" ? "bike" : playerMode === "surf" ? "surf" : stepRunning ? "run" : "walk";
     const offsets = avatarAnimator?.offsets(action);
     const duration = avatarAnimator ? (isLedgeJump || transition ? 32 : offsets!.length) * GBA_FRAME_MS : isLedgeJump ? 32 * GBA_FRAME_MS : playerMode === "bike" ? 100 : stepRunning ? 120 : 160;
+    const nextElevation=avatarDepth?.elevationAt(targetX,targetY)??0;
+    const previousElevation=avatarDepth?.elevationAt(playerX,playerY)??0;
+    if(nextElevation!==15&&previousElevation!==15&&nextElevation!==0)playerElevation=nextElevation;
     stepTarget = {x:targetX,y:targetY};
     jumpBehaviors = [worldGrid.behaviorAt(targetX, targetY), worldGrid.behaviorAt(playerX, playerY)];
     shoreAnchor = transition ? previousVehicle === "surf" ? {x:startPxX,y:startPxY} : {x:destPxX,y:destPxY} : null;
@@ -899,6 +911,7 @@ async function build(): Promise<void> {
     jumpShadow = await JumpShadow.create(content);
     await jumpReady;
     playerReflection = await PlayerReflection.create(data,content,viewerClock.tick);
+    avatarDepth = new AvatarDepth(content);
   }) : Promise.resolve();
   const [worldData] = await Promise.all([HOENN ? fetchHoennIndex() : fetchWorldIndex(), mapsReady, jumpReady, avatarReady]);
   if (HOENN) await loadHoennGfx("/emerald");
@@ -930,6 +943,7 @@ async function build(): Promise<void> {
   const unsubscribeSimulation = viewerClock.subscribe(frame => {
     audioController.frame();
     playerReflection?.tick(frame.tick);
+    if(playerActive&&!interiorViewer.isOpen())avatarDepth?.update(playerVisualX,isStepping?groundVisualY:playerVisualY,minX,minY,playerElevation);
     if (playerActive && playerEl && avatarAnimator && !isStepping && !interiorViewer.isOpen()) {
       const bob = surfSupport?.update(playerMode === "surf", playerDir, playerVisualX, playerVisualY, frame.tick) ?? 0;
       playerEl.style.top = `${playerVisualY - 16 + bob}px`;
@@ -941,7 +955,7 @@ async function build(): Promise<void> {
   window.addEventListener("pagehide", event => {
     if (event.persisted) { viewerClock.pause("pagehide"); return; }
     sectorLoader?.dispose(); sectorBorder?.dispose(); explorationUi?.dispose();
-    resetExploreSession(); surfSupport?.dispose(); jumpShadow?.dispose(); playerReflection?.dispose(); disposeEffects(); unbindVisibility(); unsubscribeSimulation(); animController?.stop();
+    resetExploreSession(); surfSupport?.dispose(); jumpShadow?.dispose(); playerReflection?.dispose(); avatarDepth?.dispose(); disposeEffects(); unbindVisibility(); unsubscribeSimulation(); animController?.stop();
   });
   window.addEventListener("pageshow", () => viewerClock.resume("pagehide"));
 
@@ -985,7 +999,7 @@ async function build(): Promise<void> {
     }),
     () => updateMeta(),
     viewerClock,
-    renderer => { sectorBorder?.invalidate(renderer); updateSectorBorder(); }
+    renderer => { sectorBorder?.invalidate(renderer); avatarDepth?.invalidate(); if(playerActive)avatarDepth?.update(playerVisualX,isStepping?groundVisualY:playerVisualY,minX,minY,playerElevation); updateSectorBorder(); }
   );
 
   const renderMap = async (id: string): Promise<SectorResource> => {
@@ -1157,6 +1171,7 @@ async function build(): Promise<void> {
     }
 
     fillSources.set(id, { info, layout, renderer });
+    avatarDepth?.add(id,{x:info.x,y:info.y,width:info.width,height:info.height,blocks:layout.blocks,renderer});
     if (streaming) worldGrid.addSector(id, grid);
     content.appendChild(wrap);
 
@@ -1167,6 +1182,7 @@ async function build(): Promise<void> {
         if (animated) animController.removeMap(animated);
         worldGrid.removeSector(id);
         fillSources.delete(id);
+        avatarDepth?.remove(id);
       } };
   };
   if (streaming) {
@@ -1178,7 +1194,7 @@ async function build(): Promise<void> {
       entityManager.addEntity(e, info.x + e.x, info.y + e.y, dir);
     }
     sectorBorder = new SectorBorder(content);
-    sectorLoader = new SectorLoader(renderMap, () => { updateEntitiesView(); updateSectorBorder(); });
+    sectorLoader = new SectorLoader(renderMap, () => { updateEntitiesView(); updateSectorBorder(); if(playerActive)updatePlayerDisplay(); });
   } else {
     let processedCount = 0;
     for (const ids of byPair.values()) for (const id of ids) {
@@ -1230,7 +1246,7 @@ function setupUi(): void {
     resize: () => { if (playerActive) updatePlayerDisplay(); scheduleSectors(); },
     exit: () => document.getElementById("mode-viewer-btn")?.click(),
     stats: () => ({ sectors: sectorLoader?.ids.length ?? Object.keys(index.maps).length,
-      bytes: (sectorLoader?.bytes ?? 0) + (sectorBorder?.bytes ?? 0), pending: sectorLoader?.pending ?? 0, error: sectorLoader?.error ?? "" }),
+      bytes: (sectorLoader?.bytes ?? 0) + (sectorBorder?.bytes ?? 0) + (avatarDepth?.bytes ?? 0), pending: sectorLoader?.pending ?? 0, error: sectorLoader?.error ?? "" }),
   });
   window.addEventListener("explore-scale", event => {
     setZoom((event as CustomEvent<number>).detail);
