@@ -48,7 +48,8 @@ export default async function run(ctx){
  if(process.env.PW_DOOR_MAP){
   const sourceMap=process.env.PW_DOOR_MAP,index=JSON.parse(readFileSync('public/viewer/kanto.json','utf8'));
   const header=JSON.parse(readFileSync(`public/fr/maps/${sourceMap}.json`,'utf8')),warp=header.warps[Number(process.env.PW_DOOR_WARP??0)];
-  doorFixture={sourceMap,interiorMap:warp.destMap,x:index.maps[sourceMap].x+warp.x,y:index.maps[sourceMap].y+warp.y+1};
+  const origin=index.maps[sourceMap]??{x:0,y:0}; // contexts outside the continental atlas (Saffron City) use local coordinates
+  doorFixture={sourceMap,interiorMap:warp.destMap,x:origin.x+warp.x,y:origin.y+warp.y+1};
  }
  const navigation=await interiorNavigation({...ctx,doorFixture,onInteriorEntry:async()=>{entry=await p.evaluate(()=>window.doorReview);}});
  await capture;
