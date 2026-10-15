@@ -389,11 +389,25 @@ PREPARED existente (terreno y RAF sintéticos, recursos reales). Regresión real
 ~59–60 FPS, p95 ≤16,8 ms; hubo una tarea de 54 ms y una muestra con intervalo máximo de 33,3 ms.
 Estas medidas locales no garantizan 60 FPS constantes ni rendimiento en todos los dispositivos.
 
-Sigue pendiente el soporte durante el salto de orilla (se oculta en esa transición), su profundidad
-con elevaciones/puentes, sombras, reflejos y máscaras de terreno. No cierra la familia de efectos.
+Entrega 2778bf87: soporte durante entrada/salida de surf según UseSurfEffect_4/5 y
+Task_StopSurfingInit/WaitStopSurfing. Al subir espera en el destino acuático; al bajar permanece
+en el origen, sin copiar el arco ni el balanceo al personaje hasta aterrizar. InitJumpRegular y
+UpdateShadowFieldEffect aportan sombra de salto con tamaño del avatar y desplazamiento de
+la tabla gShadowVerticalOffsets exportada, excluyendo hierba de destino, agua/reflejo actual o
+anterior. InitJump desactiva la cobertura del personaje en vuelo; se retira el recorte de hierba
+mientras salta. Los recursos mantienen la profundidad DOM del visor, pendiente de paridad por
+elevación y metatile.
+
+Tipos, honesty, build, tablas C/Sprite y harness PREPARED de hierba/huellas pasan. El driver de
+movimiento usa terreno y teclado reales para Rojo y Hoja, con unas 30 observaciones por salto
+que comprueban soporte fijo, sombra y ausencia de recorte; las capturas de salto/orilla se
+inspeccionaron. PREPARED solo selecciona la posición inicial, sin fabricar terreno ni resultados.
+La regresión posterior de 62 pasos pasa con muestras ~60 FPS y p95 ≤16,8 ms (arranque ~58 FPS);
+no cambia los límites de la medición local. Reflejos, cobertura de terreno en suelo, profundidad con elevaciones/puentes, validación de las
+ramas de supresión de sombra y recorrido exhaustivo siguen pendientes; no cierra los efectos.
 
 Límite de la revisión base: avatar de locomoción. El soporte normal se añadió en aa4279a8;
-el soporte durante salto de orilla, sombras, reflejos, huellas/ondas en navegación real, máscaras
+las sombras fuera de los saltos revisados, reflejos, huellas/ondas en navegación real, máscaras
 de hierba/profundidad y terreno animado siguen en el punto de efectos; NPC/objetos, terrenos especiales (escaleras/puentes/rails), interiores, animaciones de
 escenas/acciones especiales, recorrido exhaustivo y comparación ROM/dispositivos siguen pendientes.
 Los jobs UI históricos C7/huellas necesitan adaptarse al modo inmersivo antes de servir de prueba
