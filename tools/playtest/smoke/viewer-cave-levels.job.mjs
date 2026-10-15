@@ -8,7 +8,7 @@ export default async function run(ctx){
   import('/src/viewer/fieldEffects.ts').then(({ViewerFieldEffects})=>{
    const on=ViewerFieldEffects.prototype.onGroundStep;
    ViewerFieldEffects.prototype.onGroundStep=function(phase,a){window.caveProbe.grid=this.grid;
-    if(phase==='finish'||phase==='spawn'||phase==='begin')window.caveProbe.steps.push({phase,x:a.x,y:a.y,vehicle:a.vehicle,elevation:a.elevation,priority:a.priority,tick:window.caveClock?.tick});
+    if(phase==='finish'||phase==='spawn'||phase==='begin')window.caveProbe.steps.push({phase,x:a.x,y:a.y,previousX:a.previousX,previousY:a.previousY,vehicle:a.vehicle,elevation:a.elevation,priority:a.priority,tick:window.caveClock?.tick});
     return on.call(this,phase,a);};
   });
  });
@@ -23,7 +23,7 @@ export default async function run(ctx){
   await p.keyboard.down(key);await finished(n);await p.keyboard.up(key);await p.waitForTimeout(500);
   const all=await p.evaluate(()=>window.caveProbe.steps);
   const finishes=all.filter(s=>s.phase==='finish').slice(0,n),begins=all.filter(s=>s.phase==='begin').slice(0,n);
-  finishes.forEach((f,i)=>{f.duration=f.tick-begins[i].tick;});
+  finishes.forEach((f,i)=>{f.duration=f.tick-begins[i].tick;f.fromX=begins[i].previousX;f.fromY=begins[i].previousY;});
   return finishes;};
  // Expected draw priority comes from the exported C table, not from hand-typed values.
  const table=(await(await fetch(new URL('fr/cdata/event_object_movement.json',process.env.PW_BASE).href)).json()).defs.sElevationToPriority.value;
@@ -47,7 +47,16 @@ export default async function run(ctx){
  if(down.some(s=>s.priority!==table[s.elevation]))throw Error('Descent priority differs from sElevationToPriority '+JSON.stringify(down));
  if(await zOf()!==expectZ(3))throw Error('Lower-level avatar is not drawn at the C priority '+await zOf());
  if(down[1].elevation!==4||down[3].elevation!==3)throw Error('Lower level did not return to elevation 3 '+JSON.stringify(down));
+ // Running (Shift): PlayerRunSlow replaces PlayerRun on the same cell rule. run = 8 frames, run slow = 11.
+ await p.keyboard.down('Shift');
+ const rule=s=>{const north=s.y<s.fromY,south=s.y>s.fromY;
+  const slow=(north&&s.fromX===10&&s.fromY===9)||(south&&s.x===10&&s.y===9);return slow?11:8;};
+ const runUp=await walk('ArrowUp',3);
+ if(runUp.some(s=>s.duration!==rule(s))||!runUp.some(s=>s.duration===11))throw Error('Run cadence on rock stairs differs '+JSON.stringify(runUp.map(s=>[s.fromX,s.fromY,s.x,s.y,s.duration])));
+ const runDown=await walk('ArrowDown',4);
+ if(runDown.some(s=>s.duration!==rule(s))||!runDown.some(s=>s.duration===11))throw Error('Run descent cadence differs '+JSON.stringify(runDown.map(s=>[s.fromX,s.fromY,s.x,s.y,s.duration])));
+ await p.keyboard.up('Shift');
  await ctx.shot(`cave-levels-${character}`);
- return{character,up:up.map(s=>[s.x,s.y,s.elevation]),down:down.map(s=>[s.x,s.y,s.elevation]),grid,
+ return{character,up:up.map(s=>[s.x,s.y,s.elevation]),down:down.map(s=>[s.x,s.y,s.elevation]),run:{up:runUp.map(s=>s.duration),down:runDown.map(s=>s.duration)},grid,
   note:'PREPARED start; real keyboard across source MB_ROCK_STAIRS between elevations 3 and 4, both directions. Avatar draw priority is asserted against sElevationToPriority at both levels; no global ROM parity claim.'};
 }

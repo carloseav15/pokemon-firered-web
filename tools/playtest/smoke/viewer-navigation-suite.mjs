@@ -9,9 +9,8 @@ const jobs = [
   "viewer-escalator", "viewer-bike-stairs", "viewer-bridge-walk", "viewer-cave-levels", "viewer-saffron-gates",
   "viewer-door-navigation", "viewer-door-large",
 ];
-// Failing before the 2026-10-15 navigation work (b2fa6a73): legacy=1 explore start finds no walkable
-// spawn in startExploration. viewer-terrain-effects covers the same sand/bike effects with real terrain.
-const known = { "viewer-tracks": "legacy=1 start throws 'No se encontró una posición inicial transitable'" };
+// Jobs known to fail for a reason that predates the current work; none at the moment.
+const known = {};
 const args = process.argv.slice(2);
 const withDoors = args.includes("--doors");
 const filter = args.find(a => !a.startsWith("--"));

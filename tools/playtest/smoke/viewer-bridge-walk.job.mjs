@@ -24,6 +24,10 @@ export default async function run(ctx){
  const down=all.slice(0,9);
  for(let i=0;i<down.length;i++)if(down[i].y!==OY+72+i||down[i].x!==OX+14)throw Error('Bridge route differs '+JSON.stringify(all.slice(0,12)));
  if(down.some(s=>s.vehicle!=='walk'||s.elevation!==3))throw Error('Bridge walk changed vehicle/elevation '+JSON.stringify(down));
+ // Draw priority comes from the exported sElevationToPriority table, as in the cave job.
+ const table=(await(await fetch(new URL('fr/cdata/event_object_movement.json',process.env.PW_BASE).href)).json()).defs.sElevationToPriority.value;
+ if(down.some(s=>s.priority!==table[s.elevation]))throw Error('Bridge step priority differs from sElevationToPriority '+JSON.stringify({down,table}));
+ await p.keyboard.up('ArrowDown');
  // The bridge ends over water: the viewer's automatic Surf adaptation takes over on the first water tile.
  if(all[9]?.y!==OY+81||all[9].vehicle!=='surf')throw Error('Bridge end differs '+JSON.stringify(all.slice(8,11)));
  const ys=down.map(s=>s.y);
