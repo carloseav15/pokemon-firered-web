@@ -78,13 +78,13 @@ assert.equal(avatar.acroBikeState, BIKE_STATE_NORMAL, "Acro Bike mount must also
 // MatSpin): full held-movement simulation needs more map/rom plumbing than this headless
 // harness mocks; verify at least that starting them doesn't throw and leaves a live task.
 {
-  (avatar as any).ForcedMovement_MatJump();
+  (avatar as any).forcedMovement.ForcedMovement_MatJump();
   assert.ok(taskFns.size > 0, "ForcedMovement_MatJump must schedule a task");
   tickAllTasks(1);
 }
 taskFns.clear();
 {
-  (avatar as any).ForcedMovement_MatSpin();
+  (avatar as any).forcedMovement.ForcedMovement_MatSpin();
   assert.ok(taskFns.size > 0, "ForcedMovement_MatSpin must schedule a task");
   tickAllTasks(1);
 }

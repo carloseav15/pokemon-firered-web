@@ -1,12 +1,12 @@
 import { Sprite, loadImage } from "@core/gba/sprite";
 import type { AnimCmd, ObjectGfxInfo } from "@core/rom";
 import { cdata, symName } from "@core/hw/assets";
-import { GetMoveDirectionAnimNum, GetMoveDirectionFastAnimNum, GetRunningDirectionAnimNum, GetJumpSpecialDirectionAnimNum } from "../../games/firered/generated/eventObjectAnims";
+import { GetMoveDirectionAnimNum, GetMoveDirectionFastAnimNum, GetRunningDirectionAnimNum, GetJumpSpecialDirectionAnimNum, GetSpinDirectionAnimNum } from "../../games/firered/generated/eventObjectAnims";
 import * as C from "../../games/firered/generated/constants";
 import type { Direction } from "./sprites";
 import type { PlayerVehicle } from "../state";
 
-export type AvatarAction = "walk" | "run" | "bike" | "surf" | "jump" | "bump" | "turn" | "board" | "dismount";
+export type AvatarAction = "walk" | "run" | "bike" | "surf" | "jump" | "bump" | "turn" | "board" | "dismount" | "ice" | "spin" | "current";
 export type AvatarData = { gfx: Record<string, ObjectGfxInfo>; animTables: Record<string, Array<string | null>>; anims: Record<string, AnimCmd[]> };
 const directions = { south: C.DIR_SOUTH, north: C.DIR_NORTH, west: C.DIR_WEST, east: C.DIR_EAST };
 
@@ -61,36 +61,38 @@ export class AvatarAnimator {
     if (!entry) throw new Error(`Missing step alternation for ${this.gfx.anims}`);
     return entry.animPos;
   }
-  begin(char: "red" | "leaf", vehicle: PlayerVehicle, direction: Direction, action: AvatarAction, tick: number): void {
+  begin(char: "red" | "leaf", vehicle: PlayerVehicle, direction: Direction, action: AvatarAction, tick: number, freeze = false): void {
     this.advance(tick);
     this.char = char; this.vehicle = vehicle; this.direction = direction; this.action = action;
     this.configure(char, action === "board" || action === "dismount" ? "surf" : vehicle);
     const dir = directions[direction];
-    this.sprite.animNum = action === "run" ? GetRunningDirectionAnimNum(dir)
+    this.sprite.animNum = action === "spin" ? GetSpinDirectionAnimNum(dir) : action === "run" ? GetRunningDirectionAnimNum(dir)
       : action === "board" || action === "dismount" ? GetJumpSpecialDirectionAnimNum(dir)
-      : action === "bike" || action === "surf" || action === "turn" ? GetMoveDirectionFastAnimNum(dir) : GetMoveDirectionAnimNum(dir);
+      : action === "bike" || action === "surf" || action === "turn" || action === "ice" || action === "current" ? GetMoveDirectionFastAnimNum(dir) : GetMoveDirectionAnimNum(dir);
     const commands = this.sprite.anims[this.sprite.animNum];
     if (!commands?.length) throw new Error(`Missing selected avatar animation ${this.gfx.anims}/${this.sprite.animNum}`);
     for (const cmd of commands) if (cmd[0] === "F" && !this.gfx.frames[cmd[1]]) throw new Error(`Avatar frame out of bounds: ${cmd[1]}`);
     const pos = this.positions();
     let index = this.sprite.animCmdIndex;
-    if (action === "board" || action === "dismount") index = 0;
+    if (action === "board" || action === "dismount" || action === "spin") index = 0;
     else if (index === pos[0]) index = pos[3]!;
     else if (index === pos[1]) index = pos[2]!;
     this.sprite.seekAnim(index);
-    this.sprite.animPaused = false;
+    this.sprite.animPaused = freeze;
     this.moving = true;
     this.lastTick = tick;
     this.beganTick = tick;
   }
-  stop(char: "red" | "leaf", vehicle: PlayerVehicle, direction: Direction, tick: number): void {
+  stop(char: "red" | "leaf", vehicle: PlayerVehicle, direction: Direction, tick: number, preserve = false): void {
     this.advance(tick);
     this.moving = false;
     this.char = char; this.vehicle = vehicle; this.direction = direction;
     this.configure(char, vehicle);
-    this.sprite.animNum = GetMoveDirectionAnimNum(directions[direction]);
-    const pos = this.positions();
-    this.sprite.seekAnim(this.sprite.animCmdIndex <= pos[0]! ? pos[0]! : pos[1]!);
+    if (!preserve) {
+      this.sprite.animNum = GetMoveDirectionAnimNum(directions[direction]);
+      const pos = this.positions();
+      this.sprite.seekAnim(this.sprite.animCmdIndex <= pos[0]! ? pos[0]! : pos[1]!);
+    }
     this.sprite.animPaused = true;
     this.lastTick = tick;
   }
@@ -112,7 +114,7 @@ export class AvatarAnimator {
   }
   /** NpcTakeStep tables, not macOS timing or a guessed ms duration. */
   offsets(action: AvatarAction): number[] {
-    const table = action === "bike" ? "sSpeedFast2StepFuncs" : action === "run" || action === "surf" ? "sSpeedFast1StepFuncs" : "sSpeedNormalStepFuncs";
+    const table = action === "bike" || action === "current" ? "sSpeedFast2StepFuncs" : action === "run" || action === "surf" || action === "ice" || action === "spin" ? "sSpeedFast1StepFuncs" : "sSpeedNormalStepFuncs";
     let x = 0;
     return cdata<unknown[]>("event_object_movement", table).map(ref => {
       const name = symName(ref), amount = name && /^Step([1-8])$/.exec(name)?.[1];

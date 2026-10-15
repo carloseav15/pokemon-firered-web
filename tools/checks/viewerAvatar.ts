@@ -9,13 +9,13 @@ registerCData('event_object_movement',source.defs);
 const data=JSON.parse(readFileSync('public/fr/objects.json','utf8')) as AvatarData;
 const directions: Direction[]=['south','north','west','east'];
 let cases=0,frames=0;
-for(const char of ['red','leaf'] as const)for(const direction of directions)for(const action of ['walk','run','bike','surf','jump','bump','turn','board','dismount'] as AvatarAction[]){
+for(const char of ['red','leaf'] as const)for(const direction of directions)for(const action of ['walk','run','bike','surf','jump','bump','turn','board','dismount','spin','ice','current'] as AvatarAction[]){
  const vehicle=action==='bike'?'bike':action==='surf'||action==='board'?'surf':'walk';
  const avatar=new AvatarAnimator(data);avatar.stop(char,vehicle,direction,0);avatar.begin(char,vehicle,direction,action,0);
- const expected=action==='run'?`sAnim_Run${direction[0]!.toUpperCase()+direction.slice(1)}`
+ const expected=action==='spin'?`sAnim_Spin${direction[0]!.toUpperCase()+direction.slice(1)}`:action==='run'?`sAnim_Run${direction[0]!.toUpperCase()+direction.slice(1)}`
   :action==='board'||action==='dismount'?`sAnim_GetOnOffSurf${direction[0]!.toUpperCase()+direction.slice(1)}`
   :action==='surf'?`sAnim_SurfFace${direction[0]!.toUpperCase()+direction.slice(1)}`
-  :`sAnim_Go${['bike','turn'].includes(action)?'Fast':''}${direction[0]!.toUpperCase()+direction.slice(1)}`;
+  :`sAnim_Go${['bike','turn','ice','current'].includes(action)?'Fast':''}${direction[0]!.toUpperCase()+direction.slice(1)}`;
  const gfx=Object.values(data.gfx).find(g=>g.name===`OBJ_EVENT_GFX_${char==='red'?'RED':'GREEN'}_${['surf','board','dismount'].includes(action)?'SURF':action==='bike'?'BIKE':'NORMAL'}`)!;
  const animation=data.animTables[gfx.anims]!.indexOf(expected);
  assert.notEqual(animation,-1,expected);
@@ -31,7 +31,7 @@ for(const char of ['red','leaf'] as const)for(const direction of directions)for(
   if(elapsed<=first.delay){ assert.equal(frame.image,first.image);assert.equal(frame.command,first.command);assert.equal(frame.delay,first.delay-elapsed); }
   assert.equal(frame.width,gfx.width);
   assert.equal(frame.height,gfx.height);
-  assert.equal(frame.hFlip,direction==='east');
+  if(action!=='spin')assert.equal(frame.hFlip,direction==='east');
   const logical=allowed.find(c=>c[0]==='F'&&c[1]===frame.image);assert(logical);
   assert.equal(frame.url,`/fr/${gfx.frames[frame.image]![0]}`);
   assert.equal(frame.index,gfx.frames[frame.image]![1]);
@@ -48,9 +48,20 @@ avatar.stop('red','walk','south',0);avatar.begin('red','walk','south','walk',0);
 const first=avatar.frame('red','walk','south',0);assert.equal(first.image,4); // SetStepAnimHandleAlternation starts opposite the paused command 1.
 avatar.stop('red','walk','south',16);avatar.begin('red','walk','south','walk',16);
 assert.equal(avatar.frame('red','walk','south',16).image,3);
-assert.deepEqual(['walk','run','bike','surf'].map(kind=>avatar.offsets(kind as AvatarAction).length),[16,8,6,8]);
-for(const action of ['walk','run','bike','surf'] as AvatarAction[])assert.equal(avatar.offsets(action).at(-1),16);
+assert.deepEqual(['walk','run','bike','surf','ice','spin','current'].map(kind=>avatar.offsets(kind as AvatarAction).length),[16,8,6,8,8,8,6]);
+for(const action of ['walk','run','bike','surf','ice','spin','current'] as AvatarAction[])assert.equal(avatar.offsets(action).at(-1),16);
 
 avatar.stop('red','bike','west',100);avatar.begin('red','bike','west','bump',100);
 assert.equal(data.animTables.sAnimTable_Standard![avatar.frame('red','bike','west',100).animation],'sAnim_GoWest');
+
+
+for(const char of ['red','leaf'] as const)for(const direction of directions){
+ const frozen=new AvatarAnimator(data);frozen.stop(char,'walk',direction,0);frozen.begin(char,'walk',direction,'ice',0,true);
+ const first=frozen.frame(char,'walk',direction,0);
+ for(let t=1;t<8;t++)assert.deepEqual(frozen.frame(char,'walk',direction,t),first);
+ frozen.stop(char,'walk',direction,8,true);const last=frozen.frame(char,'walk',direction,8);
+ assert.equal(last.animation,first.animation);assert.equal(last.image,first.image);
+ assert.deepEqual(frozen.frame(char,'walk',direction,20),last);
+}
+
 console.log(`Avatar PASS: ${cases} source selections, ${frames} frame samples, pause, foot alternation and C speed tables`);

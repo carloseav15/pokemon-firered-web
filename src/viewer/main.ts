@@ -1,3 +1,4 @@
+import { ViewerForcedMovement } from "./forcedNavigation";
 import { FallWarpAnimation, type FallObject } from "@core/field/fallWarpAnimation";
 import { TeleportAnimation, type TeleportObject } from "@core/field/teleportAnimation";
 import { TaskManager } from "@core/gba/tasks";
@@ -162,8 +163,10 @@ let allMaps: Record<string, { num: number; name: string; layout: string; section
 let fieldEffects: ViewerFieldEffects;
 /** Efectos de campo vacíos: Hoenn no tiene los de FireRed (hierba, polvo, huellas), así que explorar no los dibuja. */
 const NO_FIELD_EFFECTS = { onGroundStep(): void {}, resetSession(): void {} } as unknown as ViewerFieldEffects;
+const forcedNavigation = new ViewerForcedMovement((x,y)=>!!findMapAt(x,y));
 let cancelPlayerMotion: (() => void) | null = null;
 function resetExploreSession(): void {
+  forcedNavigation.reset(playerDir);
   cancelPlayerMotion?.();
   cancelPlayerMotion = null;
   avatarAnimator?.stop(state.playerChar, playerMode, playerDir, viewerClock.tick);
@@ -711,12 +714,30 @@ function processPlayerStep(): void {
     targetDir = "east";
   }
 
+  const forced = !HOENN ? forcedNavigation.next(worldGrid,playerX,playerY,playerDir,playerMode,playerElevation) : null;
+  if(forced?.loading){void requestSectors().then(()=>processPlayerStep());return;}
+  for(let i=0;i<(forced?.sounds??0);i++)audioController.playSE(C.SE_M_RAZOR_WIND2);
+  const forcedStep=forced?.step;
+  if(forced?.consumed&&!forcedStep){
+    // TryUpdatePlayerSpinDirection consumes the collision frame even when its
+    // action was rejected; keypad/idle handling resumes on the following tick.
+    isStepping=true;
+    cancelPlayerMotion=viewerClock.subscribe(()=>{
+      cancelPlayerMotion?.();cancelPlayerMotion=null;isStepping=false;processPlayerStep();
+    });
+    return;
+  }
+  if(forcedStep){
+    targetDir=forcedStep.direction;
+    dx=targetDir==="east"?1:targetDir==="west"?-1:0;
+    dy=targetDir==="south"?1:targetDir==="north"?-1:0;
+  }
   const previousDirection = playerDir;
-  playerDir = targetDir;
-  if (dx === 0 && dy === 0) return;
-  if (!HOENN && tryNavigationWarp("input", playerDir)) return;
+  playerDir = forcedStep?.facing ?? targetDir;
+  if (dx === 0 && dy === 0) {playerMoving=false;avatarAnimator?.stop(state.playerChar,playerMode,playerDir,viewerClock.tick);updatePlayerDisplay();return;}
+  if (!forcedStep && !HOENN && tryNavigationWarp("input", playerDir)) return;
   // PlayerNotOnBikeTurningInPlace -> PlayerTurnInPlace -> WalkInPlaceFast (8 ticks).
-  if (avatarAnimator && playerMode !== "bike" && previousDirection !== targetDir && !playerMoving) {
+  if (!forcedStep && avatarAnimator && playerMode !== "bike" && previousDirection !== targetDir && !playerMoving) {
     isStepping = true; playerMoving = true; stepRunning = false;
     const started = viewerClock.tick;
     avatarAnimator.begin(state.playerChar, playerMode, playerDir, "turn", started);
@@ -733,8 +754,8 @@ function processPlayerStep(): void {
     return;
   }
 
-  if (!HOENN && tryNavigationWarp("front", playerDir)) return;
-  const plan = planStep(worldGrid, playerX, playerY, playerDir, playerMode, playerElevation);
+  if (!forcedStep && !HOENN && tryNavigationWarp("front", playerDir)) return;
+  const plan = forcedStep?.plan ?? planStep(worldGrid, playerX, playerY, playerDir, playerMode, playerElevation);
   const targetX = plan.x, targetY = plan.y;
   const isLedgeJump = plan.jump;
   if (plan.status === "loading" && findMapAt(targetX, targetY)) {
@@ -747,7 +768,7 @@ function processPlayerStep(): void {
   if (plan.status === "ready") {
     const previousVehicle = playerMode;
     playerMode = plan.vehicle;
-    stepRunning = playerMode === "walk" && playerRunning && !isLedgeJump
+    stepRunning = !forcedStep && playerMode === "walk" && playerRunning && !isLedgeJump
       && mapHeaders.get(findMapAt(playerX,playerY)?.[0] ?? "")?.allowRunning !== false;
     isStepping = true;
     playerMoving = true;
@@ -772,14 +793,15 @@ function processPlayerStep(): void {
     fieldEffects.onGroundStep("begin", groundActor);
 
     // Kanto uses the C step tables and 32-tick jumps (far/special); Hoenn retains its adapter timings.
-    const action: AvatarAction = transition ? playerMode === "surf" ? "board" : "dismount" : isLedgeJump ? "jump" : playerMode === "bike" ? "bike" : playerMode === "surf" ? "surf" : stepRunning ? "run" : "walk";
+    const forcedAction: AvatarAction | undefined = forcedStep ? ({PlayerGoSpin:"spin",PlayerRideWaterCurrent:"current",PlayerWalkFast:"ice",PlayerWalkNormal:"walk",PlayerJumpLedge:"jump"} as const)[forcedStep.action] : undefined;
+    const action: AvatarAction = transition ? playerMode === "surf" ? "board" : "dismount" : isLedgeJump ? "jump" : forcedAction ?? (playerMode === "bike" ? "bike" : playerMode === "surf" ? "surf" : stepRunning ? "run" : "walk");
     const offsets = avatarAnimator?.offsets(action);
     const duration = avatarAnimator ? (isLedgeJump || transition ? 32 : offsets!.length) * GBA_FRAME_MS : isLedgeJump ? 32 * GBA_FRAME_MS : playerMode === "bike" ? 100 : stepRunning ? 120 : 160;
     stepTarget = {x:targetX,y:targetY};
     jumpBehaviors = [worldGrid.behaviorAt(targetX, targetY), worldGrid.behaviorAt(playerX, playerY)];
     shoreAnchor = transition ? previousVehicle === "surf" ? {x:startPxX,y:startPxY} : {x:destPxX,y:destPxY} : null;
     const startTick = viewerClock.tick;
-    avatarAnimator?.begin(state.playerChar, playerMode, playerDir, action, startTick);
+    avatarAnimator?.begin(state.playerChar, playerMode, playerDir, action, startTick, forcedStep?.freeze);
 
     const animateStep = (tick: number) => {
       const elapsed = (tick - startTick) * GBA_FRAME_MS;
@@ -808,7 +830,8 @@ function processPlayerStep(): void {
         stepTarget = null;
         jumpShadow?.hide();
         shoreAnchor = null;
-        avatarAnimator?.stop(state.playerChar, playerMode, playerDir, tick);
+        avatarAnimator?.stop(state.playerChar, playerMode, playerDir, tick, !!forcedStep);
+        if(!HOENN)forcedNavigation.moved(targetDir,!forcedStep);
 
         fieldEffects.onGroundStep("finish", groundActor);
 
@@ -816,7 +839,7 @@ function processPlayerStep(): void {
         if (!HOENN && tryNavigationWarp("step", playerDir)) return;
         checkTrainerSight();
 
-        if (keysDown.size > 0 && !dialogManager.isOpen()) {
+        if (!dialogManager.isOpen()) {
           processPlayerStep();
         } else {
           playerMoving = false;
@@ -1126,6 +1149,7 @@ async function followNavigationWarp(source: MapHeader, warpId: number, phase: "i
     if (playerElevation === 15) playerElevation = 0;
     const behavior = worldGrid.behaviorAt(playerX, playerY);
     playerDir = warpArrivalDirection(behavior,playerDir);
+    forcedNavigation.reset(playerDir);
     if(falling)playerMode="walk";
     if (!destination.header.allowCycling && playerMode === "bike") playerMode = "walk";
     if (playerMode === "surf" && !worldGrid.isWaterTile(playerX, playerY)) playerMode = "walk";

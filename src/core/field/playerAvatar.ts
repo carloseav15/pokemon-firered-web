@@ -1,3 +1,4 @@
+import { ForcedMovement } from "./forcedMovement";
 import { TeleportAnimation } from "./teleportAnimation";
 // Port of field_player_avatar.c (walking, running, turning, ledges, surf,
 // forced movement tiles) for the on-foot and surfing states.
@@ -112,6 +113,17 @@ export class PlayerAvatar {
   lastSpinTile = 0;
   object!: ObjectEvent;
   surfBlob?: import("../gba/sprite").Sprite;
+
+  private readonly forcedMovement = new ForcedMovement(this, {
+    object: () => this.object,
+    clearHeldMovement: () => this.ow.objects.clearHeldMovement(this.object),
+    setDirection: direction => this.ow.objects.setDirection(this.object, direction),
+    collision: direction => this.CheckForPlayerAvatarCollision(direction),
+    move: (action, direction) => this[action](direction),
+    spinSound: () => sound.playSE(sound.c("SE_M_RAZOR_WIND2")),
+    matJump: () => this.DoPlayerMatJump(),
+    matSpin: () => this.DoPlayerMatSpin(),
+  });
 
   constructor(private readonly ow: Overworld) {
     gPlayerAvatar = this;
@@ -518,10 +530,10 @@ export class PlayerAvatar {
   player_step(direction: number, newKeys: number, heldKeys: number): void {
     this.HandleWarpArrowSpriteHideShow();
     if (this.preventStep) return;
-    if (this.TryUpdatePlayerSpinDirection()) return;
+    if (this.forcedMovement.TryUpdatePlayerSpinDirection()) return;
     if (this.TryInterruptObjectEventSpecialAnim(direction)) return;
     this.npc_clear_strange_bits();
-    if (!this.TryDoMetatileBehaviorForcedMovement()) {
+    if (!this.forcedMovement.TryDoMetatileBehaviorForcedMovement()) {
       this.MovePlayerAvatarUsingKeypadInput(direction, newKeys, heldKeys);
       this.PlayerAllowForcedMovementIfMovingSameDirection();
     }
@@ -575,75 +587,6 @@ export class PlayerAvatar {
     return false;
   }
 
-  private TryUpdatePlayerSpinDirection(): boolean {
-    if ((this.flags & PLAYER_AVATAR_FLAG_FORCED) && MB.MetatileBehavior_IsSpinTile(this.lastSpinTile)) {
-      const o = this.object;
-      if (o.heldMovementFinished) {
-        if (MB.MetatileBehavior_IsStopSpinning(o.currentMetatileBehavior)) return false;
-        if (MB.MetatileBehavior_IsSpinTile(o.currentMetatileBehavior)) this.lastSpinTile = o.currentMetatileBehavior;
-        this.ow.objects.clearHeldMovement(o);
-        this.PlayerApplyTileForcedMovement(this.lastSpinTile);
-      }
-      return true;
-    }
-    return false;
-  }
-
-  /** sForcedMovementFuncs (field_player_avatar.c); the fallback ForcedMovement_None
-   * entry lives in tryForcedMovement/applyTileForcedMovement, matching the C loop that
-   * stops at the first matching check (or the trailing {NULL, ForcedMovement_None}). */
-  private forcedMovementTable(): Array<[(b: number) => boolean, () => boolean]> {
-    return [
-      [MB.MetatileBehavior_IsTrickHouseSlipperyFloor, () => this.ForcedMovement_Slip()],
-      [MB.MetatileBehavior_IsIce_2, () => this.ForcedMovement_Slip()],
-      [MB.MetatileBehavior_IsWalkSouth, () => this.ForcedMovement_WalkSouth()],
-      [MB.MetatileBehavior_IsWalkNorth, () => this.ForcedMovement_WalkNorth()],
-      [MB.MetatileBehavior_IsWalkWest, () => this.ForcedMovement_WalkWest()],
-      [MB.MetatileBehavior_IsWalkEast, () => this.ForcedMovement_WalkEast()],
-      [MB.MetatileBehavior_IsSouthwardCurrent, () => this.ForcedMovement_PushedSouthByCurrent()],
-      [MB.MetatileBehavior_IsNorthwardCurrent, () => this.ForcedMovement_PushedNorthByCurrent()],
-      [MB.MetatileBehavior_IsWestwardCurrent, () => this.ForcedMovement_PushedWestByCurrent()],
-      [MB.MetatileBehavior_IsEastwardCurrent, () => this.ForcedMovement_PushedEastByCurrent()],
-      [MB.MetatileBehavior_IsSpinRight, () => this.ForcedMovement_SpinRight()],
-      [MB.MetatileBehavior_IsSpinLeft, () => this.ForcedMovement_SpinLeft()],
-      [MB.MetatileBehavior_IsSpinUp, () => this.ForcedMovement_SpinUp()],
-      [MB.MetatileBehavior_IsSpinDown, () => this.ForcedMovement_SpinDown()],
-      [MB.MetatileBehavior_IsSlideSouth, () => this.ForcedMovement_SlideSouth()],
-      [MB.MetatileBehavior_IsSlideNorth, () => this.ForcedMovement_SlideNorth()],
-      [MB.MetatileBehavior_IsSlideWest, () => this.ForcedMovement_SlideWest()],
-      [MB.MetatileBehavior_IsSlideEast, () => this.ForcedMovement_SlideEast()],
-      // MetatileBehavior_IsWaterfall reuses ForcedMovement_PushedSouthByCurrent directly in C.
-      [MB.MetatileBehavior_IsWaterfall, () => this.ForcedMovement_PushedSouthByCurrent()],
-      [MB.MetatileBehavior_IsSecretBaseJumpMat, () => this.ForcedMovement_MatJump()],
-      [MB.MetatileBehavior_IsSecretBaseSpinMat, () => this.ForcedMovement_MatSpin()],
-    ];
-  }
-
-  private ForcedMovement_Slip(): boolean { return this.DoForcedMovementInCurrentDirection((d) => this.PlayerWalkFast(d)); }
-  private ForcedMovement_WalkSouth(): boolean { return this.DoForcedMovement(DIR_SOUTH, (d) => this.PlayerWalkNormal(d)); }
-  private ForcedMovement_WalkNorth(): boolean { return this.DoForcedMovement(DIR_NORTH, (d) => this.PlayerWalkNormal(d)); }
-  private ForcedMovement_WalkWest(): boolean { return this.DoForcedMovement(DIR_WEST, (d) => this.PlayerWalkNormal(d)); }
-  private ForcedMovement_WalkEast(): boolean { return this.DoForcedMovement(DIR_EAST, (d) => this.PlayerWalkNormal(d)); }
-  private ForcedMovement_PushedSouthByCurrent(): boolean { return this.DoForcedMovement(DIR_SOUTH, (d) => this.PlayerRideWaterCurrent(d)); }
-  private ForcedMovement_PushedNorthByCurrent(): boolean { return this.DoForcedMovement(DIR_NORTH, (d) => this.PlayerRideWaterCurrent(d)); }
-  private ForcedMovement_PushedWestByCurrent(): boolean { return this.DoForcedMovement(DIR_WEST, (d) => this.PlayerRideWaterCurrent(d)); }
-  private ForcedMovement_PushedEastByCurrent(): boolean { return this.DoForcedMovement(DIR_EAST, (d) => this.PlayerRideWaterCurrent(d)); }
-  private PlaySpinSound(): void { sound.playSE(sound.c("SE_M_RAZOR_WIND2")); }
-  private ForcedMovement_SpinRight(): boolean { this.PlaySpinSound(); return this.DoForcedMovement(DIR_EAST, (d) => this.PlayerGoSpin(d)); }
-  private ForcedMovement_SpinLeft(): boolean { this.PlaySpinSound(); return this.DoForcedMovement(DIR_WEST, (d) => this.PlayerGoSpin(d)); }
-  private ForcedMovement_SpinUp(): boolean { this.PlaySpinSound(); return this.DoForcedMovement(DIR_NORTH, (d) => this.PlayerGoSpin(d)); }
-  private ForcedMovement_SpinDown(): boolean { this.PlaySpinSound(); return this.DoForcedMovement(DIR_SOUTH, (d) => this.PlayerGoSpin(d)); }
-  private ForcedMovement_SlideSouth(): boolean { return this.ForcedMovement_Slide(DIR_SOUTH); }
-  private ForcedMovement_SlideNorth(): boolean { return this.ForcedMovement_Slide(DIR_NORTH); }
-  private ForcedMovement_SlideWest(): boolean { return this.ForcedMovement_Slide(DIR_WEST); }
-  private ForcedMovement_SlideEast(): boolean { return this.ForcedMovement_Slide(DIR_EAST); }
-
-  /** ForcedMovement_MatJump (field_player_avatar.c). */
-  private ForcedMovement_MatJump(): boolean {
-    this.DoPlayerMatJump();
-    return true;
-  }
-
   /** DoPlayerAvatarSecretBaseMatJump (field_player_avatar.c): the
    * sPlayerAvatarSecretBaseMatJump table has a single entry, so the C tight while-loop
    * (`while (sPlayerAvatarSecretBaseMatJump[data[0]](...))`) reduces to one call. */
@@ -671,12 +614,6 @@ export class PlayerAvatar {
   /** DoPlayerMatJump (field_player_avatar.c). */
   private DoPlayerMatJump(): void { this.DoPlayerAvatarSecretBaseMatJump(); }
 
-
-  /** ForcedMovement_MatSpin (field_player_avatar.c). */
-  private ForcedMovement_MatSpin(): boolean {
-    this.DoPlayerMatSpin();
-    return true;
-  }
 
   /** DoPlayerMatSpin / PlayerAvatar_DoSecretBaseMatSpin (field_player_avatar.c):
    * sPlayerAvatarSecretBaseMatSpin = [Step0, Step1, Step2, Step3], run through
@@ -730,65 +667,8 @@ export class PlayerAvatar {
     PlayerAvatar_DoSecretBaseMatSpin();
   }
 
-  private TryDoMetatileBehaviorForcedMovement(): boolean {
-    if (!(this.flags & PLAYER_AVATAR_FLAG_CONTROLLABLE)) {
-      const behavior = this.object.currentMetatileBehavior;
-      for (const [check, apply] of this.forcedMovementTable()) {
-        if (check(behavior)) {
-          this.lastSpinTile = behavior;
-          return apply();
-        }
-      }
-    }
-    return this.ForcedMovement_None();
-  }
-
-  private PlayerApplyTileForcedMovement(behavior: number): void {
-    for (const [check, apply] of this.forcedMovementTable()) if (check(behavior)) apply();
-  }
-
-  private ForcedMovement_None(): boolean {
-    if (this.flags & PLAYER_AVATAR_FLAG_FORCED) {
-      const o = this.object;
-      o.facingDirectionLocked = false;
-      o.enableAnim = true;
-      this.ow.objects.setDirection(o, o.facingDirection);
-      this.flags &= ~PLAYER_AVATAR_FLAG_FORCED;
-    }
-    return false;
-  }
-
   /** CancelPlayerForcedMovement (field_player_avatar.c). */
-  CancelPlayerForcedMovement(): void {
-    this.ForcedMovement_None();
-  }
-
-  private DoForcedMovement(direction: number, action: (d: number) => void): boolean {
-    const collision = this.CheckForPlayerAvatarCollision(direction);
-    this.flags |= PLAYER_AVATAR_FLAG_FORCED;
-    if (collision) {
-      this.ForcedMovement_None();
-      if (collision < COLLISION_STOP_SURFING) return false;
-      if (collision === COLLISION_LEDGE_JUMP) this.PlayerJumpLedge(direction);
-      this.flags |= PLAYER_AVATAR_FLAG_FORCED;
-      this.runningState = MOVING;
-      return true;
-    }
-    this.runningState = MOVING;
-    action(direction);
-    return true;
-  }
-
-  private DoForcedMovementInCurrentDirection(action: (d: number) => void): boolean {
-    this.object.disableAnim = true;
-    return this.DoForcedMovement(this.object.movementDirection, action);
-  }
-
-  private ForcedMovement_Slide(direction: number): boolean {
-    this.object.disableAnim = true;
-    this.object.facingDirectionLocked = true;
-    return this.DoForcedMovement(direction, (d) => this.PlayerWalkFast(d));
-  }
+  CancelPlayerForcedMovement(): void { this.forcedMovement.ForcedMovement_None(); }
 
   // ---------------------------------------------------------------- bike.c
 
