@@ -257,8 +257,9 @@ desbordamiento. Compara 256 píxeles de un metatile de borde con su fuente. Los 
 usan grids/promesas/reloj PREPARED para memoria dispersa, carga tardía, cierre y reintento;
 `viewerClock.ts` comprueba pausas/cancelación del reloj. Tipos, honestidad, build y diff pasan.
 
-En la última muestra, las diez ventanas del recorrido dieron ~60 FPS, p95 16,7–16,8 ms y máximo
-16,8 ms; la primera ventana de arranque dio ~48 FPS y máximo 66,6 ms: **arranque aún pendiente**.
+En la muestra inicial de `e1702ffe`, las diez ventanas del recorrido dieron ~60 FPS, p95 16,7–16,8 ms y máximo
+16,8 ms; la primera ventana de arranque dio ~48 FPS y máximo 66,6 ms. Esa ventana incluía la
+capa de carga residual, corregida en la revisión de arranque descrita abajo.
 Son intervalos RAF, no presentación GPU ni garantía en dispositivos. En Pallet se retienen tres
 mapas: canvas de mapas 2.703.360 bytes + colisiones 23.760 + borde de cámara 1.007.616 =
 3.734.736 bytes (~3,56 MiB) estimados. Durante la ida se observaron tres/cuatro mapas y hasta
@@ -273,11 +274,57 @@ node .decomp-build/checks/viewerSectors.mjs
 PW_BASE=http://127.0.0.1:5173/ node tools/playtest/pw.mjs tools/playtest/smoke/viewer-navigation.job.mjs output/playwright/navigation
 ```
 
-Pendientes: arranque, recorrido exhaustivo de Kanto, resto de animaciones, bici/surf/salientes,
+Pendientes: medición de arranque en producción/dispositivos, recorrido exhaustivo de Kanto, resto de animaciones y más casos de bici/surf/salientes,
 interiores con control/llegadas reales, audio, comparación ROM, entrada táctil/dispositivos reales
 y producción. Las puertas siguen abriendo el visor de interiores, los diálogos/NPC mantienen
 la simulación adaptada y no se ejecutan historia/combates. Hoenn conserva su ruta global y Johto
 solo consulta; la conexión entre regiones y la integración del juego completo son fases posteriores.
+
+### Arranque y movimiento revisados
+
+Entrega `e32a8a02`. La clase `hidden` de la capa de carga no tenía una regla CSS y el overlay
+seguía cubriendo el juego, interceptando punteros y aplicando blur hasta retirarse 400 ms después.
+Ahora desaparece al alcanzar `viewer-interactive`, con los mapas, el avatar y las hojas de sus
+modos y NPC inmediatamente visibles preparados. El layout inmersivo se aplica antes de elegir
+sectores; metadatos y tilesets independientes cargan en paralelo. Una imagen fallida conserva
+un mensaje visible y un botón de reintento; se comprobó con HTTP 503 PREPARED y recursos reales al recargar.
+
+`planStep` consulta el saliente en el destino adyacente, como `CheckForPlayerAvatarCollision` /
+`ShouldJumpLedge` de `field_player_avatar.c`; comprueba el aterrizaje y bloquea el sentido inverso.
+El salto usa `sJumpY_High` de cdata y 32 ticks de `DoJumpSpriteMovement` (distancia FAR), sin copiar
+una curva a mano. El vehículo cambia únicamente al aceptar el paso, por lo que un bloqueo no
+monta/desmonta surf. Recargar en agua elige surf; una URL que apunta a un muro busca una casilla
+transitable. La velocidad/hoja de correr se fija durante el paso y B no cambia el vehículo en vuelo.
+Los pasos ordinarios conservan las velocidades previas del visor, medidas en 10/8/6 ticks para
+caminar/correr/bici. Esto es revisión del adaptador de navegación, no portado de nuevos cuerpos C.
+
+Comprobación: `viewerMovement.ts` usa geometría PREPARED para aterrizajes ocupados/sólidos,
+cambios de surf bloqueados y sectores ausentes. El harness existente `eventObjectAnims.ts` pasa
+136.860 comparaciones de datos/límites y 137 casos C extraídos. El job de movimiento elige
+posiciones del terreno real de Pallet/Ruta 1 y pulsa teclas: caminar, correr (incluida liberación
+temprana), bici (B en movimiento), salto/curva/32 ticks y bloqueo inverso, surf/retorno y recarga
+en agua. Una entrada PREPARED al árbol de (0,0) se reubica a terreno válido. No altera mapas ni flags.
+Capturas de salto en el aire y regreso de surf inspeccionadas. La regresión de 62 pasos hasta
+el norte de Ruta 1 y vuelta sigue pasando, ~60 FPS y p95 16,7–16,8 ms.
+
+Tres muestras con caché HTTP desactivada y Vite local dieron ~59 FPS en los primeros 60 intervalos
+del arranque preparado, con un máximo de 33,3 ms; la instrumentación visible dio ~58 FPS en su
+primera ventana y ~60 durante el recorrido. La observación previa (~53–55 FPS) incluía el overlay
+borroso y no representaba juego interactivo. Los tiempos de carga varían por módulos/cachés;
+no se afirma una reducción uniforme de descarga ni una garantía en hardware real. Reloj y medidas
+RAF conservan sus límites: no miden presentación GPU, audio percibido ni paridad ROM.
+
+```bash
+node_modules/.bin/esbuild tools/checks/viewerMovement.ts --bundle --platform=node --format=esm --outfile=.decomp-build/checks/viewerMovement.mjs
+node .decomp-build/checks/viewerMovement.mjs
+PW_BASE=http://127.0.0.1:5173/ node tools/playtest/pw.mjs tools/playtest/smoke/viewer-startup.job.mjs output/playwright/startup
+PW_BASE=http://127.0.0.1:5173/ node tools/playtest/pw.mjs tools/playtest/smoke/viewer-movement.job.mjs output/playwright/movement
+```
+
+Siguen pendientes interiores controlables/llegadas, persistencia de sesión completa, revisión de
+todos los mapas, elevaciones/puentes, animaciones y efectos completos (incluido surf), dispositivos,
+producción y ROM. Surf sigue siendo automático sin requisitos MO/historia; NPC/diálogos y
+velocidades ordinarias conservan la adaptación del visor. Hoenn/Johto no se acreditan con estas pruebas.
 
 ## Mundo principal y variantes
 
