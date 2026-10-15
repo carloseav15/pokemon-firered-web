@@ -406,8 +406,33 @@ La regresión posterior de 62 pasos pasa con muestras ~60 FPS y p95 ≤16,8 ms (
 no cambia los límites de la medición local. Reflejos, cobertura de terreno en suelo, profundidad con elevaciones/puentes, validación de las
 ramas de supresión de sombra y recorrido exhaustivo siguen pendientes; no cierra los efectos.
 
+Reflejos del avatar (ce2f4708): scan de las dos filas bajo las coordenadas actual y
+anterior, en el orden de ObjectEventCheckForReflectiveSurface; fotograma y espejado del avatar,
+PNG con paleta de reflejo exportada y desplazamiento height−2 con y2 invertido. La deformación
+usa sAffineAnims_ReflectionDistortion desde cdata y el intérprete affine de sprite.c, inicializando
+las tablas trigonométricas originales. Las dos matrices avanzan con el reloj común, también sin
+reflejo visible; el menú/visibilidad pausan el reloj y se liberan las matrices al abandonar la página.
+
+El visor conserva el mapa aplanado: una máscara de casillas reflectantes adapta la prioridad BG
+para impedir que el reflejo pinte tierra. No sustituye el compositor GBA por capas/elevaciones.
+GetBridgeType es false en FireRed; la rama de hielo tiene traducción estática, sin recorrido real
+en esta entrega. Paletas con clima, profundidad completa y cobertura de hierba en suelo pendientes.
+Se retira también la sombra al completar el salto antes de encadenar el siguiente movimiento;
+la comprobación específica con tecla mantenida sigue pendiente.
+
+Pruebas: tipos, honesty, build, Avatar (72 selecciones/4.608 muestras) y affine existentes PASS.
+Chromium Rojo/Hoja en orilla real de Ruta 22: cuatro direcciones, misma paleta/fotograma, ningún
+píxel fuera de agua, bici, surf con offsets0/1 y pausa PASS; capturas inspeccionadas. Nueve matrices
+por ciclo observado, aunque el sprite pequeño conserva la misma imagen rasterizada en esas
+muestras; no se añade una oscilación inventada. El canal de Pallet no es reflectante y queda sin
+reflejo. PREPARED selecciona entradas sobre terreno real; no modifica comportamientos ni progreso.
+Arranque: recursos de reflejo preparados antes de jugar, reintento HTTP503 PREPARED PASS;
+tres primeras ventanas ~57–58 FPS y lecturas posteriores ~60, con un intervalo inicial de49,9 ms.
+Regresión de 62 pasos: ~60 FPS, p95≤16,8 ms; una tarea de54 ms. Mediciones locales, no
+garantía de FPS constantes, dispositivos o paridad ROM.
+
 Límite de la revisión base: avatar de locomoción. El soporte normal se añadió en aa4279a8;
-las sombras fuera de los saltos revisados, reflejos, huellas/ondas en navegación real, máscaras
+las sombras fuera de los saltos revisados, revisión exhaustiva de reflejos, huellas/ondas en navegación real, máscaras
 de hierba/profundidad y terreno animado siguen en el punto de efectos; NPC/objetos, terrenos especiales (escaleras/puentes/rails), interiores, animaciones de
 escenas/acciones especiales, recorrido exhaustivo y comparación ROM/dispositivos siguen pendientes.
 Los jobs UI históricos C7/huellas necesitan adaptarse al modo inmersivo antes de servir de prueba
