@@ -40,7 +40,7 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | `party_menu.c` | 6342 | 326/357 | `core/field/overworld.ts`, `battle/ext.ts`, `menus/fieldMenus.ts` … |  |  |
 | `pokemon_summary_screen.c` | 5224 | 131/137 | `pokemonSummaryScreen.ts`, `summaryScreen.ts` |  |  |
 | `battle_main.c` | 4477 | 87/106 | `core/battle/controllers.ts`, `core/battle/globals.ts`, `core/battle/main.ts` … |  |  |
-| `field_effect.c` | 4033 | 220/239 | `core/field/escalatorWarp.ts`, `core/field/fieldEffects.ts`, `core/field/fieldMoves.ts` … |  |  |
+| `field_effect.c` | 4033 | 220/239 | `core/field/escalatorWarp.ts`, `core/field/fallWarpAnimation.ts`, `core/field/fieldEffects.ts` … |  |  |
 | `battle_transition.c` | 3037 | 129/134 | `core/battle/transition.ts`, `battle/mugshotTransition.ts` |  |  |
 | `battle_controller_player.c` | 2966 | 122/123 | `core/battle/controller_player.ts`, `core/battle/reshow.ts` |  |  |
 | `intro.c` | 2805 | 77/79 | `introCopyright.ts`, `introGameFreak.ts`, `introScene1.ts` … |  |  |
