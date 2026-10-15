@@ -103,9 +103,11 @@ export default async function run(ctx) {
  await enter(cases.surf);const surf=await step(cases.surf,'surf');
  if(!await p.locator('#player-sprite').evaluate(el=>el.style.backgroundImage.includes('surfrun')))throw Error('Surf sheet missing');
  await p.waitForFunction(point=>{const h=new URLSearchParams(location.hash.slice(1));return Number(h.get('px'))===point.nx&&Number(h.get('py'))===point.ny;},cases.surf);
+ await p.waitForFunction(()=>document.querySelector('.surf-support')?.style.display==='block');
  await p.reload();await p.waitForFunction(()=>window.motionProbe?.events.some(e=>e.phase==='spawn')&&!document.body.hasAttribute('aria-busy'));
  if(!await p.locator('#player-sprite').evaluate(el=>el.style.backgroundImage.includes('surfrun')))throw Error('Reload on water lost surf vehicle');
  const dismount=await step({x:cases.surf.nx,y:cases.surf.ny,nx:cases.surf.x,ny:cases.surf.y,key:reverse[cases.surf.key]},'walk');
+ if(await p.locator('.surf-support').evaluate(el=>el.style.display!=='none'))throw Error('Surf support remained on land');
  await ctx.shot('surf-return');
  if(ctx.errors().length)throw Error(ctx.errors().join(';'));
  return {cases,repairedSpawn,walk,run,bike,jump,surf,dismount,releaseKeepsRunAnimation:true,reverseLedgeBlocked:true,surfReload:true,note:'PREPARED start URLs, real exported terrain and keyboard. Automatic surf is a viewer adaptation; no HM/story or full movement parity claim.'};

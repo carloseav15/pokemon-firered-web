@@ -1,3 +1,4 @@
+import { SurfSupport } from "./render/surf";
 // Visor del mundo: 37 mapas exteriores de Kanto unidos (docs/VISOR-MUNDO.md).
 // Navegación nativa sobre el lienzo de Kanto con avatar de jugador (Red/Leaf),
 // colisiones, bici, surf, salientes, efectos de campo (hierba, agua, polvo, huellas de arena y bici),
@@ -173,6 +174,7 @@ let isStepping = false;
 let stepRunning = false;
 let jumpArc: readonly number[] = [];
 let avatarAnimator: AvatarAnimator | null = null;
+let surfSupport: SurfSupport | null = null;
 const playerEl = document.getElementById("player-sprite");
 
 function parseHash(): void {
@@ -389,7 +391,9 @@ function updatePlayerDisplay(): void {
     const frame = avatarAnimator.frame(state.playerChar, playerMode, playerDir, viewerClock.tick);
     playerEl.style.width = `${frame.width}px`; playerEl.style.height = `${frame.height}px`;
     playerEl.style.left = `${px - (frame.width - TILE) / 2}px`;
-    playerEl.style.top = `${py - (frame.height - TILE)}px`;
+    const shoreJump = frame.moving && (frame.action === "board" || frame.action === "dismount");
+    const bob = surfSupport?.update(playerMode === "surf" && !shoreJump, playerDir, px, py, viewerClock.tick) ?? 0;
+    playerEl.style.top = `${py - (frame.height - TILE) + bob}px`;
     playerEl.style.backgroundImage = `url(${frame.url})`;
     playerEl.style.backgroundPosition = `-${frame.index * frame.width}px 0px`;
     playerEl.style.transform = `scale(${frame.hFlip ? -1 : 1}, ${frame.vFlip ? -1 : 1})`;
@@ -586,6 +590,7 @@ function stopExploration(): void {
   if (bikeBtn) bikeBtn.style.display = "none";
 
   if (playerEl) playerEl.style.display = "none";
+  surfSupport?.hide();
   entityManager.hideAll();
   dialogManager.close();
   minimapController?.updateRadar();
@@ -858,6 +863,7 @@ async function build(): Promise<void> {
     if (!response.ok) throw new Error(`objects.json: HTTP ${response.status}`);
     avatarAnimator = new AvatarAnimator(await response.json() as AvatarData);
     await avatarAnimator.preload();
+    surfSupport = await SurfSupport.create(content);
   }) : Promise.resolve();
   const [worldData] = await Promise.all([HOENN ? fetchHoennIndex() : fetchWorldIndex(), mapsReady, jumpReady, avatarReady]);
   if (HOENN) await loadHoennGfx("/emerald");
@@ -888,12 +894,16 @@ async function build(): Promise<void> {
   const unbindVisibility = bindViewerClockVisibility();
   const unsubscribeSimulation = viewerClock.subscribe(frame => {
     audioController.frame();
+    if (playerActive && playerEl && avatarAnimator && playerMode === "surf" && !isStepping && !interiorViewer.isOpen()) {
+      const bob = surfSupport?.update(true, playerDir, playerVisualX, playerVisualY, frame.tick) ?? 0;
+      playerEl.style.top = `${playerVisualY - 16 + bob}px`;
+    }
     if (playerActive && !interiorViewer.isOpen()) entityManager.updateAutonomousBehaviors(frame.elapsedMs, playerX, playerY);
   });
   window.addEventListener("pagehide", event => {
     if (event.persisted) { viewerClock.pause("pagehide"); return; }
     sectorLoader?.dispose(); sectorBorder?.dispose(); explorationUi?.dispose();
-    resetExploreSession(); disposeEffects(); unbindVisibility(); unsubscribeSimulation(); animController?.stop();
+    resetExploreSession(); surfSupport?.dispose(); disposeEffects(); unbindVisibility(); unsubscribeSimulation(); animController?.stop();
   });
   window.addEventListener("pageshow", () => viewerClock.resume("pagehide"));
 

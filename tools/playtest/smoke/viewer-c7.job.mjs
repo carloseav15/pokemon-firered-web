@@ -6,7 +6,7 @@ export default async function run(ctx) {
  const templates=await p.evaluate(async()=>{
   const {loadEffectTemplate}=await window.c7Import('/src/viewer/data/fieldFxTemplates.ts');
   const out=[];for(const name of ['TallGrass','GroundImpactDust','Ripple']){const a=loadEffectTemplate(name),b=loadEffectTemplate(name);if(a!==b)throw Error('inflight cache identity');const t=await a;out.push({name,frames:t.frames.length,ticks:t.anims[0].filter(c=>c[0]==='F').reduce((s,c)=>s+c[2],0),first:t.anims[0][0],packing:t.frames.map(f=>[f.sourceX,f.sourceY,f.width,f.height])});}
-  try{await loadEffectTemplate('SurfBlob');throw Error('Unsupported template accepted');}catch(e){if(!String(e).includes('unsupported template'))throw e;}
+  try{await loadEffectTemplate('UnsupportedFixture');throw Error('Unsupported template accepted');}catch(e){if(!String(e).includes('unsupported template'))throw e;}
   // Observation only: no events, terrains or results are fabricated.
   const {ViewerFieldEffects}=await window.c7Import('/src/viewer/fieldEffects.ts');const original=ViewerFieldEffects.prototype.onGroundStep;
   window.c7Events=[];ViewerFieldEffects.prototype.onGroundStep=function(phase,actor){window.c7Grid=this.grid;if(!this.observed){this.observed=true;this.subscribe(e=>window.c7Events.push(e.type==='spawn'?{type:e.type,name:e.template.name,generation:e.generation,id:e.id,position:e.position,phase:e.phase,direction:e.direction,priority:e.priority}:e));}return original.call(this,phase,actor);};

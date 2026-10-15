@@ -1,7 +1,7 @@
 import { DATA_ROOT } from "@core/rom";
 
 export const M12_TEMPLATE_NAMES = ["TallGrass", "GroundImpactDust", "Ripple"] as const;
-export const VIEWER_TEMPLATE_NAMES = [...M12_TEMPLATE_NAMES, "SandFootprints", "DeepSandFootprints", "BikeTireTracks"] as const;
+export const VIEWER_TEMPLATE_NAMES = [...M12_TEMPLATE_NAMES, "SandFootprints", "DeepSandFootprints", "BikeTireTracks", "SurfBlob"] as const;
 export type EffectTemplateName = typeof VIEWER_TEMPLATE_NAMES[number];
 export type M12TemplateName = typeof M12_TEMPLATE_NAMES[number];
 export type ViewerAnimCmd = readonly ["F", number, number, 0 | 1, 0 | 1] | readonly ["J", number] | readonly ["E"];
@@ -69,16 +69,20 @@ export function loadEffectTemplate(name: EffectTemplateName): Promise<EffectTemp
     promise = loadManifest().then(async all => {
       const t = object(all[name], name);
       if (!Array.isArray(t.frames) || !t.frames.length || !Array.isArray(t.anims) || !t.anims.length || typeof t.callback !== "string") fail(name, "invalid frames/anims/callback");
+      const size = t.size;
+      if (!Array.isArray(size) || size.length !== 2 || !integer(size[0], 1, 64) || !integer(size[1], 1, 64)) fail(name, "invalid OAM size");
       const frames = await Promise.all(t.frames.map(async (f: unknown, i: number) => {
         if (!Array.isArray(f) || f.length !== 4 || typeof f[0] !== "string" || !/^fieldfx\/[a-z0-9_]+\.png$/i.test(f[0]) || !integer(f[1], 0, 65535) || !integer(f[2], 1, 64) || !integer(f[3], 1, 64)) fail(name, `invalid frame ${i}`);
         const url = `${DATA_ROOT}/${f[0]}`;
         const image = await loadImage(url);
-        const columns = image.naturalWidth / f[2], rows = image.naturalHeight / f[3];
+        // overworld_frame dimensions specify allocation bytes; OAM defines geometry.
+        // SurfBlob allocates 2x8 tiles but displays those 16 tiles as 4x4.
+        if (f[2] * f[3] !== size[0] * size[1]) fail(name, `allocation/OAM mismatch ${i}`);
+        const columns = image.naturalWidth / size[0], rows = image.naturalHeight / size[1];
         if (!Number.isInteger(columns) || !Number.isInteger(rows) || f[1] >= columns * rows) fail(name, `image bounds/packing for frame ${i}`);
-        return Object.freeze({ image, url, sourceX: (f[1] % columns) * f[2], sourceY: Math.floor(f[1] / columns) * f[3], width: f[2], height: f[3] });
+        return Object.freeze({ image, url, sourceX: (f[1] % columns) * size[0], sourceY: Math.floor(f[1] / columns) * size[1], width: size[0], height: size[1] });
       }));
-      const size = t.size;
-      if (!Array.isArray(size) || size.length !== 2 || !integer(size[0], 1, 64) || !integer(size[1], 1, 64) || frames.some(f => f.width !== size[0] || f.height !== size[1])) fail(name, "size does not match frame dimensions");
+      if (frames.some(f => f.width !== size[0] || f.height !== size[1])) fail(name, "size does not match frame dimensions");
       const anims = t.anims.map((a, i) => validateEffectAnimation(a, frames.length, `${name}/anim${i}`));
       return Object.freeze({ name, frames: Object.freeze(frames), anims: Object.freeze(anims), callback: t.callback, size: Object.freeze([size[0], size[1]]) as readonly [number, number] });
     }).catch(error => { templates.delete(name); throw error; });

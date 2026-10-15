@@ -76,6 +76,27 @@ export default async function run(ctx){
     }
    },{before,mode,direction,character,expectedTicks});
   }
+  if(mode==='surf') {
+   await p.waitForFunction(d=>{const el=document.querySelector('.surf-support');return el?.style.display==='block'&&JSON.parse(el.dataset.animation).direction===d;},direction);
+   const observed=await p.evaluate(async()=>{
+    const support=document.querySelector('.surf-support'),rider=document.querySelector('#player-sprite'),samples=[];
+    for(let i=0;i<115;i++){
+     await new Promise(requestAnimationFrame);
+     const a=JSON.parse(support.dataset.animation);
+     const bob=parseFloat(rider.style.top)-parseFloat(support.style.top)+8;
+     if(bob!== (a.command!==0?1:0))throw Error('Surf rider offset differs from C '+JSON.stringify({a,bob}));
+     samples.push(a.frame);
+    }
+    if(new Set(samples).size!==2)throw Error('Surf support did not animate');
+    return [...new Set(samples)];
+   });
+   await ctx.shot(`surf-${character}-${direction}`);
+   await p.getByRole('button',{name:'Menú · Esc'}).click();
+   const paused=await p.locator('.surf-support').getAttribute('data-animation');
+   await p.waitForTimeout(150);
+   if(await p.locator('.surf-support').getAttribute('data-animation')!==paused)throw Error('Surf animated while paused');
+   await p.keyboard.press('Escape');
+  }
   if(mode==='run')await p.keyboard.up('Shift');
   results.push({character,mode,direction,ticks:expectedTicks});
  }
