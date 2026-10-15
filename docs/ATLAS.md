@@ -431,9 +431,32 @@ tres primeras ventanas ~57–58 FPS y lecturas posteriores ~60, con un intervalo
 Regresión de 62 pasos: ~60 FPS, p95≤16,8 ms; una tarea de54 ms. Mediciones locales, no
 garantía de FPS constantes, dispositivos o paridad ROM.
 
+Cobertura local del avatar (30bdd798): se mantienen dos canvases de 128×128 (128 KiB RGBA)
+para BG1/medio y BG2/superior cerca del personaje. DrawMetatile de field_camera.c asigna NORMAL
+como bottom→BG1/top→BG2, COVERED como bottom→BG3/top→BG1 y SPLIT como bottom→BG3/top→BG2.
+La base del visor sigue aplanada; las capas locales restauran la cobertura sobre avatar, efectos
+y reflejo. OBJ gana el empate de prioridad: BG1 queda entre el reflejo (prioridad 3) y el avatar;
+BG2 queda delante del avatar de prioridad 2 y detrás si su prioridad es 0/1, desde sElevationToPriority.
+La elevación se lee de los bloques residentes y conserva las reglas 0/15 de ObjectEventUpdateElevation.
+Se retira el recorte fijo de 4px en la exploración inmersiva de Kanto: hierba/terreno y efecto original
+aportan los píxeles de cobertura. Los adaptadores anteriores de Hoenn/inspector conservan su ruta.
+
+Las capas reutilizan renderer/bloques del sector sin duplicarlos; invalidan al cambiar tiles animados,
+cargar o liberar sectores. Se recalculan al cambiar la ventana alineada a metatiles y se liberan al
+abandonar la página. El contador de memoria estimada añade sus 128 KiB, sin pretender medir toda la GPU.
+Checks de tipos/honesty/build y Chromium Rojo/Hoja PASS: 57 metatiles por muestra en hierba real de
+Ruta 2 (44 NORMAL/13 COVERED), contraste de píxeles BG1/BG2, orden DOM y capturas inspeccionadas.
+Regresión de reflejos de Hoja en Ruta 22 (direcciones/bici/surf/pausa) PASS y captura de surf revisada.
+SPLIT solo está en gTileset_SeviiIslands67 (tres metatiles), fuera de esta exploración; revisión C,
+sin recorrido real. Los bloques transitables de los exteriores del Kanto continental exportado no usan prioridades
+altas0/1: esa rama queda conectada pero sin validación real en esta entrega.
+
+El recorrido de 62 pasos Pallet/Ruta1 pasa (~60 FPS, p95≤16,8 ms, sin tareas>50 ms en esa muestra).
+No completa el compositor de toda la cámara ni la prioridad/subsprites de todos los NPC/objetos,
+colisiones por elevación/puentes o revisión exhaustiva/ROM. Esas validaciones continúan en 6.5d.
+
 Límite de la revisión base: avatar de locomoción. El soporte normal se añadió en aa4279a8;
-las sombras fuera de los saltos revisados, revisión exhaustiva de reflejos, huellas/ondas en navegación real, máscaras
-de hierba/profundidad y terreno animado siguen en el punto de efectos; NPC/objetos, terrenos especiales (escaleras/puentes/rails), interiores, animaciones de
+las sombras fuera de los saltos revisados, revisión exhaustiva de reflejos, huellas/ondas en navegación real, revisión exhaustiva de máscaras/profundidad y terreno animado siguen en el punto de efectos; NPC/objetos, terrenos especiales (escaleras/puentes/rails), interiores, animaciones de
 escenas/acciones especiales, recorrido exhaustivo y comparación ROM/dispositivos siguen pendientes.
 Los jobs UI históricos C7/huellas necesitan adaptarse al modo inmersivo antes de servir de prueba
 actual; no se ejecutaron ni se presentan como validación vigente en esta entrega.
