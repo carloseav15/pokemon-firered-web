@@ -1,3 +1,4 @@
+import { JumpShadow } from "./render/shadow";
 import { SurfSupport } from "./render/surf";
 // Visor del mundo: 37 mapas exteriores de Kanto unidos (docs/VISOR-MUNDO.md).
 // Navegación nativa sobre el lienzo de Kanto con avatar de jugador (Red/Leaf),
@@ -143,6 +144,9 @@ function resetExploreSession(): void {
   avatarAnimator?.stop(state.playerChar, playerMode, playerDir, viewerClock.tick);
   isStepping = false;
   stepRunning = false;
+  shoreAnchor = null;
+  jumpShadow?.hide();
+  surfSupport?.hide();
   playerMoving = false;
   keysDown.clear();
   if (!HOENN) fieldEffects.resetSession();
@@ -175,6 +179,10 @@ let stepRunning = false;
 let jumpArc: readonly number[] = [];
 let avatarAnimator: AvatarAnimator | null = null;
 let surfSupport: SurfSupport | null = null;
+let jumpShadow: JumpShadow | null = null;
+let groundVisualY = 0;
+let jumpBehaviors: readonly number[] = [];
+let shoreAnchor: { x: number; y: number } | null = null;
 const playerEl = document.getElementById("player-sprite");
 
 function parseHash(): void {
@@ -384,7 +392,8 @@ function updatePlayerDisplay(): void {
       : (playerDir === "south" ? 3 : playerDir === "north" ? 5 : 7) + (playerStep % 2 === 0 ? 0 : 1);
   }
 
-  const inGrass = worldGrid.isGrassTile(playerX, playerY) && playerMode !== "surf" && !isBike;
+  const airborne = !!avatarAnimator && isStepping && (shoreAnchor !== null || avatarAnimator.frame(state.playerChar, playerMode, playerDir, viewerClock.tick).action === "jump");
+  const inGrass = !airborne && worldGrid.isGrassTile(playerX, playerY) && playerMode !== "surf" && !isBike;
   playerEl.style.clipPath = inGrass ? "inset(0 0 4px 0)" : "none";
 
   if (avatarAnimator) {
@@ -392,8 +401,12 @@ function updatePlayerDisplay(): void {
     playerEl.style.width = `${frame.width}px`; playerEl.style.height = `${frame.height}px`;
     playerEl.style.left = `${px - (frame.width - TILE) / 2}px`;
     const shoreJump = frame.moving && (frame.action === "board" || frame.action === "dismount");
-    const bob = surfSupport?.update(playerMode === "surf" && !shoreJump, playerDir, px, py, viewerClock.tick) ?? 0;
-    playerEl.style.top = `${py - (frame.height - TILE) + bob}px`;
+    const supportPoint = shoreJump ? shoreAnchor : { x: px, y: py };
+    const bob = surfSupport?.update((playerMode === "surf" || shoreJump) && !!supportPoint, playerDir, supportPoint?.x ?? px, supportPoint?.y ?? py, viewerClock.tick) ?? 0;
+    jumpShadow?.update(frame.moving && frame.action === "jump" && !MB.MetatileBehavior_IsPokeGrass(jumpBehaviors[0] ?? 0)
+      && !jumpBehaviors.some(behavior => MB.MetatileBehavior_IsSurfable(behavior) || MB.MetatileBehavior_IsReflective(behavior)),
+      px, groundVisualY, frame.height, frame.shadowSize);
+    playerEl.style.top = `${py - (frame.height - TILE) + (shoreJump ? 0 : bob)}px`;
     playerEl.style.backgroundImage = `url(${frame.url})`;
     playerEl.style.backgroundPosition = `-${frame.index * frame.width}px 0px`;
     playerEl.style.transform = `scale(${frame.hFlip ? -1 : 1}, ${frame.vFlip ? -1 : 1})`;
@@ -591,6 +604,8 @@ function stopExploration(): void {
 
   if (playerEl) playerEl.style.display = "none";
   surfSupport?.hide();
+  jumpShadow?.hide();
+  shoreAnchor = null;
   entityManager.hideAll();
   dialogManager.close();
   minimapController?.updateRadar();
@@ -689,6 +704,8 @@ function processPlayerStep(): void {
     const action: AvatarAction = transition ? playerMode === "surf" ? "board" : "dismount" : isLedgeJump ? "jump" : playerMode === "bike" ? "bike" : playerMode === "surf" ? "surf" : stepRunning ? "run" : "walk";
     const offsets = avatarAnimator?.offsets(action);
     const duration = avatarAnimator ? (isLedgeJump || transition ? 32 : offsets!.length) * GBA_FRAME_MS : isLedgeJump ? 32 * GBA_FRAME_MS : playerMode === "bike" ? 100 : stepRunning ? 120 : 160;
+    jumpBehaviors = [worldGrid.behaviorAt(targetX, targetY), worldGrid.behaviorAt(playerX, playerY)];
+    shoreAnchor = transition ? previousVehicle === "surf" ? {x:startPxX,y:startPxY} : {x:destPxX,y:destPxY} : null;
     const startTick = viewerClock.tick;
     avatarAnimator?.begin(state.playerChar, playerMode, playerDir, action, startTick);
 
@@ -699,6 +716,7 @@ function processPlayerStep(): void {
       const progress = avatarAnimator ? isLedgeJump ? Math.min(1, elapsedTicks / 32) : transition ? Math.min(16, Math.ceil(elapsedTicks / 2)) / 16 : offsets![Math.min(offsets!.length - 1, elapsedTicks - 1)]! / 16 : t;
       playerVisualX = startPxX + (destPxX - startPxX) * progress;
       playerVisualY = startPxY + (destPxY - startPxY) * progress;
+      groundVisualY = playerVisualY;
 
       if (isLedgeJump || transition) {
         const elapsedTicks = tick - startTick;
@@ -715,6 +733,7 @@ function processPlayerStep(): void {
         playerVisualX = destPxX;
         playerVisualY = destPxY;
         isStepping = false;
+        shoreAnchor = null;
         avatarAnimator?.stop(state.playerChar, playerMode, playerDir, tick);
 
         fieldEffects.onGroundStep("finish", groundActor);
@@ -864,6 +883,7 @@ async function build(): Promise<void> {
     avatarAnimator = new AvatarAnimator(await response.json() as AvatarData);
     await avatarAnimator.preload();
     surfSupport = await SurfSupport.create(content);
+    jumpShadow = await JumpShadow.create(content);
   }) : Promise.resolve();
   const [worldData] = await Promise.all([HOENN ? fetchHoennIndex() : fetchWorldIndex(), mapsReady, jumpReady, avatarReady]);
   if (HOENN) await loadHoennGfx("/emerald");
@@ -903,7 +923,7 @@ async function build(): Promise<void> {
   window.addEventListener("pagehide", event => {
     if (event.persisted) { viewerClock.pause("pagehide"); return; }
     sectorLoader?.dispose(); sectorBorder?.dispose(); explorationUi?.dispose();
-    resetExploreSession(); surfSupport?.dispose(); disposeEffects(); unbindVisibility(); unsubscribeSimulation(); animController?.stop();
+    resetExploreSession(); surfSupport?.dispose(); jumpShadow?.dispose(); disposeEffects(); unbindVisibility(); unsubscribeSimulation(); animController?.stop();
   });
   window.addEventListener("pageshow", () => viewerClock.resume("pagehide"));
 

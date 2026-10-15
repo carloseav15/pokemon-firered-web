@@ -108,7 +108,7 @@ export class AvatarAnimator {
     this.advance(tick);
     const [file, index] = this.gfx.frames[this.sprite.imageValue]!;
     return { url: `/fr/${file}`, index, width: this.gfx.width, height: this.gfx.height, hFlip: this.sprite.hFlip, vFlip: this.sprite.vFlip,
-      image: this.sprite.imageValue, command: this.sprite.animCmdIndex, delay: this.sprite.animDelayCounter, animation: this.sprite.animNum, action: this.action, direction: this.direction, graphics: this.gfx.name, moving: this.moving };
+      shadowSize: this.gfx.shadowSize, image: this.sprite.imageValue, command: this.sprite.animCmdIndex, delay: this.sprite.animDelayCounter, animation: this.sprite.animNum, action: this.action, direction: this.direction, graphics: this.gfx.name, moving: this.moving };
   }
   /** NpcTakeStep tables, not macOS timing or a guessed ms duration. */
   offsets(action: AvatarAction): number[] {

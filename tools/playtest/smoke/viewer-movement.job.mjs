@@ -2,10 +2,20 @@
 // flags, vehicles or expected outcomes are injected; all actions use the keyboard.
 export default async function run(ctx) {
  const p=ctx.page;
+ const character=process.env.PW_CHARACTER??'red';
  await p.setViewportSize({width:1280,height:720});
  await p.addInitScript(()=>{
   if(!/^https?:$/.test(location.protocol))return;
-  window.motionProbe={events:[]};
+  window.motionProbe={events:[],attachments:[]};
+  const sample=()=>{
+   const avatar=document.querySelector('#player-sprite'),support=document.querySelector('.surf-support'),shadow=document.querySelector('.jump-shadow');
+   if(avatar?.dataset.animation){const a=JSON.parse(avatar.dataset.animation);
+    if(a.moving&&['jump','board','dismount'].includes(a.action))window.motionProbe.attachments.push({action:a.action,
+     supportVisible:support?.style.display==='block',supportX:support?.style.left,supportY:support?.style.top,
+     shadowVisible:shadow?.style.display==='block',shadowY:shadow?.style.top,clip:avatar.style.clipPath});
+   }
+   requestAnimationFrame(sample);
+  };requestAnimationFrame(sample);
   void Promise.all([import('/src/viewer/fieldEffects.ts'),import('/src/viewer/clock.ts')]).then(([fx,clock])=>{
    const on=fx.ViewerFieldEffects.prototype.onGroundStep;
    fx.ViewerFieldEffects.prototype.onGroundStep=function(phase,actor){window.motionProbe.grid=this.grid;window.motionProbe.events.push({...actor,phase,tick:clock.viewerClock.tick,at:performance.now()});return on.call(this,phase,actor);};
@@ -15,6 +25,7 @@ export default async function run(ctx) {
   await p.goto('about:blank');
   await p.goto(new URL(`viewer.html#modo=explore&px=${point.x}&py=${point.y}`,process.env.PW_BASE).href);
   await p.waitForFunction(()=>window.motionProbe?.events.some(e=>e.phase==='spawn')&&!document.body.hasAttribute('aria-busy'));
+  if(await p.locator('#player-char').inputValue()!==character){await p.getByRole('button',{name:'Menú · Esc'}).click();await p.locator('#explore-character').selectOption(character);await p.keyboard.press('Escape');}
  };
  await p.goto(new URL('viewer.html#modo=explore&mapa=MAP_PALLET_TOWN',process.env.PW_BASE).href);
  await p.waitForFunction(()=>window.motionProbe?.grid&&window.motionProbe.events.some(e=>e.phase==='spawn'));
@@ -44,10 +55,11 @@ export default async function run(ctx) {
    await p.keyboard.press(key);await p.waitForFunction(()=>!JSON.parse(document.querySelector('#player-sprite').dataset.animation).moving);
   }
  };
- const step=async(point,vehicle,inspectJump=false)=>{
+ const step=async(point,vehicle,inspectJump=false,inspectShore=false)=>{
   await face(point.key);
   const before=await p.evaluate(()=>window.motionProbe.events.length);
   await p.keyboard.down(point.key);await p.waitForTimeout(20);await p.keyboard.up(point.key);
+  if(inspectShore){await p.waitForTimeout(160);await ctx.shot(vehicle==='surf'?'surf-board-midair':'surf-dismount-midair');}
   if(inspectJump){
    await p.waitForTimeout(200);
    const arc=await p.evaluate(async before=>{
@@ -100,15 +112,33 @@ export default async function run(ctx) {
  const afterStyle=await p.locator('#player-sprite').evaluate(el=>[el.style.left,el.style.top]);
  if(JSON.stringify(beforeStyle)!==JSON.stringify(afterStyle))throw Error('Blocked reverse jump moved avatar');
  await ctx.shot('ledge-landing');
- await enter(cases.surf);const surf=await step(cases.surf,'surf');
+ const jumpAttachments=await p.evaluate(()=>{
+  const samples=window.motionProbe.attachments.filter(s=>s.action==='jump');
+  if(samples.length<3||samples.some(s=>!s.shadowVisible||s.clip!=='none'))throw Error('Jump shadow/mask missing');
+  return samples.length;
+ });
+ await enter(cases.surf);const surf=await step(cases.surf,'surf',false,true);
  if(!await p.locator('#player-sprite').evaluate(el=>el.style.backgroundImage.includes('surfrun')))throw Error('Surf sheet missing');
  await p.waitForFunction(point=>{const h=new URLSearchParams(location.hash.slice(1));return Number(h.get('px'))===point.nx&&Number(h.get('py'))===point.ny;},cases.surf);
  await p.waitForFunction(()=>document.querySelector('.surf-support')?.style.display==='block');
+ const boardAttachments=await p.evaluate(()=>{
+  const samples=window.motionProbe.attachments.filter(s=>s.action==='board');
+  if(samples.length<3||samples.some(s=>!s.supportVisible||s.clip!=='none'))throw Error('Board support/mask missing');
+  if(new Set(samples.map(s=>s.supportX+','+s.supportY)).size!==1)throw Error('Board support followed airborne rider');
+  return samples.length;
+ });
  await p.reload();await p.waitForFunction(()=>window.motionProbe?.events.some(e=>e.phase==='spawn')&&!document.body.hasAttribute('aria-busy'));
  if(!await p.locator('#player-sprite').evaluate(el=>el.style.backgroundImage.includes('surfrun')))throw Error('Reload on water lost surf vehicle');
- const dismount=await step({x:cases.surf.nx,y:cases.surf.ny,nx:cases.surf.x,ny:cases.surf.y,key:reverse[cases.surf.key]},'walk');
+ const dismount=await step({x:cases.surf.nx,y:cases.surf.ny,nx:cases.surf.x,ny:cases.surf.y,key:reverse[cases.surf.key]},'walk',false,true);
  if(await p.locator('.surf-support').evaluate(el=>el.style.display!=='none'))throw Error('Surf support remained on land');
+ const attachments=await p.evaluate(()=>{
+  const samples=window.motionProbe.attachments;
+  const dismount=samples.filter(s=>s.action==='dismount');
+  if(dismount.length<3||dismount.some(s=>!s.supportVisible||s.clip!=='none'))throw Error('Dismount support/mask missing');
+  if(new Set(dismount.map(s=>s.supportX+','+s.supportY)).size!==1)throw Error('Dismount support followed airborne rider');
+  return {dismountSamples:dismount.length};
+ });
  await ctx.shot('surf-return');
  if(ctx.errors().length)throw Error(ctx.errors().join(';'));
- return {cases,repairedSpawn,walk,run,bike,jump,surf,dismount,releaseKeepsRunAnimation:true,reverseLedgeBlocked:true,surfReload:true,note:'PREPARED start URLs, real exported terrain and keyboard. Automatic surf is a viewer adaptation; no HM/story or full movement parity claim.'};
+ return {character,cases,repairedSpawn,walk,run,bike,jump,surf,dismount,attachments,boardAttachments,jumpAttachments,releaseKeepsRunAnimation:true,reverseLedgeBlocked:true,surfReload:true,note:'PREPARED start URLs, real exported terrain and keyboard. Automatic surf is a viewer adaptation; no HM/story or full movement parity claim.'};
 }
