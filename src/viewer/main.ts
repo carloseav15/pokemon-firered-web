@@ -1,3 +1,5 @@
+import { TeleportAnimation, type TeleportObject } from "@core/field/teleportAnimation";
+import { TaskManager } from "@core/gba/tasks";
 import { ViewerDoorAnimation, ViewerWarpVisuals } from "./render/warpVisuals";
 import * as C from "../games/firered/generated/constants";
 import { FADE_FROM_BLACK, FADE_FROM_WHITE, FADE_TO_BLACK, FADE_TO_WHITE } from "@core/gba/fade";
@@ -992,10 +994,51 @@ function startStairMovement(behavior: number, exit: boolean): () => void {
   };
 }
 
+const teleportTasks=new TaskManager();
+let teleportFixedPriority=false,teleportSubpriority=0,teleportSubsprites=0,teleportFaceTick=-1;
+const warpDirections=["south","south","north","west","east"] as const;
+const warpDirectionIds={south:C.DIR_SOUTH,north:C.DIR_NORTH,west:C.DIR_WEST,east:C.DIR_EAST};
+const teleportActor: TeleportObject={
+  get facingDirection(){return warpDirectionIds[playerDir];},
+  set facingDirection(direction){playerDir=warpDirections[direction]!;},
+  get fixedPriority(){return teleportFixedPriority;},set fixedPriority(value){teleportFixedPriority=value;},
+  sprite:{
+    get y2(){return warpOffsetY;},set y2(value){warpOffsetY=value;},
+    get priority(){return warpPriority??cdata<number[]>("event_object_movement","sElevationToPriority")[playerElevation]!;},
+    set priority(value){warpPriority=value;},
+    get subpriority(){return teleportSubpriority;},set subpriority(value){teleportSubpriority=value;},
+    get subspriteMode(){return teleportSubsprites;},set subspriteMode(value){teleportSubsprites=value;},
+  },
+};
+const navigationTeleport=new TeleportAnimation({
+  object:()=>teleportActor,
+  // The native 240x160 camera centers the tile at y80: the 32px sprite center is y72.
+  // Keep that virtual anchor when the viewer reveals extra tiles around the native view.
+  screenY:()=>C.DISPLAY_HEIGHT/2-TILE/2,
+  clearHeldMovement:()=>stepTarget===null,
+  heldMovementFinished:()=>viewerClock.tick>teleportFaceTick,
+  face:direction=>{playerDir=warpDirections[direction]!;teleportFaceTick=viewerClock.tick;
+    avatarAnimator!.stop(state.playerChar,playerMode,playerDir,viewerClock.tick);},
+},teleportTasks);
+async function animateTeleport(incoming: boolean): Promise<void> {
+  const started=viewerClock.tick;isStepping=true;
+  if(incoming)navigationTeleport.StartTeleportInPlayerAnim();else navigationTeleport.StartTeleportWarpOutPlayerAnim();
+  const display=()=>{updatePlayerDisplay();playerEl!.dataset.warpMotion=JSON.stringify({phase:incoming?"teleport-in":"teleport-out",
+    tick:viewerClock.tick-started,x:warpOffsetX,y:warpOffsetY,direction:playerDir,priority:teleportActor.sprite.priority});};
+  display();
+  await new Promise<void>(resolve=>{const off=viewerClock.subscribe(()=>{
+    teleportTasks.run();display();
+    if(incoming?navigationTeleport.WaitTeleportInPlayerAnim():navigationTeleport.WaitTeleportWarpOutPlayerAnim())return;
+    off();isStepping=false;delete playerEl!.dataset.warpMotion;resolve();
+  });});
+}
+
 async function followNavigationWarp(source: MapHeader, warpId: number, phase: "input" | "front" | "step"): Promise<void> {
   if (warpBusy) return;
   warpBusy = true; content.setAttribute("aria-busy","true"); keysDown.clear(); playerMoving = false;
   const old = { map: navigationMap, x: playerX, y: playerY, direction: playerDir, vehicle: playerMode, dynamic: navigationWarps.returnAddress };
+  const sourceBehavior=worldGrid.behaviorAt(playerX,playerY);
+  const teleport=phase==="step"&&MB.MetatileBehavior_IsWarpPad(sourceBehavior);
   let switched = false;
   let door: ViewerDoorAnimation | null = null;
   let stopStairs: (()=>void) | null = null;
@@ -1026,11 +1069,12 @@ async function followNavigationWarp(source: MapHeader, warpId: number, phase: "i
       stopStairs=startStairMovement(worldGrid.behaviorAt(playerX,playerY),false);
       audioController.playSE(C.SE_EXIT);await warpVisuals!.wait(12);
     }
+    if(teleport){audioController.playSE(C.SE_WARP_IN);await animateTeleport(false);playerWarpHidden=true;updatePlayerDisplay();}
     await warpVisuals!.fadeScreen(!cavePreview&&MapTransitionIsEnter(source.mapType,destination.header.mapType)?FADE_TO_WHITE:FADE_TO_BLACK);
     stopStairs?.();stopStairs=null;
     viewerClock.pause("warp");
     content.style.visibility = "hidden";
-    resetExploreSession();
+    resetExploreSession();warpOffsetX=warpOffsetY=0;warpPriority=null;teleportFixedPriority=false;
     await changeNavigationWorld(destination.mapId); switched = true;
     const info = index.maps[destination.mapId]!;
     playerX = info.x + destination.arrival.x; playerY = info.y + destination.arrival.y;
@@ -1047,7 +1091,10 @@ async function followNavigationWarp(source: MapHeader, warpId: number, phase: "i
     blockedArrival = `${playerX},${playerY}`;
     viewerClock.resume("warp"); content.style.visibility = "";
     const fromWhite=MapTransitionIsExit(source.mapType,destination.header.mapType);
-    if (MB.MetatileBehavior_IsWarpDoor_2(behavior)) {
+    if (teleport) {
+      playerWarpHidden=false;updatePlayerDisplay();audioController.playSE(C.SE_WARP_OUT);
+      await Promise.all([warpVisuals!.fadeScreen(fromWhite?FADE_FROM_WHITE:FADE_FROM_BLACK),animateTeleport(true)]);
+    } else if (MB.MetatileBehavior_IsWarpDoor_2(behavior)) {
       playerWarpHidden=true;updatePlayerDisplay();
       const resource=fillSources.get(destination.mapId);
       if(!resource||!avatarDepth)throw Error("Arrival door is not resident");
@@ -1086,7 +1133,8 @@ async function followNavigationWarp(source: MapHeader, warpId: number, phase: "i
     }
     panel.textContent = `No se pudo cambiar de mapa: ${String(error)}`;
   } finally {
-    stopStairs?.();door?.dispose();warpVisuals?.clear();playerWarpHidden=false;
+    stopStairs?.();door?.dispose();navigationTeleport.reset();warpOffsetX=warpOffsetY=0;warpPriority=null;teleportFixedPriority=false;
+    warpVisuals?.clear();playerWarpHidden=false;
     viewerClock.resume("warp"); content.style.visibility = "";
     warpBusy = false; content.setAttribute("aria-busy","false"); playerMoving = false; updatePlayerDisplay(); writeHash();
   }
