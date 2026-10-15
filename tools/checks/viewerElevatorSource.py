@@ -26,6 +26,8 @@ with tempfile.TemporaryDirectory(prefix='elevator-source-') as temp:
             ('SilphCo_Elevator','MAP_SILPH_CO_1F, 255, 22, 3','MAP_SILPH_CO_1F, 254, 22, 3'),
             ('RocketHideout_Elevator','special AnimateElevator','special UnsupportedAnimation'),
             ('TrainerTower_Elevator','walk_right\n','walk_left\n'),
+            ('TrainerTower_Elevator','goto TrainerTower_Elevator_EventScript_CloseFloorSelect','goto TrainerTower_Elevator_EventScript_SelectLobby'),
+            ('RocketHideout_Elevator','msgbox RocketHideout_Elevator_Text_AppearsToNeedAKey','setflag FLAG_CAN_USE_ROCKET_HIDEOUT_LIFT'),
         ]
         for folder, before, after in cases:
             path=source/'data/maps'/folder/'scripts.inc'
@@ -40,4 +42,4 @@ with tempfile.TemporaryDirectory(prefix='elevator-source-') as temp:
                 raise AssertionError(f'Unsupported source was accepted: {folder}')
             finally:
                 path.write_text(original)
-print('Viewer elevator source PASS: four menus deterministic; four unsupported changes rejected')
+print('Viewer elevator source PASS: four menus deterministic; six unsupported changes rejected')

@@ -34,6 +34,9 @@ def compile_all():
             expected_root += ['special ListMenu', 'waitstate']
         if root[:len(expected_root)] != expected_root or root[len(expected_root)] != 'switch VAR_RESULT':
             raise ValueError(f'{folder}: unsupported menu entry sequence')
+        root_cases = root[len(expected_root) + 1:]
+        if not root_cases or root_cases[-1] != 'end' or any(not re.fullmatch(r'case \d+, \w+', line) for line in root_cases[:-1]):
+            raise ValueError(f'{folder}: unsupported menu dispatch')
         if menu_id != 1:
             for index, label in re.findall(r'^\s*case (\d+), (\w+)', bodies[folder + '_EventScript_FloorSelect'], re.M):
                 expected_from = [f'multichoicedefault 0, 0, '+{2:'MULTICHOICE_ROCKET_HIDEOUT_ELEVATOR',3:'MULTICHOICE_DEPT_STORE_ELEVATOR',6:'MULTICHOICE_ROOFTOP_B1F'}[menu_id]+f', {index}, FALSE',
@@ -54,7 +57,11 @@ def compile_all():
             target = re.search(r'setdynamicwarp (MAP_\w+), (.*)', body)
             if not target:
                 # Exit/cancel and Trainer Tower's intentionally inert roof option.
-                if not re.fullmatch(r'\s*(?:(?:special CloseElevatorCurrentFloorWindow|releaseall|end|goto \w+)\s*)+', body):
+                normalized = [line.strip() for line in body.splitlines() if line.strip()]
+                expected_close = (['goto '+folder+'_EventScript_CloseFloorSelect', 'end']
+                                  if label.endswith('_SelectRoof') else
+                                  ['special CloseElevatorCurrentFloorWindow', 'releaseall', 'end'])
+                if normalized != expected_close:
                     raise ValueError(f'{folder}:{label}: unsupported non-destination body')
                 if label.endswith('_SelectRoof'):
                     choices.append({'label': 'Rooftop', 'floor': 15, 'destination': None})
@@ -92,6 +99,10 @@ def compile_all():
         if not choices:
             raise ValueError(f'{folder}: no choices')
         gate = re.search(r'goto_if_unset (FLAG_\w+), \w+_NeedKey', text)
+        if gate:
+            denied = [line.strip() for line in bodies[folder+'_EventScript_NeedKey'].splitlines() if line.strip()]
+            if denied != ['msgbox RocketHideout_Elevator_Text_AppearsToNeedAKey','releaseall','end']:
+                raise ValueError(f'{folder}: unsupported locked-elevator branch')
         # Resolve current floors from C cases, including the inert Trainer Tower roof choice.
         c = (DECOMP / 'src/field_specials.c').read_text()
         c = c[c.index('void GetElevatorFloor(void)'):c.index('u16 InitElevatorFloorSelectMenuPos(void)')]
