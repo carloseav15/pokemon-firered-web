@@ -11,6 +11,12 @@ const doors = [
   ["METATILE_PalletTown_OaksLabDoor", "MAP_PALLET_TOWN", 2], ["METATILE_CinnabarIsland_LabDoor", "MAP_CINNABAR_ISLAND", 2],
   ["METATILE_FuchsiaCity_Door", "MAP_FUCHSIA_CITY", 1], ["METATILE_PewterCity_Door", "MAP_PEWTER_CITY", 1],
   ["METATILE_FuchsiaCity_SafariZoneDoor", "MAP_FUCHSIA_CITY", 0],
+  // Sevii exteriors are outside the Kanto atlas and open as context maps (local coordinates).
+  ["METATILE_SeviiIslands123_PokeCenterDoor", "MAP_ONE_ISLAND", 0], ["METATILE_SeviiIslands123_Door", "MAP_ONE_ISLAND", 1],
+  ["METATILE_SeviiIslands123_GameCornerDoor", "MAP_TWO_ISLAND", 0], ["METATILE_SeviiIslands45_DayCareDoor", "MAP_FOUR_ISLAND", 1],
+  ["METATILE_SeviiIslands45_Door", "MAP_FOUR_ISLAND", 2], ["METATILE_SeviiIslands67_Door", "MAP_SIX_ISLAND", 2],
+  // Saffron City (context map reached through its gate houses).
+  ["METATILE_SaffronCity_SilphCoDoor", "MAP_SAFFRON_CITY", 0], ["METATILE_SaffronCity_Door", "MAP_SAFFRON_CITY", 1],
 ];
 const large = [
   ["METATILE_DepartmentStore_ElevatorDoor", "MAP_CELADON_CITY_DEPARTMENT_STORE_2F", 0], ["METATILE_SilphCo_HideoutElevatorDoor", "MAP_ROCKET_HIDEOUT_B1F", 4],
