@@ -1,0 +1,3851 @@
+{
+ "_meta": {
+  "generator": "unified-world/extract_rules.py",
+  "note": "propuesta column is not a decision",
+  "showdown": "pinned in refs/showdown/gen_changes.json"
+ },
+ "catalogAddedByGen": {
+  "abilities": {
+   "gen4": 47,
+   "gen5": 41,
+   "gen6": 27,
+   "gen7": 42,
+   "gen8": 34,
+   "gen9": 50
+  },
+  "items": {
+   "gen4": 97,
+   "gen5": 37,
+   "gen6": 64,
+   "gen7": 63,
+   "gen8": 131,
+   "gen9": 62
+  },
+  "moves": {
+   "gen4": 113,
+   "gen5": 92,
+   "gen6": 62,
+   "gen7": 103,
+   "gen8": 117,
+   "gen9": 94
+  },
+  "species": {
+   "gen4": 107,
+   "gen5": 156,
+   "gen6": 72,
+   "gen7": 88,
+   "gen8": 96,
+   "gen9": 120
+  }
+ },
+ "changesByGen": {
+  "abilities": {
+   "gen4": 20,
+   "gen5": 35,
+   "gen6": 4,
+   "gen7": 2,
+   "gen8": 4,
+   "gen9": 2
+  },
+  "items": {
+   "gen4": 45,
+   "gen5": 19,
+   "gen6": 44,
+   "gen7": 26,
+   "gen8": 29,
+   "gen9": 8
+  },
+  "moves": {
+   "gen4": 103,
+   "gen5": 89,
+   "gen6": 83,
+   "gen7": 12,
+   "gen8": 66,
+   "gen9": 35
+  },
+  "species": {
+   "gen4": 89,
+   "gen5": 348,
+   "gen6": 43,
+   "gen7": 27,
+   "gen8": 129,
+   "gen9": 186
+  }
+ },
+ "fairy": {
+  "fairyAttacking": {
+   "bug": 0,
+   "dark": 1,
+   "dragon": 1,
+   "electric": 0,
+   "fighting": 1,
+   "fire": 2,
+   "flying": 0,
+   "ghost": 0,
+   "grass": 0,
+   "ground": 0,
+   "ice": 0,
+   "normal": 0,
+   "poison": 2,
+   "psychic": 0,
+   "rock": 0,
+   "steel": 2,
+   "water": 0
+  },
+  "fairyDefending": {
+   "Bug": 2,
+   "Dark": 2,
+   "Dragon": 3,
+   "Electric": 0,
+   "Fighting": 2,
+   "Fire": 0,
+   "Flying": 0,
+   "Ghost": 0,
+   "Grass": 0,
+   "Ground": 0,
+   "Ice": 0,
+   "Normal": 0,
+   "Poison": 1,
+   "Psychic": 0,
+   "Rock": 0,
+   "Steel": 1,
+   "Water": 0
+  },
+  "movesRetyped": [
+   {
+    "from": "Normal",
+    "move": "charm",
+    "to": "Fairy"
+   },
+   {
+    "from": "Normal",
+    "move": "moonlight",
+    "to": "Fairy"
+   },
+   {
+    "from": "Normal",
+    "move": "sweetkiss",
+    "to": "Fairy"
+   }
+  ],
+  "speciesRetyped": [
+   {
+    "gen3": [
+     "Water"
+    ],
+    "gen6": [
+     "Water",
+     "Fairy"
+    ],
+    "species": "azumarill"
+   },
+   {
+    "gen3": [
+     "Normal"
+    ],
+    "gen6": [
+     "Normal",
+     "Fairy"
+    ],
+    "species": "azurill"
+   },
+   {
+    "gen3": [
+     "Normal"
+    ],
+    "gen6": [
+     "Fairy"
+    ],
+    "species": "clefable"
+   },
+   {
+    "gen3": [
+     "Normal"
+    ],
+    "gen6": [
+     "Fairy"
+    ],
+    "species": "clefairy"
+   },
+   {
+    "gen3": [
+     "Normal"
+    ],
+    "gen6": [
+     "Fairy"
+    ],
+    "species": "cleffa"
+   },
+   {
+    "gen3": [
+     "Psychic"
+    ],
+    "gen6": [
+     "Psychic",
+     "Fairy"
+    ],
+    "species": "gardevoir"
+   },
+   {
+    "gen3": [
+     "Normal"
+    ],
+    "gen6": [
+     "Fairy"
+    ],
+    "species": "granbull"
+   },
+   {
+    "gen3": [
+     "Normal"
+    ],
+    "gen6": [
+     "Normal",
+     "Fairy"
+    ],
+    "species": "igglybuff"
+   },
+   {
+    "gen3": [
+     "Normal"
+    ],
+    "gen6": [
+     "Normal",
+     "Fairy"
+    ],
+    "species": "jigglypuff"
+   },
+   {
+    "gen3": [
+     "Psychic"
+    ],
+    "gen6": [
+     "Psychic",
+     "Fairy"
+    ],
+    "species": "kirlia"
+   },
+   {
+    "gen3": [
+     "Water"
+    ],
+    "gen6": [
+     "Water",
+     "Fairy"
+    ],
+    "species": "marill"
+   },
+   {
+    "gen3": [
+     "Steel"
+    ],
+    "gen6": [
+     "Steel",
+     "Fairy"
+    ],
+    "species": "mawile"
+   },
+   {
+    "gen3": [
+     "Psychic"
+    ],
+    "gen6": [
+     "Psychic",
+     "Fairy"
+    ],
+    "species": "mrmime"
+   },
+   {
+    "gen3": [
+     "Psychic"
+    ],
+    "gen6": [
+     "Psychic",
+     "Fairy"
+    ],
+    "species": "ralts"
+   },
+   {
+    "gen3": [
+     "Normal"
+    ],
+    "gen6": [
+     "Fairy"
+    ],
+    "species": "snubbull"
+   },
+   {
+    "gen3": [
+     "Normal"
+    ],
+    "gen6": [
+     "Fairy"
+    ],
+    "species": "togepi"
+   },
+   {
+    "gen3": [
+     "Normal",
+     "Flying"
+    ],
+    "gen6": [
+     "Fairy",
+     "Flying"
+    ],
+    "species": "togetic"
+   },
+   {
+    "gen3": [
+     "Normal"
+    ],
+    "gen6": [
+     "Normal",
+     "Fairy"
+    ],
+    "species": "wigglytuff"
+   }
+  ],
+  "steelLoses": {
+   "Dark": [
+    2,
+    0
+   ],
+   "Ghost": [
+    2,
+    0
+   ]
+  }
+ },
+ "matrix": [
+  {
+   "evidence": [
+    "showdown/data/mods/gen3/scripts.ts:5"
+   ],
+   "g3": "por tipo (Fuego, Agua, Planta, Hielo, El\u00e9ctrico, Siniestro, Ps\u00edquico y Drag\u00f3n = especial)",
+   "g4": "por movimiento",
+   "g5": "por movimiento",
+   "g6": "por movimiento",
+   "propuesta": "por movimiento (Gen 4)",
+   "rule": "Categor\u00eda f\u00edsico/especial"
+  },
+  {
+   "evidence": [
+    "showdown/sim/battle-actions.ts:1627",
+    "showdown/sim/battle-actions.ts:1631"
+   ],
+   "g3": "1/16, 1/8, 1/4, 1/3, 1/2",
+   "g4": "igual",
+   "g5": "igual",
+   "g6": "1/16, 1/8, 1/2, 1/1",
+   "propuesta": "la de Gen 3 (fiel)",
+   "rule": "Probabilidad de cr\u00edtico por etapa"
+  },
+  {
+   "evidence": [
+    "showdown/sim/battle-actions.ts:1751"
+   ],
+   "g3": "\u00d72",
+   "g4": "\u00d72",
+   "g5": "\u00d72",
+   "g6": "\u00d71,5",
+   "propuesta": "\u00d72 (fiel)",
+   "rule": "Multiplicador de cr\u00edtico"
+  },
+  {
+   "evidence": [
+    "showdown/data/mods/gen3/scripts.ts:52",
+    "showdown/data/mods/gen4/scripts.ts:74"
+   ],
+   "g3": "\u00d70,5",
+   "g4": "\u00d70,75",
+   "g5": "\u00d70,75",
+   "g6": "\u00d70,75",
+   "propuesta": "pendiente (afecta solo a dobles)",
+   "rule": "Modificador de golpe m\u00faltiple en dobles"
+  },
+  {
+   "evidence": [
+    "showdown/data/mods/gen6/conditions.ts:5",
+    "showdown/data/conditions.ts:17"
+   ],
+   "g3": "1/8 de PS",
+   "g4": "1/8",
+   "g5": "1/8",
+   "g6": "1/8 (1/16 desde Gen 7)",
+   "propuesta": "1/8 (fiel)",
+   "rule": "Quemadura: da\u00f1o residual"
+  },
+  {
+   "evidence": [
+    "showdown/data/mods/gen3/scripts.ts:41"
+   ],
+   "g3": "\u00d70,5 salvo Agallas",
+   "g4": "igual",
+   "g5": "igual",
+   "g6": "igual",
+   "propuesta": "\u00d70,5 (fiel)",
+   "rule": "Quemadura: reducci\u00f3n de da\u00f1o f\u00edsico"
+  },
+  {
+   "evidence": [
+    "showdown/data/mods/gen4/conditions.ts:11",
+    "showdown/data/mods/gen6/conditions.ts:14"
+   ],
+   "g3": "\u00d70,25",
+   "g4": "\u00d70,25",
+   "g5": "\u00d70,25",
+   "g6": "\u00d70,25 (\u00d70,5 desde Gen 7)",
+   "propuesta": "\u00d70,25 (fiel)",
+   "rule": "Par\u00e1lisis: velocidad"
+  },
+  {
+   "evidence": [
+    "showdown/data/mods/gen3/conditions.ts:12",
+    "showdown/data/conditions.ts:59",
+    "showdown/data/mods/gen5/conditions.ts:4"
+   ],
+   "g3": "1\u20134 turnos; el contador se conserva al cambiar (Sleep Talk y Ronquido no cuentan)",
+   "g4": "1\u20134 turnos",
+   "g5": "1\u20133 turnos; el contador se reinicia al cambiar",
+   "g6": "1\u20133 turnos",
+   "propuesta": "Gen 3 (fiel)",
+   "rule": "Sue\u00f1o: duraci\u00f3n"
+  },
+  {
+   "evidence": [
+    "showdown/data/mods/gen3/conditions.ts:47",
+    "showdown/data/mods/gen4/conditions.ts:90"
+   ],
+   "g3": "1/5 de descongelar por turno; un golpe de Fuego descongela (Hidden Power y Weather Ball no cuentan)",
+   "g4": "1/5 por turno; golpe de Fuego descongela",
+   "g5": "igual",
+   "g6": "igual",
+   "propuesta": "pendiente (Frostbite por evaluar)",
+   "rule": "Congelaci\u00f3n"
+  },
+  {
+   "evidence": [
+    "showdown/data/mods/gen4/conditions.ts:114",
+    "showdown/data/mods/gen5/conditions.ts:12",
+    "showdown/data/conditions.ts:231"
+   ],
+   "g3": "3\u20136 turnos del simulador; da\u00f1o 1/16 por turno",
+   "g4": "3\u20136; Garra Garra fija la duraci\u00f3n en 6",
+   "g5": "5\u20136; da\u00f1o 1/16 (1/8 con Banda Atadura)",
+   "g6": "5\u20136; da\u00f1o 1/8 (1/6 con Banda Atadura)",
+   "propuesta": "Gen 3 (fiel)",
+   "rule": "Movimientos de atadura (Wrap, Bind\u2026)"
+  },
+  {
+   "evidence": [
+    "showdown/data/mods/gen4/conditions.ts:146",
+    "showdown/data/mods/gen5/conditions.ts:27",
+    "showdown/data/conditions.ts:443"
+   ],
+   "g3": "la probabilidad se divide a la mitad hasta 1/8",
+   "g4": "igual",
+   "g5": "se divide a la mitad hasta 1/256",
+   "g6": "se divide entre 3 hasta 1/729",
+   "propuesta": "Gen 3 (fiel)",
+   "rule": "Protecci\u00f3n encadenada (Protect, Detect, Endure)"
+  },
+  {
+   "evidence": [
+    "showdown/data/mods/gen3/conditions.ts:54"
+   ],
+   "g3": "no sube la Def. Esp. de tipo Roca",
+   "g4": "sube \u00d71,5 a tipo Roca",
+   "g5": "igual",
+   "g6": "igual",
+   "propuesta": "pendiente",
+   "rule": "Tormenta de arena"
+  },
+  {
+   "evidence": [
+    "pokefirered/src/battle_util.c:1717"
+   ],
+   "g3": "permanente mientras no cambie el clima",
+   "g4": "no verificado en Showdown",
+   "g5": "no verificado",
+   "g6": "no verificado",
+   "propuesta": "pendiente: el decomp de FireRed es la referencia fiel",
+   "rule": "Clima fijado por habilidad (Llovizna, Sequ\u00eda\u2026)"
+  },
+  {
+   "evidence": [
+    "showdown/data/mods/gen6/typechart.ts:4"
+   ],
+   "g3": "18 tipos; Acero resiste Siniestro y Fantasma",
+   "g4": "igual",
+   "g5": "igual",
+   "g6": "a\u00f1ade Hada; Acero deja de resistir Siniestro y Fantasma",
+   "propuesta": "Gen 6",
+   "rule": "Tabla de tipos"
+  }
+ ],
+ "split": {
+  "categoryChanges": [
+   {
+    "id": 7,
+    "name": "Fire Punch",
+    "new": "PHYSICAL",
+    "old": "SPECIAL",
+    "power": 75,
+    "type": "FIRE"
+   },
+   {
+    "id": 8,
+    "name": "Ice Punch",
+    "new": "PHYSICAL",
+    "old": "SPECIAL",
+    "power": 75,
+    "type": "ICE"
+   },
+   {
+    "id": 9,
+    "name": "ThunderPunch",
+    "new": "PHYSICAL",
+    "old": "SPECIAL",
+    "power": 75,
+    "type": "ELECTRIC"
+   },
+   {
+    "id": 13,
+    "name": "Razor Wind",
+    "new": "SPECIAL",
+    "old": "PHYSICAL",
+    "power": 80,
+    "type": "NORMAL"
+   },
+   {
+    "id": 16,
+    "name": "Gust",
+    "new": "SPECIAL",
+    "old": "PHYSICAL",
+    "power": 40,
+    "type": "FLYING"
+   },
+   {
+    "id": 22,
+    "name": "Vine Whip",
+    "new": "PHYSICAL",
+    "old": "SPECIAL",
+    "power": 35,
+    "type": "GRASS"
+   },
+   {
+    "id": 44,
+    "name": "Bite",
+    "new": "PHYSICAL",
+    "old": "SPECIAL",
+    "power": 60,
+    "type": "DARK"
+   },
+   {
+    "id": 49,
+    "name": "SonicBoom",
+    "new": "SPECIAL",
+    "old": "PHYSICAL",
+    "power": 1,
+    "type": "NORMAL"
+   },
+   {
+    "id": 51,
+    "name": "Acid",
+    "new": "SPECIAL",
+    "old": "PHYSICAL",
+    "power": 40,
+    "type": "POISON"
+   },
+   {
+    "id": 63,
+    "name": "Hyper Beam",
+    "new": "SPECIAL",
+    "old": "PHYSICAL",
+    "power": 150,
+    "type": "NORMAL"
+   },
+   {
+    "id": 75,
+    "name": "Razor Leaf",
+    "new": "PHYSICAL",
+    "old": "SPECIAL",
+    "power": 55,
+    "type": "GRASS"
+   },
+   {
+    "id": 101,
+    "name": "Night Shade",
+    "new": "SPECIAL",
+    "old": "PHYSICAL",
+    "power": 1,
+    "type": "GHOST"
+   },
+   {
+    "id": 123,
+    "name": "Smog",
+    "new": "SPECIAL",
+    "old": "PHYSICAL",
+    "power": 20,
+    "type": "POISON"
+   },
+   {
+    "id": 124,
+    "name": "Sludge",
+    "new": "SPECIAL",
+    "old": "PHYSICAL",
+    "power": 65,
+    "type": "POISON"
+   },
+   {
+    "id": 127,
+    "name": "Waterfall",
+    "new": "PHYSICAL",
+    "old": "SPECIAL",
+    "power": 80,
+    "type": "WATER"
+   },
+   {
+    "id": 128,
+    "name": "Clamp",
+    "new": "PHYSICAL",
+    "old": "SPECIAL",
+    "power": 35,
+    "type": "WATER"
+   },
+   {
+    "id": 129,
+    "name": "Swift",
+    "new": "SPECIAL",
+    "old": "PHYSICAL",
+    "power": 60,
+    "type": "NORMAL"
+   },
+   {
+    "id": 152,
+    "name": "Crabhammer",
+    "new": "PHYSICAL",
+    "old": "SPECIAL",
+    "power": 90,
+    "type": "WATER"
+   },
+   {
+    "id": 161,
+    "name": "Tri Attack",
+    "new": "SPECIAL",
+    "old": "PHYSICAL",
+    "power": 80,
+    "type": "NORMAL"
+   },
+   {
+    "id": 168,
+    "name": "Thief",
+    "new": "PHYSICAL",
+    "old": "SPECIAL",
+    "power": 40,
+    "type": "DARK"
+   },
+   {
+    "id": 172,
+    "name": "Flame Wheel",
+    "new": "PHYSICAL",
+    "old": "SPECIAL",
+    "power": 60,
+    "type": "FIRE"
+   },
+   {
+    "id": 173,
+    "name": "Snore",
+    "new": "SPECIAL",
+    "old": "PHYSICAL",
+    "power": 40,
+    "type": "NORMAL"
+   },
+   {
+    "id": 177,
+    "name": "Aeroblast",
+    "new": "SPECIAL",
+    "old": "PHYSICAL",
+    "power": 100,
+    "type": "FLYING"
+   },
+   {
+    "id": 185,
+    "name": "Faint Attack",
+    "new": "PHYSICAL",
+    "old": "SPECIAL",
+    "power": 60,
+    "type": "DARK"
+   },
+   {
+    "id": 188,
+    "name": "Sludge Bomb",
+    "new": "SPECIAL",
+    "old": "PHYSICAL",
+    "power": 90,
+    "type": "POISON"
+   },
+   {
+    "id": 189,
+    "name": "Mud-Slap",
+    "new": "SPECIAL",
+    "old": "PHYSICAL",
+    "power": 20,
+    "type": "GROUND"
+   },
+   {
+    "id": 200,
+    "name": "Outrage",
+    "new": "PHYSICAL",
+    "old": "SPECIAL",
+    "power": 90,
+    "type": "DRAGON"
+   },
+   {
+    "id": 209,
+    "name": "Spark",
+    "new": "PHYSICAL",
+    "old": "SPECIAL",
+    "power": 65,
+    "type": "ELECTRIC"
+   },
+   {
+    "id": 221,
+    "name": "Sacred Fire",
+    "new": "PHYSICAL",
+    "old": "SPECIAL",
+    "power": 100,
+    "type": "FIRE"
+   },
+   {
+    "id": 228,
+    "name": "Pursuit",
+    "new": "PHYSICAL",
+    "old": "SPECIAL",
+    "power": 40,
+    "type": "DARK"
+   },
+   {
+    "id": 242,
+    "name": "Crunch",
+    "new": "PHYSICAL",
+    "old": "SPECIAL",
+    "power": 80,
+    "type": "DARK"
+   },
+   {
+    "id": 246,
+    "name": "AncientPower",
+    "new": "SPECIAL",
+    "old": "PHYSICAL",
+    "power": 60,
+    "type": "ROCK"
+   },
+   {
+    "id": 247,
+    "name": "Shadow Ball",
+    "new": "SPECIAL",
+    "old": "PHYSICAL",
+    "power": 80,
+    "type": "GHOST"
+   },
+   {
+    "id": 251,
+    "name": "Beat Up",
+    "new": "PHYSICAL",
+    "old": "SPECIAL",
+    "power": 10,
+    "type": "DARK"
+   },
+   {
+    "id": 253,
+    "name": "Uproar",
+    "new": "SPECIAL",
+    "old": "PHYSICAL",
+    "power": 50,
+    "type": "NORMAL"
+   },
+   {
+    "id": 255,
+    "name": "Spit Up",
+    "new": "SPECIAL",
+    "old": "PHYSICAL",
+    "power": 100,
+    "type": "NORMAL"
+   },
+   {
+    "id": 282,
+    "name": "Knock Off",
+    "new": "PHYSICAL",
+    "old": "SPECIAL",
+    "power": 20,
+    "type": "DARK"
+   },
+   {
+    "id": 291,
+    "name": "Dive",
+    "new": "PHYSICAL",
+    "old": "SPECIAL",
+    "power": 60,
+    "type": "WATER"
+   },
+   {
+    "id": 299,
+    "name": "Blaze Kick",
+    "new": "PHYSICAL",
+    "old": "SPECIAL",
+    "power": 85,
+    "type": "FIRE"
+   },
+   {
+    "id": 301,
+    "name": "Ice Ball",
+    "new": "PHYSICAL",
+    "old": "SPECIAL",
+    "power": 30,
+    "type": "ICE"
+   },
+   {
+    "id": 302,
+    "name": "Needle Arm",
+    "new": "PHYSICAL",
+    "old": "SPECIAL",
+    "power": 60,
+    "type": "GRASS"
+   },
+   {
+    "id": 304,
+    "name": "Hyper Voice",
+    "new": "SPECIAL",
+    "old": "PHYSICAL",
+    "power": 90,
+    "type": "NORMAL"
+   },
+   {
+    "id": 311,
+    "name": "Weather Ball",
+    "new": "SPECIAL",
+    "old": "PHYSICAL",
+    "power": 50,
+    "type": "NORMAL"
+   },
+   {
+    "id": 314,
+    "name": "Air Cutter",
+    "new": "SPECIAL",
+    "old": "PHYSICAL",
+    "power": 55,
+    "type": "FLYING"
+   },
+   {
+    "id": 318,
+    "name": "Silver Wind",
+    "new": "SPECIAL",
+    "old": "PHYSICAL",
+    "power": 60,
+    "type": "BUG"
+   },
+   {
+    "id": 324,
+    "name": "Signal Beam",
+    "new": "SPECIAL",
+    "old": "PHYSICAL",
+    "power": 75,
+    "type": "BUG"
+   },
+   {
+    "id": 331,
+    "name": "Bullet Seed",
+    "new": "PHYSICAL",
+    "old": "SPECIAL",
+    "power": 10,
+    "type": "GRASS"
+   },
+   {
+    "id": 333,
+    "name": "Icicle Spear",
+    "new": "PHYSICAL",
+    "old": "SPECIAL",
+    "power": 10,
+    "type": "ICE"
+   },
+   {
+    "id": 337,
+    "name": "Dragon Claw",
+    "new": "PHYSICAL",
+    "old": "SPECIAL",
+    "power": 80,
+    "type": "DRAGON"
+   },
+   {
+    "id": 341,
+    "name": "Mud Shot",
+    "new": "SPECIAL",
+    "old": "PHYSICAL",
+    "power": 55,
+    "type": "GROUND"
+   },
+   {
+    "id": 344,
+    "name": "Volt Tackle",
+    "new": "PHYSICAL",
+    "old": "SPECIAL",
+    "power": 120,
+    "type": "ELECTRIC"
+   },
+   {
+    "id": 348,
+    "name": "Leaf Blade",
+    "new": "PHYSICAL",
+    "old": "SPECIAL",
+    "power": 70,
+    "type": "GRASS"
+   },
+   {
+    "id": 353,
+    "name": "Doom Desire",
+    "new": "SPECIAL",
+    "old": "PHYSICAL",
+    "power": 120,
+    "type": "STEEL"
+   }
+  ],
+  "damagingGen1to3": 215,
+  "onlyInPlatinum": [],
+  "onlyInShowdown": [],
+  "showdownCount": 53,
+  "species": [
+   {
+    "atk": 49,
+    "bestStabNew": 120,
+    "bestStabOld": 120,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 65,
+    "species": "BULBASAUR"
+   },
+   {
+    "atk": 62,
+    "bestStabNew": 120,
+    "bestStabOld": 120,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 80,
+    "species": "IVYSAUR"
+   },
+   {
+    "atk": 82,
+    "bestStabNew": 120,
+    "bestStabOld": 120,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 100,
+    "species": "VENUSAUR"
+   },
+   {
+    "atk": 52,
+    "bestStabNew": 95,
+    "bestStabOld": 95,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 60,
+    "species": "CHARMANDER"
+   },
+   {
+    "atk": 64,
+    "bestStabNew": 95,
+    "bestStabOld": 95,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 80,
+    "species": "CHARMELEON"
+   },
+   {
+    "atk": 84,
+    "bestStabNew": 100,
+    "bestStabOld": 100,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 109,
+    "species": "CHARIZARD"
+   },
+   {
+    "atk": 48,
+    "bestStabNew": 120,
+    "bestStabOld": 120,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 50,
+    "species": "SQUIRTLE"
+   },
+   {
+    "atk": 63,
+    "bestStabNew": 120,
+    "bestStabOld": 120,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 65,
+    "species": "WARTORTLE"
+   },
+   {
+    "atk": 83,
+    "bestStabNew": 120,
+    "bestStabOld": 120,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 85,
+    "species": "BLASTOISE"
+   },
+   {
+    "atk": 30,
+    "bestStabNew": 0,
+    "bestStabOld": 0,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 20,
+    "species": "CATERPIE"
+   },
+   {
+    "atk": 20,
+    "bestStabNew": 0,
+    "bestStabOld": 0,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 25,
+    "species": "METAPOD"
+   },
+   {
+    "atk": 45,
+    "bestStabNew": 60,
+    "bestStabOld": 0,
+    "delta": 60,
+    "prefers": "SPECIAL",
+    "spa": 80,
+    "species": "BUTTERFREE"
+   },
+   {
+    "atk": 35,
+    "bestStabNew": 15,
+    "bestStabOld": 15,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 20,
+    "species": "WEEDLE"
+   },
+   {
+    "atk": 80,
+    "bestStabNew": 25,
+    "bestStabOld": 25,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 45,
+    "species": "BEEDRILL"
+   },
+   {
+    "atk": 45,
+    "bestStabNew": 60,
+    "bestStabOld": 60,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 35,
+    "species": "PIDGEY"
+   },
+   {
+    "atk": 60,
+    "bestStabNew": 60,
+    "bestStabOld": 60,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 50,
+    "species": "PIDGEOTTO"
+   },
+   {
+    "atk": 80,
+    "bestStabNew": 60,
+    "bestStabOld": 60,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 70,
+    "species": "PIDGEOT"
+   },
+   {
+    "atk": 56,
+    "bestStabNew": 80,
+    "bestStabOld": 80,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 25,
+    "species": "RATTATA"
+   },
+   {
+    "atk": 81,
+    "bestStabNew": 80,
+    "bestStabOld": 80,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 50,
+    "species": "RATICATE"
+   },
+   {
+    "atk": 60,
+    "bestStabNew": 80,
+    "bestStabOld": 80,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 31,
+    "species": "SPEAROW"
+   },
+   {
+    "atk": 90,
+    "bestStabNew": 80,
+    "bestStabOld": 80,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 61,
+    "species": "FEAROW"
+   },
+   {
+    "atk": 60,
+    "bestStabNew": 15,
+    "bestStabOld": 40,
+    "delta": -25,
+    "prefers": "PHYSICAL",
+    "spa": 40,
+    "species": "EKANS"
+   },
+   {
+    "atk": 85,
+    "bestStabNew": 15,
+    "bestStabOld": 40,
+    "delta": -25,
+    "prefers": "PHYSICAL",
+    "spa": 65,
+    "species": "ARBOK"
+   },
+   {
+    "atk": 55,
+    "bestStabNew": 0,
+    "bestStabOld": 0,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 50,
+    "species": "PIKACHU"
+   },
+   {
+    "atk": 75,
+    "bestStabNew": 15,
+    "bestStabOld": 15,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 20,
+    "species": "SANDSHREW"
+   },
+   {
+    "atk": 100,
+    "bestStabNew": 15,
+    "bestStabOld": 15,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 45,
+    "species": "SANDSLASH"
+   },
+   {
+    "atk": 47,
+    "bestStabNew": 15,
+    "bestStabOld": 15,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 40,
+    "species": "NIDORAN_F"
+   },
+   {
+    "atk": 62,
+    "bestStabNew": 15,
+    "bestStabOld": 15,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 55,
+    "species": "NIDORINA"
+   },
+   {
+    "atk": 82,
+    "bestStabNew": 15,
+    "bestStabOld": 15,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 75,
+    "species": "NIDOQUEEN"
+   },
+   {
+    "atk": 57,
+    "bestStabNew": 15,
+    "bestStabOld": 15,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 40,
+    "species": "NIDORAN_M"
+   },
+   {
+    "atk": 72,
+    "bestStabNew": 15,
+    "bestStabOld": 15,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 55,
+    "species": "NIDORINO"
+   },
+   {
+    "atk": 92,
+    "bestStabNew": 15,
+    "bestStabOld": 15,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 85,
+    "species": "NIDOKING"
+   },
+   {
+    "atk": 45,
+    "bestStabNew": 0,
+    "bestStabOld": 0,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 60,
+    "species": "CLEFAIRY"
+   },
+   {
+    "atk": 70,
+    "bestStabNew": 0,
+    "bestStabOld": 0,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 85,
+    "species": "CLEFABLE"
+   },
+   {
+    "atk": 41,
+    "bestStabNew": 95,
+    "bestStabOld": 95,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 50,
+    "species": "VULPIX"
+   },
+   {
+    "atk": 76,
+    "bestStabNew": 40,
+    "bestStabOld": 40,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 81,
+    "species": "NINETALES"
+   },
+   {
+    "atk": 70,
+    "bestStabNew": 0,
+    "bestStabOld": 0,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 75,
+    "species": "WIGGLYTUFF"
+   },
+   {
+    "atk": 45,
+    "bestStabNew": 60,
+    "bestStabOld": 60,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 30,
+    "species": "ZUBAT"
+   },
+   {
+    "atk": 80,
+    "bestStabNew": 60,
+    "bestStabOld": 60,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 65,
+    "species": "GOLBAT"
+   },
+   {
+    "atk": 50,
+    "bestStabNew": 70,
+    "bestStabOld": 70,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 75,
+    "species": "ODDISH"
+   },
+   {
+    "atk": 65,
+    "bestStabNew": 70,
+    "bestStabOld": 70,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 85,
+    "species": "GLOOM"
+   },
+   {
+    "atk": 80,
+    "bestStabNew": 70,
+    "bestStabOld": 70,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 100,
+    "species": "VILEPLUME"
+   },
+   {
+    "atk": 70,
+    "bestStabNew": 20,
+    "bestStabOld": 20,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 45,
+    "species": "PARAS"
+   },
+   {
+    "atk": 95,
+    "bestStabNew": 20,
+    "bestStabOld": 20,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 60,
+    "species": "PARASECT"
+   },
+   {
+    "atk": 55,
+    "bestStabNew": 20,
+    "bestStabOld": 20,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 40,
+    "species": "VENONAT"
+   },
+   {
+    "atk": 65,
+    "bestStabNew": 60,
+    "bestStabOld": 0,
+    "delta": 60,
+    "prefers": "SPECIAL",
+    "spa": 90,
+    "species": "VENOMOTH"
+   },
+   {
+    "atk": 55,
+    "bestStabNew": 100,
+    "bestStabOld": 100,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 35,
+    "species": "DIGLETT"
+   },
+   {
+    "atk": 80,
+    "bestStabNew": 100,
+    "bestStabOld": 100,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 50,
+    "species": "DUGTRIO"
+   },
+   {
+    "atk": 45,
+    "bestStabNew": 70,
+    "bestStabOld": 70,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 40,
+    "species": "MEOWTH"
+   },
+   {
+    "atk": 70,
+    "bestStabNew": 70,
+    "bestStabOld": 70,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 65,
+    "species": "PERSIAN"
+   },
+   {
+    "atk": 52,
+    "bestStabNew": 120,
+    "bestStabOld": 120,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 65,
+    "species": "PSYDUCK"
+   },
+   {
+    "atk": 82,
+    "bestStabNew": 120,
+    "bestStabOld": 120,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 95,
+    "species": "GOLDUCK"
+   },
+   {
+    "atk": 80,
+    "bestStabNew": 100,
+    "bestStabOld": 100,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 35,
+    "species": "MANKEY"
+   },
+   {
+    "atk": 105,
+    "bestStabNew": 100,
+    "bestStabOld": 100,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 60,
+    "species": "PRIMEAPE"
+   },
+   {
+    "atk": 110,
+    "bestStabNew": 0,
+    "bestStabOld": 0,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 100,
+    "species": "ARCANINE"
+   },
+   {
+    "atk": 50,
+    "bestStabNew": 0,
+    "bestStabOld": 0,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 40,
+    "species": "POLIWAG"
+   },
+   {
+    "atk": 65,
+    "bestStabNew": 0,
+    "bestStabOld": 0,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 50,
+    "species": "POLIWHIRL"
+   },
+   {
+    "atk": 85,
+    "bestStabNew": 80,
+    "bestStabOld": 80,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 70,
+    "species": "POLIWRATH"
+   },
+   {
+    "atk": 20,
+    "bestStabNew": 0,
+    "bestStabOld": 0,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 105,
+    "species": "ABRA"
+   },
+   {
+    "atk": 35,
+    "bestStabNew": 90,
+    "bestStabOld": 90,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 120,
+    "species": "KADABRA"
+   },
+   {
+    "atk": 50,
+    "bestStabNew": 90,
+    "bestStabOld": 90,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 135,
+    "species": "ALAKAZAM"
+   },
+   {
+    "atk": 80,
+    "bestStabNew": 100,
+    "bestStabOld": 100,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 35,
+    "species": "MACHOP"
+   },
+   {
+    "atk": 100,
+    "bestStabNew": 100,
+    "bestStabOld": 100,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 50,
+    "species": "MACHOKE"
+   },
+   {
+    "atk": 130,
+    "bestStabNew": 100,
+    "bestStabOld": 100,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 65,
+    "species": "MACHAMP"
+   },
+   {
+    "atk": 75,
+    "bestStabNew": 55,
+    "bestStabOld": 40,
+    "delta": 15,
+    "prefers": "PHYSICAL",
+    "spa": 70,
+    "species": "BELLSPROUT"
+   },
+   {
+    "atk": 90,
+    "bestStabNew": 55,
+    "bestStabOld": 40,
+    "delta": 15,
+    "prefers": "PHYSICAL",
+    "spa": 85,
+    "species": "WEEPINBELL"
+   },
+   {
+    "atk": 105,
+    "bestStabNew": 55,
+    "bestStabOld": 0,
+    "delta": 55,
+    "prefers": "PHYSICAL",
+    "spa": 100,
+    "species": "VICTREEBEL"
+   },
+   {
+    "atk": 40,
+    "bestStabNew": 120,
+    "bestStabOld": 120,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 50,
+    "species": "TENTACOOL"
+   },
+   {
+    "atk": 70,
+    "bestStabNew": 120,
+    "bestStabOld": 120,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 80,
+    "species": "TENTACRUEL"
+   },
+   {
+    "atk": 80,
+    "bestStabNew": 100,
+    "bestStabOld": 100,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 30,
+    "species": "GEODUDE"
+   },
+   {
+    "atk": 95,
+    "bestStabNew": 100,
+    "bestStabOld": 100,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 45,
+    "species": "GRAVELER"
+   },
+   {
+    "atk": 110,
+    "bestStabNew": 100,
+    "bestStabOld": 100,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 55,
+    "species": "GOLEM"
+   },
+   {
+    "atk": 85,
+    "bestStabNew": 0,
+    "bestStabOld": 0,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 65,
+    "species": "PONYTA"
+   },
+   {
+    "atk": 100,
+    "bestStabNew": 0,
+    "bestStabOld": 0,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 80,
+    "species": "RAPIDASH"
+   },
+   {
+    "atk": 65,
+    "bestStabNew": 0,
+    "bestStabOld": 0,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 40,
+    "species": "SLOWPOKE"
+   },
+   {
+    "atk": 75,
+    "bestStabNew": 90,
+    "bestStabOld": 90,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 100,
+    "species": "SLOWBRO"
+   },
+   {
+    "atk": 35,
+    "bestStabNew": 100,
+    "bestStabOld": 100,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 95,
+    "species": "MAGNEMITE"
+   },
+   {
+    "atk": 60,
+    "bestStabNew": 100,
+    "bestStabOld": 100,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 120,
+    "species": "MAGNETON"
+   },
+   {
+    "atk": 65,
+    "bestStabNew": 70,
+    "bestStabOld": 70,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 58,
+    "species": "FARFETCHD"
+   },
+   {
+    "atk": 85,
+    "bestStabNew": 80,
+    "bestStabOld": 80,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 35,
+    "species": "DODUO"
+   },
+   {
+    "atk": 110,
+    "bestStabNew": 80,
+    "bestStabOld": 80,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 60,
+    "species": "DODRIO"
+   },
+   {
+    "atk": 80,
+    "bestStabNew": 0,
+    "bestStabOld": 90,
+    "delta": -90,
+    "prefers": "PHYSICAL",
+    "spa": 40,
+    "species": "GRIMER"
+   },
+   {
+    "atk": 105,
+    "bestStabNew": 0,
+    "bestStabOld": 90,
+    "delta": -90,
+    "prefers": "PHYSICAL",
+    "spa": 65,
+    "species": "MUK"
+   },
+   {
+    "atk": 65,
+    "bestStabNew": 35,
+    "bestStabOld": 0,
+    "delta": 35,
+    "prefers": "PHYSICAL",
+    "spa": 45,
+    "species": "SHELLDER"
+   },
+   {
+    "atk": 95,
+    "bestStabNew": 0,
+    "bestStabOld": 0,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 85,
+    "species": "CLOYSTER"
+   },
+   {
+    "atk": 35,
+    "bestStabNew": 80,
+    "bestStabOld": 0,
+    "delta": 80,
+    "prefers": "SPECIAL",
+    "spa": 100,
+    "species": "GASTLY"
+   },
+   {
+    "atk": 50,
+    "bestStabNew": 80,
+    "bestStabOld": 0,
+    "delta": 80,
+    "prefers": "SPECIAL",
+    "spa": 115,
+    "species": "HAUNTER"
+   },
+   {
+    "atk": 65,
+    "bestStabNew": 80,
+    "bestStabOld": 0,
+    "delta": 80,
+    "prefers": "SPECIAL",
+    "spa": 130,
+    "species": "GENGAR"
+   },
+   {
+    "atk": 45,
+    "bestStabNew": 50,
+    "bestStabOld": 50,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 30,
+    "species": "ONIX"
+   },
+   {
+    "atk": 48,
+    "bestStabNew": 0,
+    "bestStabOld": 0,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 43,
+    "species": "DROWZEE"
+   },
+   {
+    "atk": 105,
+    "bestStabNew": 90,
+    "bestStabOld": 0,
+    "delta": 90,
+    "prefers": "PHYSICAL",
+    "spa": 25,
+    "species": "KRABBY"
+   },
+   {
+    "atk": 130,
+    "bestStabNew": 90,
+    "bestStabOld": 0,
+    "delta": 90,
+    "prefers": "PHYSICAL",
+    "spa": 50,
+    "species": "KINGLER"
+   },
+   {
+    "atk": 30,
+    "bestStabNew": 0,
+    "bestStabOld": 65,
+    "delta": -65,
+    "prefers": "SPECIAL",
+    "spa": 55,
+    "species": "VOLTORB"
+   },
+   {
+    "atk": 50,
+    "bestStabNew": 0,
+    "bestStabOld": 65,
+    "delta": -65,
+    "prefers": "SPECIAL",
+    "spa": 80,
+    "species": "ELECTRODE"
+   },
+   {
+    "atk": 40,
+    "bestStabNew": 120,
+    "bestStabOld": 120,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 60,
+    "species": "EXEGGCUTE"
+   },
+   {
+    "atk": 95,
+    "bestStabNew": 50,
+    "bestStabOld": 50,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 125,
+    "species": "EXEGGUTOR"
+   },
+   {
+    "atk": 50,
+    "bestStabNew": 65,
+    "bestStabOld": 65,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 40,
+    "species": "CUBONE"
+   },
+   {
+    "atk": 80,
+    "bestStabNew": 65,
+    "bestStabOld": 65,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 50,
+    "species": "MAROWAK"
+   },
+   {
+    "atk": 120,
+    "bestStabNew": 85,
+    "bestStabOld": 85,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 35,
+    "species": "HITMONLEE"
+   },
+   {
+    "atk": 105,
+    "bestStabNew": 85,
+    "bestStabOld": 85,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 35,
+    "species": "HITMONCHAN"
+   },
+   {
+    "atk": 55,
+    "bestStabNew": 0,
+    "bestStabOld": 0,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 60,
+    "species": "LICKITUNG"
+   },
+   {
+    "atk": 65,
+    "bestStabNew": 0,
+    "bestStabOld": 65,
+    "delta": -65,
+    "prefers": "PHYSICAL",
+    "spa": 60,
+    "species": "KOFFING"
+   },
+   {
+    "atk": 90,
+    "bestStabNew": 0,
+    "bestStabOld": 65,
+    "delta": -65,
+    "prefers": "PHYSICAL",
+    "spa": 85,
+    "species": "WEEZING"
+   },
+   {
+    "atk": 85,
+    "bestStabNew": 100,
+    "bestStabOld": 100,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 30,
+    "species": "RHYHORN"
+   },
+   {
+    "atk": 130,
+    "bestStabNew": 100,
+    "bestStabOld": 100,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 45,
+    "species": "RHYDON"
+   },
+   {
+    "atk": 5,
+    "bestStabNew": 0,
+    "bestStabOld": 0,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 35,
+    "species": "CHANSEY"
+   },
+   {
+    "atk": 55,
+    "bestStabNew": 40,
+    "bestStabOld": 40,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 100,
+    "species": "TANGELA"
+   },
+   {
+    "atk": 95,
+    "bestStabNew": 80,
+    "bestStabOld": 80,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 40,
+    "species": "KANGASKHAN"
+   },
+   {
+    "atk": 40,
+    "bestStabNew": 120,
+    "bestStabOld": 120,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 70,
+    "species": "HORSEA"
+   },
+   {
+    "atk": 65,
+    "bestStabNew": 120,
+    "bestStabOld": 120,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 95,
+    "species": "SEADRA"
+   },
+   {
+    "atk": 67,
+    "bestStabNew": 80,
+    "bestStabOld": 0,
+    "delta": 80,
+    "prefers": "PHYSICAL",
+    "spa": 35,
+    "species": "GOLDEEN"
+   },
+   {
+    "atk": 92,
+    "bestStabNew": 80,
+    "bestStabOld": 0,
+    "delta": 80,
+    "prefers": "PHYSICAL",
+    "spa": 65,
+    "species": "SEAKING"
+   },
+   {
+    "atk": 45,
+    "bestStabNew": 120,
+    "bestStabOld": 120,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 70,
+    "species": "STARYU"
+   },
+   {
+    "atk": 75,
+    "bestStabNew": 40,
+    "bestStabOld": 40,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 100,
+    "species": "STARMIE"
+   },
+   {
+    "atk": 45,
+    "bestStabNew": 90,
+    "bestStabOld": 90,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 100,
+    "species": "MR_MIME"
+   },
+   {
+    "atk": 110,
+    "bestStabNew": 60,
+    "bestStabOld": 60,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 55,
+    "species": "SCYTHER"
+   },
+   {
+    "atk": 50,
+    "bestStabNew": 120,
+    "bestStabOld": 120,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 115,
+    "species": "JYNX"
+   },
+   {
+    "atk": 83,
+    "bestStabNew": 120,
+    "bestStabOld": 120,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 95,
+    "species": "ELECTABUZZ"
+   },
+   {
+    "atk": 95,
+    "bestStabNew": 120,
+    "bestStabOld": 120,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 100,
+    "species": "MAGMAR"
+   },
+   {
+    "atk": 125,
+    "bestStabNew": 0,
+    "bestStabOld": 0,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 55,
+    "species": "PINSIR"
+   },
+   {
+    "atk": 100,
+    "bestStabNew": 90,
+    "bestStabOld": 90,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 40,
+    "species": "TAUROS"
+   },
+   {
+    "atk": 10,
+    "bestStabNew": 0,
+    "bestStabOld": 0,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 15,
+    "species": "MAGIKARP"
+   },
+   {
+    "atk": 125,
+    "bestStabNew": 0,
+    "bestStabOld": 0,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 60,
+    "species": "GYARADOS"
+   },
+   {
+    "atk": 55,
+    "bestStabNew": 90,
+    "bestStabOld": 90,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 45,
+    "species": "EEVEE"
+   },
+   {
+    "atk": 65,
+    "bestStabNew": 120,
+    "bestStabOld": 120,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 110,
+    "species": "VAPOREON"
+   },
+   {
+    "atk": 65,
+    "bestStabNew": 120,
+    "bestStabOld": 120,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 110,
+    "species": "JOLTEON"
+   },
+   {
+    "atk": 130,
+    "bestStabNew": 0,
+    "bestStabOld": 0,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 95,
+    "species": "FLAREON"
+   },
+   {
+    "atk": 60,
+    "bestStabNew": 80,
+    "bestStabOld": 0,
+    "delta": 80,
+    "prefers": "SPECIAL",
+    "spa": 85,
+    "species": "PORYGON"
+   },
+   {
+    "atk": 40,
+    "bestStabNew": 120,
+    "bestStabOld": 120,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 90,
+    "species": "OMANYTE"
+   },
+   {
+    "atk": 60,
+    "bestStabNew": 120,
+    "bestStabOld": 120,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 115,
+    "species": "OMASTAR"
+   },
+   {
+    "atk": 80,
+    "bestStabNew": 0,
+    "bestStabOld": 60,
+    "delta": -60,
+    "prefers": "PHYSICAL",
+    "spa": 55,
+    "species": "KABUTO"
+   },
+   {
+    "atk": 115,
+    "bestStabNew": 0,
+    "bestStabOld": 60,
+    "delta": -60,
+    "prefers": "PHYSICAL",
+    "spa": 65,
+    "species": "KABUTOPS"
+   },
+   {
+    "atk": 105,
+    "bestStabNew": 60,
+    "bestStabOld": 60,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 60,
+    "species": "AERODACTYL"
+   },
+   {
+    "atk": 110,
+    "bestStabNew": 85,
+    "bestStabOld": 150,
+    "delta": -65,
+    "prefers": "PHYSICAL",
+    "spa": 65,
+    "species": "SNORLAX"
+   },
+   {
+    "atk": 85,
+    "bestStabNew": 120,
+    "bestStabOld": 120,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 95,
+    "species": "ARTICUNO"
+   },
+   {
+    "atk": 90,
+    "bestStabNew": 120,
+    "bestStabOld": 120,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 125,
+    "species": "ZAPDOS"
+   },
+   {
+    "atk": 100,
+    "bestStabNew": 100,
+    "bestStabOld": 100,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 125,
+    "species": "MOLTRES"
+   },
+   {
+    "atk": 64,
+    "bestStabNew": 90,
+    "bestStabOld": 0,
+    "delta": 90,
+    "prefers": "PHYSICAL",
+    "spa": 50,
+    "species": "DRATINI"
+   },
+   {
+    "atk": 84,
+    "bestStabNew": 90,
+    "bestStabOld": 0,
+    "delta": 90,
+    "prefers": "PHYSICAL",
+    "spa": 70,
+    "species": "DRAGONAIR"
+   },
+   {
+    "atk": 134,
+    "bestStabNew": 90,
+    "bestStabOld": 60,
+    "delta": 30,
+    "prefers": "PHYSICAL",
+    "spa": 100,
+    "species": "DRAGONITE"
+   },
+   {
+    "atk": 110,
+    "bestStabNew": 90,
+    "bestStabOld": 90,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 154,
+    "species": "MEWTWO"
+   },
+   {
+    "atk": 62,
+    "bestStabNew": 120,
+    "bestStabOld": 120,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 63,
+    "species": "BAYLEEF"
+   },
+   {
+    "atk": 82,
+    "bestStabNew": 120,
+    "bestStabOld": 120,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 83,
+    "species": "MEGANIUM"
+   },
+   {
+    "atk": 52,
+    "bestStabNew": 95,
+    "bestStabOld": 95,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 60,
+    "species": "CYNDAQUIL"
+   },
+   {
+    "atk": 64,
+    "bestStabNew": 95,
+    "bestStabOld": 95,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 80,
+    "species": "QUILAVA"
+   },
+   {
+    "atk": 84,
+    "bestStabNew": 95,
+    "bestStabOld": 95,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 109,
+    "species": "TYPHLOSION"
+   },
+   {
+    "atk": 65,
+    "bestStabNew": 0,
+    "bestStabOld": 0,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 44,
+    "species": "TOTODILE"
+   },
+   {
+    "atk": 80,
+    "bestStabNew": 0,
+    "bestStabOld": 0,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 59,
+    "species": "CROCONAW"
+   },
+   {
+    "atk": 105,
+    "bestStabNew": 0,
+    "bestStabOld": 0,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 79,
+    "species": "FERALIGATR"
+   },
+   {
+    "atk": 46,
+    "bestStabNew": 80,
+    "bestStabOld": 80,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 35,
+    "species": "SENTRET"
+   },
+   {
+    "atk": 76,
+    "bestStabNew": 80,
+    "bestStabOld": 80,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 45,
+    "species": "FURRET"
+   },
+   {
+    "atk": 30,
+    "bestStabNew": 0,
+    "bestStabOld": 0,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 36,
+    "species": "HOOTHOOT"
+   },
+   {
+    "atk": 50,
+    "bestStabNew": 0,
+    "bestStabOld": 0,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 76,
+    "species": "NOCTOWL"
+   },
+   {
+    "atk": 20,
+    "bestStabNew": 0,
+    "bestStabOld": 0,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 40,
+    "species": "LEDYBA"
+   },
+   {
+    "atk": 35,
+    "bestStabNew": 0,
+    "bestStabOld": 0,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 55,
+    "species": "LEDIAN"
+   },
+   {
+    "atk": 60,
+    "bestStabNew": 20,
+    "bestStabOld": 20,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 40,
+    "species": "SPINARAK"
+   },
+   {
+    "atk": 90,
+    "bestStabNew": 20,
+    "bestStabOld": 20,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 60,
+    "species": "ARIADOS"
+   },
+   {
+    "atk": 90,
+    "bestStabNew": 60,
+    "bestStabOld": 60,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 70,
+    "species": "CROBAT"
+   },
+   {
+    "atk": 38,
+    "bestStabNew": 120,
+    "bestStabOld": 120,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 56,
+    "species": "CHINCHOU"
+   },
+   {
+    "atk": 58,
+    "bestStabNew": 120,
+    "bestStabOld": 120,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 76,
+    "species": "LANTURN"
+   },
+   {
+    "atk": 40,
+    "bestStabNew": 0,
+    "bestStabOld": 0,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 35,
+    "species": "PICHU"
+   },
+   {
+    "atk": 25,
+    "bestStabNew": 0,
+    "bestStabOld": 0,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 45,
+    "species": "CLEFFA"
+   },
+   {
+    "atk": 30,
+    "bestStabNew": 0,
+    "bestStabOld": 0,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 40,
+    "species": "IGGLYBUFF"
+   },
+   {
+    "atk": 20,
+    "bestStabNew": 0,
+    "bestStabOld": 0,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 40,
+    "species": "TOGEPI"
+   },
+   {
+    "atk": 40,
+    "bestStabNew": 0,
+    "bestStabOld": 0,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 80,
+    "species": "TOGETIC"
+   },
+   {
+    "atk": 50,
+    "bestStabNew": 90,
+    "bestStabOld": 90,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 70,
+    "species": "NATU"
+   },
+   {
+    "atk": 75,
+    "bestStabNew": 90,
+    "bestStabOld": 90,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 95,
+    "species": "XATU"
+   },
+   {
+    "atk": 40,
+    "bestStabNew": 120,
+    "bestStabOld": 120,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 65,
+    "species": "MAREEP"
+   },
+   {
+    "atk": 55,
+    "bestStabNew": 120,
+    "bestStabOld": 120,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 80,
+    "species": "FLAAFFY"
+   },
+   {
+    "atk": 75,
+    "bestStabNew": 120,
+    "bestStabOld": 120,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 115,
+    "species": "AMPHAROS"
+   },
+   {
+    "atk": 80,
+    "bestStabNew": 120,
+    "bestStabOld": 120,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 90,
+    "species": "BELLOSSOM"
+   },
+   {
+    "atk": 100,
+    "bestStabNew": 75,
+    "bestStabOld": 75,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 30,
+    "species": "SUDOWOODO"
+   },
+   {
+    "atk": 75,
+    "bestStabNew": 40,
+    "bestStabOld": 40,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 90,
+    "species": "POLITOED"
+   },
+   {
+    "atk": 70,
+    "bestStabNew": 40,
+    "bestStabOld": 60,
+    "delta": -20,
+    "prefers": "PHYSICAL",
+    "spa": 40,
+    "species": "AIPOM"
+   },
+   {
+    "atk": 75,
+    "bestStabNew": 120,
+    "bestStabOld": 120,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 105,
+    "species": "SUNFLORA"
+   },
+   {
+    "atk": 65,
+    "bestStabNew": 0,
+    "bestStabOld": 0,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 75,
+    "species": "YANMA"
+   },
+   {
+    "atk": 45,
+    "bestStabNew": 100,
+    "bestStabOld": 100,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 25,
+    "species": "WOOPER"
+   },
+   {
+    "atk": 85,
+    "bestStabNew": 100,
+    "bestStabOld": 100,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 65,
+    "species": "QUAGSIRE"
+   },
+   {
+    "atk": 65,
+    "bestStabNew": 90,
+    "bestStabOld": 90,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 130,
+    "species": "ESPEON"
+   },
+   {
+    "atk": 65,
+    "bestStabNew": 60,
+    "bestStabOld": 0,
+    "delta": 60,
+    "prefers": "PHYSICAL",
+    "spa": 60,
+    "species": "UMBREON"
+   },
+   {
+    "atk": 75,
+    "bestStabNew": 90,
+    "bestStabOld": 90,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 100,
+    "species": "SLOWKING"
+   },
+   {
+    "atk": 60,
+    "bestStabNew": 0,
+    "bestStabOld": 0,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 85,
+    "species": "MISDREAVUS"
+   },
+   {
+    "atk": 80,
+    "bestStabNew": 65,
+    "bestStabOld": 65,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 90,
+    "species": "GIRAFARIG"
+   },
+   {
+    "atk": 65,
+    "bestStabNew": 0,
+    "bestStabOld": 0,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 35,
+    "species": "PINECO"
+   },
+   {
+    "atk": 90,
+    "bestStabNew": 0,
+    "bestStabOld": 0,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 60,
+    "species": "FORRETRESS"
+   },
+   {
+    "atk": 70,
+    "bestStabNew": 90,
+    "bestStabOld": 90,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 65,
+    "species": "DUNSPARCE"
+   },
+   {
+    "atk": 75,
+    "bestStabNew": 0,
+    "bestStabOld": 0,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 35,
+    "species": "GLIGAR"
+   },
+   {
+    "atk": 85,
+    "bestStabNew": 100,
+    "bestStabOld": 100,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 55,
+    "species": "STEELIX"
+   },
+   {
+    "atk": 80,
+    "bestStabNew": 90,
+    "bestStabOld": 90,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 40,
+    "species": "SNUBBULL"
+   },
+   {
+    "atk": 120,
+    "bestStabNew": 90,
+    "bestStabOld": 90,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 60,
+    "species": "GRANBULL"
+   },
+   {
+    "atk": 95,
+    "bestStabNew": 15,
+    "bestStabOld": 15,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 55,
+    "species": "QWILFISH"
+   },
+   {
+    "atk": 130,
+    "bestStabNew": 50,
+    "bestStabOld": 50,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 55,
+    "species": "SCIZOR"
+   },
+   {
+    "atk": 125,
+    "bestStabNew": 120,
+    "bestStabOld": 120,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 40,
+    "species": "HERACROSS"
+   },
+   {
+    "atk": 95,
+    "bestStabNew": 60,
+    "bestStabOld": 0,
+    "delta": 60,
+    "prefers": "PHYSICAL",
+    "spa": 35,
+    "species": "SNEASEL"
+   },
+   {
+    "atk": 80,
+    "bestStabNew": 90,
+    "bestStabOld": 90,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 50,
+    "species": "TEDDIURSA"
+   },
+   {
+    "atk": 130,
+    "bestStabNew": 90,
+    "bestStabOld": 90,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 75,
+    "species": "URSARING"
+   },
+   {
+    "atk": 40,
+    "bestStabNew": 95,
+    "bestStabOld": 95,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 70,
+    "species": "SLUGMA"
+   },
+   {
+    "atk": 50,
+    "bestStabNew": 95,
+    "bestStabOld": 95,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 80,
+    "species": "MAGCARGO"
+   },
+   {
+    "atk": 50,
+    "bestStabNew": 0,
+    "bestStabOld": 0,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 30,
+    "species": "SWINUB"
+   },
+   {
+    "atk": 100,
+    "bestStabNew": 0,
+    "bestStabOld": 0,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 60,
+    "species": "PILOSWINE"
+   },
+   {
+    "atk": 55,
+    "bestStabNew": 65,
+    "bestStabOld": 65,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 65,
+    "species": "CORSOLA"
+   },
+   {
+    "atk": 55,
+    "bestStabNew": 0,
+    "bestStabOld": 0,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 65,
+    "species": "DELIBIRD"
+   },
+   {
+    "atk": 40,
+    "bestStabNew": 65,
+    "bestStabOld": 65,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 80,
+    "species": "MANTINE"
+   },
+   {
+    "atk": 80,
+    "bestStabNew": 70,
+    "bestStabOld": 70,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 40,
+    "species": "SKARMORY"
+   },
+   {
+    "atk": 60,
+    "bestStabNew": 95,
+    "bestStabOld": 95,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 80,
+    "species": "HOUNDOUR"
+   },
+   {
+    "atk": 90,
+    "bestStabNew": 95,
+    "bestStabOld": 95,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 110,
+    "species": "HOUNDOOM"
+   },
+   {
+    "atk": 60,
+    "bestStabNew": 0,
+    "bestStabOld": 0,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 40,
+    "species": "PHANPY"
+   },
+   {
+    "atk": 120,
+    "bestStabNew": 100,
+    "bestStabOld": 100,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 60,
+    "species": "DONPHAN"
+   },
+   {
+    "atk": 80,
+    "bestStabNew": 80,
+    "bestStabOld": 0,
+    "delta": 80,
+    "prefers": "SPECIAL",
+    "spa": 105,
+    "species": "PORYGON2"
+   },
+   {
+    "atk": 95,
+    "bestStabNew": 90,
+    "bestStabOld": 90,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 85,
+    "species": "STANTLER"
+   },
+   {
+    "atk": 95,
+    "bestStabNew": 60,
+    "bestStabOld": 60,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 35,
+    "species": "HITMONTOP"
+   },
+   {
+    "atk": 30,
+    "bestStabNew": 120,
+    "bestStabOld": 120,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 85,
+    "species": "SMOOCHUM"
+   },
+   {
+    "atk": 63,
+    "bestStabNew": 120,
+    "bestStabOld": 120,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 65,
+    "species": "ELEKID"
+   },
+   {
+    "atk": 75,
+    "bestStabNew": 75,
+    "bestStabOld": 0,
+    "delta": 75,
+    "prefers": "PHYSICAL",
+    "spa": 70,
+    "species": "MAGBY"
+   },
+   {
+    "atk": 80,
+    "bestStabNew": 85,
+    "bestStabOld": 85,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 40,
+    "species": "MILTANK"
+   },
+   {
+    "atk": 10,
+    "bestStabNew": 0,
+    "bestStabOld": 0,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 75,
+    "species": "BLISSEY"
+   },
+   {
+    "atk": 85,
+    "bestStabNew": 120,
+    "bestStabOld": 120,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 115,
+    "species": "RAIKOU"
+   },
+   {
+    "atk": 115,
+    "bestStabNew": 0,
+    "bestStabOld": 0,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 90,
+    "species": "ENTEI"
+   },
+   {
+    "atk": 75,
+    "bestStabNew": 120,
+    "bestStabOld": 120,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 90,
+    "species": "SUICUNE"
+   },
+   {
+    "atk": 64,
+    "bestStabNew": 100,
+    "bestStabOld": 100,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 45,
+    "species": "LARVITAR"
+   },
+   {
+    "atk": 84,
+    "bestStabNew": 100,
+    "bestStabOld": 100,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 65,
+    "species": "PUPITAR"
+   },
+   {
+    "atk": 134,
+    "bestStabNew": 80,
+    "bestStabOld": 75,
+    "delta": 5,
+    "prefers": "PHYSICAL",
+    "spa": 95,
+    "species": "TYRANITAR"
+   },
+   {
+    "atk": 130,
+    "bestStabNew": 100,
+    "bestStabOld": 40,
+    "delta": 60,
+    "prefers": "PHYSICAL",
+    "spa": 110,
+    "species": "HO_OH"
+   },
+   {
+    "atk": 45,
+    "bestStabNew": 60,
+    "bestStabOld": 60,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 65,
+    "species": "TREECKO"
+   },
+   {
+    "atk": 65,
+    "bestStabNew": 20,
+    "bestStabOld": 70,
+    "delta": -50,
+    "prefers": "SPECIAL",
+    "spa": 85,
+    "species": "GROVYLE"
+   },
+   {
+    "atk": 85,
+    "bestStabNew": 20,
+    "bestStabOld": 70,
+    "delta": -50,
+    "prefers": "SPECIAL",
+    "spa": 105,
+    "species": "SCEPTILE"
+   },
+   {
+    "atk": 60,
+    "bestStabNew": 95,
+    "bestStabOld": 95,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 70,
+    "species": "TORCHIC"
+   },
+   {
+    "atk": 120,
+    "bestStabNew": 85,
+    "bestStabOld": 85,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 110,
+    "species": "BLAZIKEN"
+   },
+   {
+    "atk": 70,
+    "bestStabNew": 0,
+    "bestStabOld": 0,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 50,
+    "species": "MUDKIP"
+   },
+   {
+    "atk": 85,
+    "bestStabNew": 100,
+    "bestStabOld": 100,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 60,
+    "species": "MARSHTOMP"
+   },
+   {
+    "atk": 110,
+    "bestStabNew": 100,
+    "bestStabOld": 100,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 85,
+    "species": "SWAMPERT"
+   },
+   {
+    "atk": 55,
+    "bestStabNew": 80,
+    "bestStabOld": 0,
+    "delta": 80,
+    "prefers": "PHYSICAL",
+    "spa": 30,
+    "species": "POOCHYENA"
+   },
+   {
+    "atk": 90,
+    "bestStabNew": 80,
+    "bestStabOld": 0,
+    "delta": 80,
+    "prefers": "PHYSICAL",
+    "spa": 60,
+    "species": "MIGHTYENA"
+   },
+   {
+    "atk": 70,
+    "bestStabNew": 70,
+    "bestStabOld": 70,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 50,
+    "species": "LINOONE"
+   },
+   {
+    "atk": 45,
+    "bestStabNew": 0,
+    "bestStabOld": 0,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 20,
+    "species": "WURMPLE"
+   },
+   {
+    "atk": 35,
+    "bestStabNew": 0,
+    "bestStabOld": 0,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 25,
+    "species": "SILCOON"
+   },
+   {
+    "atk": 70,
+    "bestStabNew": 60,
+    "bestStabOld": 0,
+    "delta": 60,
+    "prefers": "SPECIAL",
+    "spa": 90,
+    "species": "BEAUTIFLY"
+   },
+   {
+    "atk": 35,
+    "bestStabNew": 0,
+    "bestStabOld": 0,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 25,
+    "species": "CASCOON"
+   },
+   {
+    "atk": 30,
+    "bestStabNew": 40,
+    "bestStabOld": 40,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 40,
+    "species": "LOTAD"
+   },
+   {
+    "atk": 50,
+    "bestStabNew": 120,
+    "bestStabOld": 120,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 60,
+    "species": "LOMBRE"
+   },
+   {
+    "atk": 70,
+    "bestStabNew": 20,
+    "bestStabOld": 20,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 90,
+    "species": "LUDICOLO"
+   },
+   {
+    "atk": 40,
+    "bestStabNew": 0,
+    "bestStabOld": 0,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 30,
+    "species": "SEEDOT"
+   },
+   {
+    "atk": 70,
+    "bestStabNew": 60,
+    "bestStabOld": 0,
+    "delta": 60,
+    "prefers": "PHYSICAL",
+    "spa": 60,
+    "species": "NUZLEAF"
+   },
+   {
+    "atk": 100,
+    "bestStabNew": 0,
+    "bestStabOld": 0,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 90,
+    "species": "SHIFTRY"
+   },
+   {
+    "atk": 45,
+    "bestStabNew": 60,
+    "bestStabOld": 60,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 30,
+    "species": "NINCADA"
+   },
+   {
+    "atk": 90,
+    "bestStabNew": 20,
+    "bestStabOld": 20,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 50,
+    "species": "NINJASK"
+   },
+   {
+    "atk": 90,
+    "bestStabNew": 20,
+    "bestStabOld": 80,
+    "delta": -60,
+    "prefers": "PHYSICAL",
+    "spa": 30,
+    "species": "SHEDINJA"
+   },
+   {
+    "atk": 55,
+    "bestStabNew": 60,
+    "bestStabOld": 60,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 30,
+    "species": "TAILLOW"
+   },
+   {
+    "atk": 85,
+    "bestStabNew": 60,
+    "bestStabOld": 60,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 50,
+    "species": "SWELLOW"
+   },
+   {
+    "atk": 130,
+    "bestStabNew": 100,
+    "bestStabOld": 100,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 60,
+    "species": "BRELOOM"
+   },
+   {
+    "atk": 30,
+    "bestStabNew": 40,
+    "bestStabOld": 40,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 55,
+    "species": "WINGULL"
+   },
+   {
+    "atk": 50,
+    "bestStabNew": 120,
+    "bestStabOld": 120,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 85,
+    "species": "PELIPPER"
+   },
+   {
+    "atk": 30,
+    "bestStabNew": 65,
+    "bestStabOld": 65,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 50,
+    "species": "SURSKIT"
+   },
+   {
+    "atk": 60,
+    "bestStabNew": 60,
+    "bestStabOld": 0,
+    "delta": 60,
+    "prefers": "SPECIAL",
+    "spa": 80,
+    "species": "MASQUERAIN"
+   },
+   {
+    "atk": 45,
+    "bestStabNew": 120,
+    "bestStabOld": 120,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 35,
+    "species": "SKITTY"
+   },
+   {
+    "atk": 65,
+    "bestStabNew": 15,
+    "bestStabOld": 15,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 55,
+    "species": "DELCATTY"
+   },
+   {
+    "atk": 90,
+    "bestStabNew": 70,
+    "bestStabOld": 70,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 60,
+    "species": "KECLEON"
+   },
+   {
+    "atk": 75,
+    "bestStabNew": 60,
+    "bestStabOld": 80,
+    "delta": -20,
+    "prefers": "PHYSICAL",
+    "spa": 65,
+    "species": "SABLEYE"
+   },
+   {
+    "atk": 48,
+    "bestStabNew": 100,
+    "bestStabOld": 100,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 46,
+    "species": "BARBOACH"
+   },
+   {
+    "atk": 78,
+    "bestStabNew": 100,
+    "bestStabOld": 100,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 76,
+    "species": "WHISCASH"
+   },
+   {
+    "atk": 30,
+    "bestStabNew": 40,
+    "bestStabOld": 40,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 40,
+    "species": "LUVDISC"
+   },
+   {
+    "atk": 80,
+    "bestStabNew": 90,
+    "bestStabOld": 0,
+    "delta": 90,
+    "prefers": "PHYSICAL",
+    "spa": 50,
+    "species": "CORPHISH"
+   },
+   {
+    "atk": 120,
+    "bestStabNew": 90,
+    "bestStabOld": 0,
+    "delta": 90,
+    "prefers": "PHYSICAL",
+    "spa": 90,
+    "species": "CRAWDAUNT"
+   },
+   {
+    "atk": 15,
+    "bestStabNew": 0,
+    "bestStabOld": 0,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 10,
+    "species": "FEEBAS"
+   },
+   {
+    "atk": 60,
+    "bestStabNew": 120,
+    "bestStabOld": 120,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 100,
+    "species": "MILOTIC"
+   },
+   {
+    "atk": 90,
+    "bestStabNew": 80,
+    "bestStabOld": 0,
+    "delta": 80,
+    "prefers": "PHYSICAL",
+    "spa": 65,
+    "species": "CARVANHA"
+   },
+   {
+    "atk": 120,
+    "bestStabNew": 80,
+    "bestStabOld": 0,
+    "delta": 80,
+    "prefers": "PHYSICAL",
+    "spa": 95,
+    "species": "SHARPEDO"
+   },
+   {
+    "atk": 100,
+    "bestStabNew": 60,
+    "bestStabOld": 60,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 45,
+    "species": "TRAPINCH"
+   },
+   {
+    "atk": 70,
+    "bestStabNew": 15,
+    "bestStabOld": 15,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 50,
+    "species": "VIBRAVA"
+   },
+   {
+    "atk": 100,
+    "bestStabNew": 15,
+    "bestStabOld": 15,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 80,
+    "species": "FLYGON"
+   },
+   {
+    "atk": 60,
+    "bestStabNew": 70,
+    "bestStabOld": 70,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 20,
+    "species": "MAKUHITA"
+   },
+   {
+    "atk": 120,
+    "bestStabNew": 70,
+    "bestStabOld": 70,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 40,
+    "species": "HARIYAMA"
+   },
+   {
+    "atk": 45,
+    "bestStabNew": 120,
+    "bestStabOld": 120,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 65,
+    "species": "ELECTRIKE"
+   },
+   {
+    "atk": 75,
+    "bestStabNew": 120,
+    "bestStabOld": 120,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 105,
+    "species": "MANECTRIC"
+   },
+   {
+    "atk": 60,
+    "bestStabNew": 95,
+    "bestStabOld": 95,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 65,
+    "species": "NUMEL"
+   },
+   {
+    "atk": 100,
+    "bestStabNew": 150,
+    "bestStabOld": 150,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 105,
+    "species": "CAMERUPT"
+   },
+   {
+    "atk": 40,
+    "bestStabNew": 120,
+    "bestStabOld": 120,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 55,
+    "species": "SPHEAL"
+   },
+   {
+    "atk": 60,
+    "bestStabNew": 120,
+    "bestStabOld": 120,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 75,
+    "species": "SEALEO"
+   },
+   {
+    "atk": 80,
+    "bestStabNew": 120,
+    "bestStabOld": 120,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 95,
+    "species": "WALREIN"
+   },
+   {
+    "atk": 55,
+    "bestStabNew": 90,
+    "bestStabOld": 90,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 95,
+    "species": "LUNATONE"
+   },
+   {
+    "atk": 95,
+    "bestStabNew": 75,
+    "bestStabOld": 75,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 55,
+    "species": "SOLROCK"
+   },
+   {
+    "atk": 25,
+    "bestStabNew": 90,
+    "bestStabOld": 90,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 70,
+    "species": "SPOINK"
+   },
+   {
+    "atk": 45,
+    "bestStabNew": 90,
+    "bestStabOld": 90,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 90,
+    "species": "GRUMPIG"
+   },
+   {
+    "atk": 50,
+    "bestStabNew": 120,
+    "bestStabOld": 120,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 85,
+    "species": "PLUSLE"
+   },
+   {
+    "atk": 40,
+    "bestStabNew": 120,
+    "bestStabOld": 120,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 75,
+    "species": "MINUN"
+   },
+   {
+    "atk": 85,
+    "bestStabNew": 0,
+    "bestStabOld": 0,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 55,
+    "species": "MAWILE"
+   },
+   {
+    "atk": 40,
+    "bestStabNew": 30,
+    "bestStabOld": 30,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 30,
+    "species": "DUSKULL"
+   },
+   {
+    "atk": 70,
+    "bestStabNew": 60,
+    "bestStabOld": 60,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 60,
+    "species": "DUSCLOPS"
+   },
+   {
+    "atk": 60,
+    "bestStabNew": 70,
+    "bestStabOld": 70,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 100,
+    "species": "ROSELIA"
+   },
+   {
+    "atk": 60,
+    "bestStabNew": 40,
+    "bestStabOld": 40,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 35,
+    "species": "SLAKOTH"
+   },
+   {
+    "atk": 80,
+    "bestStabNew": 70,
+    "bestStabOld": 70,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 55,
+    "species": "VIGOROTH"
+   },
+   {
+    "atk": 160,
+    "bestStabNew": 40,
+    "bestStabOld": 40,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 95,
+    "species": "SLAKING"
+   },
+   {
+    "atk": 68,
+    "bestStabNew": 120,
+    "bestStabOld": 120,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 72,
+    "species": "TROPIUS"
+   },
+   {
+    "atk": 64,
+    "bestStabNew": 40,
+    "bestStabOld": 40,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 74,
+    "species": "CLAMPERL"
+   },
+   {
+    "atk": 104,
+    "bestStabNew": 0,
+    "bestStabOld": 0,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 94,
+    "species": "HUNTAIL"
+   },
+   {
+    "atk": 84,
+    "bestStabNew": 120,
+    "bestStabOld": 120,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 114,
+    "species": "GOREBYSS"
+   },
+   {
+    "atk": 130,
+    "bestStabNew": 60,
+    "bestStabOld": 0,
+    "delta": 60,
+    "prefers": "PHYSICAL",
+    "spa": 75,
+    "species": "ABSOL"
+   },
+   {
+    "atk": 75,
+    "bestStabNew": 0,
+    "bestStabOld": 80,
+    "delta": -80,
+    "prefers": "PHYSICAL",
+    "spa": 63,
+    "species": "SHUPPET"
+   },
+   {
+    "atk": 115,
+    "bestStabNew": 0,
+    "bestStabOld": 80,
+    "delta": -80,
+    "prefers": "PHYSICAL",
+    "spa": 83,
+    "species": "BANETTE"
+   },
+   {
+    "atk": 115,
+    "bestStabNew": 75,
+    "bestStabOld": 75,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 60,
+    "species": "ZANGOOSE"
+   },
+   {
+    "atk": 90,
+    "bestStabNew": 50,
+    "bestStabOld": 60,
+    "delta": -10,
+    "prefers": "PHYSICAL",
+    "spa": 45,
+    "species": "RELICANTH"
+   },
+   {
+    "atk": 70,
+    "bestStabNew": 100,
+    "bestStabOld": 100,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 40,
+    "species": "ARON"
+   },
+   {
+    "atk": 90,
+    "bestStabNew": 100,
+    "bestStabOld": 100,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 50,
+    "species": "LAIRON"
+   },
+   {
+    "atk": 110,
+    "bestStabNew": 100,
+    "bestStabOld": 100,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 60,
+    "species": "AGGRON"
+   },
+   {
+    "atk": 73,
+    "bestStabNew": 0,
+    "bestStabOld": 75,
+    "delta": -75,
+    "prefers": "PHYSICAL",
+    "spa": 47,
+    "species": "VOLBEAT"
+   },
+   {
+    "atk": 47,
+    "bestStabNew": 0,
+    "bestStabOld": 0,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 73,
+    "species": "ILLUMISE"
+   },
+   {
+    "atk": 41,
+    "bestStabNew": 60,
+    "bestStabOld": 0,
+    "delta": 60,
+    "prefers": "SPECIAL",
+    "spa": 61,
+    "species": "LILEEP"
+   },
+   {
+    "atk": 95,
+    "bestStabNew": 25,
+    "bestStabOld": 60,
+    "delta": -35,
+    "prefers": "PHYSICAL",
+    "spa": 40,
+    "species": "ANORITH"
+   },
+   {
+    "atk": 125,
+    "bestStabNew": 25,
+    "bestStabOld": 60,
+    "delta": -35,
+    "prefers": "PHYSICAL",
+    "spa": 70,
+    "species": "ARMALDO"
+   },
+   {
+    "atk": 25,
+    "bestStabNew": 100,
+    "bestStabOld": 100,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 45,
+    "species": "RALTS"
+   },
+   {
+    "atk": 35,
+    "bestStabNew": 100,
+    "bestStabOld": 100,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 65,
+    "species": "KIRLIA"
+   },
+   {
+    "atk": 65,
+    "bestStabNew": 100,
+    "bestStabOld": 100,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 125,
+    "species": "GARDEVOIR"
+   },
+   {
+    "atk": 75,
+    "bestStabNew": 80,
+    "bestStabOld": 0,
+    "delta": 80,
+    "prefers": "PHYSICAL",
+    "spa": 40,
+    "species": "BAGON"
+   },
+   {
+    "atk": 95,
+    "bestStabNew": 80,
+    "bestStabOld": 0,
+    "delta": 80,
+    "prefers": "PHYSICAL",
+    "spa": 60,
+    "species": "SHELGON"
+   },
+   {
+    "atk": 135,
+    "bestStabNew": 80,
+    "bestStabOld": 70,
+    "delta": 10,
+    "prefers": "PHYSICAL",
+    "spa": 110,
+    "species": "SALAMENCE"
+   },
+   {
+    "atk": 55,
+    "bestStabNew": 0,
+    "bestStabOld": 0,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 35,
+    "species": "BELDUM"
+   },
+   {
+    "atk": 75,
+    "bestStabNew": 100,
+    "bestStabOld": 100,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 55,
+    "species": "METANG"
+   },
+   {
+    "atk": 135,
+    "bestStabNew": 100,
+    "bestStabOld": 100,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 95,
+    "species": "METAGROSS"
+   },
+   {
+    "atk": 100,
+    "bestStabNew": 50,
+    "bestStabOld": 60,
+    "delta": -10,
+    "prefers": "PHYSICAL",
+    "spa": 50,
+    "species": "REGIROCK"
+   },
+   {
+    "atk": 50,
+    "bestStabNew": 55,
+    "bestStabOld": 55,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 100,
+    "species": "REGICE"
+   },
+   {
+    "atk": 100,
+    "bestStabNew": 150,
+    "bestStabOld": 150,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 150,
+    "species": "KYOGRE"
+   },
+   {
+    "atk": 150,
+    "bestStabNew": 100,
+    "bestStabOld": 100,
+    "delta": 0,
+    "prefers": "PHYSICAL",
+    "spa": 100,
+    "species": "GROUDON"
+   },
+   {
+    "atk": 80,
+    "bestStabNew": 90,
+    "bestStabOld": 90,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 110,
+    "species": "LATIAS"
+   },
+   {
+    "atk": 90,
+    "bestStabNew": 90,
+    "bestStabOld": 90,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 130,
+    "species": "LATIOS"
+   },
+   {
+    "atk": 50,
+    "bestStabNew": 90,
+    "bestStabOld": 90,
+    "delta": 0,
+    "prefers": "SPECIAL",
+    "spa": 95,
+    "species": "CHIMECHO"
+   }
+  ],
+  "speciesSummary": {
+   "better": 37,
+   "evaluated": 325,
+   "same": 265,
+   "worse": 23
+  }
+ }
+}

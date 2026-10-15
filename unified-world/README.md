@@ -42,6 +42,7 @@ determinista: ejecutarlo dos veces da los mismos archivos.
 |---|---|---|
 | `extract_curve.py` | `out/CURVE.md`, `out/curve.json` | XP finita de entrenadores por región frente al nivel alcanzable |
 | `extract_flag_spaces.py` | `out/FLAG_SPACES.md`, `flag_spaces.json`, `flag_ids.json` | Colisiones de IDs de flags y variables entre FireRed, Emerald y HnS |
+| `extract_rules.py` | `out/RULES.md`, `out/rules.json` | Matriz de reglas de combate por generación (3–6) con evidencia `archivo:línea`, impacto del split físico/especial y de Hada, y catálogo añadido por Gen 4–6 |
 | `progress/progress.ts` | – | Modelo de progreso en tres capas (regional, derivada, exploración) |
 | `progress/progress.check.ts` | – | Comprobación con los IDs reales; ver el comando abajo |
 
