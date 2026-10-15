@@ -1,0 +1,1699 @@
+{
+ "_meta": {
+  "generator": "unified-world/extract_split_consumers.py",
+  "note": "enclosing function is a backwards-search heuristic; lines are as found"
+ },
+ "sources": {
+  "emerald": {
+   "fairy": [],
+   "moveMacro": [],
+   "mysteryCompare": [
+    {
+     "file": "src/battle_script_commands.c",
+     "function": "Cmd_tryconversiontypechange",
+     "kind": "other",
+     "line": 7407,
+     "text": "if (moveType == TYPE_MYSTERY)"
+    },
+    {
+     "file": "src/battle_script_commands.c",
+     "function": "Cmd_tryconversiontypechange",
+     "kind": "other",
+     "line": 7433,
+     "text": "if (moveType == TYPE_MYSTERY)"
+    },
+    {
+     "file": "src/battle_script_commands.c",
+     "function": "Cmd_hiddenpowercalc",
+     "kind": "other",
+     "line": 8910,
+     "text": "if (gBattleStruct->dynamicMoveType >= TYPE_MYSTERY)"
+    },
+    {
+     "file": "src/pokemon.c",
+     "function": "CalculateBaseDamage",
+     "kind": "other",
+     "line": 3284,
+     "text": "if (type == TYPE_MYSTERY)"
+    }
+   ],
+   "optionStyle": [],
+   "typeMacro": [
+    {
+     "file": "src/battle_script_commands.c",
+     "function": "Cmd_accuracycheck",
+     "kind": "use",
+     "line": 1156,
+     "text": "if (gBattleMons[gBattlerAttacker].ability == ABILITY_HUSTLE && IS_TYPE_PHYSICAL(type))"
+    },
+    {
+     "file": "src/battle_script_commands.c",
+     "function": "Cmd_datahpupdate",
+     "kind": "use",
+     "line": 1938,
+     "text": "if (IS_TYPE_PHYSICAL(moveType) && !(gHitMarker & HITMARKER_PASSIVE_HP_UPDATE) && gCurrentMove != MOVE_PAIN_SPLIT)"
+    },
+    {
+     "file": "src/battle_script_commands.c",
+     "function": "Cmd_datahpupdate",
+     "kind": "use",
+     "line": 1954,
+     "text": "else if (!IS_TYPE_PHYSICAL(moveType) && !(gHitMarker & HITMARKER_PASSIVE_HP_UPDATE))"
+    },
+    {
+     "file": "src/battle_tv.c",
+     "function": "AddMovePoints",
+     "kind": "use",
+     "line": 1249,
+     "text": "if (IS_TYPE_PHYSICAL(type) && power != 0 && tvPtr->side[defSide].reflectMonId != 0)"
+    },
+    {
+     "file": "src/battle_tv.c",
+     "function": "AddMovePoints",
+     "kind": "use",
+     "line": 1257,
+     "text": "if (!IS_TYPE_PHYSICAL(type) && power != 0 && tvPtr->side[defSide].lightScreenMonId != 0)"
+    },
+    {
+     "file": "src/pokemon.c",
+     "function": "CalculateBaseDamage",
+     "kind": "use",
+     "line": 3176,
+     "text": "if (IS_TYPE_PHYSICAL(type))"
+    },
+    {
+     "file": "src/pokemon.c",
+     "function": "CalculateBaseDamage",
+     "kind": "use",
+     "line": 3232,
+     "text": "if (IS_TYPE_PHYSICAL(type))"
+    },
+    {
+     "file": "src/pokemon.c",
+     "function": "CalculateBaseDamage",
+     "kind": "use",
+     "line": 3287,
+     "text": "if (IS_TYPE_SPECIAL(type))"
+    },
+    {
+     "file": "include/battle.h",
+     "function": "?",
+     "kind": "definition",
+     "line": 466,
+     "text": "#define IS_TYPE_PHYSICAL(moveType) (moveType < TYPE_MYSTERY)"
+    },
+    {
+     "file": "include/battle.h",
+     "function": "?",
+     "kind": "definition",
+     "line": 467,
+     "text": "#define IS_TYPE_SPECIAL(moveType) (moveType > TYPE_MYSTERY)"
+    }
+   ]
+  },
+  "firered": {
+   "fairy": [],
+   "moveMacro": [],
+   "mysteryCompare": [
+    {
+     "file": "src/battle_script_commands.c",
+     "function": "Cmd_tryconversiontypechange",
+     "kind": "other",
+     "line": 7021,
+     "text": "if (moveType == TYPE_MYSTERY)"
+    },
+    {
+     "file": "src/battle_script_commands.c",
+     "function": "Cmd_tryconversiontypechange",
+     "kind": "other",
+     "line": 7047,
+     "text": "if (moveType == TYPE_MYSTERY)"
+    },
+    {
+     "file": "src/battle_script_commands.c",
+     "function": "Cmd_hiddenpowercalc",
+     "kind": "other",
+     "line": 8525,
+     "text": "if (gBattleStruct->dynamicMoveType >= TYPE_MYSTERY)"
+    },
+    {
+     "file": "src/pokemon.c",
+     "function": "CalculateBaseDamage",
+     "kind": "other",
+     "line": 2561,
+     "text": "if (type == TYPE_MYSTERY)"
+    }
+   ],
+   "optionStyle": [],
+   "typeMacro": [
+    {
+     "file": "src/battle_script_commands.c",
+     "function": "Cmd_accuracycheck",
+     "kind": "use",
+     "line": 1073,
+     "text": "if (gBattleMons[gBattlerAttacker].ability == ABILITY_HUSTLE && IS_TYPE_PHYSICAL(type))"
+    },
+    {
+     "file": "src/battle_script_commands.c",
+     "function": "Cmd_datahpupdate",
+     "kind": "use",
+     "line": 1825,
+     "text": "if (IS_TYPE_PHYSICAL(moveType) && !(gHitMarker & HITMARKER_PASSIVE_DAMAGE) && gCurrentMove != MOVE_PAIN_SPLIT)"
+    },
+    {
+     "file": "src/battle_script_commands.c",
+     "function": "Cmd_datahpupdate",
+     "kind": "use",
+     "line": 1840,
+     "text": "else if (!IS_TYPE_PHYSICAL(moveType) && !(gHitMarker & HITMARKER_PASSIVE_DAMAGE))"
+    },
+    {
+     "file": "src/pokemon.c",
+     "function": "CalculateBaseDamage",
+     "kind": "use",
+     "line": 2455,
+     "text": "if (IS_TYPE_PHYSICAL(type))"
+    },
+    {
+     "file": "src/pokemon.c",
+     "function": "CalculateBaseDamage",
+     "kind": "use",
+     "line": 2509,
+     "text": "if (IS_TYPE_PHYSICAL(type))"
+    },
+    {
+     "file": "src/pokemon.c",
+     "function": "CalculateBaseDamage",
+     "kind": "use",
+     "line": 2564,
+     "text": "if (IS_TYPE_SPECIAL(type))"
+    },
+    {
+     "file": "include/battle.h",
+     "function": "?",
+     "kind": "definition",
+     "line": 475,
+     "text": "#define IS_TYPE_PHYSICAL(moveType)(moveType < TYPE_MYSTERY)"
+    },
+    {
+     "file": "include/battle.h",
+     "function": "?",
+     "kind": "definition",
+     "line": 476,
+     "text": "#define IS_TYPE_SPECIAL(moveType)(moveType > TYPE_MYSTERY)"
+    }
+   ]
+  },
+  "hns": {
+   "fairy": [
+    {
+     "file": "src/battle_controller_player.c",
+     "function": "MoveSelectionDisplayMoveTypeDoubles",
+     "kind": "fairy",
+     "line": 1802,
+     "text": "type = TYPE_FAIRY;"
+    },
+    {
+     "file": "src/battle_controller_player.c",
+     "function": "MoveSelectionDisplayMoveType",
+     "kind": "fairy",
+     "line": 1838,
+     "text": "type = TYPE_FAIRY;"
+    },
+    {
+     "file": "src/battle_main.c",
+     "function": "?",
+     "kind": "fairy",
+     "line": 523,
+     "text": "TYPE_FAIRY, TYPE_FIGHTING, TYPE_MUL_SUPER_EFFECTIVE,"
+    },
+    {
+     "file": "src/battle_main.c",
+     "function": "?",
+     "kind": "fairy",
+     "line": 524,
+     "text": "TYPE_FAIRY, TYPE_DRAGON, TYPE_MUL_SUPER_EFFECTIVE,"
+    },
+    {
+     "file": "src/battle_main.c",
+     "function": "?",
+     "kind": "fairy",
+     "line": 525,
+     "text": "TYPE_FAIRY, TYPE_DARK, TYPE_MUL_SUPER_EFFECTIVE,"
+    },
+    {
+     "file": "src/battle_main.c",
+     "function": "?",
+     "kind": "fairy",
+     "line": 526,
+     "text": "TYPE_FAIRY, TYPE_POISON, TYPE_MUL_NOT_EFFECTIVE,"
+    },
+    {
+     "file": "src/battle_main.c",
+     "function": "?",
+     "kind": "fairy",
+     "line": 527,
+     "text": "TYPE_FAIRY, TYPE_STEEL, TYPE_MUL_NOT_EFFECTIVE,"
+    },
+    {
+     "file": "src/battle_main.c",
+     "function": "?",
+     "kind": "fairy",
+     "line": 528,
+     "text": "TYPE_FAIRY, TYPE_FIRE, TYPE_MUL_NOT_EFFECTIVE,"
+    },
+    {
+     "file": "src/battle_main.c",
+     "function": "?",
+     "kind": "fairy",
+     "line": 529,
+     "text": "TYPE_FIGHTING, TYPE_FAIRY, TYPE_MUL_NOT_EFFECTIVE,"
+    },
+    {
+     "file": "src/battle_main.c",
+     "function": "?",
+     "kind": "fairy",
+     "line": 530,
+     "text": "TYPE_POISON, TYPE_FAIRY, TYPE_MUL_SUPER_EFFECTIVE,"
+    },
+    {
+     "file": "src/battle_main.c",
+     "function": "?",
+     "kind": "fairy",
+     "line": 532,
+     "text": "TYPE_DRAGON, TYPE_FAIRY, TYPE_MUL_NO_EFFECT,"
+    },
+    {
+     "file": "src/battle_main.c",
+     "function": "?",
+     "kind": "fairy",
+     "line": 533,
+     "text": "TYPE_DARK, TYPE_FAIRY, TYPE_MUL_NOT_EFFECTIVE,"
+    },
+    {
+     "file": "src/battle_main.c",
+     "function": "?",
+     "kind": "fairy",
+     "line": 534,
+     "text": "TYPE_STEEL, TYPE_FAIRY, TYPE_MUL_SUPER_EFFECTIVE,"
+    },
+    {
+     "file": "src/battle_main.c",
+     "function": "?",
+     "kind": "fairy",
+     "line": 649,
+     "text": "TYPE_FAIRY, TYPE_FIGHTING, TYPE_MUL_SUPER_EFFECTIVE,"
+    },
+    {
+     "file": "src/battle_main.c",
+     "function": "?",
+     "kind": "fairy",
+     "line": 650,
+     "text": "TYPE_FAIRY, TYPE_DRAGON, TYPE_MUL_SUPER_EFFECTIVE,"
+    },
+    {
+     "file": "src/battle_main.c",
+     "function": "?",
+     "kind": "fairy",
+     "line": 651,
+     "text": "TYPE_FAIRY, TYPE_DARK, TYPE_MUL_SUPER_EFFECTIVE,"
+    },
+    {
+     "file": "src/battle_main.c",
+     "function": "?",
+     "kind": "fairy",
+     "line": 652,
+     "text": "TYPE_FAIRY, TYPE_POISON, TYPE_MUL_NOT_EFFECTIVE,"
+    },
+    {
+     "file": "src/battle_main.c",
+     "function": "?",
+     "kind": "fairy",
+     "line": 653,
+     "text": "TYPE_FAIRY, TYPE_STEEL, TYPE_MUL_NOT_EFFECTIVE,"
+    },
+    {
+     "file": "src/battle_main.c",
+     "function": "?",
+     "kind": "fairy",
+     "line": 654,
+     "text": "TYPE_FAIRY, TYPE_FIRE, TYPE_MUL_NOT_EFFECTIVE,"
+    },
+    {
+     "file": "src/battle_main.c",
+     "function": "?",
+     "kind": "fairy",
+     "line": 655,
+     "text": "TYPE_FIGHTING, TYPE_FAIRY, TYPE_MUL_NOT_EFFECTIVE,"
+    },
+    {
+     "file": "src/battle_main.c",
+     "function": "?",
+     "kind": "fairy",
+     "line": 656,
+     "text": "TYPE_POISON, TYPE_FAIRY, TYPE_MUL_SUPER_EFFECTIVE,"
+    },
+    {
+     "file": "src/battle_main.c",
+     "function": "?",
+     "kind": "fairy",
+     "line": 657,
+     "text": "TYPE_BUG, TYPE_FAIRY, TYPE_MUL_NOT_EFFECTIVE,"
+    },
+    {
+     "file": "src/battle_main.c",
+     "function": "?",
+     "kind": "fairy",
+     "line": 658,
+     "text": "TYPE_DRAGON, TYPE_FAIRY, TYPE_MUL_NO_EFFECT,"
+    },
+    {
+     "file": "src/battle_main.c",
+     "function": "?",
+     "kind": "fairy",
+     "line": 659,
+     "text": "TYPE_DARK, TYPE_FAIRY, TYPE_MUL_NOT_EFFECTIVE,"
+    },
+    {
+     "file": "src/battle_main.c",
+     "function": "?",
+     "kind": "fairy",
+     "line": 660,
+     "text": "TYPE_STEEL, TYPE_FAIRY, TYPE_MUL_SUPER_EFFECTIVE,"
+    },
+    {
+     "file": "src/battle_main.c",
+     "function": "?",
+     "kind": "fairy",
+     "line": 777,
+     "text": "TYPE_FAIRY, TYPE_FIGHTING, TYPE_MUL_SUPER_EFFECTIVE,"
+    },
+    {
+     "file": "src/battle_main.c",
+     "function": "?",
+     "kind": "fairy",
+     "line": 778,
+     "text": "TYPE_FAIRY, TYPE_DRAGON, TYPE_MUL_SUPER_EFFECTIVE,"
+    },
+    {
+     "file": "src/battle_main.c",
+     "function": "?",
+     "kind": "fairy",
+     "line": 779,
+     "text": "TYPE_FAIRY, TYPE_DARK, TYPE_MUL_SUPER_EFFECTIVE,"
+    },
+    {
+     "file": "src/battle_main.c",
+     "function": "?",
+     "kind": "fairy",
+     "line": 780,
+     "text": "TYPE_FAIRY, TYPE_POISON, TYPE_MUL_NOT_EFFECTIVE,"
+    },
+    {
+     "file": "src/battle_main.c",
+     "function": "?",
+     "kind": "fairy",
+     "line": 781,
+     "text": "TYPE_FAIRY, TYPE_STEEL, TYPE_MUL_NOT_EFFECTIVE,"
+    },
+    {
+     "file": "src/battle_main.c",
+     "function": "?",
+     "kind": "fairy",
+     "line": 782,
+     "text": "TYPE_FAIRY, TYPE_FIRE, TYPE_MUL_NOT_EFFECTIVE,"
+    },
+    {
+     "file": "src/battle_main.c",
+     "function": "?",
+     "kind": "fairy",
+     "line": 783,
+     "text": "TYPE_FIGHTING, TYPE_FAIRY, TYPE_MUL_NOT_EFFECTIVE,"
+    },
+    {
+     "file": "src/battle_main.c",
+     "function": "?",
+     "kind": "fairy",
+     "line": 784,
+     "text": "TYPE_POISON, TYPE_FAIRY, TYPE_MUL_SUPER_EFFECTIVE,"
+    },
+    {
+     "file": "src/battle_main.c",
+     "function": "?",
+     "kind": "fairy",
+     "line": 785,
+     "text": "TYPE_BUG, TYPE_FAIRY, TYPE_MUL_NOT_EFFECTIVE,"
+    },
+    {
+     "file": "src/battle_main.c",
+     "function": "?",
+     "kind": "fairy",
+     "line": 786,
+     "text": "TYPE_DRAGON, TYPE_FAIRY, TYPE_MUL_NO_EFFECT,"
+    },
+    {
+     "file": "src/battle_main.c",
+     "function": "?",
+     "kind": "fairy",
+     "line": 787,
+     "text": "TYPE_DARK, TYPE_FAIRY, TYPE_MUL_NOT_EFFECTIVE,"
+    },
+    {
+     "file": "src/battle_main.c",
+     "function": "?",
+     "kind": "fairy",
+     "line": 788,
+     "text": "TYPE_STEEL, TYPE_FAIRY, TYPE_MUL_SUPER_EFFECTIVE,"
+    },
+    {
+     "file": "src/battle_main.c",
+     "function": "?",
+     "kind": "fairy",
+     "line": 815,
+     "text": "[TYPE_FAIRY] = _(\"FAIRY\"),"
+    },
+    {
+     "file": "src/battle_script_commands.c",
+     "function": "Cmd_damagecalc",
+     "kind": "fairy",
+     "line": 1364,
+     "text": "moveType = TYPE_FAIRY;"
+    },
+    {
+     "file": "src/battle_script_commands.c",
+     "function": "DisplayMoveTypeChange",
+     "kind": "fairy",
+     "line": 1397,
+     "text": "moveType = TYPE_FAIRY;"
+    },
+    {
+     "file": "src/battle_script_commands.c",
+     "function": "getHiddenPowerType",
+     "kind": "fairy",
+     "line": 1584,
+     "text": "type = TYPE_FAIRY;"
+    },
+    {
+     "file": "src/battle_script_commands.c",
+     "function": "getHiddenPowerType2",
+     "kind": "fairy",
+     "line": 1601,
+     "text": "type = TYPE_FAIRY;"
+    },
+    {
+     "file": "src/battle_script_commands.c",
+     "function": "Cmd_hiddenpowercalc",
+     "kind": "fairy",
+     "line": 9730,
+     "text": "gBattleStruct->dynamicMoveType = TYPE_FAIRY;"
+    },
+    {
+     "file": "src/battle_script_commands.c",
+     "function": "Cmd_handleballthrow",
+     "kind": "fairy",
+     "line": 10801,
+     "text": "if (IS_BATTLER_OF_TYPE(gBattlerTarget, TYPE_FAIRY) || IS_BATTLER_OF_TYPE(gBattlerTarget, TYPE_PSYCHIC ))"
+    },
+    {
+     "file": "src/data/battle_moves.h",
+     "function": "?",
+     "kind": "fairy",
+     "line": 2611,
+     "text": ".type = TYPE_FAIRY,"
+    },
+    {
+     "file": "src/data/battle_moves.h",
+     "function": "?",
+     "kind": "fairy",
+     "line": 2863,
+     "text": ".type = TYPE_FAIRY,"
+    },
+    {
+     "file": "src/data/battle_moves.h",
+     "function": "?",
+     "kind": "fairy",
+     "line": 3311,
+     "text": ".type = TYPE_FAIRY,"
+    },
+    {
+     "file": "src/data/battle_moves.h",
+     "function": "?",
+     "kind": "fairy",
+     "line": 5106,
+     "text": ".type = TYPE_FAIRY,"
+    },
+    {
+     "file": "src/data/battle_moves.h",
+     "function": "?",
+     "kind": "fairy",
+     "line": 5119,
+     "text": ".type = TYPE_FAIRY,"
+    },
+    {
+     "file": "src/data/pokemon/species_info.h",
+     "function": "?",
+     "kind": "fairy",
+     "line": 1082,
+     "text": ".types = { TYPE_FAIRY, TYPE_FAIRY }, //changed"
+    },
+    {
+     "file": "src/data/pokemon/species_info.h",
+     "function": "?",
+     "kind": "fairy",
+     "line": 1114,
+     "text": ".types = { TYPE_FAIRY, TYPE_FAIRY }, //changed"
+    },
+    {
+     "file": "src/data/pokemon/species_info.h",
+     "function": "?",
+     "kind": "fairy",
+     "line": 1205,
+     "text": ".types = { TYPE_NORMAL, TYPE_FAIRY }, //changed"
+    },
+    {
+     "file": "src/data/pokemon/species_info.h",
+     "function": "?",
+     "kind": "fairy",
+     "line": 1237,
+     "text": ".types = { TYPE_NORMAL, TYPE_FAIRY }, //changed"
+    },
+    {
+     "file": "src/data/pokemon/species_info.h",
+     "function": "?",
+     "kind": "fairy",
+     "line": 3716,
+     "text": ".types = { TYPE_PSYCHIC, TYPE_FAIRY }, //changed"
+    },
+    {
+     "file": "src/data/pokemon/species_info.h",
+     "function": "?",
+     "kind": "fairy",
+     "line": 4685,
+     "text": ".types = { TYPE_GRASS, TYPE_FAIRY }, //changed"
+    },
+    {
+     "file": "src/data/pokemon/species_info.h",
+     "function": "?",
+     "kind": "fairy",
+     "line": 5270,
+     "text": ".types = { TYPE_FAIRY, TYPE_FAIRY }, //changed"
+    },
+    {
+     "file": "src/data/pokemon/species_info.h",
+     "function": "?",
+     "kind": "fairy",
+     "line": 5301,
+     "text": ".types = { TYPE_NORMAL, TYPE_FAIRY }, //changed"
+    },
+    {
+     "file": "src/data/pokemon/species_info.h",
+     "function": "?",
+     "kind": "fairy",
+     "line": 5332,
+     "text": ".types = { TYPE_FAIRY, TYPE_FAIRY }, //changed"
+    },
+    {
+     "file": "src/data/pokemon/species_info.h",
+     "function": "?",
+     "kind": "fairy",
+     "line": 5363,
+     "text": ".types = { TYPE_FAIRY, TYPE_FLYING }, //changed"
+    },
+    {
+     "file": "src/data/pokemon/species_info.h",
+     "function": "?",
+     "kind": "fairy",
+     "line": 5576,
+     "text": ".types = { TYPE_WATER, TYPE_FAIRY }, //changed"
+    },
+    {
+     "file": "src/data/pokemon/species_info.h",
+     "function": "?",
+     "kind": "fairy",
+     "line": 5608,
+     "text": ".types = { TYPE_WATER, TYPE_FAIRY }, //changed"
+    },
+    {
+     "file": "src/data/pokemon/species_info.h",
+     "function": "?",
+     "kind": "fairy",
+     "line": 6366,
+     "text": ".types = { TYPE_FAIRY, TYPE_FAIRY }, //changed"
+    },
+    {
+     "file": "src/data/pokemon/species_info.h",
+     "function": "?",
+     "kind": "fairy",
+     "line": 6367,
+     "text": ".types_new = { TYPE_FAIRY, TYPE_NORMAL }, //changed, modern typing"
+    },
+    {
+     "file": "src/data/pokemon/species_info.h",
+     "function": "?",
+     "kind": "fairy",
+     "line": 6398,
+     "text": ".types = { TYPE_FAIRY, TYPE_FAIRY }, //changed"
+    },
+    {
+     "file": "src/data/pokemon/species_info.h",
+     "function": "?",
+     "kind": "fairy",
+     "line": 6399,
+     "text": ".types_new = { TYPE_FAIRY, TYPE_NORMAL }, //changed, modern typing"
+    },
+    {
+     "file": "src/data/pokemon/species_info.h",
+     "function": "?",
+     "kind": "fairy",
+     "line": 8923,
+     "text": ".types = { TYPE_NORMAL, TYPE_FAIRY }, //changed"
+    },
+    {
+     "file": "src/data/pokemon/species_info.h",
+     "function": "?",
+     "kind": "fairy",
+     "line": 9201,
+     "text": ".types = { TYPE_WATER, TYPE_FAIRY }, //changed"
+    },
+    {
+     "file": "src/data/pokemon/species_info.h",
+     "function": "?",
+     "kind": "fairy",
+     "line": 9954,
+     "text": ".types = { TYPE_NORMAL, TYPE_FAIRY }, //changed"
+    },
+    {
+     "file": "src/data/pokemon/species_info.h",
+     "function": "?",
+     "kind": "fairy",
+     "line": 10108,
+     "text": ".types = { TYPE_STEEL, TYPE_FAIRY }, //changed"
+    },
+    {
+     "file": "src/data/pokemon/species_info.h",
+     "function": "?",
+     "kind": "fairy",
+     "line": 11226,
+     "text": ".types = { TYPE_PSYCHIC, TYPE_FAIRY }, //changed"
+    },
+    {
+     "file": "src/data/pokemon/species_info.h",
+     "function": "?",
+     "kind": "fairy",
+     "line": 11257,
+     "text": ".types = { TYPE_PSYCHIC, TYPE_FAIRY }, //changed"
+    },
+    {
+     "file": "src/data/pokemon/species_info.h",
+     "function": "?",
+     "kind": "fairy",
+     "line": 11288,
+     "text": ".types = { TYPE_PSYCHIC, TYPE_FAIRY }, //changed"
+    },
+    {
+     "file": "src/data/pokemon/species_info.h",
+     "function": "?",
+     "kind": "fairy",
+     "line": 12481,
+     "text": ".types = { TYPE_PSYCHIC, TYPE_FAIRY}, //change"
+    },
+    {
+     "file": "src/data/pokemon/species_info.h",
+     "function": "?",
+     "kind": "fairy",
+     "line": 12738,
+     "text": ".types = { TYPE_FAIRY, TYPE_FAIRY},"
+    },
+    {
+     "file": "src/data/pokemon/species_info.h",
+     "function": "?",
+     "kind": "fairy",
+     "line": 12795,
+     "text": ".types = { TYPE_FAIRY, TYPE_FLYING}, //changed"
+    },
+    {
+     "file": "src/data/union_room.h",
+     "function": "?",
+     "kind": "fairy",
+     "line": 888,
+     "text": "{ gTypeNames[TYPE_FAIRY],    TYPE_FAIRY          },"
+    },
+    {
+     "file": "src/menu.c",
+     "function": "?",
+     "kind": "fairy",
+     "line": 135,
+     "text": "[TYPE_FAIRY + 1]    = { 32, 12, 0x4  },"
+    },
+    {
+     "file": "src/pokedex.c",
+     "function": "?",
+     "kind": "fairy",
+     "line": 1400,
+     "text": "{gText_DexEmptyString, gTypeNames[TYPE_FAIRY]},"
+    },
+    {
+     "file": "src/pokedex.c",
+     "function": "?",
+     "kind": "fairy",
+     "line": 1435,
+     "text": "TYPE_FAIRY,"
+    },
+    {
+     "file": "src/pokedex_plus_hgss.c",
+     "function": "?",
+     "kind": "fairy",
+     "line": 1950,
+     "text": "{gText_DexEmptyString, gTypeNames[TYPE_FAIRY]},"
+    },
+    {
+     "file": "src/pokedex_plus_hgss.c",
+     "function": "?",
+     "kind": "fairy",
+     "line": 1985,
+     "text": "TYPE_FAIRY,"
+    },
+    {
+     "file": "src/pokedex_plus_hgss.c",
+     "function": "SetSpriteInvisibility",
+     "kind": "fairy",
+     "line": 4415,
+     "text": "[TYPE_FAIRY] = TYPE_ICON_PAL_NUM_1, //based on battle_engine"
+    },
+    {
+     "file": "src/pokemon.c",
+     "function": "?",
+     "kind": "fairy",
+     "line": 2155,
+     "text": "{HOLD_EFFECT_FAIRY_POWER, TYPE_FAIRY},"
+    },
+    {
+     "file": "src/pokemon.c",
+     "function": "?",
+     "kind": "fairy",
+     "line": 4488,
+     "text": "TYPE_FAIRY    ,"
+    },
+    {
+     "file": "src/pokemon.c",
+     "function": "CalculateBaseDamage",
+     "kind": "fairy",
+     "line": 6393,
+     "text": "if ((attackerHoldEffect == HOLD_EFFECT_FAIRY_POWER && moveType == TYPE_FAIRY) && attacker->ability == ABILITY_MULTITYPE)"
+    },
+    {
+     "file": "src/pokemon_summary_screen.c",
+     "function": "?",
+     "kind": "fairy",
+     "line": 1015,
+     "text": "ANIMCMD_FRAME(TYPE_FAIRY * 8, 0, FALSE, FALSE),"
+    },
+    {
+     "file": "src/pokemon_summary_screen.c",
+     "function": "?",
+     "kind": "fairy",
+     "line": 1101,
+     "text": "[TYPE_FAIRY] = 14,"
+    },
+    {
+     "file": "src/pokemon_summary_screen.c",
+     "function": "SetMoveTypeIcons",
+     "kind": "fairy",
+     "line": 4359,
+     "text": "type = TYPE_FAIRY;"
+    },
+    {
+     "file": "src/pokemon_summary_screen.c",
+     "function": "SetNewMoveTypeIcon",
+     "kind": "fairy",
+     "line": 4406,
+     "text": "type = TYPE_FAIRY;"
+    },
+    {
+     "file": "src/scrcmd.c",
+     "function": "ScrCmd_showmonpic",
+     "kind": "fairy",
+     "line": 1660,
+     "text": "&& ((gSaveBlock1Ptr->tx_Challenges_OneTypeChallenge == TYPE_NORMAL) || (gSaveBlock1Ptr->tx_Challenges_OneTypeChallenge == TYPE_FAIRY)"
+    },
+    {
+     "file": "src/scrcmd.c",
+     "function": "ScrCmd_showmonpic",
+     "kind": "fairy",
+     "line": 1671,
+     "text": "&& ((gSaveBlock1Ptr->tx_Challenges_OneTypeChallenge == TYPE_NORMAL) || (gSaveBlock1Ptr->tx_Challenges_OneTypeChallenge == TYPE_FAIRY)"
+    },
+    {
+     "file": "src/scrcmd.c",
+     "function": "ScrCmd_buffermoncategory",
+     "kind": "fairy",
+     "line": 1796,
+     "text": "&& ((gSaveBlock1Ptr->tx_Challenges_OneTypeChallenge == TYPE_NORMAL) || (gSaveBlock1Ptr->tx_Challenges_OneTypeChallenge == TYPE_FAIRY)"
+    },
+    {
+     "file": "src/script_pokemon_util.c",
+     "function": "ScriptGiveMon",
+     "kind": "fairy",
+     "line": 126,
+     "text": "&& ((gSaveBlock1Ptr->tx_Challenges_OneTypeChallenge == TYPE_NORMAL) || (gSaveBlock1Ptr->tx_Challenges_OneTypeChallenge == TYPE_FAIRY)"
+    },
+    {
+     "file": "include/constants/pokemon.h",
+     "function": "?",
+     "kind": "fairy",
+     "line": 24,
+     "text": "#define TYPE_FAIRY            18"
+    }
+   ],
+   "moveMacro": [
+    {
+     "file": "src/battle_controller_player.c",
+     "function": "TypeEffectiveness",
+     "kind": "use",
+     "line": 1734,
+     "text": "if (IS_MOVE_STATUS(move) == TRUE && gBattleMoves[move].type != (TYPE_ELECTRIC | TYPE_GROUND))"
+    },
+    {
+     "file": "src/battle_controller_player.c",
+     "function": "TypeEffectiveness",
+     "kind": "use",
+     "line": 1738,
+     "text": "else if (IS_MOVE_STATUS(move) == TRUE && gBattleMoves[move].type == TYPE_ELECTRIC)"
+    },
+    {
+     "file": "src/battle_controller_player.c",
+     "function": "TypeEffectiveness",
+     "kind": "use",
+     "line": 1749,
+     "text": "else if (IS_MOVE_STATUS(move) == TRUE && gBattleMoves[move].type == TYPE_GROUND)"
+    },
+    {
+     "file": "src/battle_script_commands.c",
+     "function": "Cmd_accuracycheck",
+     "kind": "use",
+     "line": 1204,
+     "text": "if (gBattleMons[gBattlerAttacker].ability == ABILITY_HUSTLE && IS_MOVE_PHYSICAL(move))"
+    },
+    {
+     "file": "src/battle_script_commands.c",
+     "function": "Cmd_datahpupdate",
+     "kind": "use",
+     "line": 2420,
+     "text": "if (IS_MOVE_PHYSICAL(gCurrentMove) && !(gHitMarker & HITMARKER_PASSIVE_DAMAGE) && gCurrentMove != MOVE_PAIN_SPLIT)"
+    },
+    {
+     "file": "src/battle_script_commands.c",
+     "function": "Cmd_datahpupdate",
+     "kind": "use",
+     "line": 2435,
+     "text": "else if (IS_MOVE_SPECIAL(gCurrentMove) && !(gHitMarker & HITMARKER_PASSIVE_DAMAGE))"
+    },
+    {
+     "file": "src/battle_tv.c",
+     "function": "AddMovePoints",
+     "kind": "use",
+     "line": 1251,
+     "text": "if (IS_MOVE_PHYSICAL(gCurrentMove) && power != 0 && tvPtr->side[defSide].reflectMonId != 0)"
+    },
+    {
+     "file": "src/battle_tv.c",
+     "function": "AddMovePoints",
+     "kind": "use",
+     "line": 1267,
+     "text": "if (IS_MOVE_SPECIAL(gCurrentMove) && power != 0 && tvPtr->side[defSide].lightScreenMonId != 0)"
+    },
+    {
+     "file": "src/pokemon.c",
+     "function": "CalculateBaseDamage",
+     "kind": "use",
+     "line": 6705,
+     "text": "if (IS_MOVE_PHYSICAL(gCurrentMove))"
+    },
+    {
+     "file": "src/pokemon.c",
+     "function": "CalculateBaseDamage",
+     "kind": "use",
+     "line": 6813,
+     "text": "if (IS_MOVE_SPECIAL(gCurrentMove))"
+    },
+    {
+     "file": "include/battle.h",
+     "function": "?",
+     "kind": "definition",
+     "line": 467,
+     "text": "#define IS_MOVE_PHYSICAL(move)(gBattleMoves[move].category == MOVE_CATEGORY_PHYSICAL)"
+    },
+    {
+     "file": "include/battle.h",
+     "function": "?",
+     "kind": "definition",
+     "line": 468,
+     "text": "#define IS_MOVE_SPECIAL(move)(gBattleMoves[move].category == MOVE_CATEGORY_SPECIAL)"
+    },
+    {
+     "file": "include/battle.h",
+     "function": "?",
+     "kind": "definition",
+     "line": 469,
+     "text": "#define IS_MOVE_STATUS(move)(gBattleMoves[move].category == MOVE_CATEGORY_STATUS)"
+    }
+   ],
+   "mysteryCompare": [
+    {
+     "file": "src/battle_controller_player.c",
+     "function": "MoveSelectionDisplayMoveTypeDoubles",
+     "kind": "other",
+     "line": 1801,
+     "text": "if (type == TYPE_MYSTERY)"
+    },
+    {
+     "file": "src/battle_controller_player.c",
+     "function": "MoveSelectionDisplayMoveType",
+     "kind": "other",
+     "line": 1837,
+     "text": "if (type == TYPE_MYSTERY)"
+    },
+    {
+     "file": "src/battle_script_commands.c",
+     "function": "getHiddenPowerType",
+     "kind": "other",
+     "line": 1583,
+     "text": "if (type == TYPE_MYSTERY)"
+    },
+    {
+     "file": "src/battle_script_commands.c",
+     "function": "getHiddenPowerType2",
+     "kind": "other",
+     "line": 1600,
+     "text": "if (type == TYPE_MYSTERY)"
+    },
+    {
+     "file": "src/battle_script_commands.c",
+     "function": "Cmd_tryconversiontypechange",
+     "kind": "other",
+     "line": 8191,
+     "text": "if (moveType == TYPE_MYSTERY)"
+    },
+    {
+     "file": "src/battle_script_commands.c",
+     "function": "Cmd_tryconversiontypechange",
+     "kind": "other",
+     "line": 8217,
+     "text": "if (moveType == TYPE_MYSTERY)"
+    },
+    {
+     "file": "src/battle_script_commands.c",
+     "function": "Cmd_hiddenpowercalc",
+     "kind": "other",
+     "line": 9729,
+     "text": "if (gBattleStruct->dynamicMoveType == TYPE_MYSTERY)"
+    },
+    {
+     "file": "src/pokemon.c",
+     "function": "CalculateBaseDamage",
+     "kind": "other",
+     "line": 6809,
+     "text": "if (type == TYPE_MYSTERY)"
+    },
+    {
+     "file": "src/pokemon.c",
+     "function": "RandomizeTypeEffectivenessListEWRAM",
+     "kind": "other",
+     "line": 11806,
+     "text": "if (i != TYPE_MYSTERY)"
+    },
+    {
+     "file": "src/pokemon_summary_screen.c",
+     "function": "SetMoveTypeIcons",
+     "kind": "other",
+     "line": 4358,
+     "text": "if (type == TYPE_MYSTERY)"
+    },
+    {
+     "file": "src/pokemon_summary_screen.c",
+     "function": "SetNewMoveTypeIcon",
+     "kind": "other",
+     "line": 4405,
+     "text": "if (type == TYPE_MYSTERY)"
+    },
+    {
+     "file": "src/tx_rac_menu.c",
+     "function": "SaveData_TxRandomizerAndChallenges",
+     "kind": "other",
+     "line": 1994,
+     "text": "else if (sOptions->sel_challenges[MENUITEM_CHALLENGES_ONE_TYPE_CHALLENGE] >= TYPE_MYSTERY)"
+    },
+    {
+     "file": "src/tx_rac_menu.c",
+     "function": "DrawChoices_Challenges_OneTypeChallenge",
+     "kind": "other",
+     "line": 2631,
+     "text": "else if (n >= TYPE_MYSTERY)"
+    }
+   ],
+   "optionStyle": [
+    {
+     "file": "src/battle_controller_player.c",
+     "function": "MoveSelectionDisplaySplitIcon",
+     "kind": "option",
+     "line": 3525,
+     "text": "if (gSaveBlock2Ptr->optionStyle == 0)"
+    },
+    {
+     "file": "src/battle_controller_player.c",
+     "function": "MoveSelectionDisplaySplitIcon",
+     "kind": "option",
+     "line": 3530,
+     "text": "else if (gSaveBlock2Ptr->optionStyle == 1)"
+    },
+    {
+     "file": "src/battle_dome.c",
+     "function": "SetFacilityTrainerAndMonPtrs",
+     "kind": "option",
+     "line": 5942,
+     "text": "if (gSaveBlock2Ptr->optionStyle == 1) //off"
+    },
+    {
+     "file": "src/battle_dome.c",
+     "function": "SetFacilityTrainerAndMonPtrs",
+     "kind": "option",
+     "line": 5944,
+     "text": "else if (gSaveBlock2Ptr->optionStyle == 0) //on"
+    },
+    {
+     "file": "src/battle_factory.c",
+     "function": "SetRentalsToOpponentParty",
+     "kind": "option",
+     "line": 389,
+     "text": "if (gSaveBlock2Ptr->optionStyle == 1) //off"
+    },
+    {
+     "file": "src/battle_factory.c",
+     "function": "SetRentalsToOpponentParty",
+     "kind": "option",
+     "line": 391,
+     "text": "else if (gSaveBlock2Ptr->optionStyle == 0) //on"
+    },
+    {
+     "file": "src/battle_factory.c",
+     "function": "SetRentalsToOpponentParty",
+     "kind": "option",
+     "line": 394,
+     "text": "if (gSaveBlock2Ptr->optionStyle == 1) //off"
+    },
+    {
+     "file": "src/battle_factory.c",
+     "function": "SetRentalsToOpponentParty",
+     "kind": "option",
+     "line": 396,
+     "text": "else if (gSaveBlock2Ptr->optionStyle == 0) //on"
+    },
+    {
+     "file": "src/battle_factory.c",
+     "function": "SetPlayerAndOpponentParties",
+     "kind": "option",
+     "line": 422,
+     "text": "if (gSaveBlock2Ptr->optionStyle == 1) //off"
+    },
+    {
+     "file": "src/battle_factory.c",
+     "function": "SetPlayerAndOpponentParties",
+     "kind": "option",
+     "line": 424,
+     "text": "else if (gSaveBlock2Ptr->optionStyle == 0) //on"
+    },
+    {
+     "file": "src/battle_factory.c",
+     "function": "SetPlayerAndOpponentParties",
+     "kind": "option",
+     "line": 430,
+     "text": "if (gSaveBlock2Ptr->optionStyle == 1) //off"
+    },
+    {
+     "file": "src/battle_factory.c",
+     "function": "SetPlayerAndOpponentParties",
+     "kind": "option",
+     "line": 432,
+     "text": "else if (gSaveBlock2Ptr->optionStyle == 0) //on"
+    },
+    {
+     "file": "src/battle_factory.c",
+     "function": "GenerateInitialRentalMons",
+     "kind": "option",
+     "line": 552,
+     "text": "if (gSaveBlock2Ptr->optionStyle == 1) //off"
+    },
+    {
+     "file": "src/battle_factory.c",
+     "function": "GenerateInitialRentalMons",
+     "kind": "option",
+     "line": 554,
+     "text": "else if (gSaveBlock2Ptr->optionStyle == 0) //on"
+    },
+    {
+     "file": "src/battle_factory.c",
+     "function": "GetOpponentMostCommonMonType",
+     "kind": "option",
+     "line": 628,
+     "text": "if (gSaveBlock2Ptr->optionStyle == 1) //off"
+    },
+    {
+     "file": "src/battle_factory.c",
+     "function": "GetOpponentMostCommonMonType",
+     "kind": "option",
+     "line": 630,
+     "text": "else if (gSaveBlock2Ptr->optionStyle == 0) //on"
+    },
+    {
+     "file": "src/battle_factory.c",
+     "function": "GetOpponentBattleStyle",
+     "kind": "option",
+     "line": 681,
+     "text": "if (gSaveBlock2Ptr->optionStyle == 1) //off"
+    },
+    {
+     "file": "src/battle_factory.c",
+     "function": "GetOpponentBattleStyle",
+     "kind": "option",
+     "line": 683,
+     "text": "else if (gSaveBlock2Ptr->optionStyle == 0) //on"
+    },
+    {
+     "file": "src/battle_factory.c",
+     "function": "RestorePlayerPartyHeldItems",
+     "kind": "option",
+     "line": 740,
+     "text": "if (gSaveBlock2Ptr->optionStyle == 1) //off"
+    },
+    {
+     "file": "src/battle_factory.c",
+     "function": "RestorePlayerPartyHeldItems",
+     "kind": "option",
+     "line": 742,
+     "text": "else if (gSaveBlock2Ptr->optionStyle == 0) //on"
+    },
+    {
+     "file": "src/battle_factory.c",
+     "function": "RestorePlayerPartyHeldItems",
+     "kind": "option",
+     "line": 745,
+     "text": "if (gSaveBlock2Ptr->optionStyle == 1) //off"
+    },
+    {
+     "file": "src/battle_factory.c",
+     "function": "RestorePlayerPartyHeldItems",
+     "kind": "option",
+     "line": 747,
+     "text": "else if (gSaveBlock2Ptr->optionStyle == 0) //on"
+    },
+    {
+     "file": "src/battle_factory_screen.c",
+     "function": "CreateFrontierFactorySelectableMons",
+     "kind": "option",
+     "line": 1748,
+     "text": "if (gSaveBlock2Ptr->optionStyle == 1) //off"
+    },
+    {
+     "file": "src/battle_factory_screen.c",
+     "function": "CreateFrontierFactorySelectableMons",
+     "kind": "option",
+     "line": 1750,
+     "text": "else if (gSaveBlock2Ptr->optionStyle == 0) //on"
+    },
+    {
+     "file": "src/battle_factory_screen.c",
+     "function": "CreateSlateportTentSelectableMons",
+     "kind": "option",
+     "line": 1791,
+     "text": "if (gSaveBlock2Ptr->optionStyle == 1) //off"
+    },
+    {
+     "file": "src/battle_factory_screen.c",
+     "function": "CreateSlateportTentSelectableMons",
+     "kind": "option",
+     "line": 1793,
+     "text": "else if (gSaveBlock2Ptr->optionStyle == 0) //on"
+    },
+    {
+     "file": "src/battle_script_commands.c",
+     "function": "Cmd_accuracycheck",
+     "kind": "option",
+     "line": 1200,
+     "text": "if (gSaveBlock2Ptr->optionStyle == 1)"
+    },
+    {
+     "file": "src/battle_script_commands.c",
+     "function": "Cmd_accuracycheck",
+     "kind": "option",
+     "line": 1203,
+     "text": "if (gSaveBlock2Ptr->optionStyle == 0)"
+    },
+    {
+     "file": "src/battle_script_commands.c",
+     "function": "Cmd_datahpupdate",
+     "kind": "option",
+     "line": 2419,
+     "text": "if (gSaveBlock2Ptr->optionStyle == 0)"
+    },
+    {
+     "file": "src/battle_script_commands.c",
+     "function": "Cmd_datahpupdate",
+     "kind": "option",
+     "line": 2450,
+     "text": "if (gSaveBlock2Ptr->optionStyle == 1)"
+    },
+    {
+     "file": "src/battle_tent.c",
+     "function": "GenerateInitialRentalMons",
+     "kind": "option",
+     "line": 307,
+     "text": "if (gSaveBlock2Ptr->optionStyle == 1) //off"
+    },
+    {
+     "file": "src/battle_tent.c",
+     "function": "GenerateInitialRentalMons",
+     "kind": "option",
+     "line": 309,
+     "text": "else if (gSaveBlock2Ptr->optionStyle == 0) //on"
+    },
+    {
+     "file": "src/battle_tent.c",
+     "function": "GenerateOpponentMons",
+     "kind": "option",
+     "line": 363,
+     "text": "if (gSaveBlock2Ptr->optionStyle == 1) //off"
+    },
+    {
+     "file": "src/battle_tent.c",
+     "function": "GenerateOpponentMons",
+     "kind": "option",
+     "line": 365,
+     "text": "else if (gSaveBlock2Ptr->optionStyle == 0) //on"
+    },
+    {
+     "file": "src/battle_tower.c",
+     "function": "SetFacilityPtrsGetLevel",
+     "kind": "option",
+     "line": 3427,
+     "text": "if (gSaveBlock2Ptr->optionStyle == 1) //off"
+    },
+    {
+     "file": "src/battle_tower.c",
+     "function": "SetFacilityPtrsGetLevel",
+     "kind": "option",
+     "line": 3429,
+     "text": "else if (gSaveBlock2Ptr->optionStyle == 0) //on"
+    },
+    {
+     "file": "src/battle_tower.c",
+     "function": "SetTentPtrsGetLevel",
+     "kind": "option",
+     "line": 3525,
+     "text": "if (gSaveBlock2Ptr->optionStyle == 1) //off"
+    },
+    {
+     "file": "src/battle_tower.c",
+     "function": "SetTentPtrsGetLevel",
+     "kind": "option",
+     "line": 3527,
+     "text": "else if (gSaveBlock2Ptr->optionStyle == 0) //on"
+    },
+    {
+     "file": "src/battle_tower.c",
+     "function": "SetTentPtrsGetLevel",
+     "kind": "option",
+     "line": 3533,
+     "text": "if (gSaveBlock2Ptr->optionStyle == 1) //off"
+    },
+    {
+     "file": "src/battle_tower.c",
+     "function": "SetTentPtrsGetLevel",
+     "kind": "option",
+     "line": 3535,
+     "text": "else if (gSaveBlock2Ptr->optionStyle == 0) //on"
+    },
+    {
+     "file": "src/battle_tower.c",
+     "function": "SetTentPtrsGetLevel",
+     "kind": "option",
+     "line": 3542,
+     "text": "if (gSaveBlock2Ptr->optionStyle == 1) //off"
+    },
+    {
+     "file": "src/battle_tower.c",
+     "function": "SetTentPtrsGetLevel",
+     "kind": "option",
+     "line": 3544,
+     "text": "else if (gSaveBlock2Ptr->optionStyle == 0) //on"
+    },
+    {
+     "file": "src/battle_tower.c",
+     "function": "SetTentPtrsGetLevel",
+     "kind": "option",
+     "line": 3550,
+     "text": "if (gSaveBlock2Ptr->optionStyle == 1) //off"
+    },
+    {
+     "file": "src/battle_tower.c",
+     "function": "SetTentPtrsGetLevel",
+     "kind": "option",
+     "line": 3552,
+     "text": "else if (gSaveBlock2Ptr->optionStyle == 0) //on"
+    },
+    {
+     "file": "src/battle_tv.c",
+     "function": "AddMovePoints",
+     "kind": "option",
+     "line": 1249,
+     "text": "if (gSaveBlock2Ptr->optionStyle == 0)"
+    },
+    {
+     "file": "src/battle_tv.c",
+     "function": "AddMovePoints",
+     "kind": "option",
+     "line": 1256,
+     "text": "if (gSaveBlock2Ptr->optionStyle == 1)"
+    },
+    {
+     "file": "src/battle_tv.c",
+     "function": "AddMovePoints",
+     "kind": "option",
+     "line": 1265,
+     "text": "if (gSaveBlock2Ptr->optionStyle == 0)"
+    },
+    {
+     "file": "src/battle_tv.c",
+     "function": "AddMovePoints",
+     "kind": "option",
+     "line": 1272,
+     "text": "if (gSaveBlock2Ptr->optionStyle == 1)"
+    },
+    {
+     "file": "src/new_game.c",
+     "function": "SetDefaultOptions",
+     "kind": "option",
+     "line": 107,
+     "text": "gSaveBlock2Ptr->optionStyle = 0;"
+    },
+    {
+     "file": "src/options_plus_menu.c",
+     "function": "CB2_InitOptionPlusMenu",
+     "kind": "option",
+     "line": 878,
+     "text": "sOptions->sel_battle[MENUITEM_BATTLE_SPLIT]             = gSaveBlock2Ptr->optionStyle;"
+    },
+    {
+     "file": "src/options_plus_menu.c",
+     "function": "Task_OptionMenuSave",
+     "kind": "option",
+     "line": 1118,
+     "text": "gSaveBlock2Ptr->optionStyle             = sOptions->sel_battle[MENUITEM_BATTLE_SPLIT];"
+    },
+    {
+     "file": "src/options_plus_menu.c",
+     "function": "DrawChoices_Style",
+     "kind": "option",
+     "line": 1727,
+     "text": "gSaveBlock2Ptr->optionStyle = 0; //Phy / sp split on"
+    },
+    {
+     "file": "src/options_plus_menu.c",
+     "function": "DrawChoices_Style",
+     "kind": "option",
+     "line": 1731,
+     "text": "gSaveBlock2Ptr->optionStyle = 1; //Phy / sp split off"
+    },
+    {
+     "file": "src/pokedex_plus_hgss.c",
+     "function": "PrintStatsScreen_Moves_Bottom",
+     "kind": "option",
+     "line": 5644,
+     "text": "if (gSaveBlock2Ptr->optionStyle == 0)"
+    },
+    {
+     "file": "src/pokemon.c",
+     "function": "CalculateBaseDamage",
+     "kind": "option",
+     "line": 6356,
+     "text": "if (gSaveBlock2Ptr->optionStyle == 1)"
+    },
+    {
+     "file": "src/pokemon.c",
+     "function": "CalculateBaseDamage",
+     "kind": "option",
+     "line": 6366,
+     "text": "if (gSaveBlock2Ptr->optionStyle == 0)"
+    },
+    {
+     "file": "src/pokemon.c",
+     "function": "CalculateBaseDamage",
+     "kind": "option",
+     "line": 6484,
+     "text": "if (gSaveBlock2Ptr->optionStyle == 0)"
+    },
+    {
+     "file": "src/pokemon.c",
+     "function": "CalculateBaseDamage",
+     "kind": "option",
+     "line": 6487,
+     "text": "if (gSaveBlock2Ptr->optionStyle == 1)"
+    },
+    {
+     "file": "src/pokemon.c",
+     "function": "CalculateBaseDamage",
+     "kind": "option",
+     "line": 6704,
+     "text": "if (gSaveBlock2Ptr->optionStyle == 0)"
+    },
+    {
+     "file": "src/pokemon.c",
+     "function": "CalculateBaseDamage",
+     "kind": "option",
+     "line": 6756,
+     "text": "if (gSaveBlock2Ptr->optionStyle == 1)"
+    },
+    {
+     "file": "src/pokemon.c",
+     "function": "CalculateBaseDamage",
+     "kind": "option",
+     "line": 6812,
+     "text": "if (gSaveBlock2Ptr->optionStyle == 0)"
+    },
+    {
+     "file": "src/pokemon.c",
+     "function": "CalculateBaseDamage",
+     "kind": "option",
+     "line": 6857,
+     "text": "if (gSaveBlock2Ptr->optionStyle == 1)"
+    },
+    {
+     "file": "src/pokemon.c",
+     "function": "CalculateBaseDamage",
+     "kind": "option",
+     "line": 6943,
+     "text": "if (gSaveBlock2Ptr->optionStyle == 0)"
+    },
+    {
+     "file": "src/pokemon_summary_screen.c",
+     "function": "PrintMoveDetails",
+     "kind": "option",
+     "line": 4166,
+     "text": "if (gSaveBlock2Ptr->optionStyle == 0)"
+    },
+    {
+     "file": "include/global.h",
+     "function": "?",
+     "kind": "option",
+     "line": 532,
+     "text": "u16 optionStyle:1;"
+    }
+   ],
+   "typeMacro": [
+    {
+     "file": "src/battle_script_commands.c",
+     "function": "Cmd_accuracycheck",
+     "kind": "use",
+     "line": 1201,
+     "text": "if (gBattleMons[gBattlerAttacker].ability == ABILITY_HUSTLE && IS_TYPE_PHYSICAL(type))"
+    },
+    {
+     "file": "src/battle_script_commands.c",
+     "function": "Cmd_datahpupdate",
+     "kind": "use",
+     "line": 2451,
+     "text": "if (IS_TYPE_PHYSICAL(moveType) && !(gHitMarker & HITMARKER_PASSIVE_DAMAGE) && gCurrentMove != MOVE_PAIN_SPLIT)"
+    },
+    {
+     "file": "src/battle_script_commands.c",
+     "function": "Cmd_datahpupdate",
+     "kind": "use",
+     "line": 2466,
+     "text": "else if (!IS_TYPE_PHYSICAL(moveType) && !(gHitMarker & HITMARKER_PASSIVE_DAMAGE))"
+    },
+    {
+     "file": "src/battle_tv.c",
+     "function": "AddMovePoints",
+     "kind": "use",
+     "line": 1258,
+     "text": "if (IS_TYPE_PHYSICAL(type) && power != 0 && tvPtr->side[defSide].reflectMonId != 0)"
+    },
+    {
+     "file": "src/battle_tv.c",
+     "function": "AddMovePoints",
+     "kind": "use",
+     "line": 1274,
+     "text": "if (!IS_TYPE_PHYSICAL(type) && power != 0 && tvPtr->side[defSide].lightScreenMonId != 0)"
+    },
+    {
+     "file": "src/pokemon.c",
+     "function": "CalculateBaseDamage",
+     "kind": "use",
+     "line": 6360,
+     "text": "if (IS_TYPE_PHYSICAL(type))"
+    },
+    {
+     "file": "src/pokemon.c",
+     "function": "CalculateBaseDamage",
+     "kind": "use",
+     "line": 6757,
+     "text": "if (IS_TYPE_PHYSICAL(type))"
+    },
+    {
+     "file": "src/pokemon.c",
+     "function": "CalculateBaseDamage",
+     "kind": "use",
+     "line": 6858,
+     "text": "if (IS_TYPE_SPECIAL(type))"
+    },
+    {
+     "file": "include/battle.h",
+     "function": "?",
+     "kind": "definition",
+     "line": 476,
+     "text": "#define IS_TYPE_PHYSICAL(t) ( ((t) < TYPE_MYSTERY && (t) != TYPE_GHOST) || (t) == TYPE_DARK )"
+    },
+    {
+     "file": "include/battle.h",
+     "function": "?",
+     "kind": "definition",
+     "line": 477,
+     "text": "#define IS_TYPE_SPECIAL(t) ( ((t) > TYPE_MYSTERY && (t) != TYPE_DARK)  || (t) == TYPE_GHOST )"
+    }
+   ]
+  },
+  "ts": {
+   "fairy": [],
+   "moveMacro": [],
+   "mysteryCompare": [
+    {
+     "file": "src/core/battle/cmds/part3.ts",
+     "function": "Cmd_tryconversiontypechange",
+     "kind": "other",
+     "line": 1127,
+     "text": "if (t === C.TYPE_MYSTERY) t = IS_BATTLER_OF_TYPE(a, C.TYPE_GHOST) ? C.TYPE_GHOST : C.TYPE_NORMAL;"
+    },
+    {
+     "file": "src/core/battle/cmds/part4.ts",
+     "function": "Cmd_hiddenpowercalc",
+     "kind": "other",
+     "line": 433,
+     "text": "if (type >= C.TYPE_MYSTERY) type++;"
+    },
+    {
+     "file": "src/core/battle/damage.ts",
+     "function": "CalculateBaseDamage",
+     "kind": "category",
+     "line": 59,
+     "text": "if (type < C.TYPE_MYSTERY) attack = u16(div(attack * (attackerHoldEffectParam + 100), 100));"
+    },
+    {
+     "file": "src/core/battle/damage.ts",
+     "function": "CalculateBaseDamage",
+     "kind": "category",
+     "line": 98,
+     "text": "if (type < C.TYPE_MYSTERY) {"
+    },
+    {
+     "file": "src/core/battle/damage.ts",
+     "function": "CalculateBaseDamage",
+     "kind": "other",
+     "line": 113,
+     "text": "if (type === C.TYPE_MYSTERY) damage = 0;"
+    },
+    {
+     "file": "src/core/battle/damage.ts",
+     "function": "CalculateBaseDamage",
+     "kind": "category",
+     "line": 115,
+     "text": "if (type > C.TYPE_MYSTERY) {"
+    }
+   ],
+   "optionStyle": [],
+   "typeMacro": [
+    {
+     "file": "src/core/battle/cmds/part1.ts",
+     "function": "Cmd_accuracycheck",
+     "kind": "use",
+     "line": 255,
+     "text": "if (gBattleMons[G.gBattlerAttacker].ability === C.ABILITY_HUSTLE && IS_TYPE_PHYSICAL(type)) calc = div(calc * 80, 100) & 0xffff;"
+    },
+    {
+     "file": "src/core/battle/cmds/part1.ts",
+     "function": "Cmd_datahpupdate",
+     "kind": "use",
+     "line": 696,
+     "text": "if (IS_TYPE_PHYSICAL(moveType) && !(G.gHitMarker & C.HITMARKER_PASSIVE_DAMAGE) && G.gCurrentMove !== C.MOVE_PAIN_SPLIT) {"
+    },
+    {
+     "file": "src/core/battle/cmds/part1.ts",
+     "function": "Cmd_datahpupdate",
+     "kind": "use",
+     "line": 702,
+     "text": "} else if (!IS_TYPE_PHYSICAL(moveType) && !(G.gHitMarker & C.HITMARKER_PASSIVE_DAMAGE)) {"
+    }
+   ]
+  }
+ },
+ "summary": {
+  "emerald": {
+   "fairyFiles": 0,
+   "fairyLines": 0,
+   "filesTouchingCategory": 3,
+   "moveMacroUses": 0,
+   "mysteryCompares": 0,
+   "mysteryOther": 4,
+   "optionStyleLines": 0,
+   "typeMacroUses": 8
+  },
+  "firered": {
+   "fairyFiles": 0,
+   "fairyLines": 0,
+   "filesTouchingCategory": 2,
+   "moveMacroUses": 0,
+   "mysteryCompares": 0,
+   "mysteryOther": 4,
+   "optionStyleLines": 0,
+   "typeMacroUses": 6
+  },
+  "hns": {
+   "fairyFiles": 14,
+   "fairyLines": 94,
+   "filesTouchingCategory": 4,
+   "moveMacroUses": 10,
+   "mysteryCompares": 0,
+   "mysteryOther": 13,
+   "optionStyleLines": 65,
+   "typeMacroUses": 8
+  },
+  "ts": {
+   "fairyFiles": 0,
+   "fairyLines": 0,
+   "filesTouchingCategory": 2,
+   "moveMacroUses": 0,
+   "mysteryCompares": 3,
+   "mysteryOther": 3,
+   "optionStyleLines": 0,
+   "typeMacroUses": 3
+  }
+ }
+}
