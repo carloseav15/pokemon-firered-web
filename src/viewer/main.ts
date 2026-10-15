@@ -242,6 +242,8 @@ let warpOffsetX=0,warpOffsetY=0;
 let warpPriority: number | null = null;
 let warpCameraY=0,fallPreventStep=false;
 let playerElevation = 0;
+/** ObjectEventUpdateElevation currentElevation: 0 on neutral tiles, unlike previousElevation (draw priority). */
+let playerCurrentElevation = 0;
 let stepTarget: {x:number;y:number} | null = null;
 let groundVisualY = 0;
 let jumpBehaviors: readonly number[] = [];
@@ -665,6 +667,7 @@ async function startExploration(targetGx?: number, targetGy?: number): Promise<v
   }
   playerElevation=avatarDepth?.elevationAt(playerX,playerY)??0;
   if(playerElevation===15)playerElevation=0;
+  playerCurrentElevation=playerElevation;
   playerVisualX = (playerX - minX) * TILE;
   playerVisualY = (playerY - minY) * TILE;
   groundVisualY = playerVisualY;
@@ -737,7 +740,7 @@ function processPlayerStep(): void {
     targetDir = "east";
   }
 
-  const forced = !HOENN ? forcedNavigation.next(worldGrid,playerX,playerY,playerDir,playerMode,playerElevation) : null;
+  const forced = !HOENN ? forcedNavigation.next(worldGrid,playerX,playerY,playerDir,playerMode,playerCurrentElevation) : null;
   if(forced?.loading){void requestSectors().then(()=>processPlayerStep());return;}
   for(let i=0;i<(forced?.sounds??0);i++)audioController.playSE(C.SE_M_RAZOR_WIND2);
   const forcedStep=forced?.step;
@@ -778,7 +781,7 @@ function processPlayerStep(): void {
   }
 
   if (!forcedStep && !HOENN && tryNavigationWarp("front", playerDir)) return;
-  const plan = forcedStep?.plan ?? planStep(worldGrid, playerX, playerY, playerDir, playerMode, playerElevation);
+  const plan = forcedStep?.plan ?? planStep(worldGrid, playerX, playerY, playerDir, playerMode, playerCurrentElevation);
   const targetX = plan.x, targetY = plan.y;
   const isLedgeJump = plan.jump;
   if (plan.status === "loading" && findMapAt(targetX, targetY)) {
@@ -808,7 +811,7 @@ function processPlayerStep(): void {
 
     const nextElevation=avatarDepth?.elevationAt(targetX,targetY)??0;
     const previousElevation=avatarDepth?.elevationAt(playerX,playerY)??0;
-    if(nextElevation!==15&&previousElevation!==15&&nextElevation!==0)playerElevation=nextElevation;
+    if(nextElevation!==15&&previousElevation!==15){playerCurrentElevation=nextElevation&0xf;if(nextElevation!==0)playerElevation=nextElevation;}
     const transition = !!avatarAnimator && (previousVehicle === "surf") !== (playerMode === "surf");
     const groundActor = { x: targetX, y: targetY, previousX: playerX, previousY: playerY,
       direction: playerDir, previousDirection, landingJump: isLedgeJump || (transition && previousVehicle === "surf"), airborne:isLedgeJump||transition,
@@ -1008,6 +1011,7 @@ async function walkWarpStep(direction: Direction): Promise<void> {
       unsubscribe(); playerX += dx; playerY += dy; isStepping = false;
       const elevation = worldGrid.elevationAt(playerX,playerY);
       if (elevation !== 0 && elevation !== 15) playerElevation = elevation;
+      if (elevation !== 15) playerCurrentElevation = elevation & 0xf;
       avatarAnimator!.stop(state.playerChar, playerMode, direction, frame.tick);
       resolve();
     });
@@ -1219,6 +1223,7 @@ async function followNavigationWarp(source: MapHeader, warpId: number, phase: "i
     playerX = info.x + destination.arrival.x; playerY = info.y + destination.arrival.y;
     playerElevation = worldGrid.elevationAt(playerX, playerY);
     if (playerElevation === 15) playerElevation = 0;
+    playerCurrentElevation = playerElevation;
     const behavior = worldGrid.behaviorAt(playerX, playerY);
     playerDir = warpArrivalDirection(behavior,playerDir);
     forcedNavigation.reset(playerDir);
@@ -1277,7 +1282,7 @@ async function followNavigationWarp(source: MapHeader, warpId: number, phase: "i
     if (switched || !playerActive) {
       await changeNavigationWorld(old.map ?? source.id);
       playerX = old.x; playerY = old.y; playerDir = old.direction; playerMode = old.vehicle;
-      playerElevation = worldGrid.elevationAt(playerX, playerY);
+      playerElevation = worldGrid.elevationAt(playerX, playerY);playerCurrentElevation = playerElevation;
       playerVisualX = (playerX-minX)*TILE; playerVisualY = groundVisualY = (playerY-minY)*TILE; playerActive = true;
     }
     panel.textContent = `No se pudo cambiar de mapa: ${String(error)}`;
