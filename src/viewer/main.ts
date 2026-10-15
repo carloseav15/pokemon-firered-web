@@ -1,6 +1,7 @@
 import { ViewerForcedMovement } from "./forcedNavigation";
 import { FallWarpAnimation, type FallObject } from "@core/field/fallWarpAnimation";
 import { TeleportAnimation, type TeleportObject } from "@core/field/teleportAnimation";
+import { EscalatorTiles, EscalatorWarpAnimation } from "@core/field/escalatorAnimation";
 import { TaskManager } from "@core/gba/tasks";
 import { ViewerDoorAnimation, ViewerWarpVisuals } from "./render/warpVisuals";
 import * as C from "../games/firered/generated/constants";
@@ -15,7 +16,7 @@ import { SurfSupport } from "./render/surf";
 // colisiones, bici, surf, salientes, efectos de campo (hierba, agua, polvo, huellas de arena y bici),
 // interacción y deambulación de NPCs, música ambiental dinámica (12 pistas BGM) y efectos de sonido (SE).
 
-import type { MapHeader } from "@core/rom";
+import type { MapHeader, TilesetData } from "@core/rom";
 import { NavigationWarps, warpAt, stepWarpBehavior, inputWarpBehavior, warpArrivalDirection } from "./navigation";
 import { Rom, rom, setDataRoot } from "@core/rom";
 import { TileRenderer } from "@core/field/tileRenderer";
@@ -152,6 +153,28 @@ function scheduleSectors(): void {
   requestAnimationFrame(() => { sectorUpdateQueued = false; void requestSectors(); });
 }
 let fillSources = new Map<string, FillSource>();
+/** Live metatile replacement for field effects that rewrite map blocks (special_field_anim.c escalators). */
+type MetatilePainter = { info: KantoIndex["maps"][string]; layout: { blocks: Uint16Array | number[] }; renderer: TileRenderer;
+  bctx: CanvasRenderingContext2D; grid: WorldGrid; primary: TilesetData; secondary: TilesetData };
+const metatilePainters = new Map<string, MetatilePainter>();
+function paintNavigationMetatile(gx: number, gy: number, value: number): void {
+  const hit = findMapAt(gx, gy);
+  const painter = hit && metatilePainters.get(hit[0]);
+  if (!hit || !painter) return;
+  const x = gx - painter.info.x, y = gy - painter.info.y, mt = value & 0x3ff;
+  const slot = y * painter.info.width + x, old = painter.layout.blocks[slot]!;
+  painter.layout.blocks[slot] = (old & 0xf000) | (value & 0x0fff);
+  const { bottom, top } = painter.renderer.metatile(mt);
+  painter.bctx.clearRect(x * TILE, y * TILE, TILE, TILE);
+  painter.bctx.drawImage(bottom, x * TILE, y * TILE);
+  painter.bctx.drawImage(top, x * TILE, y * TILE);
+  const idx = painter.grid.idx(gx, gy);
+  painter.grid.metatiles[idx] = mt;
+  painter.grid.behaviors[idx] = behaviorOf(painter.primary.attributes, painter.secondary.attributes, mt);
+  painter.grid.solid[idx] = ((value & 0xc00) >> 10) !== 0 ? 1 : 0;
+  avatarDepth?.invalidate();
+  if (playerActive) avatarDepth?.update(playerVisualX, isStepping ? groundVisualY : playerVisualY, minX, minY, playerElevation);
+}
 let fillNearest: Int16Array | null = null;
 let animController: TileAnimationController;
 let minimapController: MinimapController | null = null;
@@ -1023,7 +1046,7 @@ const warpTasks=new TaskManager();
 let teleportFixedPriority=false,teleportSubpriority=0,teleportSubsprites=0,teleportFaceTick=-1;
 const warpDirections=["south","south","north","west","east"] as const;
 const warpDirectionIds={south:C.DIR_SOUTH,north:C.DIR_NORTH,west:C.DIR_WEST,east:C.DIR_EAST};
-const warpActor: TeleportObject & FallObject={
+const warpActor: TeleportObject & FallObject & {sprite:{x2:number}}={
   get invisible(){return playerWarpHidden;},set invisible(value){playerWarpHidden=value;},
   triggerGroundEffectsOnMove:false,triggerGroundEffectsOnStop:false,landingJump:false,
   get facingDirection(){return warpDirectionIds[playerDir];},
@@ -1031,6 +1054,7 @@ const warpActor: TeleportObject & FallObject={
   get fixedPriority(){return teleportFixedPriority;},set fixedPriority(value){teleportFixedPriority=value;},
   sprite:{
     get centerToCornerVecY(){return -parseFloat(playerEl!.style.height)/2;},
+    get x2(){return warpOffsetX;},set x2(value){warpOffsetX=value;},
     get y2(){return warpOffsetY;},set y2(value){warpOffsetY=value;},
     get priority(){return warpPriority??cdata<number[]>("event_object_movement","sElevationToPriority")[playerElevation]!;},
     set priority(value){warpPriority=value;},
@@ -1098,6 +1122,47 @@ async function animateFallDeparture(): Promise<void> {
   await warpVisuals!.wait(60+1);
 }
 
+let escalatorFade: Promise<void> | null = null, escalatorFadeDone = false, escalatorWarped = false, escalatorFaceTick = -1, escalatorFadeMode = 0;
+let escalatorMetatileIds: Record<string, number> | null = null;
+const navigationEscalator = new EscalatorWarpAnimation({
+  sprite: () => warpActor.sprite,
+  freezeObjects: () => {}, unfreezeObjects: () => {},
+  playerMovementReady: () => stepTarget === null,
+  holdFacing: () => {},
+  faceRight: () => { playerDir = "east"; escalatorFaceTick = viewerClock.tick;
+    avatarAnimator!.stop(state.playerChar, playerMode, playerDir, viewerClock.tick); },
+  playerMovementFinished: () => viewerClock.tick > escalatorFaceTick,
+  walkRight: () => {},
+  playEscalatorSound: () => audioController.playSE(C.SE_ESCALATOR),
+  beginFadeOut: () => { escalatorFadeDone = false;
+    escalatorFade = warpVisuals!.fadeScreen(escalatorFadeMode).then(() => { escalatorFadeDone = true; }); },
+  fadeFinished: () => escalatorFadeDone,
+  warpIntoMap: () => { escalatorWarped = true; },
+  destinationIsDownEscalator: () => worldGrid.behaviorAt(playerX, playerY) === C.MB_DOWN_ESCALATOR,
+  beginWarpIn: () => {}, unlockControls: () => {}, questLog: () => {},
+}, new EscalatorTiles({
+  metatileIdAt: (x, y) => worldGrid.getMetatile(x, y),
+  setMetatileIdAt: (x, y, id) => paintNavigationMetatile(x, y, id),
+}, () => ({ x: playerX, y: playerY }), warpTasks, name => {
+  const id = escalatorMetatileIds?.[name];
+  if (id === undefined) throw Error(`Missing metatile constant ${name}`);
+  return id;
+}), warpTasks);
+async function animateEscalator(outgoing: boolean, behavior: number): Promise<void> {
+  const started = viewerClock.tick; isStepping = true;
+  escalatorWarped = false; escalatorFaceTick = viewerClock.tick;
+  if (outgoing) navigationEscalator.StartEscalatorWarp(behavior, 10); else navigationEscalator.FieldCB_EscalatorWarpIn();
+  await new Promise<void>(resolve => {
+    const off = viewerClock.subscribe(() => {
+      warpTasks.run(); updatePlayerDisplay();
+      playerEl!.dataset.warpMotion = JSON.stringify({ phase: outgoing ? "escalator-out" : "escalator-in",
+        tick: viewerClock.tick - started, stage: navigationEscalator.stage, x: warpOffsetX, y: warpOffsetY });
+      if (outgoing ? !escalatorWarped : navigationEscalator.active) return;
+      off(); isStepping = false; delete playerEl!.dataset.warpMotion; resolve();
+    });
+  });
+}
+
 async function followNavigationWarp(source: MapHeader, warpId: number, phase: "input" | "front" | "step"): Promise<void> {
   if (warpBusy) return;
   warpBusy = true; content.setAttribute("aria-busy","true"); keysDown.clear(); playerMoving = false;
@@ -1105,6 +1170,7 @@ async function followNavigationWarp(source: MapHeader, warpId: number, phase: "i
   const sourceBehavior=worldGrid.behaviorAt(playerX,playerY);
   const falling=phase==="step"&&MB.MetatileBehavior_IsFallWarp(sourceBehavior);
   const teleport=phase==="step"&&MB.MetatileBehavior_IsWarpPad(sourceBehavior);
+  const escalator=phase==="step"&&MB.MetatileBehavior_IsEscalator(sourceBehavior);
   let switched = false;
   let door: ViewerDoorAnimation | null = null;
   let stopStairs: (()=>void) | null = null;
@@ -1137,7 +1203,13 @@ async function followNavigationWarp(source: MapHeader, warpId: number, phase: "i
     }
     if(falling)await animateFallDeparture();
     if(teleport){audioController.playSE(C.SE_WARP_IN);await animateTeleport(false);playerWarpHidden=true;updatePlayerDisplay();}
-    await warpVisuals!.fadeScreen(!cavePreview&&MapTransitionIsEnter(source.mapType,destination.header.mapType)?FADE_TO_WHITE:FADE_TO_BLACK);
+    const fadeOut=!cavePreview&&MapTransitionIsEnter(source.mapType,destination.header.mapType)?FADE_TO_WHITE:FADE_TO_BLACK;
+    if(escalator){
+      escalatorMetatileIds??=await fetch("/fr/constants.json").then(r=>r.json() as Promise<Record<string,number>>);
+      // Task_EscalatorWarpFieldEffect starts the fade itself and keeps animating until it finishes.
+      escalatorFadeMode=fadeOut;escalatorFade=null;escalatorFadeDone=false;
+      await animateEscalator(true,sourceBehavior);await escalatorFade;
+    }else await warpVisuals!.fadeScreen(fadeOut);
     stopStairs?.();stopStairs=null;
     viewerClock.pause("warp");
     content.style.visibility = "hidden";
@@ -1166,6 +1238,11 @@ async function followNavigationWarp(source: MapHeader, warpId: number, phase: "i
     } else if (teleport) {
       playerWarpHidden=false;updatePlayerDisplay();audioController.playSE(C.SE_WARP_OUT);
       await Promise.all([warpVisuals!.fadeScreen(fromWhite?FADE_FROM_WHITE:FADE_FROM_BLACK),animateTeleport(true)]);
+    } else if (escalator) {
+      // FieldCB_EscalatorWarpIn: fade in while the rider slides onto the escalator, then walk right.
+      playerWarpHidden=false;updatePlayerDisplay();
+      await Promise.all([warpVisuals!.fadeScreen(fromWhite?FADE_FROM_WHITE:FADE_FROM_BLACK),animateEscalator(false,behavior)]);
+      await walkWarpStep("east");
     } else if (MB.MetatileBehavior_IsWarpDoor_2(behavior)) {
       playerWarpHidden=true;updatePlayerDisplay();
       const resource=fillSources.get(destination.mapId);
@@ -1205,7 +1282,7 @@ async function followNavigationWarp(source: MapHeader, warpId: number, phase: "i
     }
     panel.textContent = `No se pudo cambiar de mapa: ${String(error)}`;
   } finally {
-    stopStairs?.();door?.dispose();navigationTeleport.reset();navigationFall.reset();fallPreventStep=false;warpCameraY=0;warpOffsetX=warpOffsetY=0;warpPriority=null;teleportFixedPriority=false;
+    stopStairs?.();door?.dispose();navigationTeleport.reset();navigationFall.reset();navigationEscalator.reset();fallPreventStep=false;warpCameraY=0;warpOffsetX=warpOffsetY=0;warpPriority=null;teleportFixedPriority=false;
     warpVisuals?.clear();playerWarpHidden=false;
     viewerClock.resume("warp"); content.style.visibility = "";
     warpBusy = false; content.setAttribute("aria-busy","false"); playerMoving = false; updatePlayerDisplay(); writeHash();
@@ -1502,6 +1579,7 @@ async function build(): Promise<void> {
     }
 
     fillSources.set(id, { info, layout, renderer });
+    metatilePainters.set(id, { info, layout, renderer, bctx, grid, primary, secondary });
     avatarDepth?.add(id,{x:info.x,y:info.y,width:info.width,height:info.height,blocks:layout.blocks,renderer});
     if (streaming) worldGrid.addSector(id, grid);
     content.appendChild(wrap);
@@ -1513,6 +1591,7 @@ async function build(): Promise<void> {
         if (animated) animController.removeMap(animated);
         worldGrid.removeSector(id);
         fillSources.delete(id);
+        metatilePainters.delete(id);
         avatarDepth?.remove(id);
       } };
   };
