@@ -1,6 +1,8 @@
 // Characterization check for the six places that decide the physical/special category from the move's
 // type: CalculateBaseDamage (damage.ts), Cmd_accuracycheck (Hustle) and Cmd_datahpupdate (Counter /
-// Mirror Coat bookkeeping). See unified-world/DISENO-REGLAS.md, steps 0 and 1.
+// Mirror Coat bookkeeping). See unified-world/DISENO-REGLAS.md, steps 0 to 2.
+// Steps 0-1: the default (gen3) profile is pinned to a reference recorded before the refactor.
+// Step 2: the unified profile (Gen 4 per-move category) is checked against the data files and the damage formula.
 //
 // What this proves: the behaviour of those functions over a fixed grid of inputs is unchanged by a refactor.
 // What it does NOT prove: that the behaviour matches the GBA. The reference was recorded from this port, not from
@@ -20,6 +22,8 @@ import { preloadBattleAssets } from '../../src/games/firered/battle/preload.ts';
 import { bs, ROM_BASE } from '../../src/core/battle/bscript.ts';
 import { seedRng } from '../../src/core/random.ts';
 import { CalculateBaseDamage } from '../../src/core/battle/damage.ts';
+import { setBattleRulesProfile } from '../../src/core/battle/rules.ts';
+import { MOVE_CATEGORIES_GEN4 } from '../../src/core/battle/data/moveCategoriesGen4.ts';
 import { Cmd_accuracycheck, Cmd_datahpupdate } from '../../src/core/battle/cmds/part1.ts';
 import { gBattleScriptingCommandsTable } from '../../src/core/battle/cmds/index.ts';
 import {
@@ -240,4 +244,160 @@ if (WRITE) {
     assert.deepEqual(result[k], ref[k], `${k}: behaviour differs from the recorded reference`);
   }
   console.log(`battle category characterization PASS (${damage.length} damage, ${accuracy.length} accuracy, ${hpupdate.length} hpupdate cases)`);
+}
+
+// ------------------------------------------------------------------------------------------------ unified profile
+// Expected values below are computed from the data files or from the documented damage formula, never copied
+// from a run of the code under test.
+
+const normName = (s: string): string => {
+  const n = s.toLowerCase().replace(/[^a-z0-9]/g, '');
+  return ({ vicegrip: 'visegrip', hijumpkick: 'highjumpkick', smellingsalt: 'smellingsalts', faintattack: 'feintattack' } as Record<string, string>)[n] ?? n;
+};
+const HIDDEN_POWER = C.MOVE_HIDDEN_POWER;
+const typeIsPhysical = (t: number): boolean => t < C.TYPE_MYSTERY;
+
+function moveOfLine(line: string): number {
+  const m = /(?:^|\|)[mt](\d+)\|/.exec(line);
+  assert.ok(m, `cannot read the move of case ${line}`);
+  return Number(m![1]);
+}
+
+function unifiedChecks(): void {
+  // 1. The table is the one the data files give.
+  const plat = JSON.parse(readFileSync('refs/platinum/moves.json', 'utf8')).data as Array<{ id: number; name: string; class: string }>;
+  const letter: Record<string, string> = { CLASS_PHYSICAL: 'P', CLASS_SPECIAL: 'S', CLASS_STATUS: '-' };
+  const expected = '-' + Array.from({ length: C.MOVES_COUNT - 1 }, (_, i) => letter[plat.find((m) => m.id === i + 1)!.class]).join('');
+  assert.equal(MOVE_CATEGORIES_GEN4, expected, 'moveCategoriesGen4.ts is stale: run tools/rules/move_categories.py');
+
+  // 2. The moves whose category differs from the type rule are exactly the Gen 4 changes Showdown lists
+  //    (plus Hidden Power, whose type is variable and which the type rule cannot classify).
+  const changed = new Set<number>();
+  for (let m = 1; m < C.MOVES_COUNT; m++) {
+    const c = MOVE_CATEGORIES_GEN4[m];
+    if (c === '-' || rom.moves[m].power === 0) continue;
+    if ((c === 'P') !== typeIsPhysical(rom.moves[m].type)) changed.add(m);
+  }
+  const sd = JSON.parse(readFileSync('refs/showdown/gen_changes.json', 'utf8'));
+  const sdMoves = (sd.data ?? sd).moves as Record<string, { changes: Record<string, { category?: string }> }>;
+  const byName = new Map(plat.map((m) => [normName(m.name), m.id]));
+  const showdownChanged = new Set<number>();
+  for (const [key, rec] of Object.entries(sdMoves)) {
+    if (rec.changes.gen4?.category) showdownChanged.add(byName.get(normName(key))!);
+  }
+  assert.equal(showdownChanged.size, 53, 'Showdown lists 53 Gen 4 category changes');
+  const unexplained = [...changed].filter((m) => m !== HIDDEN_POWER && !showdownChanged.has(m));
+  const missing = [...showdownChanged].filter((m) => !changed.has(m));
+  assert.deepEqual([unexplained, missing], [[], []], 'overlay differs from the Showdown Gen 4 changes');
+  assert.ok(changed.has(HIDDEN_POWER) && changed.size === 54, `expected 53 + Hidden Power, got ${changed.size}`);
+
+  // 3. Damage follows the move's category. Independent restatement of the non-modifier path of CalculateBaseDamage:
+  //    ((A * power * (2L/5 + 2)) / D) / 50, minimum 1, plus 2.
+  const formula = (level: number, power: number, atk: number, def: number): number => {
+    let d = atk * power;
+    d *= Math.trunc((2 * level) / 5) + 2;
+    d = Math.trunc(d / def);
+    d = Math.trunc(d / 50);
+    if (d === 0) d = 1;
+    return d + 2;
+  };
+  const A = 200, S = 20, D = 100, L = 50;
+  const dmg = (move: number): number => {
+    setMon(0, { attack: A, spAttack: S, level: L }); setMon(1, { defense: D, spDefense: D });
+    G.gBattleTypeFlags = 0; G.gBattlersCount = 2; G.gCurrentMove = move; G.gCritMultiplier = 1; G.gBattleWeather = 0;
+    return CalculateBaseDamage(gBattleMons[0], gBattleMons[1], move, 0, 0, 0, 0, 1);
+  };
+  const power = (m: number): number => rom.moves[m].power;
+  setBattleRulesProfile('gen3');
+  assert.equal(dmg(C.MOVE_TACKLE), formula(L, power(C.MOVE_TACKLE), A, D), 'formula restatement must match gen3 (Normal = physical)');
+  assert.equal(dmg(C.MOVE_FLAMETHROWER), formula(L, power(C.MOVE_FLAMETHROWER), S, D), 'formula restatement must match gen3 (Fire = special)');
+  assert.equal(dmg(C.MOVE_CRUNCH), formula(L, power(C.MOVE_CRUNCH), S, D), 'gen3: Dark is special');
+  assert.equal(dmg(C.MOVE_SHADOW_BALL), formula(L, power(C.MOVE_SHADOW_BALL), A, D), 'gen3: Ghost is physical');
+  setBattleRulesProfile('unified');
+  assert.equal(dmg(C.MOVE_TACKLE), formula(L, power(C.MOVE_TACKLE), A, D), 'unified: Tackle stays physical');
+  assert.equal(dmg(C.MOVE_FLAMETHROWER), formula(L, power(C.MOVE_FLAMETHROWER), S, D), 'unified: Flamethrower stays special');
+  assert.equal(dmg(C.MOVE_CRUNCH), formula(L, power(C.MOVE_CRUNCH), A, D), 'unified: Crunch becomes physical');
+  assert.equal(dmg(C.MOVE_SHADOW_BALL), formula(L, power(C.MOVE_SHADOW_BALL), S, D), 'unified: Shadow Ball becomes special');
+
+  // 4. Counter / Mirror Coat bookkeeping follows the category.
+  const hpAddr = findDataHpUpdate();
+  const hit = (move: number): { physical: number; special: number } => {
+    resetBattleStructs();
+    G.gBattleTypeFlags = 0; G.gBattlersCount = 2; G.gBattlerAttacker = 0; G.gBattlerTarget = 1;
+    setMon(0, {}); setMon(1, {});
+    G.gCurrentMove = move; gBattleStruct.dynamicMoveType = 0; G.gHitMarker = 0; G.gMoveResultFlags = 0;
+    G.gBattleMoveDamage = 20; G.gBattleControllerExecFlags = 0; G.gBattlescriptCurrInstr = hpAddr;
+    Cmd_datahpupdate();
+    return { physical: (gProtectStructs[1] as any).physicalDmg, special: (gProtectStructs[1] as any).specialDmg };
+  };
+  setBattleRulesProfile('gen3');
+  assert.deepEqual(hit(C.MOVE_CRUNCH), { physical: 0, special: 20 }, 'gen3: Crunch is recorded as special damage');
+  setBattleRulesProfile('unified');
+  assert.deepEqual(hit(C.MOVE_CRUNCH), { physical: 20, special: 0 }, 'unified: Crunch is recorded as physical damage');
+  assert.deepEqual(hit(C.MOVE_SHADOW_BALL), { physical: 0, special: 20 }, 'unified: Shadow Ball is recorded as special damage');
+
+  // 5. Hustle penalises physical moves by category: with accuracy 100 a miss can only come from the 80 % factor.
+  const addr = findAccuracyCheck();
+  const misses = (move: number): number => {
+    let n = 0;
+    for (let seed = 0; seed < 300; seed++) {
+      resetBattleStructs();
+      G.gBattleTypeFlags = 0; G.gBattlersCount = 2; G.gBattlerAttacker = 0; G.gBattlerTarget = 1;
+      setMon(0, { ability: C.ABILITY_HUSTLE }); setMon(1, {});
+      G.gCurrentMove = move; gBattleStruct.dynamicMoveType = 0; G.gMoveResultFlags = 0; G.gBattleWeather = 0;
+      G.gBattlescriptCurrInstr = addr;
+      seedRng(seed * 31 + 7);
+      Cmd_accuracycheck();
+      if (G.gMoveResultFlags & C.MOVE_RESULT_MISSED) n++;
+    }
+    return n;
+  };
+  assert.equal(rom.moves[C.MOVE_CRUNCH].accuracy, 100);
+  setBattleRulesProfile('gen3');
+  assert.equal(misses(C.MOVE_CRUNCH), 0, 'gen3: Crunch (Dark, special) is not affected by Hustle');
+  setBattleRulesProfile('unified');
+  assert.ok(misses(C.MOVE_CRUNCH) > 0, 'unified: Crunch (physical) is affected by Hustle');
+  assert.ok(misses(C.MOVE_TACKLE) > 0, 'unified: Tackle (physical) is affected by Hustle');
+
+  // 6. Outside the changed set, both profiles agree on the whole damage grid (status moves included);
+  //    inside it, they must differ somewhere, or this comparison proves nothing. The typeOverride grid ("t" lines)
+  //    is compared separately in 6b: there the gen3 category follows the overridden type and the unified one does not.
+  const unifiedLines = damageCases();
+  setBattleRulesProfile('gen3');
+  assert.equal(unifiedLines.length, damage.length);
+  let outsideDiff = 0, insideDiff = 0;
+  for (let i = 0; i < damage.length; i++) {
+    if (damage[i].startsWith('t') || unifiedLines[i] === damage[i]) continue;
+    if (changed.has(moveOfLine(damage[i]))) insideDiff++;
+    else outsideDiff++;
+  }
+  assert.equal(outsideDiff, 0, 'unified profile changes damage for a move whose category did not change');
+  assert.ok(insideDiff > 1000, `unified profile barely changes the changed moves (${insideDiff} cases)`);
+
+  // 6b. With a type override, the unified result depends on the move, not on the type: constant over the 17 real
+  //     types, and a "???" type (id 9) still deals no damage, as in gen3.
+  const tRows = (lines: string[]): Map<string, number> => new Map(lines.filter((l) => l.startsWith('t')).map((l) => {
+    const p = l.split('|');
+    return [`${p[0]}|${p[1]}|${p[2]}`, Number(p[3])] as [string, number];
+  }));
+  const gen3T = tRows(damage), uniT = tRows(unifiedLines);
+  for (const move of [C.MOVE_TACKLE, C.MOVE_HIDDEN_POWER, C.MOVE_FLAMETHROWER]) {
+    for (const crit of ['c1', 'c2']) {
+      const real = new Set<number>();
+      for (let t = 0; t <= 17; t++) if (t !== C.TYPE_MYSTERY) real.add(uniT.get(`t${move}|type${t}|${crit}`)!);
+      assert.equal(real.size, 1, `unified: move ${move} damage depends on the overridden type`);
+      assert.equal(uniT.get(`t${move}|type${C.TYPE_MYSTERY}|${crit}`), gen3T.get(`t${move}|type${C.TYPE_MYSTERY}|${crit}`),
+        `unified: a ??? type must still deal no damage (move ${move})`);
+    }
+  }
+
+  // 7. Switching back leaves no residue.
+  assert.equal(digest(damageCases()), result.damage.sha256, 'gen3 behaviour changed after using the unified profile');
+  console.log(`unified profile PASS (53 Gen 4 category changes + Hidden Power; ${insideDiff} damage cases differ, 0 outside the set)`);
+}
+
+try {
+  unifiedChecks();
+} finally {
+  setBattleRulesProfile('gen3');
 }
