@@ -183,9 +183,9 @@ Las rutas antiguas conservan los enlaces de mapa y redirigen a la consulta comú
 `src/hns/maps.ts` y `src/compare/crystalMain.ts`; el inspector GBA y el grafo de enlaces Crystal
 se conservan porque aportan herramientas adicionales. Los jobs anteriores especifican `legacy=1`.
 Explorar se ofrece solo para el mundo/exteriores de FireRed y Emerald: entra en el mapa elegido y
-«Visor» regresa a la consulta común con su cámara. Su renderizador/simulación anterior sigue cargando
-el mundo completo; optimizar Explorar por sectores es trabajo pendiente. No es un port jugable de
-Emerald, HnS o Crystal.
+el menú de Kanto permite regresar al mismo punto del atlas. Kanto continental usa mapas próximos
+(véase abajo); Hoenn y el inspector técnico conservan carga global. Johto sigue estático. No es un
+port jugable de Emerald, HnS o Crystal.
 
 Medición local antes/después: Chromium headless, Vite ya en ejecución, 1280×800, caché de red
 desactivada, una muestra por fuente. «Listo» significa imágenes de la vista cargadas; tiempos
@@ -222,8 +222,62 @@ compatibilidad de enlaces. El stress de caché pasó en las cuatro fuentes; la p
 usa un retraso de red de 150 ms declarado PREPARED, sin preparar estado del juego. La consulta no
 solicita módulos de `src/core` ni `src/games`. También pasó el job existente de huellas/bici y
 limpieza al salir. Pendientes: revisión completa de todos los mapas/sprites, gestos táctiles reales,
-producción, paridad con ROM, Explorer por sectores y traslado de más herramientas técnicas al visor común.
+producción, paridad con ROM, extender los sectores de Kanto a Hoenn/Johto y traslado de más herramientas técnicas al visor común.
 
+
+## Navegación inmersiva de Kanto
+
+Entrega `e1702ffe`. `/viewer.html#modo=explore&mapa=MAP_PALLET_TOWN` inicia la ruta de Kanto continental.
+El viewport ocupa la página; Esc abre un menú modal que pausa el reloj fijo GBA, con formato
+16:9 opcional sin deformación, escalas enteras 1–4×, minimapa de consulta y métricas opcionales.
+La entrada desde el atlas conserva en la sesión su selección/cámara para volver a ella. El
+inspector `?legacy=1` conserva sus capas técnicas; entrar en Explorar recarga la ruta por sectores.
+
+La unidad de carga es **un mapa completo**, no una tesela ni un bloque fijo: se cargan los que
+intersectan la cámara más 20 casillas de margen, protegiendo el mapa del personaje. Un cargador
+serial prioriza el centro, cede al navegador entre mapas/filas y descarta cargas que ya no se
+necesitan. Los canvas, renderizadores y colisiones lejanos se liberan; un caché ROM privado por
+mapa evita retenerlos en el caché compartido del motor. Los objetos mantienen su estado ligero
+independientemente de los sprites visibles. Las zonas sin datos permanecen bloqueadas. Los
+fallos de recursos se muestran y los reintentos esperan al menos un segundo entre solicitudes.
+No existe una cota global de RAM: la cota es espacial y depende de viewport, escala y tamaños de mapa.
+
+Se elimina el lienzo de relleno global de Explorar Kanto. Un canvas del tamaño de la cámara más
+una casilla repite el borde exportado del mapa actual, anclado a su origen local, siguiendo
+`GetBorderBlockAt` de `fieldmap.c`; los mapas conectados se dibujan encima. El borde visual no
+crea superficies transitables. Las animaciones existentes reutilizan la composición de cada
+metatile una vez por actualización, conservando el reloj fijo y las duraciones previas del visor.
+Esto no acredita fidelidad C de todas las animaciones ni introduce nuevas familias.
+
+Verificación local: Chromium headless, Vite, viewport 1280×720; entrada por URL declarada
+PREPARED, terreno exportado y teclado real. `viewer-navigation.job.mjs` hace 62 pasos desde
+Pallet hasta el extremo norte de Ruta 1 y regresa; observa colisión, 44 efectos TallGrass,
+expulsión/reentrada de mapas, pausa/reanudación, 16:9, retorno al atlas y captura 390×844 sin
+desbordamiento. Compara 256 píxeles de un metatile de borde con su fuente. Los checks de sectores
+usan grids/promesas/reloj PREPARED para memoria dispersa, carga tardía, cierre y reintento;
+`viewerClock.ts` comprueba pausas/cancelación del reloj. Tipos, honestidad, build y diff pasan.
+
+En la última muestra, las diez ventanas del recorrido dieron ~60 FPS, p95 16,7–16,8 ms y máximo
+16,8 ms; la primera ventana de arranque dio ~48 FPS y máximo 66,6 ms: **arranque aún pendiente**.
+Son intervalos RAF, no presentación GPU ni garantía en dispositivos. En Pallet se retienen tres
+mapas: canvas de mapas 2.703.360 bytes + colisiones 23.760 + borde de cámara 1.007.616 =
+3.734.736 bytes (~3,56 MiB) estimados. Durante la ida se observaron tres/cuatro mapas y hasta
+5.718.096 bytes (~5,45 MiB). El inspector global conserva 37 mapas y sus canvas suman
+525.336.576 bytes (~501 MiB), incluidos 167.116.800 del relleno. Esta comparación es de buffers
+observados en una escena, no de memoria total: excluye tilesets, sprites, objetos JS y cachés
+GPU/navegador. No hay comparación de FPS antes/después.
+
+```bash
+node_modules/.bin/esbuild tools/checks/viewerSectors.ts --bundle --platform=node --format=esm --outfile=.decomp-build/checks/viewerSectors.mjs
+node .decomp-build/checks/viewerSectors.mjs
+PW_BASE=http://127.0.0.1:5173/ node tools/playtest/pw.mjs tools/playtest/smoke/viewer-navigation.job.mjs output/playwright/navigation
+```
+
+Pendientes: arranque, recorrido exhaustivo de Kanto, resto de animaciones, bici/surf/salientes,
+interiores con control/llegadas reales, audio, comparación ROM, entrada táctil/dispositivos reales
+y producción. Las puertas siguen abriendo el visor de interiores, los diálogos/NPC mantienen
+la simulación adaptada y no se ejecutan historia/combates. Hoenn conserva su ruta global y Johto
+solo consulta; la conexión entre regiones y la integración del juego completo son fases posteriores.
 
 ## Mundo principal y variantes
 
@@ -291,7 +345,7 @@ PW_BASE=http://localhost:5174/ node tools/playtest/pw.mjs tools/playtest/smoke/p
 ```
 
 Pendientes: verificar las posiciones omitidas, revisar exhaustivamente selección, mapas,
-paletas/animación/ROM, gestos/dispositivos y producción; implementar simulación por sectores,
+paletas/animación/ROM, gestos/dispositivos y producción; extender la navegación por sectores de Kanto,
 Dive, ferris y conexiones físicas entre regiones. Consulta integrada y exploración jugable
 siguen siendo estados distintos.
 
