@@ -295,8 +295,8 @@ El salto usa `sJumpY_High` de cdata y 32 ticks de `DoJumpSpriteMovement` (distan
 una curva a mano. El vehículo cambia únicamente al aceptar el paso, por lo que un bloqueo no
 monta/desmonta surf. Recargar en agua elige surf; una URL que apunta a un muro busca una casilla
 transitable. La velocidad/hoja de correr se fija durante el paso y B no cambia el vehículo en vuelo.
-Los pasos ordinarios conservan las velocidades previas del visor, medidas en 10/8/6 ticks para
-caminar/correr/bici. Esto es revisión del adaptador de navegación, no portado de nuevos cuerpos C.
+En esa entrega los pasos ordinarios conservaban 10/8/6 ticks para caminar/correr/bici;
+la revisión del avatar descrita abajo los alinea con las tablas C. Esto es revisión del adaptador de navegación, no portado de nuevos cuerpos C.
 
 Comprobación: `viewerMovement.ts` usa geometría PREPARED para aterrizajes ocupados/sólidos,
 cambios de surf bloqueados y sectores ausentes. El harness existente `eventObjectAnims.ts` pasa
@@ -323,8 +323,61 @@ PW_BASE=http://127.0.0.1:5173/ node tools/playtest/pw.mjs tools/playtest/smoke/v
 
 Siguen pendientes interiores controlables/llegadas, persistencia de sesión completa, revisión de
 todos los mapas, elevaciones/puentes, animaciones y efectos completos (incluido surf), dispositivos,
-producción y ROM. Surf sigue siendo automático sin requisitos MO/historia; NPC/diálogos y
-velocidades ordinarias conservan la adaptación del visor. Hoenn/Johto no se acreditan con estas pruebas.
+producción y ROM. Surf sigue siendo automático sin requisitos MO/historia; NPC/diálogos conservan la adaptación del visor; las cadencias base se revisan abajo. Hoenn/Johto no se acreditan con estas pruebas.
+
+### Avatar de Kanto: fotogramas y cadencias
+
+Entrega `c7a2fca7`. `render/avatar.ts` lee las seis definiciones de Rojo/Hoja (normal, bici y surf)
+de `/fr/objects.json`: tablas de comandos, lista lógica de frames, hoja física, índice, tamaño y
+flips. Reutiliza `Sprite` de `src/core/gba/sprite.ts`; la ruta activa de Kanto ya no usa los índices
+manuales por paso. Las hojas se precargan/decodifican y se comprueban sus límites; el menú permite
+cambiar entre Rojo y Hoja. Hoenn mantiene su adaptador anterior y no se acredita con estas pruebas.
+
+La carrera era incorrecta: `sAnim_Run*` referencia frames lógicos 9–17 de la definición NORMAL,
+que a su vez apuntan a los frames físicos 3–11 de SurfRun. La selección anterior confundía esos
+índices. Caminar y pedalear ahora incluyen sus frames neutrales y alternan los pies con
+`sStepAnimTables` / `SetStepAnimHandleAlternation`, conservando la pausa en el sitio. La colisión a pie usa WalkInPlaceSlow y avanza
+su animación cada dos ticks; el giro usa WalkInPlaceFast y la colisión en bici, WalkInPlaceNormal.
+
+| Acción base | Tiempo de movimiento | Tabla/ruta de origen |
+|---|---|---|
+| Caminar | 16 ticks por casilla | `PlayerWalkNormal`, `sSpeedNormalStepFuncs`, `sAnim_Go*` |
+| Correr | 8 ticks por casilla | `StartRunningAnim`, `sSpeedFast1StepFuncs`, `sAnim_Run*` |
+| Bicicleta en terreno normal | 6 ticks por casilla | `BikeTransition_MoveDirection` → `PlayerRideWaterCurrent`, `sSpeedFast2StepFuncs`, `sAnim_GoFast*` |
+| Surf ya montado | 8 ticks por casilla | `PlayerWalkFast`, `sAnim_SurfFace*` |
+| Giro a pie/surf | 8 ticks en el sitio | `PlayerTurnInPlace`, `WalkInPlaceFast` |
+| Colisión a pie / bici | 32 / 16 ticks en el sitio | `PlayerNotOnBikeCollide` / `PlayerOnBikeCollide` |
+| Saliente / montar-desmontar surf | 32 ticks | `DoJumpSpriteMovement` FAR / `DoJumpSpecialSpriteMovement` NORMAL; `sJumpY_High` |
+
+El desplazamiento por tick también sale de las tablas Step1/Step2/Step3, incluida la bici con
+pasos no uniformes. Los giros cortos no desplazan al personaje y una colisión no lo empuja dentro
+del obstáculo. Montar/desmontar conserva la pose de surf durante el salto y cambia a la hoja de
+caminar al aterrizar. Las teclas del visor, Surf automático y ausencia de requisitos MO/historia
+siguen siendo adaptaciones; esto no conecta las tareas/scripts originales completos.
+
+Verificación: `viewerAvatar.ts` contrasta 72 selecciones (dos personajes, cuatro direcciones,
+nueve acciones) y 4.608 muestras, incluidos progreso de comandos/delays, todos sus frames,
+espejados, pausa y alternancia de pies. Pasan el check de animación de sprites y el harness
+existente de event_object_movement. `viewer-avatar.job.mjs` usa terreno real y teclado para
+32 combinaciones de locomoción, cuatro colisiones a pie/bici y dos saltos reales de Ruta 1.
+Compara hojas físicas/posiciones CSS/flips con el exportado; las capturas congelan temporalmente
+el reloj con PREPARED para inspeccionar un frame ya observado, sin preparar terreno ni progreso.
+Se inspeccionaron las 32 capturas y los saltos. Entrada/salida/recarga de surf y la regresión de
+62 pasos Pallet→Ruta 1 y vuelta pasan; recorrido ~60 FPS, p95 hasta 16,8 ms en Chromium local.
+Arranque/reintento siguen pasando (~59 FPS en las muestras iniciales); no es garantía GPU/dispositivo.
+
+```bash
+node_modules/.bin/esbuild tools/checks/viewerAvatar.ts --bundle --platform=node --format=esm --outfile=.decomp-build/checks/viewerAvatar.mjs
+node .decomp-build/checks/viewerAvatar.mjs
+PW_BASE=http://127.0.0.1:5173/ PW_TIMEOUT_MS=180000 node tools/playtest/pw.mjs tools/playtest/smoke/viewer-avatar.job.mjs output/playwright/avatar-review
+```
+
+Límite de esta revisión: avatar de locomoción base. Soporte/balanceo de SurfBlob, sombras,
+reflejos, huellas, ondas, máscaras de hierba/profundidad y terreno animado se revisan en el punto
+de efectos; NPC/objetos, terrenos especiales (escaleras/puentes/rails), interiores, animaciones de
+escenas/acciones especiales, recorrido exhaustivo y comparación ROM/dispositivos siguen pendientes.
+Los jobs UI históricos C7/huellas necesitan adaptarse al modo inmersivo antes de servir de prueba
+actual; no se ejecutaron ni se presentan como validación vigente en esta entrega.
 
 ## Mundo principal y variantes
 
