@@ -1,5 +1,6 @@
 // Runs the door observer (viewer-door-navigation.job.mjs) on one real exterior warp per 1x1 door graphic.
-// Door types are chosen from sDoorGraphics (field_door.c) against the Kanto exterior warps; 1x2 doors have no exterior warp.
+// Door types are chosen from sDoorGraphics (field_door.c) against real warps: 1x1 doors from Kanto exteriors,
+// 1x2 doors from interior MB_WARP_DOOR warps (viewer-door-large.job.mjs).
 import { spawnSync } from "node:child_process";
 import { resolve } from "node:path";
 const doors = [
@@ -11,9 +12,16 @@ const doors = [
   ["METATILE_FuchsiaCity_Door", "MAP_FUCHSIA_CITY", 1], ["METATILE_PewterCity_Door", "MAP_PEWTER_CITY", 1],
   ["METATILE_FuchsiaCity_SafariZoneDoor", "MAP_FUCHSIA_CITY", 0],
 ];
-const job = resolve("tools/playtest/smoke/viewer-door-navigation.job.mjs");
+const large = [
+  ["METATILE_DepartmentStore_ElevatorDoor", "MAP_CELADON_CITY_DEPARTMENT_STORE_2F", 0], ["METATILE_SilphCo_HideoutElevatorDoor", "MAP_ROCKET_HIDEOUT_B1F", 4],
+  ["METATILE_SilphCo_ElevatorDoor", "MAP_SILPH_CO_1F", 4], ["METATILE_SSAnne_Door", "MAP_SSANNE_1F_ROOM1", 0],
+  ["METATILE_TrainerTower_LobbyElevatorDoor", "MAP_TRAINER_TOWER_LOBBY", 2], ["METATILE_TrainerTower_RoofElevatorDoor", "MAP_TRAINER_TOWER_ROOF", 0],
+  ["METATILE_PokemonCenter_CableClubDoor", "MAP_CELADON_CITY_POKEMON_CENTER_2F", 1],
+];
+const smallJob = resolve("tools/playtest/smoke/viewer-door-navigation.job.mjs");
+const largeJob = resolve("tools/playtest/smoke/viewer-door-large.job.mjs");
 let failed = false;
-for (const [name, map, warp] of doors) {
+for (const [name, map, warp, job = smallJob] of [...doors, ...large.map(d => [...d, largeJob])]) {
   const env = { ...process.env, PW_BASE: process.env.PW_BASE ?? "http://localhost:5173/", PW_DOOR_MAP: map, PW_DOOR_WARP: String(warp) };
   const r = spawnSync("node", ["tools/playtest/pw.mjs", job, resolve(process.env.TMPDIR ?? "/tmp", `pw-door-${name}`)], { env, encoding: "utf8", timeout: 240000 });
   const text = `${r.stdout ?? ""}\n${r.stderr ?? ""}`;
