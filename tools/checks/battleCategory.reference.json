@@ -1,0 +1,15 @@
+{
+  "note": "recorded from the TypeScript port (not from the C); see header of tools/checks/battleCategory.ts",
+  "damage": {
+    "cases": 31428,
+    "sha256": "8cf2d30c538b45bc7d197f51eaf7238a3fd91f015df59df89094e9eda204ebb8"
+  },
+  "accuracy": {
+    "cases": 5664,
+    "sha256": "fa3cd5396394dd2caaf7fb8badad09d033ffaa9fdaa1dda1ead0950e757d6fe9"
+  },
+  "hpupdate": {
+    "cases": 3540,
+    "sha256": "1740c636e7cd5c5f9009e80abb4356b8a200105aac96d783d17bb83aed161892"
+  }
+}

@@ -6,6 +6,7 @@ import { cdata } from "../hw/assets";
 import { flagGet } from "@game/save";
 import { G, gBattleResources, gEnigmaBerries } from "./globals";
 import { div, gBattleMoves } from "./macros";
+import { battleRules } from "./rules";
 import { AbilityBattleEffects, CountAliveMonsInBattle, GetBattlerSide, ItemId_GetHoldEffect, ItemId_GetHoldEffectParam, WEATHER_HAS_EFFECT2 } from "./util";
 
 const u16 = (v: number) => v & 0xffff;
@@ -56,7 +57,7 @@ export function CalculateBaseDamage(
 
   for (const [effect, effType] of cdata<Array<[number, number]>>("pokemon", "sHoldEffectToType")) {
     if (attackerHoldEffect === effect && type === effType) {
-      if (type < C.TYPE_MYSTERY) attack = u16(div(attack * (attackerHoldEffectParam + 100), 100));
+      if (battleRules().isPhysical(move, type)) attack = u16(div(attack * (attackerHoldEffectParam + 100), 100));
       else spAttack = u16(div(spAttack * (attackerHoldEffectParam + 100), 100));
       break;
     }
@@ -95,7 +96,7 @@ export function CalculateBaseDamage(
     if (G.gBattleTypeFlags & C.BATTLE_TYPE_DOUBLE && gBattleMoves(move).target === C.MOVE_TARGET_BOTH && CountAliveMonsInBattle(C.BATTLE_ALIVE_DEF_SIDE) === 2) damage = div(damage, 2);
   };
 
-  if (type < C.TYPE_MYSTERY) {
+  if (battleRules().isPhysical(move, type)) {
     if (crit) damage = attacker.statStages[C.STAT_ATK] > C.DEFAULT_STAT_STAGE ? applyStatMod(attacker, attack, C.STAT_ATK) : attack;
     else damage = applyStatMod(attacker, attack, C.STAT_ATK);
     damage = damage * G.gBattleMovePower;
@@ -112,7 +113,7 @@ export function CalculateBaseDamage(
 
   if (type === C.TYPE_MYSTERY) damage = 0;
 
-  if (type > C.TYPE_MYSTERY) {
+  if (battleRules().isSpecial(move, type)) {
     if (crit) damage = attacker.statStages[C.STAT_SPATK] > C.DEFAULT_STAT_STAGE ? applyStatMod(attacker, spAttack, C.STAT_SPATK) : spAttack;
     else damage = applyStatMod(attacker, spAttack, C.STAT_SPATK);
     damage = damage * G.gBattleMovePower;

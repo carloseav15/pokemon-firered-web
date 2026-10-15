@@ -12,10 +12,11 @@ import {
   gSpecialStatuses, gStatuses3, gTakenDmg, gTakenDmgByBattler, gWishFutureKnock,
 } from "../globals";
 import {
-  GET_BATTLER_SIDE, GET_MOVE_TYPE, HITMARKER_FAINTED, IS_BATTLER_OF_TYPE, IS_TYPE_PHYSICAL, MOVE_IS_PERMANENT, SET_STAT_BUFF_VALUE,
+  GET_BATTLER_SIDE, GET_MOVE_TYPE, HITMARKER_FAINTED, IS_BATTLER_OF_TYPE, MOVE_IS_PERMANENT, SET_STAT_BUFF_VALUE,
   STAT_BUFF_NEGATIVE, STATUS1_SLEEP_TURN, STATUS2_CONFUSION_TURN, STATUS2_LOCK_CONFUSE_TURN, STATUS2_UPROAR_TURN, STATUS2_WRAPPED_TURN,
   TYPE_EFFECT_ATK_TYPE, TYPE_EFFECT_DEF_TYPE, TYPE_EFFECT_MULTIPLIER, div, gBattleMoves, F_DYNAMIC_TYPE_1, DYNAMIC_TYPE_MASK,
 } from "../macros";
+import { battleRules } from "../rules";
 import { GetMonData, gEnemyParty, playerMon } from "../../pokemon/mon";
 import {
   AbilityBattleEffects, AtkCanceller_UnableToUseMove, CancelMultiTurnMoves, GetBattlerForBattleScript, GetBattlerSide,
@@ -252,7 +253,7 @@ export function Cmd_accuracycheck(): void {
   calc = div(calc, sAccuracyStageRatios[buff][1]) & 0xffff;
   if (gBattleMons[G.gBattlerAttacker].ability === C.ABILITY_COMPOUND_EYES) calc = div(calc * 130, 100) & 0xffff;
   if (WEATHER_HAS_EFFECT() && gBattleMons[G.gBattlerTarget].ability === C.ABILITY_SAND_VEIL && G.gBattleWeather & C.B_WEATHER_SANDSTORM) calc = div(calc * 80, 100) & 0xffff;
-  if (gBattleMons[G.gBattlerAttacker].ability === C.ABILITY_HUSTLE && IS_TYPE_PHYSICAL(type)) calc = div(calc * 80, 100) & 0xffff;
+  if (gBattleMons[G.gBattlerAttacker].ability === C.ABILITY_HUSTLE && battleRules().isPhysical(move, type)) calc = div(calc * 80, 100) & 0xffff;
   const [holdEffect, param] = holdEffectOf(G.gBattlerTarget);
   G.gPotentialItemEffectBattler = G.gBattlerTarget;
   if (holdEffect === C.HOLD_EFFECT_EVASION_UP) calc = div(calc * (100 - param), 100) & 0xffff;
@@ -693,13 +694,13 @@ export function Cmd_datahpupdate(): void {
           gBattleMons[b].hp = 0;
         }
         if (!gSpecialStatuses[b].dmg && !(G.gHitMarker & C.HITMARKER_PASSIVE_DAMAGE)) gSpecialStatuses[b].dmg = G.gHpDealt;
-        if (IS_TYPE_PHYSICAL(moveType) && !(G.gHitMarker & C.HITMARKER_PASSIVE_DAMAGE) && G.gCurrentMove !== C.MOVE_PAIN_SPLIT) {
+        if (battleRules().isPhysical(G.gCurrentMove, moveType) && !(G.gHitMarker & C.HITMARKER_PASSIVE_DAMAGE) && G.gCurrentMove !== C.MOVE_PAIN_SPLIT) {
           gProtectStructs[b].physicalDmg = G.gHpDealt;
           gSpecialStatuses[b].physicalDmg = G.gHpDealt;
           const id = arg === C.BS_TARGET ? G.gBattlerAttacker : G.gBattlerTarget;
           gProtectStructs[b].physicalBattlerId = id;
           gSpecialStatuses[b].physicalBattlerId = id;
-        } else if (!IS_TYPE_PHYSICAL(moveType) && !(G.gHitMarker & C.HITMARKER_PASSIVE_DAMAGE)) {
+        } else if (!battleRules().isPhysical(G.gCurrentMove, moveType) && !(G.gHitMarker & C.HITMARKER_PASSIVE_DAMAGE)) {
           gProtectStructs[b].specialDmg = G.gHpDealt;
           gSpecialStatuses[b].specialDmg = G.gHpDealt;
           const id = arg === C.BS_TARGET ? G.gBattlerAttacker : G.gBattlerTarget;
