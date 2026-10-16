@@ -7,6 +7,7 @@ import { encode } from '@core/gba/charmap';
 import { InitPlayerTrainerId, SeedRngAndSetTrainerId } from '@core/random';
 import { newSaveData, save, saveStore, setSave, setSaveStorageKey, flagGet, flagSet, type SaveData } from '@game/save';
 import { HandleSetPokedexFlag } from '@core/pokemon/mon_extra';
+import { GetHealLocationIndexFromMapGroupAndNum, GetHealLocation } from '@core/field/overworld';
 import * as C from '@game/generated/constants';
 import type { WarpAddress } from './navigation';
 import type { Direction } from './render/sprites';
@@ -33,7 +34,16 @@ export async function initializeViewerSession(): Promise<void> {
     (save as ViewerSave).viewerStart = 'temporary-kanto-v1';
   }
   grantTemporaryPokedex();
+  seedTemporaryRespawn();
   initialized = true;
+}
+// Temporary start only: new_game.c leaves Pallet Town as the white-out respawn
+// until a Pokémon Center nurse script (setrespawn) changes it.
+function seedTemporaryRespawn(): void {
+  const last = save.lastHealLocation;
+  if (GetHealLocationIndexFromMapGroupAndNum(last.mapGroup, last.mapNum) !== C.HEAL_LOCATION_NONE) return;
+  const pallet = GetHealLocation(rom.c('HEAL_LOCATION_PALLET_TOWN'));
+  if (pallet) save.lastHealLocation = { mapGroup: pallet.mapGroup, mapNum: pallet.mapNum, warpId: -1, x: pallet.x, y: pallet.y };
 }
 // Temporary start only: the Pokédex Oak hands over in the story, with the
 // starter registered, so the start menu shows the source Pokédex entry.

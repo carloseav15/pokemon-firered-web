@@ -5,18 +5,28 @@ import { Game, FRAME_MS } from '@game/game';
 import { joy } from '@core/gba/input';
 import { loadFieldFx } from '@core/field/fieldEffects';
 import { preloadFieldAssets } from '@core/field/preloadField';
-import { loadCData, preloadPacks } from '@core/hw/assets';
+import { cdata, loadCData, preloadPacks } from '@core/hw/assets';
+import { rom } from '@core/rom';
 import { loadTrig } from '@core/hw/trig';
 import { gWindows } from '@core/hw/window';
 import { GetBgTilemapBuffer } from '@core/hw/bg';
 import { save, SV, varSet } from '@game/save';
+import * as C from '@game/generated/constants';
 import type { Sprite } from '@core/gba/sprite';
+import { gBattlerControllerFuncs } from '@core/battle/globals';
+import { installBattleHost } from '@core/battle/host';
+import { preloadBattleAssets } from '@game/battle/preload';
+import { sound } from '@core/audio/sound';
+import { MAP_OFFSET } from '@core/field/fieldmap';
+import { PLAYER_AVATAR_FLAG_SURFING } from '@core/field/playerAvatar';
 import { syncViewerLocation, type NavigationSave } from './session';
 
 type Hooks = {
   pause(active: boolean): void;
   project(canvas: HTMLCanvasElement, game: Game): void;
   hideObjects(hidden: boolean, localId: number): void;
+  /** Engine moved the player (white-out respawn): continue the viewer from here. */
+  relocate(nav: NavigationSave): void;
 };
 export class EngineInteraction {
   readonly root = document.createElement('section');
@@ -35,7 +45,12 @@ export class EngineInteraction {
   // Start-menu scenes (Pokédex, party, bag, summary...) own the whole GBA screen,
   // so their full frame is shown. Field interactions keep the window-only mode.
   private fullScreen = false;
+  // Map the engine overworld was last prepared for by the wild-encounter test.
+  private wildMap = '';
+  private testingWild = false;
   get open(): boolean { return !this.root.hidden; }
+  /** True while a step is being tested for an encounter or a battle is running. */
+  get busy(): boolean { return this.open || this.testingWild; }
   constructor(private readonly hooks: Hooks) {
     this.root.id = 'engine-interaction'; this.root.hidden = true;
     this.root.setAttribute('aria-label', 'Diálogo y compras');
@@ -52,8 +67,25 @@ export class EngineInteraction {
     await loadFieldFx();
     await Promise.all([preloadFieldAssets(), loadTrig(), loadCData('text_printer', 'text', 'wild_encounter', 'berry'),
       preloadPacks(['graphics_fonts', 'graphics_help_system', 'graphics_quest_log'])]);
+    // Wild encounters and trainer battles run the source battle scene.
+    await Promise.all([preloadBattleAssets(), sound.loadCryData()]);
     this.game = new Game(this.engineCanvas);
+    installBattleHost(this.game);
     joy.attach(); joy.setExternalInputEnabled(false);
+  }
+  /** The engine may have moved the player (white-out): hand its position back to the viewer. */
+  private finish(nav: NavigationSave): void {
+    this.close();
+    this.wildMap = '';
+    if (!this.game) return;
+    // DoWhiteOut/warps update save.location before the engine's own map load
+    // completes, so the destination is read from the record, not the loaded map.
+    const { mapGroup, mapNum, x, y } = save.location;
+    const mapId = rom.mapIdByNum(((mapGroup & 0xff) << 8) | (mapNum & 0xff));
+    if (mapId && (mapId !== nav.mapId || x !== nav.x || y !== nav.y)) {
+      const direction = ({ [C.DIR_SOUTH]: 'south', [C.DIR_NORTH]: 'north', [C.DIR_WEST]: 'west', [C.DIR_EAST]: 'east' } as const)[save.facing] ?? nav.direction;
+      this.hooks.relocate({ mapId, x, y, direction, dynamic: null });
+    }
   }
   private close(): void {
     cancelAnimationFrame(this.frame); this.root.hidden = true; this.field.remove();
@@ -109,15 +141,17 @@ export class EngineInteraction {
   async showStartMenu(nav: NavigationSave): Promise<void> {
     await this.run(nav, 0, true, (game) => game.showStartMenu());
   }
-  private async run(nav: NavigationSave, localId: number, fullScreen: boolean, start: (game: Game) => void): Promise<void> {
+  private async run(nav: NavigationSave, localId: number, fullScreen: boolean, start: (game: Game) => void, prepared = false): Promise<void> {
     if (this.open) return;
     this.localId=localId; this.fullScreen=fullScreen; this.hooks.pause(true); this.root.hidden=false;
     this.root.dataset.loading='true';
     try {
       await (this.loading ??= this.initialize());
-      syncViewerLocation(nav);
       const game = this.game!, ow = game.overworld;
-      await ow.prepareViewerInteraction(nav.mapId);
+      if (!prepared) {
+        syncViewerLocation(nav);
+        await ow.prepareViewerInteraction(nav.mapId);
+      }
       this.initialSprites=new Set(ow.sprites.sprites);
       start(game);
       joy.initKeys();joy.setExternalInputEnabled(true);
@@ -133,11 +167,55 @@ export class EngineInteraction {
         this.root.dataset.native=ow.script.global.nativePtr?.name??'';
         this.root.dataset.mode=String(ow.script.global.mode);
         this.root.dataset.money=String(save.money);
+        this.root.dataset.battle=game.scene?gBattlerControllerFuncs[0]?.name??'':'';
         const finished=fullScreen?!ow.controlsLocked&&!ow.script.isActive():!ow.script.isActive();
-        if(finished&&!game.scene){this.close();return;}
+        if(finished&&!game.scene){this.finish(nav);return;}
         this.frame=requestAnimationFrame(loop);
       };
       this.frame=requestAnimationFrame(loop);
     }catch(error){this.loading=undefined;this.close();throw error;}
+  }
+  private readonly wildHeaders = new Map<string, boolean>();
+  /** gWildMonHeaders lookup (wild_encounter.c GetCurrentMapWildMonHeaderId), without starting the engine. */
+  private async mapHasWildHeader(mapId: string): Promise<boolean> {
+    const known = this.wildHeaders.get(mapId);
+    if (known !== undefined) return known;
+    await loadCData('wild_encounter');
+    const num = rom.mapNum(mapId), group = num >>> 8, id = num & 255;
+    const headers = cdata<{ mapGroup: number; mapNum: number }[]>('wild_encounter', 'gWildMonHeaders');
+    const has = headers.some(h => h && h.mapGroup === group && h.mapNum === id);
+    this.wildHeaders.set(mapId, has);
+    return has;
+  }
+  /**
+   * CheckStandardWildEncounter (field_control_avatar.c) for the tile the viewer
+   * player just reached. The engine decides (rate, repel, tables, level) and
+   * runs the real transition and battle scene; the viewer is paused until the
+   * battle returns.
+   */
+  async tryWildEncounter(nav: NavigationSave, surfing: boolean): Promise<boolean> {
+    if (this.busy) return false;
+    this.testingWild = true;
+    if (!await this.mapHasWildHeader(nav.mapId)) { this.testingWild = false; return false; }
+    let started = false;
+    try {
+      await (this.loading ??= this.initialize());
+      const game = this.game!, ow = game.overworld;
+      syncViewerLocation(nav);
+      if (this.wildMap !== nav.mapId) { await ow.prepareViewerInteraction(nav.mapId); this.wildMap = nav.mapId; }
+      const player = ow.player.object;
+      player.currentCoords = { x: nav.x + MAP_OFFSET, y: nav.y + MAP_OFFSET };
+      player.previousCoords = { ...player.currentCoords };
+      ow.player.flags = surfing ? ow.player.flags | PLAYER_AVATAR_FLAG_SURFING : ow.player.flags & ~PLAYER_AVATAR_FLAG_SURFING;
+      const attributes = ow.map.attributesOf(ow.map.metatileIdAt(nav.x + MAP_OFFSET, nav.y + MAP_OFFSET));
+      const wildHit = game.wild.tryStandardWildEncounter(attributes);
+      if (!wildHit) return false;
+      started = true;
+      await this.run(nav, 0, true, () => {}, true);
+      return true;
+    } finally {
+      this.testingWild = false;
+      if (!started) this.root.dataset.loading = 'false';
+    }
   }
 }
