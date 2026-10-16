@@ -2,6 +2,8 @@
 // Run with PW_TIMEOUT_MS=580000; CENTERS=MAP_A,MAP_B limits the list.
 // explicit precondition. Healing is the source nurse script; keys only.
 const CENTERS=[["MAP_CELADON_CITY_POKEMON_CENTER_1F",7,2],["MAP_CERULEAN_CITY_POKEMON_CENTER_1F",7,2],["MAP_CINNABAR_ISLAND_POKEMON_CENTER_1F",7,2],["MAP_FIVE_ISLAND_POKEMON_CENTER_1F",7,2],["MAP_FOUR_ISLAND_POKEMON_CENTER_1F",7,2],["MAP_FUCHSIA_CITY_POKEMON_CENTER_1F",7,2],["MAP_INDIGO_PLATEAU_POKEMON_CENTER_1F",13,10],["MAP_LAVENDER_TOWN_POKEMON_CENTER_1F",7,2],["MAP_ONE_ISLAND_POKEMON_CENTER_1F",5,2],["MAP_PEWTER_CITY_POKEMON_CENTER_1F",7,2],["MAP_ROUTE10_POKEMON_CENTER_1F",7,2],["MAP_ROUTE4_POKEMON_CENTER_1F",7,2],["MAP_SAFFRON_CITY_POKEMON_CENTER_1F",7,2],["MAP_SEVEN_ISLAND_POKEMON_CENTER_1F",7,2],["MAP_SIX_ISLAND_POKEMON_CENTER_1F",7,2],["MAP_THREE_ISLAND_POKEMON_CENTER_1F",7,2],["MAP_TWO_ISLAND_POKEMON_CENTER_1F",7,2],["MAP_VERMILION_CITY_POKEMON_CENTER_1F",7,2],["MAP_VIRIDIAN_CITY_POKEMON_CENTER_1F",7,2]];
+import {readFileSync} from 'node:fs';
+const HEAL=JSON.parse(readFileSync('public/fr/data/heal_locations.json','utf8')).heal_locations;
 export default async function run(ctx){
  const p=ctx.page, only=process.env.CENTERS?.split(','), results={};
  const snapshot=()=>p.evaluate(async()=>{const {save}=await import('/src/games/firered/save.ts');return JSON.parse(JSON.stringify(save));});
@@ -21,7 +23,10 @@ export default async function run(ctx){
    for(let i=0;i<60;i++){if(await p.locator('#engine-interaction').getAttribute('data-script-active')==='false')break;await p.keyboard.press('z');await p.waitForTimeout(400);}
    await p.locator('#engine-interaction').waitFor({state:'hidden',timeout:15000});
    s=await snapshot();
-   results[map]=s.party[0].hp===s.party[0].stats[0]&&s.party[0].status===0?'PASS':'FAIL hp '+s.party[0].hp;
+   // setrespawn stores the heal location whose respawn_map is this center (heal_location.c).
+   const expected=HEAL.find(h=>(h.respawn_map??h.map)===map);
+   const respawn=!!expected&&await p.evaluate(async(e)=>{const {save}=await import('/src/games/firered/save.ts');return save.lastHealLocation.x===e.x&&save.lastHealLocation.y===e.y;},expected);
+   results[map]=s.party[0].hp===s.party[0].stats[0]&&s.party[0].status===0?(respawn?'PASS':'FAIL respawn point not this center'):'FAIL hp '+s.party[0].hp;
   }catch(e){results[map]='FAIL '+String(e).slice(0,100);await ctx.shot('fail-'+map);}
  }
  const failed=Object.entries(results).filter(([,v])=>v!=='PASS');
