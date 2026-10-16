@@ -39,9 +39,50 @@ continuación automática y esperar la siguiente petición del usuario.
 
 ### Estado al 2026-10-16 (viewer jugable; detalle en Git)
 
-Hecho y verificado con `tools/playtest/smoke/viewer-game-*.job.mjs` (Chromium, teclado): tiendas y venta (19 Centros, marts, Celadón), PC, menú de inicio, objetos de bolsa, combates salvajes/captura/derrota, pasos del campo, Corte, entrenadores y Brock, Teletransporte/Vuelo/Cuerda Huida/Excavar.
-Abierto: empujar bloques de Fuerza; pesca, Golpe Roca, olor dulce, Zona Safari, fantasmas de Pokémon Tower; evolución/aprendizaje al subir de nivel; Surf con la MO real, Flash; NPC genéricos y eventos de mapa (punto 9); posición del entrenador tras el combate; quitar el menú DOM de equipo/mochila; entrada táctil para el menú del juego; Quest Log; comparar fondo del resumen (magenta) con la ROM; los otros siete gimnasios (8).
+Hecho y verificado con `tools/playtest/smoke/viewer-game-*.job.mjs` (Chromium, teclado): tiendas y venta (todas las marts y Celadón), 19 Centros (curación, PC, respawn), menú de inicio (Pokédex, equipo, mochila, resumen, orden, opciones, guardar), objetos de bolsa (Poción, Antídoto, baya, MT, Mapa, Buscatesoros, dar, tirar, Bici, Repelente), combates salvajes, captura y derrota, pasos (veneno, huevo), Corte, entrenadores y Brock (Fame Checker incluido), Teletransporte, Vuelo, Cuerda Huida y Excavar.
 Las pruebas usan precondiciones explícitas (objetos, nivel, estado, flags) marcadas PREPARED en cada job.
+
+### Pendientes adicionales de las tareas importantes (1–8), de sencillo a complejo
+
+Anotados el 2026-10-16 a partir de lo que esa sesión dejó sin probar, sin verificar o sin revisar. No se borran sin resolverlos.
+
+**A. Solo probar (el código ya existe)**
+- [ ] Tiendas: Isla Dos con cada etapa de historia (`VAR_MAP_SCENE_TWO_ISLAND` 2–4) y el resto de tiendas de las islas Sevii no cubiertas; Game Corner (monedas, otro sistema).
+- [ ] Centros: reaparición tras derrota en un Centro ya visitado (hoy solo se probó el respawn por defecto de Paleta y que el Centro lo registra).
+- [ ] Menú: tarjeta de entrenador y Opciones más allá de abrir/cerrar (cambiar y persistir varios valores); Pokédex con más entradas y vistas.
+- [ ] Objetos: bayas y objetos de estado distintos de Antídoto, mochila con otros bolsillos (Poké Balls fuera de combate, Objetos clave variados), cañas, Poké Flauta.
+- [ ] Brock: segundo intento tras perder (volver a entrar al gimnasio) y ganar con el inicial sin preparar el nivel.
+- [ ] Reaparición: derrota dentro de cuevas e interiores (hoy solo campo abierto y gimnasio).
+- [ ] Rocas rompibles y bloques de Fuerza: no existen en exteriores de Kanto del índice; probar en cuevas/interiores.
+- [ ] Entrenadores fuera del gimnasio y los otros gimnasios: la vía es la misma (`_Gym_EventScript_*`), sin probar.
+- [ ] Precargas: primera carga del motor tras ~1,5 s (¿parón?) y pasos sin contar en los primeros ~2 s de un mapa sin tabla de encuentros.
+- [ ] Veneno hasta desmayo (script `EventScript_FieldPoison`) y eclosión con apodo/aceptar; huevos con ciclos > 0 sin preparar el contador de guardería.
+
+**B. Comparar o revisar contra la ROM / el C**
+- [ ] Fondo magenta del resumen del Pokémon: la paleta fuente tiene magenta como color 0; comparar con la ROM.
+- [ ] Rótulos y orden de las pantallas del motor proyectadas a pantalla completa frente a la captura de ROM (paridad audiovisual).
+- [ ] Posición de entrenadores tras el combate (el visor los deja en su sitio original; el motor los mueve en el acercamiento).
+- [ ] Objetos que el motor oculta/desplaza al final de un script (más allá de `removeobject`) y su sincronía con las entidades del visor.
+
+**C. Cambios de tamaño medio**
+- [ ] Quitar el menú DOM de equipo/mochila (texto) ahora que existen las pantallas del motor.
+- [ ] Entrada táctil/móvil para el menú del juego (Enter no existe; solo hay botón) y para los combates.
+- [ ] Estado de Ciudad Plateada tras Brock (el guía desaparece, aparece el hombre de las zapatillas): el visor no refresca esos objetos.
+- [ ] Quest Log conectado a los eventos del visor.
+- [ ] Tarea de curación del Centro tras derrota (`FieldCB_RushInjuredPokemonToCenter`) y su diálogo: hoy solo se reubica.
+- [ ] Contadores por paso fuera de pasos reales (bici rápida, saltos) y sincronía de pasos en mapas distintos.
+
+**D. Integración nueva**
+- [ ] Empujar bloques con Fuerza (mover entidad con colisión, interruptores y pozos).
+- [ ] Pesca, Golpe Roca, olor dulce, Zona Safari, fantasmas de Pokémon Tower, merodeadores.
+- [ ] Evolución tras subir de nivel y aprendizaje de movimientos en combate salvaje y de entrenador.
+- [ ] Surf con la MO real (hoy el visor embarca solo al llegar al agua), Flash, Corte y Fuerza desde el equipo.
+- [ ] Vuelo/Teletransporte/Cuerda Huida con animación completa (hoy el visor corta tras el fundido y sigue `save.location`).
+- [ ] Los otros siete gimnasios con sus puzzles y eventos propios (punto 8).
+
+**E. Fuera de las prioridades 1–8 (solo por petición expresa)**
+- [ ] NPC genéricos y eventos de mapa (punto 9): hoy corren enfermeras, tenderos, obstáculos de campo, entrenadores y gimnasios; el resto muestra un texto genérico.
+- [ ] Revisión general de navegación, gráficos, animaciones y sonido (punto 10) e inicio definitivo (punto 11).
 
 ## 0. Cómo trabajar
 
