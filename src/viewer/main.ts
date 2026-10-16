@@ -586,7 +586,7 @@ function interactWithEntity(ent: LiveEntity): void {
     const header = mapHeaders.get(ent.element.map);
     const npc = header?.objects.find(o => !o.clone && o.localId === ent.element.localId);
     // Scope: source nurse/clerk scripts, not a generic replacement for story VM integration.
-    if (npc && !npc.clone && /_(?:Nurse|Clerk(?:Items|TMs|XItems|Vitamins)?|MartClerk)$/.test(npc.scriptName ?? "")) {
+    if (npc && !npc.clone && /(?:_(?:Nurse|Clerk(?:Items|TMs|XItems|Vitamins)?|MartClerk)|^EventScript_(?:CutTree|RockSmash|StrengthBoulder))$/.test(npc.scriptName ?? "")) {
       if (isStepping || warpBusy || explorationUi?.paused || engineInteraction.open) return;
       const dx = playerDir === "east" ? 1 : playerDir === "west" ? -1 : 0;
       const dy = playerDir === "south" ? 1 : playerDir === "north" ? -1 : 0;
@@ -1865,6 +1865,14 @@ function setupUi(): void {
       if(canvas.parentElement!==content)content.append(canvas);
     },
     relocate: nav => { void relocateViewer(nav); },
+    removeObject: (mapId, localId) => {
+      const index = entityManager.entities.findIndex(e => e.element.map === mapId && e.element.localId === localId);
+      if (index < 0) return;
+      const ent = entityManager.entities[index]!;
+      ent.el?.remove();
+      entityManager.entities.splice(index, 1);
+      worldGrid.setNpc(ent.gx, ent.gy, false);
+    },
     setBike: on => { if (on !== (playerMode === "bike")) toggleBike(); },
     hideObjects: (hidden,localId) => {
       if(playerEl)playerEl.style.visibility=hidden?"hidden":"";

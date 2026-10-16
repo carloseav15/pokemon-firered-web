@@ -72,6 +72,12 @@ export class WorldGrid {
     return ly * this.width + lx;
   }
 
+  /** Object-event occupancy of one tile (cut trees, smashed rocks), through the sector in sparse mode. */
+  setNpc(gx: number, gy: number, occupied: boolean): void {
+    if (this.sectorMode) { this.sectorAt(gx, gy)?.setNpc(gx, gy, occupied); return; }
+    if (this.inBounds(gx, gy)) this.npc[this.idx(gx, gy)] = occupied ? 1 : 0;
+  }
+
   isWaterTile(gx: number, gy: number): boolean {
     if (this.sectorMode) return this.sectorAt(gx, gy)?.isWaterTile(gx, gy) ?? false;
     if (!this.inBounds(gx, gy)) return false;

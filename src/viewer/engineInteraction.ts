@@ -28,6 +28,8 @@ type Hooks = {
   hideObjects(hidden: boolean, localId: number): void;
   /** Engine moved the player (white-out respawn): continue the viewer from here. */
   relocate(nav: NavigationSave): void;
+  /** An object event the script removed (cut tree, smashed rock): drop it from the viewer map. */
+  removeObject(mapId: string, localId: number): void;
   /** The bag's Bicycle (or its dismount) changed the avatar state. */
   setBike(on: boolean): void;
 };
@@ -86,6 +88,8 @@ export class EngineInteraction {
       if (bike !== (this.menuVehicle === 'bike')) this.hooks.setBike(bike);
     }
     this.menuVehicle = null;
+    // removeobject (scrcmd.c) on the interacted object: cut trees, smashed rocks.
+    if (this.localId && !this.game.overworld.objects.list.some(o => o.localId === this.localId)) this.hooks.removeObject(nav.mapId, this.localId);
     // DoWhiteOut/warps update save.location before the engine's own map load
     // completes, so the destination is read from the record, not the loaded map.
     const { mapGroup, mapNum, x, y } = save.location;
