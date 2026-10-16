@@ -32,6 +32,9 @@ export class EngineInteraction {
   private accumulator = 0;
   private initialSprites = new Set<Sprite>();
   private localId = 0;
+  // Start-menu scenes (Pokédex, party, bag, summary...) own the whole GBA screen,
+  // so their full frame is shown. Field interactions keep the window-only mode.
+  private fullScreen = false;
   get open(): boolean { return !this.root.hidden; }
   constructor(private readonly hooks: Hooks) {
     this.root.id = 'engine-interaction'; this.root.hidden = true;
@@ -62,6 +65,12 @@ export class EngineInteraction {
     const game = this.game!, ow = game.overworld;
     const ui = this.ui.getContext('2d')!;
     ui.clearRect(0,0,240,160);
+    if (game.scene && this.fullScreen) {
+      game.render();
+      ui.drawImage(this.engineCanvas,0,0);
+      this.field.getContext('2d')!.clearRect(0,0,240,160);
+      return;
+    }
     if (game.scene) {
       // Run VBlank/HBlank and source PPU rendering, then extract only visible UI
       // windows. BG field tiles are never copied into the viewer presentation.
@@ -85,22 +94,32 @@ export class EngineInteraction {
     this.hooks.project(this.field,game);
   }
   async show(nav: NavigationSave, localId: number): Promise<void> {
+    await this.run(nav, localId, false, (game) => {
+      const ow = game.overworld;
+      const object = ow.objects.list.find(o=>o.localId===localId);
+      const template = ow.header.objects.find(o=>!o.clone&&o.localId===localId);
+      if(!object||!template||template.clone||!template.script)throw Error('NPC sin script fuente');
+      this.hooks.hideObjects(true,localId);
+      ow.selectedObject=ow.objects.indexOf(object);
+      varSet(SV.LAST_TALKED,localId);varSet(SV.FACING,save.facing);
+      ow.script.ScriptContext_SetupScript(template.script);
+    });
+  }
+  /** ShowStartMenu (start_menu.c) over the current viewer map. */
+  async showStartMenu(nav: NavigationSave): Promise<void> {
+    await this.run(nav, 0, true, (game) => game.showStartMenu());
+  }
+  private async run(nav: NavigationSave, localId: number, fullScreen: boolean, start: (game: Game) => void): Promise<void> {
     if (this.open) return;
-    this.localId=localId; this.hooks.pause(true); this.root.hidden=false;
+    this.localId=localId; this.fullScreen=fullScreen; this.hooks.pause(true); this.root.hidden=false;
     this.root.dataset.loading='true';
     try {
       await (this.loading ??= this.initialize());
       syncViewerLocation(nav);
       const game = this.game!, ow = game.overworld;
       await ow.prepareViewerInteraction(nav.mapId);
-      const object = ow.objects.list.find(o=>o.localId===localId);
-      const template = ow.header.objects.find(o=>!o.clone&&o.localId===localId);
-      if(!object||!template||template.clone||!template.script)throw Error('NPC sin script fuente');
       this.initialSprites=new Set(ow.sprites.sprites);
-      this.hooks.hideObjects(true,localId);
-      ow.selectedObject=ow.objects.indexOf(object);
-      varSet(SV.LAST_TALKED,localId);varSet(SV.FACING,save.facing);
-      ow.script.ScriptContext_SetupScript(template.script);
+      start(game);
       joy.initKeys();joy.setExternalInputEnabled(true);
       this.root.dataset.loading='false';this.ui.focus({preventScroll:true});
       this.last=performance.now();this.accumulator=0;
@@ -109,12 +128,13 @@ export class EngineInteraction {
         this.accumulator+=Math.min(100,now-this.last);this.last=now;
         while(this.accumulator>=FRAME_MS){game.frame();this.accumulator-=FRAME_MS;}
         this.present();
-        this.root.dataset.scriptActive=String(ow.script.isActive());
+        this.root.dataset.scriptActive=String(ow.script.isActive()||(fullScreen&&ow.controlsLocked));
         this.root.dataset.script=ow.script.global.entry;
         this.root.dataset.native=ow.script.global.nativePtr?.name??'';
         this.root.dataset.mode=String(ow.script.global.mode);
         this.root.dataset.money=String(save.money);
-        if(!ow.script.isActive()&&!game.scene){this.close();return;}
+        const finished=fullScreen?!ow.controlsLocked&&!ow.script.isActive():!ow.script.isActive();
+        if(finished&&!game.scene){this.close();return;}
         this.frame=requestAnimationFrame(loop);
       };
       this.frame=requestAnimationFrame(loop);

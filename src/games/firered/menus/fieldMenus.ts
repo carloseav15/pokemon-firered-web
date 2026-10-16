@@ -51,6 +51,10 @@ export function fieldMenu(game: Game, begin: (close: () => void) => void, closeS
   begin(() => {
     scene.leave(); game.scene = null;
     game.setCallbacks(() => game.overworld.cb1(), () => game.overworld.cb2());
+    // ResumeMap (overworld.c) runs ResetTasks() when a start-menu screen returns
+    // to the field; the screen's own tasks (list menus, arrows) must not survive
+    // into the reopened start menu.
+    if (!closeStartMenu) tasks.reset();
     if (closeStartMenu) game.closeStartMenu();
   });
 }
@@ -505,8 +509,10 @@ export function openFieldBag(game: Game, initialItem?: number): void {
       const cb = post;
       post = null;
       if (cb) { game.closeStartMenu(); cb(); }
-      else if (initialItem === undefined) FieldCB_ReturnToFieldOpenStartMenu(game);
-      else game.closeStartMenu();
+      else if (initialItem === undefined) {
+        tasks.reset(); // ResumeMap: ResetTasks before the start menu is reopened
+        FieldCB_ReturnToFieldOpenStartMenu(game);
+      } else game.closeStartMenu();
     };
     let bagCtx: BagTaskContext | null = null;
     /** Leave the bag (ItemMenu_SetExitCallback + fade) and continue with `flow`. */

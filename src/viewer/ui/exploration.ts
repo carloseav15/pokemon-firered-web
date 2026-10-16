@@ -5,6 +5,7 @@ type Hooks = {
   pause(paused: boolean): void;
   resize(): void;
   exit(): void;
+  startMenu(): void;
   stats(): { sectors: number; bytes: number; pending: number; error: string };
 };
 
@@ -34,7 +35,12 @@ export class ExplorationUi {
     this.performance.hidden = true;
     this.notice.setAttribute("role", "status");
     this.notice.id = "explore-loading";
-    this.root.append(this.location, this.notice, this.performance, menuButton);
+    const gameMenuButton = document.createElement("button");
+    gameMenuButton.className = "btn";
+    gameMenuButton.id = "explore-game-menu";
+    gameMenuButton.textContent = "Juego · Intro";
+    gameMenuButton.addEventListener("click", () => this.openGameMenu());
+    this.root.append(this.location, this.notice, this.performance, gameMenuButton, menuButton);
     this.menu.id = "explore-menu";
     this.menu.setAttribute("aria-labelledby", "explore-menu-title");
     this.menu.innerHTML = `<h2 id="explore-menu-title">Explorar Kanto</h2>
@@ -117,7 +123,14 @@ export class ExplorationUi {
     this.hooks.pause(true);
     this.menu.showModal();
   }
+  /** START: the source start menu (Pokédex, party, bag, save, options). */
+  private openGameMenu(): void {
+    if (!this.active || this.menu.open || document.getElementById("engine-interaction")?.hidden === false || document.querySelector("dialog[open]")) return;
+    this.hooks.startMenu();
+  }
   private onKey = (event: KeyboardEvent): void => {
+    if (this.active && event.key === "Enter" && !event.repeat && !(event.target instanceof HTMLButtonElement)
+      && document.getElementById("interior")?.style.display === "none") { event.preventDefault(); event.stopImmediatePropagation(); this.openGameMenu(); return; }
     if (!this.active || document.getElementById("engine-interaction")?.hidden === false || event.key !== "Escape" || document.querySelector("dialog[open]") || this.menu.open || document.getElementById("interior")?.style.display !== "none") return;
     event.preventDefault(); event.stopImmediatePropagation(); this.openMenu();
   };

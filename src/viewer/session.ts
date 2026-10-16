@@ -5,7 +5,8 @@ import { createMon } from '@core/pokemon/pokemon';
 import { addBagItem } from '@core/pokemon/items';
 import { encode } from '@core/gba/charmap';
 import { InitPlayerTrainerId, SeedRngAndSetTrainerId } from '@core/random';
-import { newSaveData, save, saveStore, setSave, setSaveStorageKey, type SaveData } from '@game/save';
+import { newSaveData, save, saveStore, setSave, setSaveStorageKey, flagGet, flagSet, type SaveData } from '@game/save';
+import { HandleSetPokedexFlag } from '@core/pokemon/mon_extra';
 import * as C from '@game/generated/constants';
 import type { WarpAddress } from './navigation';
 import type { Direction } from './render/sprites';
@@ -31,7 +32,20 @@ export async function initializeViewerSession(): Promise<void> {
     if (!addBagItem(C.ITEM_POKE_BALL, 5)) throw Error('No se pudo preparar la mochila inicial');
     (save as ViewerSave).viewerStart = 'temporary-kanto-v1';
   }
+  grantTemporaryPokedex();
   initialized = true;
+}
+// Temporary start only: the Pokédex Oak hands over in the story, with the
+// starter registered, so the start menu shows the source Pokédex entry.
+function grantTemporaryPokedex(): void {
+  if (flagGet(C.FLAG_SYS_POKEDEX_GET)) return;
+  flagSet(C.FLAG_SYS_POKEMON_GET);
+  flagSet(C.FLAG_SYS_POKEDEX_GET);
+  const lead = save.party[0];
+  if (lead) {
+    HandleSetPokedexFlag(lead.species, C.FLAG_SET_SEEN, lead.personality);
+    HandleSetPokedexFlag(lead.species, C.FLAG_SET_CAUGHT, lead.personality);
+  }
 }
 export function viewerCheckpoint(): NavigationSave | undefined { return (save as ViewerSave).viewerNavigation; }
 export function syncViewerLocation(nav: NavigationSave): void {
