@@ -65,7 +65,7 @@ Anotados el 2026-10-16 a partir de lo que esa sesión dejó sin probar, sin veri
 - [ ] Objetos que el motor oculta/desplaza al final de un script (más allá de `removeobject`) y su sincronía con las entidades del visor.
 
 **C. Cambios de tamaño medio**
-- [ ] Quitar el menú DOM de equipo/mochila (texto) ahora que existen las pantallas del motor.
+- [x] Retirar la lista DOM de equipo/mochila y añadir acceso desde ajustes al menú del motor — `5af2a378`. Chromium: apertura/retorno, resumen/orden del equipo, Poción, opciones persistentes, sesión y compra/recarga PASS; precondiciones PREPARED de los jobs conservadas. 58 checks/tipos/honesty/build PASS; táctil y paridad audiovisual siguen pendientes.
 - [ ] Entrada táctil/móvil para el menú del juego (Enter no existe; solo hay botón) y para los combates.
 - [ ] Estado de Ciudad Plateada tras Brock (el guía desaparece, aparece el hombre de las zapatillas): el visor no refresca esos objetos.
 - [ ] Quest Log conectado a los eventos del visor.
