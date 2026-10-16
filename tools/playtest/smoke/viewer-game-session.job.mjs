@@ -11,7 +11,7 @@ export default async function run(ctx) {
  let s=await snapshot();const initial=structuredClone(s);
  if(s.party.length!==1||![1,4,7,25].includes(s.party[0].species)||s.party[0].level!==5||s.money!==3000||s.bag.pokeBalls[0]?.quantity!==5)throw Error('Temporary start mismatch');
  await p.getByRole('button',{name:'Menú · Esc'}).click();
- const text=await p.locator('#explore-party').innerText();if(!text.includes('Nv. 5')||!text.includes('×5')||!text.includes('3,000'))throw Error(text);
+ if(await p.locator('#explore-party').count())throw Error('Provisional party/bag list still present');
  await p.getByRole('button',{name:'Guardar partida',exact:true}).click();
  if(!await p.locator('#explore-save-result').innerText().then(t=>t.includes('guardada')))throw Error('Save failed');
  await p.keyboard.press('Escape');
@@ -38,5 +38,5 @@ export default async function run(ctx) {
  s=await snapshot();if(s.party[0].hp!==s.party[0].stats[0])throw Error('Saved initial hp mismatch');
  await p.reload();await p.waitForFunction(()=>performance.getEntriesByName('viewer-interactive').length);
  s=await snapshot();if(s.money!==3000||JSON.stringify(s.party)!==JSON.stringify(initial.party)||s.bag.pokeBalls[0]?.quantity!==5)throw Error('Continue mismatch');
- return {initialMenu:text,healing:'source NPC bytecode; injury PREPARED',saveContinue:'PASS',errors:ctx.errors()};
+ return {provisionalPartyBagList:'removed',healing:'source NPC bytecode; injury PREPARED',saveContinue:'PASS',errors:ctx.errors()};
 }

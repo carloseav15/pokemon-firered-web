@@ -8,7 +8,10 @@ export default async function run(ctx){
  const tap=async k=>{await p.keyboard.press(k);await p.waitForTimeout(900);};
  const inputs=async()=>(await names()).filter(n=>n==='startInput').length;
  await p.locator('#viewport').focus();
- await tap('Enter');
+ await p.getByRole('button',{name:'Menú · Esc'}).click();
+ if(await p.locator('#explore-party').count())throw Error('Provisional party/bag list still present');
+ await p.locator('#explore-open-game-menu').click();
+ if(await p.locator('#explore-menu').evaluate(e=>e.open))throw Error('Settings remained open over game menu');
  await p.locator('#engine-interaction').waitFor({state:'visible'});
  await p.waitForTimeout(1500);
  if(await inputs()!==1)throw Error('start menu input tasks '+await inputs());

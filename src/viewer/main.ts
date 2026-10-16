@@ -1,8 +1,6 @@
 import { initializeViewerSession, saveViewerSession, viewerCheckpoint, type NavigationSave } from "./session";
 import { EngineInteraction } from "./engineInteraction";
 import { save as gameSave } from "@game/save";
-import { decode } from "@core/gba/charmap";
-import { itemName } from "@core/pokemon/items";
 import { ElevatorAnimation } from "@core/field/elevatorAnimation";
 import { ElevatorMenu } from "./ui/elevator";
 import { loadElevators, type ElevatorDefinition, type ElevatorChoice } from "./elevators";
@@ -1895,11 +1893,6 @@ function setupUi(): void {
     },
   });
   if (!HOENN) explorationUi = new ExplorationUi({
-    gameStatus: () => [
-      "Inicio temporal de prueba · ₽" + gameSave.money.toLocaleString("en-US"),
-      ...gameSave.party.map(mon => `${decode(mon.nickname)} · Nv. ${mon.level} · PS ${mon.hp}/${mon.stats[0]} · ${mon.status & C.STATUS1_SLEEP ? "Dormido" : mon.status & (C.STATUS1_POISON | C.STATUS1_TOXIC_POISON) ? "Envenenado" : mon.status & C.STATUS1_BURN ? "Quemado" : mon.status & C.STATUS1_FREEZE ? "Congelado" : mon.status & C.STATUS1_PARALYSIS ? "Paralizado" : "Sano"} · PP ${mon.pp.join(" / ")}`),
-      ...Object.values(gameSave.bag).flat().map(slot => `${decode(itemName(slot.item))} ×${slot.quantity}`),
-    ],
     save: () => saveViewerSession(navigationSnapshot()),
     continue: () => continueViewerSession(),
     pause: paused => {

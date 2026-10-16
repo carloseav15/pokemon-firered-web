@@ -38,7 +38,6 @@ export default async function run(ctx){
  for(let i=0;i<50;i++){if(await p.locator('#engine-interaction').getAttribute('data-script-active')==='false')break;await p.waitForTimeout(300);await tap('z');}
  await p.locator('#engine-interaction').waitFor({state:'hidden'});
  await p.getByRole('button',{name:'Menú · Esc'}).click();
- if(!await p.locator('#explore-party').innerText().then(t=>t.includes('×20')))throw Error('Bag UI not updated');
  await p.locator('#explore-save').click();await p.keyboard.press('Escape');
  await p.reload();await p.waitForFunction(()=>performance.getEntriesByName('viewer-interactive').length);
  const persisted=await read();if(persisted.money!==0||persisted.bag.pokeBalls[0].quantity!==20)throw Error('Purchase not persisted');
