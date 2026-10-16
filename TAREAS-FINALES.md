@@ -37,6 +37,12 @@ ni a una revisión general. Las tareas diferidas se conservan abiertas. La
 reorganización de carpetas/documentos sigue diferida. Al cerrar 1–8, detener la
 continuación automática y esperar la siguiente petición del usuario.
 
+### Estado al 2026-10-16 (viewer jugable; detalle en Git)
+
+Hecho y verificado con `tools/playtest/smoke/viewer-game-*.job.mjs` (Chromium, teclado): tiendas y venta (19 Centros, marts, Celadón), PC, menú de inicio, objetos de bolsa, combates salvajes/captura/derrota, pasos del campo, Corte, entrenadores y Brock, Teletransporte/Vuelo/Cuerda Huida/Excavar.
+Abierto: empujar bloques de Fuerza; pesca, Golpe Roca, olor dulce, Zona Safari, fantasmas de Pokémon Tower; evolución/aprendizaje al subir de nivel; Surf con la MO real, Flash; NPC genéricos y eventos de mapa (punto 9); posición del entrenador tras el combate; quitar el menú DOM de equipo/mochila; entrada táctil para el menú del juego; Quest Log; comparar fondo del resumen (magenta) con la ROM; los otros siete gimnasios (8).
+Las pruebas usan precondiciones explícitas (objetos, nivel, estado, flags) marcadas PREPARED en cada job.
+
 ## 0. Cómo trabajar
 
 Lee esta sección entera y después **solo la tarea que vayas a hacer**. Si algo choca
