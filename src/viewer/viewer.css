@@ -700,3 +700,10 @@ body.exploring.explore-wide #main {
 /* The old hidden class had no rule for this layer: it covered the game for
    another 400 ms. Remove its backdrop and input interception when play is ready. */
 body.exploring .loading-overlay.hidden { display: none; }
+
+/* Game UI is layered on the current world: no modal backdrop or second map. */
+#engine-interaction { position:fixed; z-index:1000; bottom:18px; left:50%; transform:translateX(-50%); width:min(720px,96vw); pointer-events:none; }
+#engine-interaction[hidden] { display:none; }
+#engine-interaction canvas { display:block; width:100%; height:auto; image-rendering:pixelated; outline:none; pointer-events:auto; }
+#engine-interaction p { margin:0; text-align:center; color:#fff; text-shadow:0 1px 3px #000; font-size:13px; }
+#engine-interaction[data-loading="true"]::after { content:"Preparando interacción…"; display:block; padding:12px; background:#173944; color:white; }

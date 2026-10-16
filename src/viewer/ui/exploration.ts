@@ -1,4 +1,7 @@
 type Hooks = {
+  gameStatus(): string[];
+  save(): boolean;
+  continue(): Promise<void>;
   pause(paused: boolean): void;
   resize(): void;
   exit(): void;
@@ -41,9 +44,17 @@ export class ExplorationUi {
       <label>Escala <select id="explore-scale"><option value="1">1×</option><option value="2" selected>2×</option><option value="3">3×</option><option value="4">4×</option></select></label>
       <label><input type="checkbox" id="explore-radar"> Mostrar minimapa</label>
       <label><input type="checkbox" id="explore-metrics"> Mostrar rendimiento</label>
+      <div id="explore-party"></div><button class="btn" id="explore-save">Guardar partida</button><button class="btn" id="explore-continue">Continuar guardado</button><p id="explore-save-result" role="status"></p>
       <p id="explore-note">Navegación por exteriores e interiores en desarrollo. Historia y combates no se ejecutan aquí.</p>
       <div class="explore-actions"><button class="btn" id="explore-resume">Continuar</button><button class="btn" id="explore-fullscreen">Pantalla completa</button><button class="btn" id="explore-exit">Volver al atlas</button></div>`;
     document.body.append(this.root, this.menu);
+    this.menu.querySelector("#explore-save")!.addEventListener("click", () => {
+      this.menu.querySelector("#explore-save-result")!.textContent = this.hooks.save() ? "Partida guardada." : "No se pudo guardar la partida.";
+    });
+    this.menu.querySelector("#explore-continue")!.addEventListener("click", () => {
+      this.menu.close();
+      void this.hooks.continue().catch(error => { this.openMenu(); this.menu.querySelector("#explore-save-result")!.textContent = String(error); });
+    });
     const character = this.menu.querySelector<HTMLSelectElement>("#explore-character")!;
     character.value = (document.getElementById("player-char") as HTMLSelectElement).value;
     character.addEventListener("change", () => {
@@ -99,13 +110,15 @@ export class ExplorationUi {
   }
   setLocation(name: string): void { if (this.location.textContent !== name) this.location.textContent = name; }
   private openMenu(): void {
-    if (!this.active || this.menu.open) return;
+    if (!this.active || this.menu.open || document.getElementById("engine-interaction")?.hidden === false) return;
     (this.menu.querySelector("#explore-character") as HTMLSelectElement).value = (document.getElementById("player-char") as HTMLSelectElement).value;
+    const party = this.menu.querySelector("#explore-party")!; party.textContent = "";
+    for (const line of this.hooks.gameStatus()) { const p=document.createElement("p"); p.textContent=line; party.append(p); }
     this.hooks.pause(true);
     this.menu.showModal();
   }
   private onKey = (event: KeyboardEvent): void => {
-    if (!this.active || event.key !== "Escape" || document.querySelector("dialog[open]") || this.menu.open || document.getElementById("interior")?.style.display !== "none") return;
+    if (!this.active || document.getElementById("engine-interaction")?.hidden === false || event.key !== "Escape" || document.querySelector("dialog[open]") || this.menu.open || document.getElementById("interior")?.style.display !== "none") return;
     event.preventDefault(); event.stopImmediatePropagation(); this.openMenu();
   };
   private measure = (now: number): void => {

@@ -305,6 +305,27 @@ export class Overworld {
     return loaded;
   }
 
+  /** Viewer interaction adapter: restore the existing field runtime at the navigation
+   * position without running automatic map/story scripts. Explicit NPC bytecode is
+   * still executed by ScriptContext. This is not a normal story map load. */
+  async prepareViewerInteraction(mapId: string): Promise<void> {
+    this.LoadCurrentMapData(await this.prepareMap(mapId));
+    this.script.ScriptContext_Init();
+    tasks.reset();
+    this.sprites.clear();
+    this.windows.clear();
+    paletteFade.clear();
+    this.effects.reset();
+    this.messageBox.reset();
+    this.map.InitMapLayoutData(this.loaded);
+    this.map.onChange = () => this.renderer?.invalidate();
+    this.loadObjEventTemplatesFromHeader();
+    this.initObjectEventsLocal(false);
+    this.objects.turn(this.player.object, save.facing);
+    this.InitViewGraphics();
+    this.game.setCallbacks(null, () => this.cb2());
+  }
+
   mapIdForWarp(w: WarpData): string {
     const id = rom.mapIdByNum(((w.mapGroup & 0xff) << 8) | (w.mapNum & 0xff));
     if (!id) throw new Error(`unknown map ${w.mapGroup}.${w.mapNum}`);

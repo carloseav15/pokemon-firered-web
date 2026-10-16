@@ -1,3 +1,4 @@
+import * as C from "@game/generated/constants";
 import type { Element } from "../types";
 import { TILE } from "../constants";
 import { DATA_ROOT } from "@core/rom";
@@ -123,6 +124,7 @@ export class EntityManager {
     // Los NPCs con movimiento miran ocasionalmente a los lados o dan un pequeño paso
     // sin abandonar su área ni superponerse con el jugador
     for (const ent of this.entities) {
+      if (ent.element.movementType !== undefined && [C.MOVEMENT_TYPE_FACE_UP,C.MOVEMENT_TYPE_FACE_DOWN,C.MOVEMENT_TYPE_FACE_LEFT,C.MOVEMENT_TYPE_FACE_RIGHT].includes(ent.element.movementType)) continue;
       if (!ent.el || ent.element.trainer || ent.element.layer === "puerta") continue;
       // Probabilidad baja por tick para emular los descansos de GBA
       if (Math.random() < 0.003) {

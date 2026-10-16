@@ -1,3 +1,8 @@
+import { initializeViewerSession, saveViewerSession, viewerCheckpoint, type NavigationSave } from "./session";
+import { EngineInteraction } from "./engineInteraction";
+import { save as gameSave } from "@game/save";
+import { decode } from "@core/gba/charmap";
+import { itemName } from "@core/pokemon/items";
 import { ElevatorAnimation } from "@core/field/elevatorAnimation";
 import { ElevatorMenu } from "./ui/elevator";
 import { loadElevators, type ElevatorDefinition, type ElevatorChoice } from "./elevators";
@@ -142,6 +147,35 @@ function updateSectorBorder(): void {
   }, minX, minY);
 }
 let explorationUi: ExplorationUi | null = null;
+let engineInteraction: EngineInteraction | null = null;
+function navigationSnapshot(): NavigationSave {
+  const found = findMapAt(playerX, playerY);
+  if (!found) throw Error("Jugador fuera del mapa");
+  return { mapId: found[0], x: playerX-found[1].x, y: playerY-found[1].y,
+    direction: playerDir, dynamic: navigationWarps.returnAddress };
+}
+function pauseInteraction(active: boolean): void {
+  keysDown.clear(); playerRunning = false;
+  if (active) viewerClock.pause("engine-interaction"); else viewerClock.resume("engine-interaction");
+}
+async function continueViewerSession(): Promise<void> {
+  const checkpoint = viewerCheckpoint();
+  if (!checkpoint) throw Error("Todavía no hay una partida guardada");
+  // Reload the saved SaveBlock too, discarding unsaved purchases/healing.
+  const { saveStore, setSave } = await import("@game/save");
+  const stored = saveStore.load();
+  if (!stored) throw Error("No se pudo leer la partida");
+  setSave(stored);
+  const nav = viewerCheckpoint()!;
+  state.playerChar = gameSave.playerGender === C.FEMALE ? "leaf" : "red";
+  (document.getElementById("player-char") as HTMLSelectElement).value = state.playerChar;
+  await changeNavigationWorld(nav.mapId);
+  const info = index.maps[nav.mapId]!;
+  navigationWarps.restore(nav.dynamic);
+  await startExploration(info.x+nav.x, info.y+nav.y);
+  playerDir = nav.direction; updatePlayerDisplay(); writeHash();
+}
+
 let sectorUpdateQueued = false;
 function requestSectors(): Promise<void> {
   if (!sectorLoader || warpBusy) return Promise.resolve();
@@ -539,6 +573,20 @@ function updateEntitiesView(): void {
 }
 
 function interactWithEntity(ent: LiveEntity): void {
+  if (!HOENN && playerActive && engineInteraction) {
+    const header = mapHeaders.get(ent.element.map);
+    const npc = header?.objects.find(o => !o.clone && o.localId === ent.element.localId);
+    // Scope: source nurse/clerk scripts, not a generic replacement for story VM integration.
+    if (npc && !npc.clone && /(?:_Nurse|_Clerk)$/.test(npc.scriptName ?? "")) {
+      if (isStepping || warpBusy || explorationUi?.paused || engineInteraction.open) return;
+      const dx = playerDir === "east" ? 1 : playerDir === "west" ? -1 : 0;
+      const dy = playerDir === "south" ? 1 : playerDir === "north" ? -1 : 0;
+      const reach = MB.MetatileBehavior_IsCounter(worldGrid.behaviorAt(playerX+dx,playerY+dy)) ? 2 : 1;
+      if (ent.element.map !== findMapAt(playerX,playerY)?.[0] || ent.gx !== playerX+dx*reach || ent.gy !== playerY+dy*reach) return;
+      void engineInteraction.show(navigationSnapshot(), npc.localId).catch(error => dialogManager.show("Interacción", [String(error)]));
+      return;
+    }
+  }
   audioController.playSelect();
   entityManager.faceTowards(ent, playerX, playerY);
 
@@ -606,6 +654,7 @@ async function startExploration(targetGx?: number, targetGy?: number): Promise<v
     location.hash = h.toString(); location.reload(); return;
   }
   if (!playerActive && !HOENN) camera.setZoom(2);
+  if (!HOENN) { await initializeViewerSession(); gameSave.playerGender = state.playerChar === "leaf" ? C.FEMALE : C.MALE; }
   resetExploreSession();
   state.appMode = "explore";
 
@@ -729,7 +778,7 @@ function toggleBike(): void {
 const keysDown = new Set<string>();
 
 function processPlayerStep(): void {
-  if (!playerActive || elevatorBusy || fallPreventStep || warpBusy || isStepping || dialogManager.isOpen() || interiorViewer.isOpen() || explorationUi?.paused) return;
+  if (!playerActive || engineInteraction?.open || elevatorBusy || fallPreventStep || warpBusy || isStepping || dialogManager.isOpen() || interiorViewer.isOpen() || explorationUi?.paused) return;
 
   let dx = 0;
   let dy = 0;
@@ -1714,6 +1763,11 @@ async function build(): Promise<void> {
       data = new Rom();
       const header = mapHeaders.get(mapId) ?? await data.loadMap(mapId);
       mapHeaders.set(mapId, header);
+      const objects: Element[] = header.objects.flatMap(o => o.clone || o.flag && gameSave.flags[o.flag >>> 3] & (1 << (o.flag & 7)) ? [] : [{
+        map: mapId, x:o.x, y:o.y, localId:o.localId, graphics:o.graphicsName, movementType:o.movementType, layer:"npc",
+        direction: o.movementType === C.MOVEMENT_TYPE_FACE_UP ? "up" : o.movementType === C.MOVEMENT_TYPE_FACE_LEFT ? "left" : o.movementType === C.MOVEMENT_TYPE_FACE_RIGHT ? "right" : "down",
+      }]);
+      elementsByMap.set(mapId, objects);
       const layout = await data.loadLayout(header.layout);
       const padding = 32;
       next = { minX: -padding, minY: -padding, index: {
@@ -1738,6 +1792,9 @@ async function build(): Promise<void> {
     contextData = data; layoutsByMap.clear(); fillSources = new Map();
     worldGrid = new WorldGrid(index.world.width,index.world.height,minX,minY,true);
     entityManager = exterior ? exteriorEntities : new EntityManager(content,minX,minY);
+    if (!exterior) for (const e of elementsByMap.get(mapId) ?? []) {
+      entityManager.addEntity(e,e.x,e.y,e.direction === "up" ? "north" : e.direction === "left" ? "west" : e.direction === "right" ? "east" : "south");
+    }
     fieldEffects = await ViewerFieldEffects.create(worldGrid,viewerClock);
     disposeEffects = installFieldFxRenderer(fieldEffects,content,minX,minY);
     disposeEffectsSound = fieldEffects.subscribe(event => {if(event.type === "sound")audioController.playSE(event.id);});
@@ -1778,7 +1835,28 @@ async function build(): Promise<void> {
 }
 
 function setupUi(): void {
+  if (!HOENN) engineInteraction = new EngineInteraction({
+    pause: pauseInteraction,
+    project: (canvas, game) => {
+      const info=index.maps[game.overworld.header.id];
+      if(!info)return;
+      canvas.style.cssText=`position:absolute;pointer-events:none;image-rendering:pixelated;left:${(info.x-minX-MAP_OFFSET)*TILE+game.overworld.camX}px;top:${(info.y-minY-MAP_OFFSET)*TILE+game.overworld.camY}px;width:240px;height:160px;z-index:25`;
+      if(canvas.parentElement!==content)content.append(canvas);
+    },
+    hideObjects: (hidden,localId) => {
+      if(playerEl)playerEl.style.visibility=hidden?"hidden":"";
+      const ent=entityManager.entities.find(e=>e.element.localId===localId);
+      if(ent?.el)ent.el.style.visibility=hidden?"hidden":"";
+    },
+  });
   if (!HOENN) explorationUi = new ExplorationUi({
+    gameStatus: () => [
+      "Inicio temporal de prueba · ₽" + gameSave.money.toLocaleString("en-US"),
+      ...gameSave.party.map(mon => `${decode(mon.nickname)} · Nv. ${mon.level} · PS ${mon.hp}/${mon.stats[0]} · ${mon.status & C.STATUS1_SLEEP ? "Dormido" : mon.status & (C.STATUS1_POISON | C.STATUS1_TOXIC_POISON) ? "Envenenado" : mon.status & C.STATUS1_BURN ? "Quemado" : mon.status & C.STATUS1_FREEZE ? "Congelado" : mon.status & C.STATUS1_PARALYSIS ? "Paralizado" : "Sano"} · PP ${mon.pp.join(" / ")}`),
+      ...Object.values(gameSave.bag).flat().map(slot => `${decode(itemName(slot.item))} ×${slot.quantity}`),
+    ],
+    save: () => saveViewerSession(navigationSnapshot()),
+    continue: () => continueViewerSession(),
     pause: paused => {
       keysDown.clear(); playerRunning = false;
       if (paused) viewerClock.pause("explore-menu"); else viewerClock.resume("explore-menu");
@@ -1809,6 +1887,7 @@ function setupUi(): void {
     charSelect.value = state.playerChar;
     charSelect.addEventListener("change", () => {
       state.playerChar = (charSelect.value as "red" | "leaf") || "red";
+      if (!HOENN && playerActive) gameSave.playerGender = state.playerChar === "leaf" ? C.FEMALE : C.MALE;
       state.saveStored();
       updatePlayerDisplay();
     });
@@ -1996,7 +2075,7 @@ function setupUi(): void {
   bikeBtn?.addEventListener("click", () => toggleBike());
 
   window.addEventListener("keydown", (e) => {
-    if (elevatorBusy || elevatorMenu?.open) return;
+    if (engineInteraction?.open || elevatorBusy || elevatorMenu?.open) return;
     const tag = document.activeElement?.tagName?.toLowerCase();
     if (tag === "input" || tag === "select" || tag === "textarea") return;
     const key = e.key.toLowerCase();
@@ -2030,7 +2109,12 @@ function setupUi(): void {
         else if (playerDir === "east") fx++;
 
         if (tryElevatorPanel(fx,fy)) return;
-        const frontEnt = entityManager.findAt(fx, fy);
+        let frontEnt = entityManager.findAt(fx, fy);
+        // field_control_avatar.c GetInteractedObjectEventScript: reach NPC across MB_COUNTER.
+        if (!frontEnt && MB.MetatileBehavior_IsCounter(worldGrid.behaviorAt(fx, fy))) {
+          const dx=fx-playerX, dy=fy-playerY;
+          frontEnt = entityManager.findAt(fx+dx,fy+dy);
+        }
         if (frontEnt) {
           interactWithEntity(frontEnt);
           return;
@@ -2174,10 +2258,12 @@ build()
       else void interiorViewer.open(startMapId);
     }
     if (startExplore) {
+      if (!HOENN) await initializeViewerSession();
       if (!HOENN && startMapId && !index.maps[startMapId]) await changeNavigationWorld(startMapId);
       const valid = startPlayer && startPlayer.x >= minX && startPlayer.y >= minY
         && startPlayer.x < minX + index.world.width && startPlayer.y < minY + index.world.height;
-      await startExploration(valid ? startPlayer!.x : undefined, valid ? startPlayer!.y : undefined);
+      if (!HOENN && !startPlayer && viewerCheckpoint()) await continueViewerSession();
+      else await startExploration(valid ? startPlayer!.x : undefined, valid ? startPlayer!.y : undefined);
     }
     document.body.removeAttribute("aria-busy");
     performance.mark("viewer-interactive");

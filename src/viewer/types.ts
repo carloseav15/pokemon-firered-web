@@ -22,6 +22,7 @@ export type Element = {
   graphics?: string;
   flag?: string | number;
   movedByScript?: boolean;
+  movementType?: number;
   trainerRange?: number;
   trainer?: string;
   direction?: string;
