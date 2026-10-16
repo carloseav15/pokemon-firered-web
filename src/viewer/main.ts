@@ -561,6 +561,13 @@ function updatePlayerDisplay(): void {
   updateSectorBorder();
   explorationUi?.setLocation(findMapAt(playerX, playerY)?.[1].title ?? GAME_NAME);
   const here = findMapAt(playerX, playerY)?.[0];
+  if (!HOENN && playerActive && here) {
+    const type = mapHeaders.get(here)?.mapType;
+    const outdoors = type === C.MAP_TYPE_ROUTE || type === C.MAP_TYPE_TOWN || type === C.MAP_TYPE_CITY || type === C.MAP_TYPE_UNDERWATER || type === C.MAP_TYPE_OCEAN_ROUTE;
+    if (outdoors) lastOutdoorNav = navigationSnapshot();
+    else if (type !== undefined && here !== enteredMapId && lastOutdoorNav && lastOutdoorNav.mapId !== here)
+      void engineInteraction?.recordEscapeWarp(lastOutdoorNav, here).catch(error => console.error("Escape warp", error));
+  }
   if (!HOENN && playerActive && here && here !== enteredMapId) {
     enteredMapId = here;
     void engineInteraction?.enterMap(navigationSnapshot()).catch(error => console.error("Entrada de mapa", error));
@@ -571,6 +578,7 @@ function updatePlayerDisplay(): void {
 }
 
 let enteredMapId = "";
+let lastOutdoorNav: NavigationSave | null = null;
 function updateEntitiesView(): void {
   // Hoenn muestra sus personajes también fuera de la exploración (fijos), siempre que haya algo a la vista.
   if (!playerActive && !HOENN) {

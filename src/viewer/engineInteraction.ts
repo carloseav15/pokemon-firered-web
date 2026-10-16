@@ -14,6 +14,7 @@ import { incrementGameStat, save, SV, varSet } from '@game/save';
 import * as MB from '@game/generated/metatileBehavior';
 import * as C from '@game/generated/constants';
 import type { Sprite } from '@core/gba/sprite';
+import { tasks } from '@core/gba/tasks';
 import { gBattlerControllerFuncs } from '@core/battle/globals';
 import { installBattleHost } from '@core/battle/host';
 import { preloadBattleAssets } from '@game/battle/preload';
@@ -180,6 +181,8 @@ export class EngineInteraction {
       joy.initKeys();joy.setExternalInputEnabled(true);
       this.root.dataset.loading='false';this.ui.focus({preventScroll:true});
       this.last=performance.now();this.accumulator=0;
+      let idle=0, warpFrames=0;
+      const startNum=save.location.mapNum, startGroup=save.location.mapGroup;
       const loop=(now:number)=>{
         if(!this.open)return;
         this.accumulator+=Math.min(100,now-this.last);this.last=now;
@@ -192,7 +195,17 @@ export class EngineInteraction {
         this.root.dataset.money=String(save.money);
         this.root.dataset.battle=game.scene?gBattlerControllerFuncs[0]?.name??'':'';
         const finished=fullScreen?!ow.controlsLocked&&!ow.script.isActive():!ow.script.isActive();
-        if(finished&&!game.scene){this.finish(nav);return;}
+        // Field moves and warps run as tasks after the menu has unlocked the field:
+        // wait until the task list stays empty (or, with a leaked task, a long while).
+        idle=finished&&!game.scene?idle+1:0;
+        // The engine decided on a warp (teleport, fly, escape rope, white-out): its own map
+        // load is not run here, so after the fade-out the viewer follows save.location.
+        const at=save.location;
+        const warped=fullScreen&&!game.scene&&(at.mapGroup!==startGroup||at.mapNum!==startNum||at.x!==nav.x||at.y!==nav.y);
+        warpFrames=warped?warpFrames+1:0;
+        if(warpFrames>=90){this.finish(nav);return;}
+        const busyTasks=fullScreen&&tasks.tasks.some(t=>t.isActive);
+        if(finished&&!game.scene&&(!fullScreen||(!busyTasks&&idle>=20)||idle>=600)){this.finish(nav);return;}
         this.frame=requestAnimationFrame(loop);
       };
       this.frame=requestAnimationFrame(loop);
@@ -217,6 +230,26 @@ export class EngineInteraction {
       await ow.prepareViewerInteraction(nav.mapId);
       this.wildMap = nav.mapId;
       ow.RunOnTransitionMapScript();
+    } finally { this.testingWild = false; }
+  }
+  /**
+   * Leaving an outdoor map for a cave or building stores the escape warp
+   * (overworld.c: outdoors -> not outdoors), which Escape Rope, Dig and Teleport
+   * out of caves use. The viewer does not run the engine's own warp, so it asks
+   * for the same bookkeeping with the last outdoor tile and the destination map.
+   */
+  async recordEscapeWarp(from: NavigationSave, toMapId: string): Promise<void> {
+    if (this.busy) return;
+    this.testingWild = true;
+    try {
+      await (this.loading ??= this.initialize());
+      const ow = this.game!.overworld;
+      syncViewerLocation(from);
+      if (this.wildMap !== from.mapId) { await ow.prepareViewerInteraction(from.mapId); this.wildMap = from.mapId; }
+      const target = rom.mapNum(toMapId);
+      ow.warpDestination = { mapGroup: target >>> 8, mapNum: target & 255, warpId: -1, x: -1, y: -1 };
+      ow.objects.turn(ow.player.object, save.facing);
+      ow.updateEscapeWarp(from.x + MAP_OFFSET, from.y + MAP_OFFSET);
     } finally { this.testingWild = false; }
   }
   /**
