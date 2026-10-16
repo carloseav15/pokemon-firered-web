@@ -17,6 +17,7 @@ import type { Sprite } from '@core/gba/sprite';
 import { gBattlerControllerFuncs } from '@core/battle/globals';
 import { installBattleHost } from '@core/battle/host';
 import { preloadBattleAssets } from '@game/battle/preload';
+import { preloadEggHatch } from '@game/eggHatch';
 import { sound } from '@core/audio/sound';
 import { MAP_OFFSET } from '@core/field/fieldmap';
 import { PLAYER_AVATAR_FLAG_ACRO_BIKE, PLAYER_AVATAR_FLAG_MACH_BIKE, PLAYER_AVATAR_FLAG_ON_FOOT, PLAYER_AVATAR_FLAG_SURFING } from '@core/field/playerAvatar';
@@ -73,7 +74,7 @@ export class EngineInteraction {
     await Promise.all([preloadFieldAssets(), loadTrig(), loadCData('text_printer', 'text', 'wild_encounter', 'berry'),
       preloadPacks(['graphics_fonts', 'graphics_help_system', 'graphics_quest_log'])]);
     // Wild encounters and trainer battles run the source battle scene.
-    await Promise.all([preloadBattleAssets(), sound.loadCryData()]);
+    await Promise.all([preloadBattleAssets(), sound.loadCryData(), preloadEggHatch()]);
     this.game = new Game(this.engineCanvas);
     installBattleHost(this.game);
     joy.attach(); joy.setExternalInputEnabled(false);
@@ -200,6 +201,59 @@ export class EngineInteraction {
   /** Load the engine ahead of the first step so it never stalls a walk. */
   warm(): Promise<void> {
     return (this.loading ??= this.initialize().catch(error => { this.loading = undefined; throw error; }));
+  }
+  /**
+   * Arrival in a Pokémon Center: its OnTransition map script (`setrespawn`,
+   * overworld.c RunOnTransitionMapScript) registers the white-out respawn point.
+   * Other maps' transition scripts belong to the story VM and are not run here.
+   */
+  async enterMap(nav: NavigationSave): Promise<void> {
+    if (!/_POKEMON_CENTER_1F$/.test(nav.mapId) || this.busy) return;
+    this.testingWild = true;
+    try {
+      await (this.loading ??= this.initialize());
+      const ow = this.game!.overworld;
+      syncViewerLocation(nav);
+      await ow.prepareViewerInteraction(nav.mapId);
+      this.wildMap = nav.mapId;
+      ow.RunOnTransitionMapScript();
+    } finally { this.testingWild = false; }
+  }
+  /**
+   * GetInteractionScript (field_control_avatar.c) for the tile in front of the
+   * viewer player: background events (signs), metatile scripts (PC, shelves, TV)
+   * and field-move water scripts. Object events are handled by the viewer.
+   */
+  async interactFront(nav: NavigationSave, surfing: boolean): Promise<boolean> {
+    if (this.busy) return false;
+    this.testingWild = true;
+    let started = false;
+    try {
+      await (this.loading ??= this.initialize());
+      const game = this.game!, ow = game.overworld;
+      syncViewerLocation(nav);
+      if (this.wildMap !== nav.mapId) { await ow.prepareViewerInteraction(nav.mapId); this.wildMap = nav.mapId; }
+      const player = ow.player.object;
+      ow.objects.MoveObjectEventToMapCoords(player, nav.x + MAP_OFFSET, nav.y + MAP_OFFSET);
+      ow.objects.turn(player, save.facing);
+      ow.SetCameraToTrackPlayer();
+      ow.player.flags = surfing ? ow.player.flags | PLAYER_AVATAR_FLAG_SURFING : ow.player.flags & ~PLAYER_AVATAR_FLAG_SURFING;
+      const front = ow.control.getInFrontOfPlayerPosition();
+      const behavior = ow.map.behaviorAt(front.x, front.y);
+      // Object events at the tile are the viewer's own entities; only the other lookups run.
+      const direction = player.facingDirection;
+      const script = ow.control.getInteractedBackgroundEventScript({ ...front }, behavior, direction)
+        || ow.control.getInteractedMetatileScript({ ...front }, behavior, direction)
+        || ow.control.getInteractedWaterScript({ ...front }, behavior, direction);
+      if (!script) return false;
+      started = true;
+      ow.script.ScriptContext_SetupScript(script);
+      await this.run(nav, 0, true, () => {}, true);
+      return true;
+    } finally {
+      this.testingWild = false;
+      if (!started) this.root.dataset.loading = 'false';
+    }
   }
   /**
    * CheckStandardWildEncounter (field_control_avatar.c) for the tile the viewer

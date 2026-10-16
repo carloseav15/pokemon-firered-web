@@ -122,9 +122,18 @@ export function EggHatch(game: Game): void {
   sScene = scene;
   game.scene = scene;
   game.setCallbacks(null, () => scene.update());
+  // CB2_Overworld keeps running tasks and the palette fade while the field fades out.
+  SetMainCallback2(CB2_EggHatchFieldFadeOut);
+  SetVBlankCallback(VBlankCB_EggHatch);
   tasks.create(Task_EggHatch, 10);
   BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, 0);
   HelpSystem_Disable();
+}
+
+/** The part of CB2_Overworld that matters while EggHatch fades the field out. */
+function CB2_EggHatchFieldFadeOut(): void {
+  tasks.run();
+  UpdatePaletteFade();
 }
 
 /** Task_EggHatch (daycare.c). */

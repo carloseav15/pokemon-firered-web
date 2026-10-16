@@ -299,8 +299,10 @@ export function Task_StartMenuHandleInput(taskId: number, state: StartMenuInputS
     const action = state.pendingAction;
     state.pendingAction = undefined;
     state.waitForFade = false;
-    action();
+    // Free the task before the action: a hardware scene entered by it snapshots
+    // the task list and would otherwise restore this input task when it leaves.
     tasks.destroy(taskId);
+    action();
     return;
   }
   if (StartCB_HandleInput(state)) tasks.destroy(taskId);

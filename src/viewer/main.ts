@@ -560,11 +560,17 @@ function updatePlayerDisplay(): void {
   scheduleSectors();
   updateSectorBorder();
   explorationUi?.setLocation(findMapAt(playerX, playerY)?.[1].title ?? GAME_NAME);
+  const here = findMapAt(playerX, playerY)?.[0];
+  if (!HOENN && playerActive && here && here !== enteredMapId) {
+    enteredMapId = here;
+    void engineInteraction?.enterMap(navigationSnapshot()).catch(error => console.error("Entrada de mapa", error));
+  }
   updateEntitiesView();
   checkCurrentMapMusic();
   scheduleHashWrite();
 }
 
+let enteredMapId = "";
 function updateEntitiesView(): void {
   // Hoenn muestra sus personajes también fuera de la exploración (fijos), siempre que haya algo a la vista.
   if (!playerActive && !HOENN) {
@@ -2152,6 +2158,11 @@ function setupUi(): void {
         }
         if (frontEnt) {
           interactWithEntity(frontEnt);
+          return;
+        }
+        // Signs, PCs, shelves and other metatile/background-event scripts of the engine.
+        if (!HOENN && engineInteraction && !isStepping && !warpBusy && !elevatorBusy) {
+          void engineInteraction.interactFront(navigationSnapshot(), playerMode === "surf").catch(error => console.error("Interacción", error));
           return;
         }
       }
