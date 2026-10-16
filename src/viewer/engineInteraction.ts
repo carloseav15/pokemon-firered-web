@@ -5,7 +5,7 @@ import { Game, FRAME_MS } from '@game/game';
 import { joy } from '@core/gba/input';
 import { loadFieldFx } from '@core/field/fieldEffects';
 import { preloadFieldAssets } from '@core/field/preloadField';
-import { cdata, loadCData, preloadPacks } from '@core/hw/assets';
+import { loadCData, preloadPacks } from '@core/hw/assets';
 import { rom } from '@core/rom';
 import { loadTrig } from '@core/hw/trig';
 import { gWindows } from '@core/hw/window';
@@ -201,18 +201,6 @@ export class EngineInteraction {
   warm(): Promise<void> {
     return (this.loading ??= this.initialize().catch(error => { this.loading = undefined; throw error; }));
   }
-  private readonly wildHeaders = new Map<string, boolean>();
-  /** gWildMonHeaders lookup (wild_encounter.c GetCurrentMapWildMonHeaderId), without starting the engine. */
-  private async mapHasWildHeader(mapId: string): Promise<boolean> {
-    const known = this.wildHeaders.get(mapId);
-    if (known !== undefined) return known;
-    await loadCData('wild_encounter');
-    const num = rom.mapNum(mapId), group = num >>> 8, id = num & 255;
-    const headers = cdata<{ mapGroup: number; mapNum: number }[]>('wild_encounter', 'gWildMonHeaders');
-    const has = headers.some(h => h && h.mapGroup === group && h.mapNum === id);
-    this.wildHeaders.set(mapId, has);
-    return has;
-  }
   /**
    * CheckStandardWildEncounter (field_control_avatar.c) for the tile the viewer
    * player just reached. The engine decides (rate, repel, tables, level) and
@@ -222,18 +210,27 @@ export class EngineInteraction {
   async tryWildEncounter(nav: NavigationSave, surfing: boolean): Promise<boolean> {
     if (this.busy) return false;
     this.testingWild = true;
-    // Until the engine has been warmed up only maps with encounter tables need it.
-    if (!this.game && !await this.mapHasWildHeader(nav.mapId)) { this.testingWild = false; return false; }
+
     let started = false;
     try {
       await (this.loading ??= this.initialize());
       const game = this.game!, ow = game.overworld;
       syncViewerLocation(nav);
       if (this.wildMap !== nav.mapId) { await ow.prepareViewerInteraction(nav.mapId); this.wildMap = nav.mapId; }
+      // Place the engine avatar (and camera) exactly where the viewer player stands.
       const player = ow.player.object;
-      player.currentCoords = { x: nav.x + MAP_OFFSET, y: nav.y + MAP_OFFSET };
-      player.previousCoords = { ...player.currentCoords };
+      ow.objects.MoveObjectEventToMapCoords(player, nav.x + MAP_OFFSET, nav.y + MAP_OFFSET);
+      ow.objects.turn(player, save.facing);
+      ow.SetCameraToTrackPlayer();
       ow.player.flags = surfing ? ow.player.flags | PLAYER_AVATAR_FLAG_SURFING : ow.player.flags & ~PLAYER_AVATAR_FLAG_SURFING;
+      // checkForTrainersWantingBattle (trainer_see.c) runs first in ProcessPlayerFieldInput:
+      // the source approach, exclamation, walk and battle script for a trainer in sight.
+      if (ow.effects.checkForTrainersWantingBattle()) {
+        const trainerId = (game.trainerSee as unknown as { approaching?: { trainer: { localId: number } } }).approaching?.trainer.localId ?? 0;
+        started = true;
+        await this.run(nav, trainerId, true, () => { if (trainerId) this.hooks.hideObjects(true, trainerId); }, true);
+        return true;
+      }
       // ProcessPlayerFieldInput tookStep (field_control_avatar.c): step stat, then the
       // step-count scripts (happiness, poison, egg hatch, Safari) and repel; those
       // that set up a script run it before the encounter check, as in the C.
