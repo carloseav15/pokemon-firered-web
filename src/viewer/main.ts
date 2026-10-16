@@ -664,6 +664,7 @@ async function startExploration(targetGx?: number, targetGy?: number): Promise<v
   }
   if (!playerActive && !HOENN) camera.setZoom(2);
   if (!HOENN) { await initializeViewerSession(); gameSave.playerGender = state.playerChar === "leaf" ? C.FEMALE : C.MALE; }
+  if (!HOENN) window.setTimeout(() => void engineInteraction?.warm().catch(() => {}), 1500);
   resetExploreSession();
   state.appMode = "explore";
 
@@ -1864,6 +1865,7 @@ function setupUi(): void {
       if(canvas.parentElement!==content)content.append(canvas);
     },
     relocate: nav => { void relocateViewer(nav); },
+    setBike: on => { if (on !== (playerMode === "bike")) toggleBike(); },
     hideObjects: (hidden,localId) => {
       if(playerEl)playerEl.style.visibility=hidden?"hidden":"";
       const ent=entityManager.entities.find(e=>e.element.localId===localId);
@@ -1886,7 +1888,7 @@ function setupUi(): void {
     exit: () => document.getElementById("mode-viewer-btn")?.click(),
     startMenu: () => {
       if (!engineInteraction || engineInteraction.open || !playerActive || isStepping || warpBusy || elevatorBusy || dialogManager.isOpen()) return;
-      void engineInteraction.showStartMenu(navigationSnapshot()).catch(error => dialogManager.show("Menú", [String(error)]));
+      void engineInteraction.showStartMenu(navigationSnapshot(), playerMode === "bike" ? "bike" : playerMode === "surf" ? "surf" : "walk").catch(error => dialogManager.show("Menú", [String(error)]));
     },
     stats: () => ({ sectors: sectorLoader?.ids.length ?? Object.keys(index.maps).length,
       bytes: (sectorLoader?.bytes ?? 0) + (sectorBorder?.bytes ?? 0) + (avatarDepth?.bytes ?? 0), pending: sectorLoader?.pending ?? 0, error: sectorLoader?.error ?? "" }),

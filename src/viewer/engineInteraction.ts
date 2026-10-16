@@ -10,7 +10,8 @@ import { rom } from '@core/rom';
 import { loadTrig } from '@core/hw/trig';
 import { gWindows } from '@core/hw/window';
 import { GetBgTilemapBuffer } from '@core/hw/bg';
-import { save, SV, varSet } from '@game/save';
+import { incrementGameStat, save, SV, varSet } from '@game/save';
+import * as MB from '@game/generated/metatileBehavior';
 import * as C from '@game/generated/constants';
 import type { Sprite } from '@core/gba/sprite';
 import { gBattlerControllerFuncs } from '@core/battle/globals';
@@ -18,7 +19,7 @@ import { installBattleHost } from '@core/battle/host';
 import { preloadBattleAssets } from '@game/battle/preload';
 import { sound } from '@core/audio/sound';
 import { MAP_OFFSET } from '@core/field/fieldmap';
-import { PLAYER_AVATAR_FLAG_SURFING } from '@core/field/playerAvatar';
+import { PLAYER_AVATAR_FLAG_ACRO_BIKE, PLAYER_AVATAR_FLAG_MACH_BIKE, PLAYER_AVATAR_FLAG_ON_FOOT, PLAYER_AVATAR_FLAG_SURFING } from '@core/field/playerAvatar';
 import { syncViewerLocation, type NavigationSave } from './session';
 
 type Hooks = {
@@ -27,6 +28,8 @@ type Hooks = {
   hideObjects(hidden: boolean, localId: number): void;
   /** Engine moved the player (white-out respawn): continue the viewer from here. */
   relocate(nav: NavigationSave): void;
+  /** The bag's Bicycle (or its dismount) changed the avatar state. */
+  setBike(on: boolean): void;
 };
 export class EngineInteraction {
   readonly root = document.createElement('section');
@@ -78,6 +81,11 @@ export class EngineInteraction {
     this.close();
     this.wildMap = '';
     if (!this.game) return;
+    if (this.menuVehicle && this.menuVehicle !== 'surf') {
+      const bike = (this.game.overworld.player.flags & (PLAYER_AVATAR_FLAG_MACH_BIKE | PLAYER_AVATAR_FLAG_ACRO_BIKE)) !== 0;
+      if (bike !== (this.menuVehicle === 'bike')) this.hooks.setBike(bike);
+    }
+    this.menuVehicle = null;
     // DoWhiteOut/warps update save.location before the engine's own map load
     // completes, so the destination is read from the record, not the loaded map.
     const { mapGroup, mapNum, x, y } = save.location;
@@ -118,7 +126,8 @@ export class EngineInteraction {
       }
     } else ow.windows.render(ui);
     const ctx = this.field.getContext('2d')!;ctx.clearRect(0,0,240,160);
-    const objects = [ow.player.object, ow.objects.list.find(o=>o.localId===this.localId)];
+    // Step events (repel, poison) leave the viewer's own avatar in place.
+    const objects = this.localId ? [ow.player.object, ow.objects.list.find(o=>o.localId===this.localId)] : [];
     for (const object of objects) if(object?.sprite && !object.sprite.invisible) ow.sprites.drawSprite(ctx,object.sprite);
     // Healing balls/glow and other actual field-effect sprites stay at their
     // original map coordinates. General NPC rendering remains a later integration.
@@ -138,9 +147,18 @@ export class EngineInteraction {
     });
   }
   /** ShowStartMenu (start_menu.c) over the current viewer map. */
-  async showStartMenu(nav: NavigationSave): Promise<void> {
-    await this.run(nav, 0, true, (game) => game.showStartMenu());
+  async showStartMenu(nav: NavigationSave, vehicle: 'walk' | 'bike' | 'surf' = 'walk'): Promise<void> {
+    const bikeFlags = PLAYER_AVATAR_FLAG_MACH_BIKE | PLAYER_AVATAR_FLAG_ACRO_BIKE;
+    await this.run(nav, 0, true, (game) => {
+      // The engine decides item rules (Bicycle on/off) from the avatar flags.
+      const player = game.overworld.player;
+      const base = player.flags & ~(bikeFlags | PLAYER_AVATAR_FLAG_SURFING | PLAYER_AVATAR_FLAG_ON_FOOT);
+      player.flags = base | (vehicle === 'bike' ? PLAYER_AVATAR_FLAG_MACH_BIKE : vehicle === 'surf' ? PLAYER_AVATAR_FLAG_SURFING : PLAYER_AVATAR_FLAG_ON_FOOT);
+      this.menuVehicle = vehicle;
+      game.showStartMenu();
+    });
   }
+  private menuVehicle: 'walk' | 'bike' | 'surf' | null = null;
   private async run(nav: NavigationSave, localId: number, fullScreen: boolean, start: (game: Game) => void, prepared = false): Promise<void> {
     if (this.open) return;
     this.localId=localId; this.fullScreen=fullScreen; this.hooks.pause(true); this.root.hidden=false;
@@ -175,6 +193,10 @@ export class EngineInteraction {
       this.frame=requestAnimationFrame(loop);
     }catch(error){this.loading=undefined;this.close();throw error;}
   }
+  /** Load the engine ahead of the first step so it never stalls a walk. */
+  warm(): Promise<void> {
+    return (this.loading ??= this.initialize().catch(error => { this.loading = undefined; throw error; }));
+  }
   private readonly wildHeaders = new Map<string, boolean>();
   /** gWildMonHeaders lookup (wild_encounter.c GetCurrentMapWildMonHeaderId), without starting the engine. */
   private async mapHasWildHeader(mapId: string): Promise<boolean> {
@@ -196,7 +218,8 @@ export class EngineInteraction {
   async tryWildEncounter(nav: NavigationSave, surfing: boolean): Promise<boolean> {
     if (this.busy) return false;
     this.testingWild = true;
-    if (!await this.mapHasWildHeader(nav.mapId)) { this.testingWild = false; return false; }
+    // Until the engine has been warmed up only maps with encounter tables need it.
+    if (!this.game && !await this.mapHasWildHeader(nav.mapId)) { this.testingWild = false; return false; }
     let started = false;
     try {
       await (this.loading ??= this.initialize());
@@ -207,6 +230,17 @@ export class EngineInteraction {
       player.currentCoords = { x: nav.x + MAP_OFFSET, y: nav.y + MAP_OFFSET };
       player.previousCoords = { ...player.currentCoords };
       ow.player.flags = surfing ? ow.player.flags | PLAYER_AVATAR_FLAG_SURFING : ow.player.flags & ~PLAYER_AVATAR_FLAG_SURFING;
+      // ProcessPlayerFieldInput tookStep (field_control_avatar.c): step stat, then the
+      // step-count scripts (happiness, poison, egg hatch, Safari) and repel; those
+      // that set up a script run it before the encounter check, as in the C.
+      const behavior = ow.map.behaviorAt(nav.x + MAP_OFFSET, nav.y + MAP_OFFSET);
+      incrementGameStat(C.GAME_STAT_STEPS);
+      const forced = MB.MetatileBehavior_IsForcedMovementTile(behavior);
+      if (ow.control.tryStartStepCountScript(behavior) || (!forced && ow.effects.updateRepelCounter())) {
+        started = true;
+        await this.run(nav, 0, true, () => {}, true);
+        return true;
+      }
       const attributes = ow.map.attributesOf(ow.map.metatileIdAt(nav.x + MAP_OFFSET, nav.y + MAP_OFFSET));
       const wildHit = game.wild.tryStandardWildEncounter(attributes);
       if (!wildHit) return false;
