@@ -10,12 +10,43 @@ Meta de producto acordada: el visor en modo navegación debe evolucionar hasta s
 la interfaz del juego completo, incorporando NPC, scripts, historia, combates,
 menús y guardado sobre la navegación existente.
 
+## Máxima prioridad vigente: puntos 1 a 8
+
+Decisión expresa del usuario (2026-10-15). Este orden sustituye las prioridades
+anteriores de esta lista y rige la continuación de todos los agentes. El primer
+punto de control de §6.5p es una base implementada; no da estos puntos por cerrados.
+
+1. Pulir la experiencia dentro del visor para que todo se vea natural, sobre el mismo mundo y sin saltar a otro escenario en una ventana.
+2. Completar NPC y scripts de Centros Pokémon.
+3. Completar tiendas: comprar, vender y guardar los cambios.
+4. Integrar combates salvajes y captura.
+5. Completar equipo, mochila y menús necesarios para jugar.
+6. Integrar combates contra entrenadores.
+7. Completar el gimnasio de Brock y su medalla persistente.
+8. Completar los otros siete gimnasios y sus eventos.
+
+**Solo por petición expresa del usuario; no iniciar automáticamente al terminar el punto 8:**
+
+9. Integrar el resto de la historia y los NPC.
+10. Revisar toda la navegación, gráficos, animaciones y sonido.
+11. Sustituir el inicio temporal por el definitivo.
+
+Dentro de 1–8 se pueden resolver las dependencias y los bloqueos concretos que
+necesite esa entrega; eso no autoriza ampliar el alcance al resto de la historia
+ni a una revisión general. Las tareas diferidas se conservan abiertas. La
+reorganización de carpetas/documentos sigue diferida. Al cerrar 1–8, detener la
+continuación automática y esperar la siguiente petición del usuario.
+
 ## 0. Cómo trabajar
 
 Lee esta sección entera y después **solo la tarea que vayas a hacer**. Si algo choca
 con [AGENTS.md](AGENTS.md), manda AGENTS.md.
 
 ### Orden
+La sección «Máxima prioridad vigente: puntos 1 a 8» manda sobre el orden histórico
+de abajo. Los puntos 9–11 requieren una nueva petición expresa del usuario.
+
+Orden histórico para cuando el usuario autorice retomarlo:
 1. Sección 1 de arriba abajo. Las **[avanzado]** déjalas a un agente capaz si no
    entiendes el C.
 2. Sección 2, un bloque de archivo por sesión, en el orden recomendado.
@@ -734,7 +765,7 @@ que avisa si algo se rompe. Ver [docs/VISION.md](docs/VISION.md) fases 2 y 3.
 - [x] **6.5l Efectos durante saltos de Kanto** — `2778bf87`: soporte de surf fijo en agua durante entrada/salida según estados C; sombra de salto desde gfx/OAM y gShadowVerticalOffsets exportado, con exclusiones C; cobertura de hierba desactivada en vuelo. Tipos, honesty, build, tablas/Sprite, harness PREPARED de hierba/huellas y Chromium Rojo/Hoja con teclado/terreno real y capturas inspeccionadas PASS. Reflejos, profundidad por elevación/puentes, cobertura en suelo, validación de ramas de supresión y retirada de sombra al encadenar pasos sin soltar la tecla quedan en 6.5d; no acredita paridad ROM ni todos los efectos.
 - [x] **6.5m Reflejos del avatar de Kanto** — `ce2f4708`: scan C de filas actual/anterior, paleta/frames exportados, inversión de y2 y deformación con cdata/trig/intérprete affine original. Máscara de casillas reflectantes adapta prioridad al mapa aplanado; sin compositor completo BG/elevaciones. Tipos, honesty, build, Avatar/affine y Chromium Rojo/Hoja en Ruta22 (cuatro direcciones, paleta/frame, píxeles solo en agua, bici, surf0/1, pausa y capturas) PASS; Pallet no reflectante. Arranque/reintento PASS, ventanas iniciales ~57–58 FPS y posteriores~60. Hielo sin recorrido, clima/ROM, profundidad y cobertura en suelo siguen pendientes en 6.5d; retirada de sombra adelantada al aterrizar, prueba específica con tecla mantenida pendiente.
 - [x] **6.5n Cobertura local del avatar por capas** — `30bdd798`: BG1/BG2 según DrawMetatile, prioridad desde tabla C y elevaciones 0/15, sin recorte fijo de pies en Explorar Kanto. Dos canvases 128×128 (128 KiB), referencias de sectores reutilizadas/liberadas e invalidación por animación. Tipos, honesty, build y Chromium Rojo/Hoja en hierba real de Ruta 2 (57 metatiles, píxeles NORMAL/COVERED, orden y capturas) y regresión de reflejos de Hoja PASS. SPLIT solo en Sevii; prioridades 0/1 sin casillas continentales transitables: ramas sin recorrido real. Compositor de cámara completa/NPC/subsprites, colisión por elevación/puentes y revisión exhaustiva/ROM pendientes en 6.5d.
-- [ ] **6.5o Revisión pendiente de los puntos 1, 3, 4 y 6 de navegación de Kanto** (autorización del usuario 2026-10-15; dejar los demás para después). No cerrar con checks estáticos/PREPARED solamente ni reducir el alcance al último commit.
+- [ ] **6.5o Revisión pendiente de los puntos 1, 3, 4 y 6 de navegación de Kanto** (diferida por la nueva prioridad 10; retomarla solo por petición expresa del usuario). No cerrar con checks estáticos/PREPARED solamente ni reducir el alcance al último commit.
   - Regresión de esta entrega: suite `viewer-navigation-suite.mjs` **25/25 Rojo y 25/25 Hoja** PASS, incluidos ascensores y casetas ida/vuelta. Confirma los casos del harness; conservar recorrido exhaustivo, ROM, dispositivos y producción pendientes.
   - [x] **Ascensores de navegación** — `5ec96850` (guardas `a03de99a`) sobre `0b1c6ac0`: cuatro menús y 20 destinos extraídos de scripts, rechazo de cambios no soportados, host de animación compartido y retorno por coordenadas conservado al recargar. Azulona Rojo/Hoja (cancelar/misma planta/viaje/recarga/salida), Silph 1F→11F, Rocket B1F→B4F (llave PREPARED; rama sin llave también PASS) y Trainer Tower Roof→Lobby con salida guiada PASS; duración/tiles observados contra cdata. Menú DOM y adaptador acotado; VM general, obtención real de la llave y paridad ROM siguen pendientes; delta 0 cuerpos C nuevos/0 nombres por equivalencias.
   - [ ] **1 Árboles y edificios**: verificar con movimiento real la ocultación parcial/completa y vuelta al frente según BG original, colisiones y ausencia de restos al cambiar sector; revisar también los casos interiores. `70c81706`: Rojo/Hoja, recorridos reales de ida/vuelta en tejado, árbol, mueble 2F y pared 1F; capturas contrastadas píxel a píxel con capas fuente y colisiones focalizadas PASS. `d7aa1aeb`: ocultación completa en Ciudad Carmín (35–37,22), tres rutas a pie de ida/vuelta con Rojo/Hoja y comparación de píxeles PASS (0 visibles detrás; 0 cubiertos al volver). Censo geométrico: 255 mapas/72.050 casillas, seis casillas candidatas; Fucsia, laboratorio de Cinnabar y Ruta 10 sin ruta solo a pie desde la entrada probada, con accesos alternativos/saltos/Surf/scripts sin validar. Siguen pendientes todos los cambios de sector/mapa y la revisión exhaustiva.
@@ -749,9 +780,9 @@ que avisa si algo se rompe. Ver [docs/VISION.md](docs/VISION.md) fases 2 y 3.
 - [x] **6.5p Primer punto de control: partida, menú básico, guardar/continuar, Centro Pokémon y compra** — `3935b183`: inicial aleatorio Bulbasaur/Charmander/Squirtle/Pikachu Nv.5, cinco Poké Balls y ₽3.000; SaveBlock/mochila/curación/tienda/VM existentes, clave de guardado independiente. UI de ventanas/sprites sobre el mapa del visor, sin segundo escenario ni diálogo modal de juego.
   Chromium: inicio/menú/guardar/continuar y enfermera de Viridian Rojo/Hoja; compras de 3 y 12 Poké Balls en Pewter, rechazo con ₽0 y recarga persistente PASS. PREPARED: ubicación inicial por URL y lesión antes de curar; ninguna compra/curación ni flag de historia preparados. Continuidad de mapas/cámara, interiores Rojo/Hoja, 58 checks, tipos/honesty/build PASS; delta 0 cuerpos C nuevos/0 equivalencias por nombre.
   Adaptaciones/pendientes: inicio temporal, menú DOM de consulta y proyección de ventanas/sprites del motor; eventos automáticos de mapa/historia, VM general, sincronización/persistencia de objetos dinámicos del visor, otros NPC/centros/tiendas, venta, menús completos, prioridad general de sprites y comparación audiovisual/ROM sin cerrar. Conservar §6.5o y las demás validaciones abiertas.
-- [ ] **6.5q Segundo punto de control acordado: combate salvaje y captura**: integrar sobre la navegación las rutas existentes de encuentro, movimientos/daño, objetos/captura, experiencia y retorno al mapa con equipo/mochila/dinero persistentes; definir con el usuario la tanda y aceptación antes de encargarla a otro agente.
-- [ ] **6.5r Tercer punto de control acordado: gimnasio de Brock**: diálogos, entrenadores/líder, victoria y medalla persistente; después los otros siete gimnasios con sus eventos. Depende de la integración de combate y de la VM de historia necesaria; no fabricar progreso para validar.
-- [ ] **6.5s Planificación conjunta para otros agentes** (petición del usuario, 2026-10-15): acordar el siguiente alcance, el estándar de presentación continua y las pruebas de aceptación; registrar aquí la decisión antes de repartir trabajo. Un agente a la vez en `main`, sin ramas/worktrees/subagentes automáticos ni push; preservar cambios ajenos. Reorganización general de carpetas/documentos diferida.
+- [ ] **6.5q Combate salvaje y captura (prioridad 4, después de 1–3)**: integrar sobre la navegación las rutas existentes de encuentro, movimientos/daño, objetos/captura, experiencia y retorno al mapa con equipo/mochila/dinero persistentes; definir con el usuario la tanda y aceptación antes de encargarla a otro agente.
+- [ ] **6.5r Gimnasio de Brock (prioridad 7; otros gimnasios en prioridad 8)**: diálogos, entrenadores/líder, victoria y medalla persistente; después los otros siete gimnasios con sus eventos. Depende de la integración de combate y de la VM de historia necesaria; no fabricar progreso para validar.
+- [ ] **6.5s Planificación conjunta para otros agentes** (petición del usuario, 2026-10-15): orden 1–8 y reserva expresa de 9–11 ya registrados arriba; concretar el alcance de la siguiente tanda y sus pruebas de aceptación dentro de esas prioridades antes de repartir trabajo. Un agente a la vez en `main`, sin ramas/worktrees/subagentes automáticos ni push; preservar cambios ajenos. Reorganización general de carpetas/documentos diferida.
 - [ ] **6.5d Explorar por sectores y revisión restante**: Kanto continental usa mapas próximos (6.5h); el inspector técnico y Hoenn conservan carga global, Johto es estático. Arranque/movimiento tienen revisión focal en 6.5i y avatar base en 6.5j. Orden acordado: efectos (hierba, agua/ondas, polvo, huellas, sombras/reflejos, soporte/balanceo de surf y máscaras de profundidad) → NPC/objetos → recorrido exhaustivo de Kanto (incluidos terrenos especiales/cámara/cargas) → interiores con control/llegadas/salida → sesión persistente → sectores Hoenn/Johto → conexiones entre regiones. Actualizar jobs UI históricos C7/huellas al modo inmersivo antes de usarlos en la revisión de efectos; la regresión actual usa los drivers nuevos. Quedan audio y medición en producción/dispositivos. Conservar revisión de sprites, ROM, Route 7 HnS, discrepancias de fuente, gestos/dispositivos reales y producción; los interiores básicos ya usan control compartido (6.5o), pero las transiciones fuente y el recorrido completo siguen abiertos, sin historia/combates del juego.
 - [ ] **6.5 Primer corte de Emerald (fase 3)**: elegir un sistema pequeño de
   `docs/EMERALD-FALTANTE.md` y portarlo sobre `src/core` con `GAME=emerald`; cada entrada del
