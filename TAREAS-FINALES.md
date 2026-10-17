@@ -89,7 +89,7 @@ Anotados el 2026-10-16 a partir de lo que esa sesión dejó sin probar, sin veri
 
 ## Hoja de ruta para el siguiente agente
 
-Punto de entrega: 2026-10-17, código `f0e119c3` + `277bbbe6` (zoom `5×`/`6×`, preferencias persistentes de exploración y HUD limpio con `H`), `d5986c54` (R1.3/R1.5: plantillas fuera de spawn, `addobjectat`/`removeobjectat`/`setobjectxyperm`/`copyobjectxytoperm`/`setobjectmovementtype` y sincronía de `graphicsId`/`elevation`/`movementType`) y `a2eed273` (C.75: `FieldCB_RushInjuredPokemonToCenter` + `EventScript_AfterWhiteOutHeal`/`EventScript_AfterWhiteOutMomHeal` en el visor). Continuar por validación jugable en navegador de R1/C.75 y por R2 (Fuerza), R3–R7.
+Punto de entrega: 2026-10-17, código `f0e119c3` + `277bbbe6` (zoom `5×`/`6×`, preferencias y HUD), `d5986c54` (R1.3/R1.5 sincronía de plantillas y mutaciones de posición), `a2eed273` (C.75 curación tras whiteout), `6bfc21a5` (validación en navegador R1/C.75 PASS) y `b4f81dc5` (R2: Fuerza y bloques de empuje en visor, pozo, botones de Victory Road 1F y persistencia validada en smoke test PASS). Continuar por R3 (pesca, Golpe Roca, dulce aroma y Safari), luego R4–R7.
 Esta sección ordena las tareas abiertas de arriba; no sustituye sus límites ni
 abre otra lista de trabajo. La meta es completar el juego de un jugador dentro
 del visor, con lógica fuente y guardado compartido; la cobertura por nombres no
@@ -100,7 +100,7 @@ mide esa integración ni la fidelidad.
 1. Leer `AGENTS.md`, `PORTING-STATUS.md`, esta sección y la fila de la tanda elegida;
    comprobar `git status` y la rama. Un agente a la vez en `main`, sin ramas,
    worktrees, subagentes ni push. Preservar cambios ajenos.
-2. Empezar por **R1** (validación jugable) o **R2**. No volver a implementar flags, Corte, guardado de poses
+2. Empezar por **R3** (pesca, Golpe Roca, dulce aroma y Safari). No volver a implementar flags, Corte, Fuerza, guardado de poses
    observadas, proyección de clones, predicados de aparición ni sincronía de plantillas fuera de spawn: ya están conectados. Confirmar el
    estado vivo antes de editar; los commits citados son evidencia, no un permiso
    para restaurar archivos completos ni descartar cambios posteriores.
@@ -199,7 +199,7 @@ jugable abierta. No cerrar toda la fila B con un único caso de clon.
 
 | Orden | Trabajo | Condición de cierre |
 | --- | --- | --- |
-| R2 | Fuerza y bloques en interiores/cuevas | Movimiento fuente, colisión, interruptores/pozos, cambios de mapa y guardado coherentes; resolver primero las dependencias de R1 que use |
+| R2 | Fuerza y bloques en interiores/cuevas | Cerrado en commit `b4f81dc5`: empuje de rocas OBJ_EVENT_GFX_PUSHABLE_BOULDER (32 ticks, SE_M_STRENGTH), colisión y límites, pozo MB_FALL_WARP (SE_FALL), botones MB_STRENGTH_BUTTON (Victory Road 1F), diálogo fuente de Fuerza y persistencia de coordenadas en save.viewerObjects; validado en viewer-game-strength.job.mjs PASS |
 | R3 | Pesca, Golpe Roca, olor dulce y Safari; después fantasmas/merodeadores que necesiten esas rutas | Seleccionar cada familia completa y sus callers; encuentro/combate/retorno y estado persistente. No ampliar a toda la historia |
 | R4 | Evolución y aprendizaje de movimientos | Subida de nivel desde combate salvaje y entrenador, aceptar/cancelar según C, retorno al visor y guardado |
 | R5 | Surf mediante MO y acciones desde equipo; Flash/Corte/Fuerza aplicables | Requisitos, rechazo sin permiso, selección/uso fuente y transición correcta; sustituir el embarque automático solo al conectar la vía real |
