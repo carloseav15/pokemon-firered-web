@@ -61,3 +61,47 @@ const valid=await router.resolveAddress({mapId:first.id,warpId:6,x:0,y:0});
 assert.equal(valid.arrival.x,first.warps[6]!.x); // Valid warp id takes precedence over coordinates.
 await assert.rejects(()=>router.resolveAddress({mapId:first.id,warpId:-1,x:-1,y:1}),/Destino inexistente/);
 console.log(`Viewer elevator coordinate destinations PASS: ${floorDestinations}`);
+
+// Field temporaries follow the source map loaders (overworld.c:753-797), not
+// menus. PREPARED: flags/vars are test inputs; no story outcome is manufactured.
+const { rom } = await import('../../src/core/rom');
+rom.constants = JSON.parse(await readFile('public/fr/constants.json','utf8'));
+const S = await import('../../src/games/firered/save');
+const events = await import('../../src/viewer/mapEvents');
+const { isViewerObjectPresent } = await import('../../src/viewer/data/objectPresence');
+const { EntityManager } = await import('../../src/viewer/render/entities');
+S.setSave(S.newSaveData());
+events.restoreViewerEventMap('MAP_ROUTE9');
+S.flagSet(C.FLAG_BADGE01_GET); // PREPARED: explicit input for map-load reset/preservation
+for (let id=C.TEMP_FLAGS_START;id<=C.TEMP_FLAGS_END;id++) S.flagSet(id); // PREPARED: explicit input for map-load reset/preservation
+for (let id=C.TEMP_VARS_START;id<=C.TEMP_VARS_END;id++) S.varSet(id,123); // PREPARED: explicit input for map-load reset/preservation
+S.varSet(C.VAR_MAP_SCENE_PEWTER_CITY,1); // PREPARED: explicit input for map-load reset/preservation
+S.flagSet(C.FLAG_SYS_USE_STRENGTH); // PREPARED: explicit input for map-load reset/preservation
+assert.equal(events.enterViewerEventMap('MAP_ROUTE9'),false);
+assert.equal(S.flagGet(C.FLAG_TEMP_12),true,'same map keeps temporary removals');
+const tree = {map:'MAP_ROUTE9',x:2,y:8,layer:'corte',flag:C.FLAG_TEMP_12,localId:1};
+assert.equal(isViewerObjectPresent(tree),false);
+assert.equal(isViewerObjectPresent({...tree,map:'MAP_PEWTER_CITY'}),true,'temp bits do not belong to neighbouring sector maps');
+assert.equal(events.enterViewerEventMap('MAP_ROUTE10'),true);
+for (let id=C.TEMP_FLAGS_START;id<=C.TEMP_FLAGS_END;id++) assert.equal(S.flagGet(id),false,`temp flag ${id}`);
+for (let id=C.TEMP_VARS_START;id<=C.TEMP_VARS_END;id++) assert.equal(S.varGet(id),0,`temp var ${id}`);
+assert.equal(S.flagGet(C.FLAG_SYS_USE_STRENGTH),false);
+assert.equal(S.flagGet(C.FLAG_BADGE01_GET),true);
+assert.equal(S.varGet(C.VAR_MAP_SCENE_PEWTER_CITY),1);
+S.flagSet(C.FLAG_TEMP_12); // PREPARED: explicit input for map-load reset/preservation
+events.restoreViewerEventMap('MAP_ROUTE9');
+assert.equal(S.flagGet(C.FLAG_TEMP_12),true,'continue restores saved temporaries');
+assert.equal(events.enterViewerEventMap('MAP_ROUTE9',true),true,'same-map warp reloads');
+assert.equal(S.flagGet(C.FLAG_TEMP_12),false);
+// Template removal with flag 0 must not erase the template permanently. Local
+// IDs repeat across maps; removing one must preserve the other and occupancy.
+const objects = new EntityManager(null as unknown as HTMLElement,0,0);
+objects.addEntity({...tree,flag:0},2,8,'south');
+objects.addEntity({...tree,map:'MAP_ROUTE10',flag:0},2,8,'south');
+objects.removeObject('MAP_ROUTE9',1);
+objects.syncPresence(isViewerObjectPresent);
+assert.equal(objects.entities.length,2);
+assert.equal(objects.findAt(2,8)?.element.map,'MAP_ROUTE10');
+objects.resetRemovedObjects();objects.syncPresence(isViewerObjectPresent);
+assert.equal(objects.findAt(2,8)?.element.map,'MAP_ROUTE9');
+console.log('PREPARED flags/vars and template fixtures; Viewer map events PASS: map change/same-map warp reset, same-map interaction/continue preservation, persistent progress and retained templates');

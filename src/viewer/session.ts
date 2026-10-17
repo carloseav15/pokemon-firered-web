@@ -1,6 +1,7 @@
 // Temporary, explicitly separate from the definitive new_game.c story opening.
 // Uses the engine's live SaveBlock, Pokemon, bag and save serialization.
 import { rom } from '@core/rom';
+import { restoreViewerEventMap } from './mapEvents';
 import { createMon } from '@core/pokemon/pokemon';
 import { addBagItem } from '@core/pokemon/items';
 import { encode } from '@core/gba/charmap';
@@ -36,6 +37,7 @@ export async function initializeViewerSession(initialFlags: Record<string, numbe
     if (!addBagItem(C.ITEM_POKE_BALL, 5)) throw Error('No se pudo preparar la mochila inicial');
     (save as ViewerSave).viewerStart = 'temporary-kanto-v1';
   }
+  restoreViewerEventMap((save as ViewerSave).viewerNavigation?.mapId ?? null);
   grantTemporaryPokedex();
   seedTemporaryRespawn();
   initialized = true;

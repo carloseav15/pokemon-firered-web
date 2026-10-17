@@ -13,11 +13,32 @@ export default async function run(ctx){
  await hold('z');await p.waitForTimeout(2000);await ctx.shot('ask');
  for(let i=0;i<10&&await p.locator('#engine-interaction').isVisible();i++){await hold('z');await p.waitForTimeout(500);}
  await p.waitForTimeout(1000);await ctx.shot('cut');
+ const cutState=await p.evaluate(async()=>{const s=await import('/src/games/firered/save.ts');const C=await import('/src/games/firered/generated/constants.ts');return {temporary:s.flagGet(C.FLAG_TEMP_12),badge:s.flagGet(C.FLAG_BADGE02_GET)};});
+ if(!cutState.temporary)throw Error('Source Cut did not set its temporary flag');
+ // Save/continue on this map must preserve the actual Cut result.
+ await p.getByRole('button',{name:'Menú · Esc'}).click();await p.locator('#explore-save').click();await p.keyboard.press('Escape');
+ // PREPARED: discard an unsaved flag edit; Continue must restore the saved
+ // result of the real Cut script, rather than clear it as a new map transition.
+ await p.evaluate(async()=>{const s=await import('/src/games/firered/save.ts');const C=await import('/src/games/firered/generated/constants.ts');s.flagClear(C.FLAG_TEMP_12);});
+ await p.getByRole('button',{name:'Menú · Esc'}).click();await p.locator('#explore-continue').click();
+ await p.waitForFunction(async()=>{const s=await import('/src/games/firered/save.ts');const C=await import('/src/games/firered/generated/constants.ts');return s.flagGet(C.FLAG_TEMP_12);});
+ await p.waitForTimeout(1500);
+ await p.reload();await p.waitForFunction(()=>performance.getEntriesByName('viewer-interactive').length);await p.waitForTimeout(1000);
+ const cutTree=p.locator('.world-npc[data-map="MAP_ROUTE9"][data-local-id="10"]');
+ if(await cutTree.count())throw Error('Saved Cut obstacle reappeared before leaving the map');
  const start=await pos();
- await hold('ArrowLeft',450);await hold('ArrowLeft',450);
+ for(let i=0;i<8;i++){
+  const map=await p.evaluate(async()=>(await import('/src/viewer/mapEvents.ts')).viewerEventMap());
+  if(map==='MAP_CERULEAN_CITY')break;
+  await hold('ArrowLeft',200);
+ }
  await p.waitForTimeout(800);await ctx.shot('walked');
  const end=await pos();
  const dbg=await p.evaluate(()=>({hidden:document.querySelector('#engine-interaction').hidden,dlg:!!document.querySelector('dialog[open]'),menu:document.querySelector('#explore-menu')?.open}));
  if(start===end)throw Error('Cut tree still blocks: '+start);
- return {start,end,errors:ctx.errors()};
+ // Westward input crosses the real Route9 -> Cerulean connection.
+ const after=await p.evaluate(async()=>{const s=await import('/src/games/firered/save.ts');const C=await import('/src/games/firered/generated/constants.ts');const {viewerEventMap}=await import('/src/viewer/mapEvents.ts');return {map:viewerEventMap(),temporary:s.flagGet(C.FLAG_TEMP_12),badge:s.flagGet(C.FLAG_BADGE02_GET)};});
+ if(after.map!=='MAP_CERULEAN_CITY'||after.temporary||!after.badge)throw Error('Map transition did not clear only temporary progress '+JSON.stringify(after));
+ await cutTree.waitFor({state:'visible'});
+ return {start,end,cutState,after,saveContinue:'cut retained',connection:'temporaries cleared; permanent badge retained; template restored',errors:ctx.errors()};
 }

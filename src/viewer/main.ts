@@ -1,4 +1,5 @@
 import { initializeViewerSession, saveViewerSession, viewerCheckpoint, type NavigationSave } from "./session";
+import { enterViewerEventMap, restoreViewerEventMap } from "./mapEvents";
 import { isViewerObjectPresent } from "./data/objectPresence";
 import { EngineInteraction } from "./engineInteraction";
 import { save as gameSave } from "@game/save";
@@ -166,6 +167,7 @@ async function continueViewerSession(): Promise<void> {
   if (!stored) throw Error("No se pudo leer la partida");
   setSave(stored);
   const nav = viewerCheckpoint()!;
+  restoreViewerEventMap(nav.mapId);
   state.playerChar = gameSave.playerGender === C.FEMALE ? "leaf" : "red";
   (document.getElementById("player-char") as HTMLSelectElement).value = state.playerChar;
   await changeNavigationWorld(nav.mapId);
@@ -177,6 +179,8 @@ async function continueViewerSession(): Promise<void> {
 
 /** The engine moved the player (white-out): continue from its new map and tile. */
 async function relocateViewer(nav: NavigationSave): Promise<void> {
+  // The engine hands off its warp before running its own map loader.
+  if (enterViewerEventMap(nav.mapId, true)) entityManager.resetRemovedObjects();
   await changeNavigationWorld(nav.mapId);
   const info = index.maps[nav.mapId]!;
   navigationWarps.restore(nav.dynamic);
@@ -568,6 +572,7 @@ function updatePlayerDisplay(): void {
       void engineInteraction?.recordEscapeWarp(lastOutdoorNav, here).catch(error => console.error("Escape warp", error));
   }
   if (!HOENN && playerActive && here && here !== enteredMapId) {
+    if (enterViewerEventMap(here)) entityManager.resetRemovedObjects();
     enteredMapId = here;
     void engineInteraction?.enterMap(navigationSnapshot()).catch(error => console.error("Entrada de mapa", error));
   }
@@ -1389,6 +1394,7 @@ async function followNavigationWarp(source: MapHeader, warpId: number, phase: "i
     viewerClock.pause("warp");
     content.style.visibility = "hidden";
     resetExploreSession();warpOffsetX=warpOffsetY=0;warpPriority=null;teleportFixedPriority=false;
+    if (enterViewerEventMap(destination.mapId, true)) entityManager.resetRemovedObjects();
     await changeNavigationWorld(destination.mapId); switched = true;
     const info = index.maps[destination.mapId]!;
     if(destination.arrival.x<0||destination.arrival.y<0||destination.arrival.x>=info.width||destination.arrival.y>=info.height)throw Error("Warp coordinates outside destination layout");
@@ -1683,7 +1689,8 @@ async function build(): Promise<void> {
       const egwy = info.y + e.y;
       const isSolidEntity = e.layer !== "puerta" && e.layer !== "activador";
       if (isSolidEntity && grid.inBounds(egwx, egwy)) {
-        if (!streaming || isViewerObjectPresent(e)) grid.npc[grid.idx(egwx, egwy)] = 1;
+        const removed = streaming && entityManager.entities.some(ent => ent.element === e && ent.removed);
+        if (!streaming || !removed && isViewerObjectPresent(e)) grid.npc[grid.idx(egwx, egwy)] = 1;
 
         let dir: Direction = "south";
         if (e.direction === "up") dir = "north";
@@ -1839,6 +1846,7 @@ async function build(): Promise<void> {
     navigationMap = exterior ? null : mapId;
     contextData = data; layoutsByMap.clear(); fillSources = new Map();
     worldGrid = new WorldGrid(index.world.width,index.world.height,minX,minY,true);
+    exteriorEntities.resetRemovedObjects();
     entityManager = exterior ? exteriorEntities : new EntityManager(content,minX,minY);
     if (!exterior) for (const e of elementsByMap.get(mapId) ?? []) {
       entityManager.addEntity(e,e.x,e.y,e.direction === "up" ? "north" : e.direction === "left" ? "west" : e.direction === "right" ? "east" : "south");
@@ -1893,12 +1901,8 @@ function setupUi(): void {
     },
     relocate: nav => { void relocateViewer(nav); },
     removeObject: (mapId, localId) => {
-      const index = entityManager.entities.findIndex(e => e.element.map === mapId && e.element.localId === localId);
-      if (index < 0) return;
-      const ent = entityManager.entities[index]!;
-      ent.el?.remove();
-      entityManager.entities.splice(index, 1);
-      worldGrid.setNpc(ent.gx, ent.gy, false);
+      entityManager.removeObject(mapId, localId);
+      updateEntitiesView();
     },
     setBike: on => { if (on !== (playerMode === "bike")) toggleBike(); },
     hideObjects: (hidden,localId) => {

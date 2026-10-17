@@ -12,23 +12,40 @@ export type LiveEntity = {
   el?: HTMLElement;
   defeated?: boolean;
   hidden?: boolean;
+  removed?: boolean;
 };
 
 export class EntityManager {
   readonly entities: LiveEntity[] = [];
   private container: HTMLElement | null = null;
+  private presenceDirty = true;
 
   constructor(private readonly content: HTMLElement, private readonly minX: number, private readonly minY: number) {}
 
   addEntity(element: Element, gx: number, gy: number, dir: Direction): void {
     this.entities.push({ element, gx, gy, dir });
+    this.presenceDirty = true;
+  }
+
+  /** Remove an active instance, retaining its template until the next map load. */
+  removeObject(mapId: string, localId: number): void {
+    const ent = this.entities.find(e => e.element.map === mapId && e.element.localId === localId);
+    if (ent) ent.removed = true;
+  }
+
+  resetRemovedObjects(): void {
+    for (const ent of this.entities) ent.removed = false;
+    // Resident sector grids can predate a map reset even if every entity keeps
+    // the same visibility. Rebuild their occupancy from the current state.
+    this.presenceDirty = true;
   }
 
   /** Retain hidden templates so clearing a flag can restore them without reloading. */
   syncPresence(isPresent: (element: Element) => boolean): boolean {
-    let changed = false;
+    let changed = this.presenceDirty;
+    this.presenceDirty = false;
     for (const ent of this.entities) {
-      const hidden = !isPresent(ent.element);
+      const hidden = !!ent.removed || !isPresent(ent.element);
       if (hidden === !!ent.hidden) continue;
       ent.hidden = hidden;
       changed = true;
