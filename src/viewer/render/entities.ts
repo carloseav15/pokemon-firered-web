@@ -11,6 +11,7 @@ export type LiveEntity = {
   dir: Direction;
   el?: HTMLElement;
   defeated?: boolean;
+  hidden?: boolean;
 };
 
 export class EntityManager {
@@ -23,8 +24,21 @@ export class EntityManager {
     this.entities.push({ element, gx, gy, dir });
   }
 
+  /** Retain hidden templates so clearing a flag can restore them without reloading. */
+  syncPresence(isPresent: (element: Element) => boolean): boolean {
+    let changed = false;
+    for (const ent of this.entities) {
+      const hidden = !isPresent(ent.element);
+      if (hidden === !!ent.hidden) continue;
+      ent.hidden = hidden;
+      changed = true;
+      if (hidden) { ent.el?.remove(); ent.el = undefined; }
+    }
+    return changed;
+  }
+
   findAt(gx: number, gy: number): LiveEntity | undefined {
-    return this.entities.find((e) => e.gx === gx && e.gy === gy);
+    return this.entities.find((e) => !e.hidden && e.gx === gx && e.gy === gy);
   }
 
   updateVisibility(
@@ -46,7 +60,7 @@ export class EntityManager {
       const px = (ent.gx - this.minX) * TILE;
       const py = (ent.gy - this.minY) * TILE;
 
-      const inView = px >= viewLeft && px <= viewRight && py >= viewTop && py <= viewBottom;
+      const inView = !ent.hidden && px >= viewLeft && px <= viewRight && py >= viewTop && py <= viewBottom;
       if (!inView) {
         if (ent.el) {
           ent.el.remove();
@@ -60,6 +74,8 @@ export class EntityManager {
         const gfxInfo = gfxInfoOf(gfxKey) ?? fallbackGfx();
         const el = document.createElement("div");
         el.className = "world-npc";
+        el.dataset.map = ent.element.map;
+        if (ent.element.localId !== undefined) el.dataset.localId = String(ent.element.localId);
         el.style.width = `${gfxInfo.w}px`;
         el.style.height = `${gfxInfo.h}px`;
         el.style.left = `${px - (gfxInfo.w > 16 ? (gfxInfo.w - 16) / 2 : 0)}px`;

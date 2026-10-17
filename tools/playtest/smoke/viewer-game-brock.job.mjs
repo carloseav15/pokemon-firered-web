@@ -1,3 +1,4 @@
+// Run with PW_TIMEOUT_MS=360000 to allow both source trainer battles and reloads.
 // PREPARED: Pewter Gym URL start at the entrance and a Lv40 lead (explicit
 // precondition so the source trainers can be beaten with the first move).
 // Camper Liam's sight, Brock's script, badge flag and TM39 are the engine's.
@@ -37,5 +38,12 @@ export default async function run(ctx){
  await p.reload();await p.waitForFunction(()=>performance.getEntriesByName('viewer-interactive').length);
  const persisted=await state();
  if(!persisted.badge||!persisted.brock||!persisted.tm39||persisted.tm.indexOf('327')<0)throw Error('Badge/TM not persisted '+JSON.stringify(persisted));
- return {steps,afterLiam,end,fame:{before:afterLiam.fame,after:end.fame},persisted:'PASS',errors:ctx.errors()};
+ // PREPARED: city URL places the camera beside the affected source NPCs.
+ // The flags remain the result of Brock's actual script above, not test writes.
+ await p.goto(new URL('viewer.html#modo=explore&mapa=MAP_PEWTER_CITY&px=31&py=-180',process.env.PW_BASE??'http://localhost:5173').href);
+ await p.reload(); // Fragment-only goto does not reconstruct the navigation world.
+ await p.waitForFunction(()=>performance.getEntriesByName('viewer-interactive').length);
+ await p.locator('.world-npc[data-map="MAP_PEWTER_CITY"][data-local-id="7"]').waitFor({state:'visible'});
+ if(await p.locator('.world-npc[data-map="MAP_PEWTER_CITY"][data-local-id="5"]').count())throw Error('Gym guide remains after Brock');
+ return {cityObjects:'guide hidden / Running Shoes aide visible after source victory and saved reload',steps,afterLiam,end,fame:{before:afterLiam.fame,after:end.fame},persisted:'PASS',errors:ctx.errors()};
 }

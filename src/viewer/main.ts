@@ -1,4 +1,5 @@
 import { initializeViewerSession, saveViewerSession, viewerCheckpoint, type NavigationSave } from "./session";
+import { isViewerObjectPresent } from "./data/objectPresence";
 import { EngineInteraction } from "./engineInteraction";
 import { save as gameSave } from "@game/save";
 import { ElevatorAnimation } from "@core/field/elevatorAnimation";
@@ -154,7 +155,7 @@ function navigationSnapshot(): NavigationSave {
 }
 function pauseInteraction(active: boolean): void {
   keysDown.clear(); playerRunning = false;
-  if (active) viewerClock.pause("engine-interaction"); else viewerClock.resume("engine-interaction");
+  if (active) viewerClock.pause("engine-interaction"); else { viewerClock.resume("engine-interaction"); updateEntitiesView(); }
 }
 async function continueViewerSession(): Promise<void> {
   const checkpoint = viewerCheckpoint();
@@ -577,7 +578,18 @@ function updatePlayerDisplay(): void {
 
 let enteredMapId = "";
 let lastOutdoorNav: NavigationSave | null = null;
+function syncEntityPresence(): boolean {
+  if (HOENN || !playerActive || !entityManager) return false;
+  const changed = entityManager.syncPresence(isViewerObjectPresent);
+  if (changed) {
+    // Clear first, then rebuild the union: conditional templates may share a tile.
+    for (const ent of entityManager.entities) worldGrid.setNpc(ent.gx, ent.gy, false);
+    for (const ent of entityManager.entities) if (!ent.hidden) worldGrid.setNpc(ent.gx, ent.gy, true);
+  }
+  return changed;
+}
 function updateEntitiesView(): void {
+  syncEntityPresence();
   // Hoenn muestra sus personajes también fuera de la exploración (fijos), siempre que haya algo a la vista.
   if (!playerActive && !HOENN) {
     entityManager.hideAll();
@@ -594,6 +606,7 @@ function updateEntitiesView(): void {
 }
 
 function interactWithEntity(ent: LiveEntity): void {
+  if (ent.hidden) return;
   if (!HOENN && playerActive && engineInteraction) {
     const header = mapHeaders.get(ent.element.map);
     const npc = header?.objects.find(o => !o.clone && o.localId === ent.element.localId);
@@ -635,7 +648,7 @@ function interactWithEntity(ent: LiveEntity): void {
 
 function checkTrainerSight(): void {
   for (const ent of entityManager.entities) {
-    if (!ent.element.trainer || ent.defeated) continue;
+    if (ent.hidden || !ent.element.trainer || ent.defeated) continue;
     const r = ent.element.trainerRange ?? 0;
     if (r <= 0) continue;
 
@@ -675,7 +688,7 @@ async function startExploration(targetGx?: number, targetGy?: number): Promise<v
     location.hash = h.toString(); location.reload(); return;
   }
   if (!playerActive && !HOENN) camera.setZoom(2);
-  if (!HOENN) { await initializeViewerSession(); gameSave.playerGender = state.playerChar === "leaf" ? C.FEMALE : C.MALE; }
+  if (!HOENN) { await initializeViewerSession(index.initialFlags); gameSave.playerGender = state.playerChar === "leaf" ? C.FEMALE : C.MALE; }
   if (!HOENN) window.setTimeout(() => void engineInteraction?.warm().catch(() => {}), 1500);
   resetExploreSession();
   state.appMode = "explore";
@@ -1486,6 +1499,7 @@ async function build(): Promise<void> {
   index = worldData.index;
   minX = worldData.minX;
   minY = worldData.minY;
+  if (!HOENN && startExplore) await initializeViewerSession(index.initialFlags);
 
   streaming = !HOENN && startExplore;
   if (streaming) {
@@ -1521,6 +1535,7 @@ async function build(): Promise<void> {
       playerReflection?.update(avatarAnimator.frame(state.playerChar,playerMode,playerDir,frame.tick),worldGrid,
         {x:playerX,y:playerY},{x:playerX,y:playerY},playerVisualX,playerVisualY,bob,minX,minY,frame.tick);
     }
+    if (playerActive && syncEntityPresence()) updateEntitiesView();
     if (playerActive && !interiorViewer.isOpen()) entityManager.updateAutonomousBehaviors(frame.elapsedMs, playerX, playerY);
   });
   window.addEventListener("pagehide", event => {
@@ -1668,7 +1683,7 @@ async function build(): Promise<void> {
       const egwy = info.y + e.y;
       const isSolidEntity = e.layer !== "puerta" && e.layer !== "activador";
       if (isSolidEntity && grid.inBounds(egwx, egwy)) {
-        grid.npc[grid.idx(egwx, egwy)] = 1;
+        if (!streaming || isViewerObjectPresent(e)) grid.npc[grid.idx(egwx, egwy)] = 1;
 
         let dir: Direction = "south";
         if (e.direction === "up") dir = "north";
@@ -1796,8 +1811,8 @@ async function build(): Promise<void> {
       data = new Rom();
       const header = mapHeaders.get(mapId) ?? await data.loadMap(mapId);
       mapHeaders.set(mapId, header);
-      const objects: Element[] = header.objects.flatMap(o => o.clone || o.flag && gameSave.flags[o.flag >>> 3] & (1 << (o.flag & 7)) ? [] : [{
-        map: mapId, x:o.x, y:o.y, localId:o.localId, graphics:o.graphicsName, movementType:o.movementType, layer:"npc",
+      const objects: Element[] = header.objects.flatMap(o => o.clone ? [] : [{
+        map: mapId, x:o.x, y:o.y, localId:o.localId, flag:o.flag, graphics:o.graphicsName, movementType:o.movementType, layer:"npc",
         direction: o.movementType === C.MOVEMENT_TYPE_FACE_UP ? "up" : o.movementType === C.MOVEMENT_TYPE_FACE_LEFT ? "left" : o.movementType === C.MOVEMENT_TYPE_FACE_RIGHT ? "right" : "down",
       }]);
       elementsByMap.set(mapId, objects);
@@ -2305,7 +2320,7 @@ build()
       else void interiorViewer.open(startMapId);
     }
     if (startExplore) {
-      if (!HOENN) await initializeViewerSession();
+      if (!HOENN) await initializeViewerSession(index.initialFlags);
       if (!HOENN && startMapId && !index.maps[startMapId]) await changeNavigationWorld(startMapId);
       const valid = startPlayer && startPlayer.x >= minX && startPlayer.y >= minY
         && startPlayer.x < minX + index.world.width && startPlayer.y < minY + index.world.height;

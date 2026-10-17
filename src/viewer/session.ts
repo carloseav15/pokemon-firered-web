@@ -16,7 +16,7 @@ export const VIEWER_SAVE_KEY = 'firered-viewer-game-v1';
 export type NavigationSave = { mapId: string; x: number; y: number; direction: Direction; dynamic: WarpAddress | null };
 type ViewerSave = SaveData & { viewerNavigation?: NavigationSave; viewerStart?: 'temporary-kanto-v1' };
 let initialized = false;
-export async function initializeViewerSession(): Promise<void> {
+export async function initializeViewerSession(initialFlags: Record<string, number>): Promise<void> {
   if (initialized) return;
   await rom.load();
   setSaveStorageKey(VIEWER_SAVE_KEY);
@@ -25,6 +25,9 @@ export async function initializeViewerSession(): Promise<void> {
   else {
     SeedRngAndSetTrainerId(Math.floor(Math.random() * 65536));
     setSave(newSaveData());
+    // new_game.c:149 runs EventScript_ResetAllMapFlags. The world index exports
+    // that source script's setflag names (values are source lines, not flag IDs).
+    for (const name of Object.keys(initialFlags)) flagSet(rom.c(name));
     save.trainerId = InitPlayerTrainerId();
     save.playerName = Array.from(encode('RED'));
     save.rivalName = Array.from(encode('GREEN'));
