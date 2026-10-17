@@ -22,7 +22,7 @@ import { preloadEggHatch } from '@game/eggHatch';
 import { sound } from '@core/audio/sound';
 import { MAP_OFFSET } from '@core/field/fieldmap';
 import { PLAYER_AVATAR_FLAG_ACRO_BIKE, PLAYER_AVATAR_FLAG_MACH_BIKE, PLAYER_AVATAR_FLAG_ON_FOOT, PLAYER_AVATAR_FLAG_SURFING } from '@core/field/playerAvatar';
-import { objectStateKey, readViewerObjectState, objectDirection, type ViewerObjectState } from './objectState';
+import { objectStateKey, readViewerObjectState, objectDirection, translateViewerObjectCoords, type ViewerMapOrigin, type ViewerObjectState } from './objectState';
 import { syncViewerLocation, type NavigationSave } from './session';
 
 type Hooks = {
@@ -32,6 +32,7 @@ type Hooks = {
   /** Engine moved the player (white-out respawn): continue the viewer from here. */
   relocate(nav: NavigationSave): void;
   readObjects(mapId: string): ViewerObjectState[];
+  mapOrigin(mapId: string): ViewerMapOrigin | undefined;
   syncObjects(states: ViewerObjectState[]): void;
   /** The bag's Bicycle (or its dismount) changed the avatar state. */
   setBike(on: boolean): void;
@@ -81,35 +82,44 @@ export class EngineInteraction {
     await Promise.all([preloadBattleAssets(), sound.loadCryData(), preloadEggHatch()]);
     this.game = new Game(this.engineCanvas);
     this.game.overworld.objects.onScriptObjectRemoved = object => {
-      if (!this.open || object.isPlayer || !this.matchesObjectMap(object)) return;
-      const state = readViewerObjectState(object,this.interactionMapId,true);
+      if (!this.open || object.isPlayer) return;
+      const state = this.objectState(object,true);
+      if(!state)return;
       this.observedObjects.set(objectStateKey(state),state);
     };
     installBattleHost(this.game);
     joy.attach(); joy.setExternalInputEnabled(false);
   }
-  private matchesObjectMap(object: {mapNum: number;mapGroup: number}): boolean {
-    const num=rom.mapNum(this.interactionMapId);
-    return object.mapNum===(num&255)&&object.mapGroup===(num>>>8);
+  private objectState(object: Parameters<typeof readViewerObjectState>[0], removed=false): ViewerObjectState | undefined {
+    const mapId=rom.mapIdByNum((object.mapGroup<<8)|object.mapNum);
+    if(!mapId)return;
+    const loadedId=this.game?.overworld.header.id;
+    const loaded=loadedId?this.hooks.mapOrigin(loadedId):undefined,owner=this.hooks.mapOrigin(mapId);
+    if(!loaded||!owner)return;
+    return readViewerObjectState(object,mapId,removed,translateViewerObjectCoords({x:0,y:0},loaded,owner));
   }
   private observeObjects(): void {
     if (!this.game || !this.interactionMapId) return;
     for (const object of this.game.overworld.objects.list) {
-      if (object.isPlayer || !this.matchesObjectMap(object)) continue;
-      const state=readViewerObjectState(object,this.interactionMapId);
+      if (object.isPlayer) continue;
+      const state=this.objectState(object);
+      if(!state)continue;
       this.observedObjects.set(objectStateKey(state),state);
     }
   }
   private async prepareObjects(nav: NavigationSave): Promise<void> {
     const ow=this.game!.overworld;
     const states=this.hooks.readObjects(nav.mapId);
-    await ow.prepareViewerInteraction(nav.mapId,states.filter(s=>!s.removed).map(s=>s.localId));
-    const num=rom.mapNum(nav.mapId);
+    await ow.prepareViewerInteraction(nav.mapId,states.filter(s=>!s.removed).map(s=>({mapId:s.mapId,localId:s.localId})));
+    const loaded=this.hooks.mapOrigin(nav.mapId);
     for (const state of states) {
+      const num=rom.mapNum(state.mapId),owner=this.hooks.mapOrigin(state.mapId);
+      if(!loaded||!owner)continue;
       const object=ow.objects.byLocalIdAndMap(state.localId,num&255,num>>>8);
       if (!object) continue; // Source spawning/view limits remain authoritative.
       if (state.removed) { ow.objects.remove(object); continue; }
-      ow.objects.MoveObjectEventToMapCoords(object,state.x+MAP_OFFSET,state.y+MAP_OFFSET);
+      const coords=translateViewerObjectCoords(state,owner,loaded);
+      ow.objects.MoveObjectEventToMapCoords(object,coords.x+MAP_OFFSET,coords.y+MAP_OFFSET);
       ow.objects.turn(object,objectDirection(state.direction));
       object.invisible=state.invisible;
     }

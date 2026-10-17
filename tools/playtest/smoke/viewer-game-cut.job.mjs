@@ -44,10 +44,31 @@ export default async function run(ctx){
  await cutTree.waitFor({state:'hidden'});
  for(let i=0;i<6;i++)await hold('ArrowLeft',200);
  await cutTree.waitFor({state:'visible'});
+ // Source start-menu initialization must observe the actual loaded clone,
+ // retain its Route9 identity and normalize Cerulean-frame x50/y18 to x2/y8.
+ await p.locator('#explore-game-menu').click();await p.locator('#engine-interaction').waitFor({state:'visible'});await p.waitForTimeout(1500);
+ await hold('x');await p.locator('#engine-interaction').waitFor({state:'hidden'});
+ const cloneState=await p.evaluate(async()=>{const S=await import('/src/games/firered/save.ts');return S.save.viewerObjects;});
+ const clone=cloneState?.states.find(s=>s.mapId==='MAP_ROUTE9'&&s.localId===10);
+ if(cloneState?.version!==2||cloneState.mapId!=='MAP_CERULEAN_CITY'||clone?.x!==2||clone?.y!==8)throw Error('Wrong clone identity/frame '+JSON.stringify(cloneState));
+ await p.getByRole('button',{name:'Menú · Esc'}).click();await p.locator('#explore-save').click();await p.keyboard.press('Escape');
+ await p.getByRole('button',{name:'Menú · Esc'}).click();await p.locator('#explore-continue').click();await p.waitForTimeout(1200);
+ await cutTree.waitFor({state:'visible'});
+ await p.reload();await p.waitForFunction(()=>performance.getEntriesByName('viewer-interactive').length);await p.waitForTimeout(1200);
+ await cutTree.waitFor({state:'visible'});
+ // Leave the source spawn window: camera culling must not become removeobject.
+ for(let i=0;i<2;i++)await hold('ArrowLeft',200);
+ await cutTree.waitFor({state:'hidden'});
+ await p.locator('#explore-game-menu').click();await p.locator('#engine-interaction').waitFor({state:'visible'});await p.waitForTimeout(1200);
+ await hold('x');await p.locator('#engine-interaction').waitFor({state:'hidden'});
+ const culled=await p.evaluate(async()=>{const S=await import('/src/games/firered/save.ts');return S.save.viewerObjects?.states.find(s=>s.mapId==='MAP_ROUTE9'&&s.localId===10);});
+ if(!culled||culled.removed)throw Error('Camera culling became explicit removal '+JSON.stringify(culled));
+ for(let i=0;i<2;i++)await hold('ArrowRight',200);
+ await cutTree.waitFor({state:'visible'});
  // Camera connections retain an existing clone instead of initializing it again.
  for(let i=0;i<7;i++)await hold('ArrowRight',200);
  await cutTree.waitFor({state:'visible'});
  const retained=await p.evaluate(async()=>{const S=await import('/src/games/firered/save.ts');const E=await import('/src/viewer/mapEvents.ts');return {map:E.viewerEventMap(),flag:S.flagGet(18)};});
  if(retained.map!=='MAP_ROUTE9'||retained.flag)throw Error('Connection lost active clone '+JSON.stringify(retained));
- return {start,end,cutState,after,retained,saveContinue:'cut retained',connection:'temporaries cleared; permanent badge retained; near clone suppressed; clone spawned beyond source exclusion',errors:ctx.errors()};
+ return {start,end,cutState,after,retained,clone,culled,saveContinue:'cut retained',connection:'temporaries cleared; permanent badge retained; near clone suppressed; clone spawned beyond source exclusion',errors:ctx.errors()};
 }

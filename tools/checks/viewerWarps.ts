@@ -225,3 +225,32 @@ for(const id of Object.keys(index.maps)){
  }
 }
 console.log(`PREPARED boundary inputs; source clone/border predicates, latched spawning and ${cloneCount} real clone identities/coordinates PASS`);
+
+// PREPARED ObjectEvent records at actual exported clone anchors. Their source
+// identities differ from the loaded coordinate frame; no gameplay is prepared.
+let cloneProjectionCount=0;
+for(const id of Object.keys(index.maps)){
+ const h=await load(id),loadedOrigin=index.maps[id];
+ for(const clone of h.objects){if(!clone.clone)continue;
+  const owner=index.maps[clone.targetMap],source=(await load(clone.targetMap)).objects[clone.targetLocalId-1];
+  if(!source||source.clone)throw Error('Missing source object');
+  const record=new ObjectEvent();record.localId=source.localId;record.currentCoords={x:clone.x+7,y:clone.y+7};
+  const offset=projections.translateViewerObjectCoords({x:0,y:0},loadedOrigin,owner);
+  const state=projections.readViewerObjectState(record,clone.targetMap,false,offset);
+  assert.equal(state.x,source.x);assert.equal(state.y,source.y);
+  assert.deepEqual(projections.translateViewerObjectCoords(state,owner,loadedOrigin),{x:clone.x,y:clone.y});
+  projections.storeViewerObjects(id,[state]);S.setSave(JSON.parse(JSON.stringify(S.save)));
+  assert.deepEqual(projections.savedViewerObjects(id),[state]);
+  assert.deepEqual(projections.savedViewerObjects(clone.targetMap),[],'snapshot still belongs to the loaded map');
+  const legacy=JSON.parse(JSON.stringify(S.save));legacy.viewerObjects.version=1;S.setSave(legacy);
+  assert.deepEqual(projections.savedViewerObjects(id),[],'v1 cannot silently reinterpret foreign identities');
+  cloneProjectionCount++;
+ }
+}
+projections.storeViewerObjects(projection.mapId,[projection]);
+const legacyProjection=JSON.parse(JSON.stringify(S.save));legacyProjection.viewerObjects.version=1;S.setSave(legacyProjection);
+assert.deepEqual(projections.savedViewerObjects(projection.mapId),[projection],'same-map version 1 remains loadable');
+const foreign={...projection,mapId:'MAP_ROUTE9',removed:true};
+projections.storeViewerObjects(projection.mapId,[projection,foreign]);S.setSave(JSON.parse(JSON.stringify(S.save)));
+assert.equal(projections.savedViewerObjects(projection.mapId).length,2,'same localId in different maps is distinct');
+console.log(`PREPARED clone records; ${cloneProjectionCount} source identity/frame conversions, v2 JSON and v1 migration PASS`);

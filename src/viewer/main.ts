@@ -1925,7 +1925,7 @@ async function build(): Promise<void> {
 function applyViewerObjects(states: ViewerObjectState[]): void {
   for (const state of states) {
     const info=index.maps[state.mapId];
-    const template=rom.cachedMap(state.mapId)?.objects.find(o=>!o.clone&&o.localId===state.localId);
+    const template=(rom.cachedMap(state.mapId)??mapHeaders.get(state.mapId))?.objects.find(o=>!o.clone&&o.localId===state.localId);
     if (!info||!template||template.clone) continue;
     const element:Element={map:state.mapId,localId:template.localId,x:template.x,y:template.y,flag:template.flag,graphics:template.graphicsName,movementType:template.movementType,layer:'npc',
       direction:template.movementType===C.MOVEMENT_TYPE_FACE_UP?'up':template.movementType===C.MOVEMENT_TYPE_FACE_LEFT?'left':template.movementType===C.MOVEMENT_TYPE_FACE_RIGHT?'right':'down'};
@@ -1944,14 +1944,19 @@ function setupUi(): void {
       if(canvas.parentElement!==content)content.append(canvas);
     },
     relocate: nav => { void relocateViewer(nav); },
+    mapOrigin: mapId=>index.maps[mapId],
     readObjects: mapId => {
-      const info=index.maps[mapId];
-      if(!info)return [];
-      return entityManager.entities.filter(e=>e.element.map===mapId&&e.element.localId!==undefined&&(e.engineState||objectSpawns.isActive(e.element))).map(e=>({mapId,localId:e.element.localId!,x:e.gx-info.x,y:e.gy-info.y,direction:e.dir,invisible:!!e.scriptInvisible,removed:!!e.removed||!!e.hidden}));
+      const header=mapHeaders.get(mapId)??rom.cachedMap(mapId);
+      if(!header)return [];
+      const identities=new Set(header.objects.map(o=>o.clone?`${o.targetMap}:${o.targetLocalId}`:`${mapId}:${o.localId}`));
+      return entityManager.entities.filter(e=>e.element.localId!==undefined&&identities.has(`${e.element.map}:${e.element.localId}`)&&(e.engineState||objectSpawns.isActive(e.element))).flatMap(e=>{
+        const owner=index.maps[e.element.map];
+        return owner?[{mapId:e.element.map,localId:e.element.localId!,x:e.gx-owner.x,y:e.gy-owner.y,direction:e.dir,invisible:!!e.scriptInvisible,removed:!!e.removed||!isViewerObjectPresent(e.element)}]:[];
+      });
     },
     syncObjects: states => {
       const mapId=viewerEventMap();
-      if(mapId)storeViewerObjects(mapId,states.filter(s=>s.mapId===mapId));
+      if(mapId)storeViewerObjects(mapId,states);
       applyViewerObjects(states);
       updateEntitiesView();
     },
