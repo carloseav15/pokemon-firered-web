@@ -62,7 +62,7 @@ Anotados el 2026-10-16 a partir de lo que esa sesión dejó sin probar, sin veri
 - [ ] Fondo magenta del resumen del Pokémon: la paleta fuente tiene magenta como color 0; comparar con la ROM.
 - [ ] Rótulos y orden de las pantallas del motor proyectadas a pantalla completa frente a la captura de ROM (paridad audiovisual).
 - [x] Posición de entrenadores al terminar el combate — `f5e80a9c`. Chromium: Liam se acerca (3,8)→(5,8), premio al jugador 3.000→3.220, conserva posición/orientación tras menú, bloquea casilla nueva y permite caminar a la antigua (URL/equipo/movimiento de ataque PREPARED; sin preparar victoria ni movimiento). Tipos/honesty/build y 58 checks PASS; persistencia de poses añadida en `31dfe405`; revisión general abierta abajo.
-- [ ] Objetos que el motor oculta/desplaza al final de un script y su sincronía con el visor. PARCIAL `f5e80a9c`: puente de posición/dirección/invisibilidad y retiradas explícitas de objetos observados del mapa actual; hidrata instancias ya cargadas en la siguiente interacción y actualiza colisiones/sectores. Invisibilidad con colisión, identidad por mapa y retiradas no indexadas comprobadas con fixtures PREPARED; Corte y flags en Chromium PASS. `31dfe405`: guarda/restaura posición, orientación, invisibilidad y retiradas observadas en la partida, con reinicio al cambiar de mapa y compatibilidad legacy. Chromium: Liam real, guardar/Continuar/recargar URL y colisiones PASS; menú fuente SAVE PASS. Serialización y estados especiales con fixtures PREPARED. `c46538b4`: observación/retiradas identifican el mapa propietario; convierte coordenadas cargadas↔propietario, hidrata identidades por mapa y guarda clones observados en proyección v2 compatible con v1. Chromium: clon Ruta 9 desde Celeste, menú→guardar/Continuar/recargar, culling sin retirada y retorno a Ruta 9 PASS; fixtures PREPARED de siete clones y migración, tipos/honesty/build PASS. Faltan selección/interacción fuente de clones, actores nunca cargados, captura de estados en el instante de SAVE fuente, gráficos/elevación/tipos de movimiento y revisión de todos los scripts del alcance.
+- [ ] Objetos que el motor oculta/desplaza al final de un script y su sincronía con el visor. PARCIAL `f5e80a9c`: puente de posición/dirección/invisibilidad y retiradas explícitas de objetos observados del mapa actual; hidrata instancias ya cargadas en la siguiente interacción y actualiza colisiones/sectores. Invisibilidad con colisión, identidad por mapa y retiradas no indexadas comprobadas con fixtures PREPARED; Corte y flags en Chromium PASS. `31dfe405`: guarda/restaura posición, orientación, invisibilidad y retiradas observadas en la partida, con reinicio al cambiar de mapa y compatibilidad legacy. Chromium: Liam real, guardar/Continuar/recargar URL y colisiones PASS; menú fuente SAVE PASS. Serialización y estados especiales con fixtures PREPARED. `c46538b4`: observación/retiradas identifican el mapa propietario; convierte coordenadas cargadas↔propietario, hidrata identidades por mapa y guarda clones observados en proyección v2 compatible con v1. Chromium: clon Ruta 9 desde Celeste, menú→guardar/Continuar/recargar, culling sin retirada y retorno a Ruta 9 PASS; fixtures PREPARED de siete clones y migración, tipos/honesty/build PASS. `20c7e4e8`: selección/interacción de clones por `{ mapId, localId }` vía `GetObjectEventScriptPointerByObjectEventId` (`GetObjectEventTemplateByLocalIdAndMap` resuelve plantillas de mapas foráneos sin colisión de `localId` homónimos) y captura fresca de `viewerObjects` antes/durante `SAVE` fuente y guardado del visor (`check:viewer-warps` con fixtures PREPARED PASS; comprobación jugable en navegador pendiente). Faltan actores nunca cargados (`addobjectat`/`removeobjectat`/movimientos fuera de spawn), gráficos/elevación/tipos de movimiento y revisión jugable de todos los scripts del alcance.
 - [x] Predicados de aparición de árboles/rocas junto a conexiones — `059a1a25`: familia C compartida por motor/visor, identidad fuente de clones sin duplicar entidades y retención de obstáculos activos entre conexiones/reconstrucciones. Chromium: Corte→guardar/Continuar/recarga→Celeste, clon cercano oculto, aparición al alejarse y regreso a Ruta 9 sin activar flag de ocultación PASS (URL/medalla/movimiento PREPARED). Fixtures PREPARED: límites inclusivos, cuatro bordes, flags y siete identidades/coordenadas fuente PASS; tipos/honesty/build PASS. Pendiente: recorrido del resto de fronteras/clones NPC y sincronización completa de scripts, movimiento, gráficos/elevación y guardado de clones/actores fuera de spawn (fila anterior sigue abierta).
 
 **C. Cambios de tamaño medio**
@@ -89,7 +89,7 @@ Anotados el 2026-10-16 a partir de lo que esa sesión dejó sin probar, sin veri
 
 ## Hoja de ruta para el siguiente agente
 
-Punto de entrega: 2026-10-16, código `c46538b4`; identidad/coordenadas y persistencia de clones observados conectadas. Continuar por la selección/interacción de clones de R1; el resto de R1 sigue abierto.
+Punto de entrega: 2026-10-16, código `7237fc4a` (cámara GBA auto/3:2 `15×10` y escenas completas) y `20c7e4e8` (selección/interacción de clones por `{ mapId, localId }` y captura fresca de `viewerObjects` en SAVE). Continuar por R1.3 (actores fuera de spawn) y R1.5 (gráficos/elevación/tipo de movimiento), más validación jugable en navegador de clones/SAVE fuente; el resto de R1 sigue abierto.
 Esta sección ordena las tareas abiertas de arriba; no sustituye sus límites ni
 abre otra lista de trabajo. La meta es completar el juego de un jugador dentro
 del visor, con lógica fuente y guardado compartido; la cobertura por nombres no
@@ -121,6 +121,7 @@ mide esa integración ni la fidelidad.
 | `31dfe405` | Guardar/Continuar/recargar conserva pose, orientación y colisión de Liam; SAVE fuente escribe la misma partida | Proyección del visor de un mapa; no es el snapshot completo de slots del motor |
 | `059a1a25` | Predicados C compartidos de árboles/rocas; siete identidades/coordenadas de clones contrastadas; Corte y Ruta 9↔Celeste con aparición/retención comprobadas | No demuestra sincronización completa de clones NPC ni de todos los bordes |
 | `c46538b4` | Proyección cargado↔propietario, observación/retiradas por identidad, hidratación y guardado v2 de clones observados; v1 compatible; clon Ruta 9 desde Celeste sobrevive menú/guardar/Continuar/recarga y culling | Selección de scripts, actores nunca cargados y captura fresca durante SAVE fuente siguen pendientes |
+| `20c7e4e8` | Selección/interacción de clones por `{ mapId, localId }` vía `GetObjectEventScriptPointerByObjectEventId` (`GetObjectEventTemplateByLocalIdAndMap` en cabeceras foráneas sin colisión de `localId` homónimos) y captura fresca de `viewerObjects` en SAVE fuente/visor (`check:viewer-warps` PREPARED PASS) | Validación jugable en navegador, actores fuera de spawn (`addobjectat`/`removeobjectat`/movimientos) y campos extra siguen pendientes |
 
 Las pruebas de juego citadas emplean entradas PREPARED declaradas en los jobs.
 No equivalen a un recorrido desde Nueva partida ni a comparación audiovisual ROM.
@@ -139,24 +140,21 @@ cuando el C los conserva. Corresponde a la fila abierta B de objetos dinámicos.
    propietario y normaliza sus coordenadas desde el mapa realmente cargado del
    motor; la hidratación hace la transformación inversa. Observación y retiradas
    ya no descartan clones por pertenecer a otro mapa. Conservar estos contratos.
-2. **Siguiente tanda: selección/interacción de clones.** `show` todavía busca por
-   `localId` y una plantilla normal de la cabecera actual; el visor exige el mismo
-   mapa para interactuar. Revisar juntos selección por identidad, script fuente,
-   `LAST_TALKED`, ocultación visual y restauración. No habilitar todos los diálogos
-   genéricos ni scripts automáticos de historia. Diagnosticar con un caller real
-   del alcance autorizado, sin preparar la retirada/movimiento que se comprueba.
-3. Resolver actores fuera de spawn desde sus callers C reales: `addobjectat`,
-   `removeobjectat`, movimientos y cambios de coordenadas/plantillas. Hoy
-   `prepareObjects` omite objetos no cargados. No convertir culling de cámara en
+2. **Selección/interacción de clones conectada en `20c7e4e8` (validación jugable pendiente).**
+   `show`, `present`, `close`, `interactWithEntity` y `GetObjectEventTemplateByLocalIdAndMap`
+   resuelven por `{ mapId, localId }` y `GetObjectEventScriptPointerByObjectEventId`
+   sin confundir `localId` homónimos (`check:viewer-warps` con fixtures PREPARED PASS).
+   Pendiente comprobarlo jugando en navegador con un caller real del alcance autorizado.
+3. **Siguiente tanda: resolver actores fuera de spawn desde sus callers C reales:**
+   `addobjectat`, `removeobjectat`, movimientos y cambios de coordenadas/plantillas.
+   Hoy `prepareObjects` omite objetos no cargados. No convertir culling de cámara en
    eliminación explícita ni fabricar un sprite/retorno para un objeto ausente.
-4. **Persistencia observada v2 entregada en `c46538b4`; cierre completo pendiente.**
-   El contenedor pertenece al mapa cargado, pero cada registro guarda identidad y
-   coordenadas del mapa propietario. Carga snapshots v1 del mismo mapa; faltantes
-   y snapshots inválidos vuelven a plantillas. Chromium verificó guardar desde
-   ajustes/Continuar/recarga de un clon real tras menú fuente. Falta comprobar y
-   conectar la captura fresca en el instante de SAVE fuente (no solo al finalizar
-   una interacción), así como actores nunca observados/cargados. Reutilizar el
-   guardado completo del motor cuando encaje; no sustituirlo por esta proyección.
+4. **Persistencia observada v2 (`c46538b4`) y captura fresca en SAVE (`20c7e4e8`); cierre de actores no cargados pendiente.**
+   `observeObjects`/`onScriptObjectRemoved` y el guardado del visor actualizan
+   `save.viewerObjects` antes de serializar `saveStore.write(save)`. Falta cubrir
+   actores nunca observados/cargados y verificar en navegador el flujo de SAVE fuente
+   con cambios previos. Reutilizar el guardado completo del motor cuando encaje; no
+   sustituirlo por esta proyección.
 5. Cerrar los otros campos que requieran los callers de la tanda: gráficos,
    elevación y tipo de movimiento. Revisar todos los consumidores al ampliar
    `ViewerObjectState`; conservar pendientes los campos/casos todavía no tratados.
