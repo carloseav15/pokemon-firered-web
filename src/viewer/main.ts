@@ -699,8 +699,8 @@ async function preloadExplorationSprites(): Promise<void> {
 
 let exploreManualZoom = 0;
 function exploreAutoZoom(): number {
-  const w = viewport.clientWidth || window.innerWidth;
-  const h = viewport.clientHeight || window.innerHeight;
+  const w = window.innerWidth || viewport.clientWidth;
+  const h = window.innerHeight || viewport.clientHeight;
   return Math.max(2, Math.min(6, Math.floor(Math.min(w / C.DISPLAY_WIDTH, h / C.DISPLAY_HEIGHT)) || 2));
 }
 

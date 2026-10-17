@@ -41,5 +41,6 @@ export class ViewerCamera {
     this.stage.style.width = `${this.width * this.zoom}px`;
     this.stage.style.height = `${this.height * this.zoom}px`;
     this.content.style.transform = `scale(${this.zoom})`;
+    document.documentElement.style.setProperty("--explore-zoom", String(this.zoom));
   }
 }

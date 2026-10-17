@@ -686,12 +686,14 @@ body.exploring.explore-wide #main {
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(255, 255, 255, 0.08);
 }
 body.exploring.explore-gba #main {
-  width: min(100vw, calc(100dvh * 3 / 2));
-  height: min(100dvh, calc(100vw * 2 / 3));
+  width: min(100vw, calc(100dvh * 3 / 2), calc(var(--explore-zoom, 5) * 240px));
+  height: min(100dvh, calc(100vw * 2 / 3), calc(var(--explore-zoom, 5) * 160px));
   inset: 50% auto auto 50%; transform: translate(-50%, -50%);
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(255, 255, 255, 0.08);
 }
-#explore-hud { position: fixed; inset: max(12px, env(safe-area-inset-top)) 16px auto; z-index: 80; display: flex; align-items: center; gap: 12px; pointer-events: none; }
+#explore-hud { position: fixed; inset: max(12px, env(safe-area-inset-top)) 16px auto; z-index: 80; display: flex; align-items: center; gap: 12px; pointer-events: none; transition: opacity 0.2s ease; }
+body.exploring.explore-clean #explore-hud { opacity: 0; pointer-events: auto; }
+body.exploring.explore-clean #explore-hud:hover, body.exploring.explore-clean #explore-hud:focus-within { opacity: 1; }
 #explore-hud[hidden], #explore-performance[hidden] { display: none; }
 #explore-hud button { pointer-events: auto; margin-left: auto; }
 #explore-location, #explore-performance { padding: 6px 10px; border-radius: 6px; background: #09090bd9; font-size: 12px; }
@@ -709,10 +711,10 @@ body.exploring.explore-gba #main {
 body.exploring .loading-overlay.hidden { display: none; }
 
 /* Game UI is layered on the current world; full GBA scenes (battles, party, bag, Pokédex) frame the stage. */
-#engine-interaction { position:fixed; z-index:1000; bottom:18px; left:50%; transform:translateX(-50%); width:min(1200px,96vw,calc((100dvh - 36px) * 3 / 2)); pointer-events:none; }
+#engine-interaction { position:fixed; z-index:1000; bottom:18px; left:50%; transform:translateX(-50%); width:min(calc(var(--explore-zoom, 5) * 240px),96vw,calc((100dvh - 36px) * 3 / 2)); pointer-events:none; }
 #engine-interaction[data-scene="true"] { inset:0; bottom:0; left:0; transform:none; width:100vw; height:100dvh; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; background:rgba(8,11,16,0.92); }
 #engine-interaction[hidden] { display:none !important; }
 #engine-interaction canvas { display:block; width:100%; height:auto; image-rendering:pixelated; outline:none; pointer-events:auto; }
-#engine-interaction[data-scene="true"] canvas { width:min(1200px,96vw,calc((100dvh - 44px) * 3 / 2)); border-radius:4px; box-shadow:0 16px 48px rgba(0,0,0,0.85),0 0 0 1px rgba(255,255,255,0.1); }
+#engine-interaction[data-scene="true"] canvas { width:min(calc(var(--explore-zoom, 5) * 240px),96vw,calc((100dvh - 44px) * 3 / 2)); border-radius:4px; box-shadow:0 16px 48px rgba(0,0,0,0.85),0 0 0 1px rgba(255,255,255,0.1); }
 #engine-interaction p { margin:0; text-align:center; color:#fff; text-shadow:0 1px 3px #000; font-size:13px; }
 #engine-interaction[data-loading="true"]::after { content:"Preparando interacción…"; display:block; padding:12px; background:#173944; color:white; }

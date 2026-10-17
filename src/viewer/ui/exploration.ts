@@ -8,6 +8,15 @@ type Hooks = {
   stats(): { sectors: number; bytes: number; pending: number; error: string };
 };
 
+const PREFS_KEY = "pokemon-explore-prefs";
+type ExplorePrefs = { format?: string; scale?: string; radar?: boolean; clean?: boolean };
+function readPrefs(): ExplorePrefs {
+  try { return JSON.parse(localStorage.getItem(PREFS_KEY) || "{}") as ExplorePrefs; } catch { return {}; }
+}
+function writePrefs(prefs: ExplorePrefs): void {
+  try { localStorage.setItem(PREFS_KEY, JSON.stringify(prefs)); } catch { /* ignore */ }
+}
+
 /** Presentation controls; pausing never advances the fixed GBA simulation. */
 export class ExplorationUi {
   private readonly root = document.createElement("div");
@@ -43,16 +52,32 @@ export class ExplorationUi {
     this.menu.id = "explore-menu";
     this.menu.setAttribute("aria-labelledby", "explore-menu-title");
     this.menu.innerHTML = `<h2 id="explore-menu-title">Explorar Kanto</h2>
-      <p>Flechas / WASD: caminar · Mayús: correr · B: bicicleta · Z: interactuar · M: audio.</p>
+      <p>Flechas / WASD: caminar · Mayús: correr · B: bicicleta · Z: interactuar · M: audio · H: HUD.</p>
       <label>Personaje <select id="explore-character"><option value="red">Rojo</option><option value="leaf">Hoja</option></select></label>
       <label>Presentación <select id="explore-format"><option value="viewport">Todo el viewport</option><option value="wide">16:9</option><option value="gba">GBA 3:2 (15×10)</option></select></label>
       <label>Escala <select id="explore-scale"><option value="auto" selected>Auto (GBA)</option><option value="1">1×</option><option value="2">2×</option><option value="3">3×</option><option value="4">4×</option><option value="5">5×</option><option value="6">6×</option></select></label>
       <label><input type="checkbox" id="explore-radar"> Mostrar minimapa</label>
+      <label><input type="checkbox" id="explore-clean"> Ocultar barra superior (H)</label>
       <label><input type="checkbox" id="explore-metrics"> Mostrar rendimiento</label>
       <button class="btn" id="explore-open-game-menu">Abrir menú del juego</button><button class="btn" id="explore-save">Guardar partida</button><button class="btn" id="explore-continue">Continuar guardado</button><p id="explore-save-result" role="status"></p>
       <p id="explore-note">Navegación por exteriores e interiores en desarrollo. Equipo, mochila y demás opciones están en Juego · Intro. Historia general pendiente.</p>
       <div class="explore-actions"><button class="btn" id="explore-resume">Continuar</button><button class="btn" id="explore-fullscreen">Pantalla completa</button><button class="btn" id="explore-exit">Volver al atlas</button></div>`;
     document.body.append(this.root, this.menu);
+    const prefs = readPrefs();
+    const formatSelect = this.menu.querySelector<HTMLSelectElement>("#explore-format")!;
+    const scaleSelect = this.menu.querySelector<HTMLSelectElement>("#explore-scale")!;
+    const radarInput = this.menu.querySelector<HTMLInputElement>("#explore-radar")!;
+    const cleanInput = this.menu.querySelector<HTMLInputElement>("#explore-clean")!;
+    if (prefs.format === "wide" || prefs.format === "gba" || prefs.format === "viewport") formatSelect.value = prefs.format;
+    if (prefs.scale && ["auto", "1", "2", "3", "4", "5", "6"].includes(prefs.scale)) scaleSelect.value = prefs.scale;
+    if (prefs.radar) radarInput.checked = true;
+    if (prefs.clean) cleanInput.checked = true;
+    const saveCurrentPrefs = () => writePrefs({
+      format: formatSelect.value,
+      scale: scaleSelect.value,
+      radar: radarInput.checked,
+      clean: cleanInput.checked,
+    });
     this.menu.querySelector("#explore-open-game-menu")!.addEventListener("click", () => {
       this.menu.close();
       this.openGameMenu();
@@ -70,18 +95,23 @@ export class ExplorationUi {
       const original = document.getElementById("player-char") as HTMLSelectElement;
       original.value = character.value; original.dispatchEvent(new Event("change"));
     });
-    this.menu.querySelector("#explore-format")!.addEventListener("change", event => {
-      const format = (event.target as HTMLSelectElement).value;
-      document.body.classList.toggle("explore-wide", format === "wide");
-      document.body.classList.toggle("explore-gba", format === "gba");
+    formatSelect.addEventListener("change", () => {
+      this.applyPresentation();
+      saveCurrentPrefs();
       this.hooks.resize();
     });
-    this.menu.querySelector("#explore-scale")!.addEventListener("change", event => {
-      const raw = (event.target as HTMLSelectElement).value;
+    scaleSelect.addEventListener("change", () => {
+      const raw = scaleSelect.value;
+      saveCurrentPrefs();
       window.dispatchEvent(new CustomEvent("explore-scale", { detail: raw === "auto" ? 0 : Number(raw) }));
     });
-    this.menu.querySelector("#explore-radar")!.addEventListener("change", event => {
-      document.body.classList.toggle("explore-radar", (event.target as HTMLInputElement).checked);
+    radarInput.addEventListener("change", () => {
+      this.applyPresentation();
+      saveCurrentPrefs();
+    });
+    cleanInput.addEventListener("change", () => {
+      this.applyPresentation();
+      saveCurrentPrefs();
     });
     this.menu.querySelector("#explore-metrics")!.addEventListener("change", event => {
       this.performance.hidden = !(event.target as HTMLInputElement).checked;
@@ -99,12 +129,26 @@ export class ExplorationUi {
       (document.getElementById("viewport") as HTMLElement).focus({ preventScroll: true });
     });
     window.addEventListener("keydown", this.onKey, true);
+    window.addEventListener("resize", this.onWindowResize);
     this.observer = new ResizeObserver(() => { if (this.active) this.hooks.resize(); });
     this.observer.observe(document.getElementById("viewport")!);
+  }
+  private onWindowResize = (): void => { if (this.active) this.hooks.resize(); };
+  private applyPresentation(): void {
+    const format = (this.menu.querySelector("#explore-format") as HTMLSelectElement).value;
+    const radar = (this.menu.querySelector("#explore-radar") as HTMLInputElement).checked;
+    const clean = (this.menu.querySelector("#explore-clean") as HTMLInputElement).checked;
+    document.body.classList.toggle("explore-wide", this.active && format === "wide");
+    document.body.classList.toggle("explore-gba", this.active && format === "gba");
+    document.body.classList.toggle("explore-radar", this.active && radar);
+    document.body.classList.toggle("explore-clean", this.active && clean);
   }
   enter(): void {
     this.active = true;
     document.body.classList.add("exploring");
+    this.applyPresentation();
+    const rawScale = (this.menu.querySelector("#explore-scale") as HTMLSelectElement).value;
+    if (rawScale !== "auto") window.dispatchEvent(new CustomEvent("explore-scale", { detail: Number(rawScale) }));
     this.root.hidden = false;
     const viewport = document.getElementById("viewport")!;
     viewport.tabIndex = 0;
@@ -115,7 +159,7 @@ export class ExplorationUi {
     this.active = false;
     if (this.menu.open) this.menu.close();
     this.hooks.pause(false);
-    document.body.classList.remove("exploring", "explore-wide", "explore-gba", "explore-radar");
+    document.body.classList.remove("exploring", "explore-wide", "explore-gba", "explore-radar", "explore-clean");
     this.root.hidden = true;
     if (this.frame !== null) cancelAnimationFrame(this.frame);
     this.frame = null;
@@ -133,6 +177,14 @@ export class ExplorationUi {
     this.hooks.startMenu();
   }
   private onKey = (event: KeyboardEvent): void => {
+    const tag = (event.target as HTMLElement | null)?.tagName?.toLowerCase();
+    if (this.active && !this.menu.open && event.key.toLowerCase() === "h" && !event.repeat && tag !== "input" && tag !== "select" && tag !== "textarea"
+      && document.getElementById("engine-interaction")?.hidden !== false && !document.querySelector("dialog[open]")) {
+      const cleanInput = this.menu.querySelector<HTMLInputElement>("#explore-clean")!;
+      cleanInput.checked = !cleanInput.checked;
+      cleanInput.dispatchEvent(new Event("change"));
+      return;
+    }
     if (this.active && event.key === "Enter" && !event.repeat && !(event.target instanceof HTMLButtonElement)
       && document.getElementById("interior")?.style.display === "none") { event.preventDefault(); event.stopImmediatePropagation(); this.openGameMenu(); return; }
     if (!this.active || document.getElementById("engine-interaction")?.hidden === false || event.key !== "Escape" || document.querySelector("dialog[open]") || this.menu.open || document.getElementById("interior")?.style.display !== "none") return;
@@ -161,5 +213,5 @@ export class ExplorationUi {
     }
     this.frame = requestAnimationFrame(this.measure);
   };
-  dispose(): void { this.exit(); this.observer.disconnect(); window.removeEventListener("keydown", this.onKey, true); }
+  dispose(): void { this.exit(); this.observer.disconnect(); window.removeEventListener("keydown", this.onKey, true); window.removeEventListener("resize", this.onWindowResize); }
 }
