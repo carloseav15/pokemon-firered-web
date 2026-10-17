@@ -62,17 +62,17 @@ Anotados el 2026-10-16 a partir de lo que esa sesión dejó sin probar, sin veri
 - [ ] Fondo magenta del resumen del Pokémon: la paleta fuente tiene magenta como color 0; comparar con la ROM.
 - [ ] Rótulos y orden de las pantallas del motor proyectadas a pantalla completa frente a la captura de ROM (paridad audiovisual).
 - [x] Posición de entrenadores al terminar el combate — `f5e80a9c`. Chromium: Liam se acerca (3,8)→(5,8), premio al jugador 3.000→3.220, conserva posición/orientación tras menú, bloquea casilla nueva y permite caminar a la antigua (URL/equipo/movimiento de ataque PREPARED; sin preparar victoria ni movimiento). Tipos/honesty/build y 58 checks PASS; persistencia de poses añadida en `31dfe405`; revisión general abierta abajo.
-- [ ] Objetos que el motor oculta/desplaza al final de un script y su sincronía con el visor. PARCIAL `f5e80a9c`: puente de posición/dirección/invisibilidad y retiradas explícitas de objetos observados del mapa actual; hidrata instancias ya cargadas en la siguiente interacción y actualiza colisiones/sectores. Invisibilidad con colisión, identidad por mapa y retiradas no indexadas comprobadas con fixtures PREPARED; Corte y flags en Chromium PASS. `31dfe405`: guarda/restaura posición, orientación, invisibilidad y retiradas observadas en la partida, con reinicio al cambiar de mapa y compatibilidad legacy. Chromium: Liam real, guardar/Continuar/recargar URL y colisiones PASS; menú fuente SAVE PASS. Serialización y estados especiales con fixtures PREPARED. `c46538b4`: observación/retiradas identifican el mapa propietario; convierte coordenadas cargadas↔propietario, hidrata identidades por mapa y guarda clones observados en proyección v2 compatible con v1. Chromium: clon Ruta 9 desde Celeste, menú→guardar/Continuar/recargar, culling sin retirada y retorno a Ruta 9 PASS; fixtures PREPARED de siete clones y migración, tipos/honesty/build PASS. `20c7e4e8`: selección/interacción de clones por `{ mapId, localId }` vía `GetObjectEventScriptPointerByObjectEventId` (`GetObjectEventTemplateByLocalIdAndMap` resuelve plantillas de mapas foráneos sin colisión de `localId` homónimos) y captura fresca de `viewerObjects` antes/durante `SAVE` fuente y guardado del visor (`check:viewer-warps` con fixtures PREPARED PASS; comprobación jugable en navegador pendiente). Faltan actores nunca cargados (`addobjectat`/`removeobjectat`/movimientos fuera de spawn), gráficos/elevación/tipos de movimiento y revisión jugable de todos los scripts del alcance.
-- [x] Predicados de aparición de árboles/rocas junto a conexiones — `059a1a25`: familia C compartida por motor/visor, identidad fuente de clones sin duplicar entidades y retención de obstáculos activos entre conexiones/reconstrucciones. Chromium: Corte→guardar/Continuar/recarga→Celeste, clon cercano oculto, aparición al alejarse y regreso a Ruta 9 sin activar flag de ocultación PASS (URL/medalla/movimiento PREPARED). Fixtures PREPARED: límites inclusivos, cuatro bordes, flags y siete identidades/coordenadas fuente PASS; tipos/honesty/build PASS. Pendiente: recorrido del resto de fronteras/clones NPC y sincronización completa de scripts, movimiento, gráficos/elevación y guardado de clones/actores fuera de spawn (fila anterior sigue abierta).
+- [ ] Objetos que el motor oculta/desplaza al final de un script y su sincronía con el visor. PARCIAL `f5e80a9c`: puente de posición/dirección/invisibilidad y retiradas explícitas de objetos observados del mapa actual; hidrata instancias ya cargadas en la siguiente interacción y actualiza colisiones/sectores. Invisibilidad con colisión, identidad por mapa y retiradas no indexadas comprobadas con fixtures PREPARED; Corte y flags en Chromium PASS. `31dfe405`: guarda/restaura posición, orientación, invisibilidad y retiradas observadas en la partida, con reinicio al cambiar de mapa y compatibilidad legacy. Chromium: Liam real, guardar/Continuar/recargar URL y colisiones PASS; menú fuente SAVE PASS. Serialización y estados especiales con fixtures PREPARED. `c46538b4`: observación/retiradas identifican el mapa propietario; convierte coordenadas cargadas↔propietario, hidrata identidades por mapa y guarda clones observados en proyección v2 compatible con v1. Chromium: clon Ruta 9 desde Celeste, menú→guardar/Continuar/recargar, culling sin retirada y retorno a Ruta 9 PASS; fixtures PREPARED de siete clones y migración, tipos/honesty/build PASS. `20c7e4e8`: selección/interacción de clones por `{ mapId, localId }` vía `GetObjectEventScriptPointerByObjectEventId` (`GetObjectEventTemplateByLocalIdAndMap` resuelve plantillas de mapas foráneos sin colisión de `localId` homónimos) y captura fresca de `viewerObjects` antes/durante `SAVE` fuente y guardado del visor (`check:viewer-warps` con fixtures PREPARED PASS). `d5986c54`: `addobjectat`/`removeobjectat`/`setobjectxyperm`/`copyobjectxytoperm`/`setobjectmovementtype` sincronizan `save.objectEventTemplates` y `viewerObjects` incluso para plantillas fuera de la ventana de spawn, `prepareObjects` instancia con `TrySpawnObjectEvent` objetos desplazados a la cámara actual y sincroniza `graphicsId` (`VAR_OBJ_GFX_ID_*`), `elevation` y `movementType` entre motor y visor (`check:viewer-warps` con fixtures PREPARED PASS). Falta validación jugable en navegador de los scripts del alcance.
+- [x] Predicados de aparición de árboles/rocas junto a conexiones — `059a1a25`: familia C compartida por motor/visor, identidad fuente de clones sin duplicar entidades y retención de obstáculos activos entre conexiones/reconstrucciones. Chromium: Corte→guardar/Continuar/recarga→Celeste, clon cercano oculto, aparición al alejarse y regreso a Ruta 9 sin activar flag de ocultación PASS (URL/medalla/movimiento PREPARED). Fixtures PREPARED: límites inclusivos, cuatro bordes, flags y siete identidades/coordenadas fuente PASS; tipos/honesty/build PASS. Pendiente: recorrido del resto de fronteras/clones NPC y revisión jugable en navegador (fila anterior sigue abierta).
 
 **C. Cambios de tamaño medio**
 - [x] Retirar la lista DOM de equipo/mochila y añadir acceso desde ajustes al menú del motor — `5af2a378`. Chromium: apertura/retorno, resumen/orden del equipo, Poción, opciones persistentes, sesión y compra/recarga PASS; precondiciones PREPARED de los jobs conservadas. 58 checks/tipos/honesty/build PASS; táctil y paridad audiovisual siguen pendientes.
 - [ ] Entrada táctil/móvil para el menú del juego (Enter no existe; solo hay botón) y para los combates.
 - [x] Presencia general por flags de guardado, exteriores/interiores, dibujo/colisión/interacción y banderas iniciales fuente solo en partidas nuevas — `2fc61ad4`. Chromium: ocultar/restaurar, guardado cambiado/recarga, interior numérico, Corte y sesión PASS; victoria real Liam/Brock (equipo Nv.40 PREPARED), medalla/MT y carga de Plateada (URL PREPARED): guía oculto/ayudante visible PASS. 49 flags iniciales contrastadas con fuente; 58 checks/tipos/honesty/build PASS.
 - [x] Ciclo temporal por mapa y conservación de plantillas retiradas — `50350097`. Reutiliza `clearTempFieldEventData` en conexiones/puertas/warps del motor; menú/continuar conservan el estado del mapa y los flags temporales no se propagan a otros sectores. Chromium: Corte real→guardar/Continuar/recarga→Celeste, puerta/menú de Paleta, presencia general, Cuerda Huida y Excavar PASS; entradas PREPARED según jobs. Check existente cubre warp al mismo mapa y retirada/restauración sin flag (fixtures PREPARED); 58 checks/tipos/honesty/build PASS.
-- [x] Visor: persistencia de posiciones/direcciones/invisibilidad/retiradas **observadas del mapa actual** — `31dfe405`: Liam real conserva pose y colisiones tras guardar/Continuar/recargar URL; compatibilidad legacy y serialización con fixtures PREPARED. La persistencia completa de clones y actores no observados sigue abierta en B y R1.
+- [x] Visor: persistencia de posiciones/direcciones/invisibilidad/retiradas **observadas del mapa actual** — `31dfe405`: Liam real conserva pose y colisiones tras guardar/Continuar/recargar URL; compatibilidad legacy y serialización con fixtures PREPARED. La persistencia de clones y plantillas fuera de spawn se amplió en `c46538b4` y `d5986c54` (validación jugable abierta en B y R1).
 - [ ] Quest Log conectado a los eventos del visor.
-- [ ] Tarea de curación del Centro tras derrota (`FieldCB_RushInjuredPokemonToCenter`) y su diálogo: hoy solo se reubica.
+- [x] Tarea de curación del Centro tras derrota (`FieldCB_RushInjuredPokemonToCenter`) y su diálogo — `a2eed273`: `PrintWhiteOutRecoveryMessage` usa coordenadas píxel `x, y` y velocidad `1` como `AddTextPrinterParameterized4` en `field_screen_effect.c`; `EngineInteraction` mantiene la pantalla en negro durante `CB2_WhiteOut` y `Task_RushInjuredPokemonToCenter`, reubica el visor al mapa de curación al iniciar `FieldCB_RushInjuredPokemonToCenter` y ejecuta `EventScript_AfterWhiteOutHeal` o `EventScript_AfterWhiteOutMomHeal` antes de devolver el control. Validación jugable en navegador pendiente.
 - [ ] Contadores por paso fuera de pasos reales (bici rápida, saltos) y sincronía de pasos en mapas distintos.
 
 **D. Integración nueva**
@@ -89,7 +89,7 @@ Anotados el 2026-10-16 a partir de lo que esa sesión dejó sin probar, sin veri
 
 ## Hoja de ruta para el siguiente agente
 
-Punto de entrega: 2026-10-16, código `7237fc4a` (cámara GBA auto/3:2 `15×10` y escenas completas) y `20c7e4e8` (selección/interacción de clones por `{ mapId, localId }` y captura fresca de `viewerObjects` en SAVE). Continuar por R1.3 (actores fuera de spawn) y R1.5 (gráficos/elevación/tipo de movimiento), más validación jugable en navegador de clones/SAVE fuente; el resto de R1 sigue abierto.
+Punto de entrega: 2026-10-17, código `f0e119c3` + `277bbbe6` (zoom `5×`/`6×`, preferencias persistentes de exploración y HUD limpio con `H`), `d5986c54` (R1.3/R1.5: plantillas fuera de spawn, `addobjectat`/`removeobjectat`/`setobjectxyperm`/`copyobjectxytoperm`/`setobjectmovementtype` y sincronía de `graphicsId`/`elevation`/`movementType`) y `a2eed273` (C.75: `FieldCB_RushInjuredPokemonToCenter` + `EventScript_AfterWhiteOutHeal`/`EventScript_AfterWhiteOutMomHeal` en el visor). Continuar por validación jugable en navegador de R1/C.75 y por R2 (Fuerza), R3–R7.
 Esta sección ordena las tareas abiertas de arriba; no sustituye sus límites ni
 abre otra lista de trabajo. La meta es completar el juego de un jugador dentro
 del visor, con lógica fuente y guardado compartido; la cobertura por nombres no
@@ -100,8 +100,8 @@ mide esa integración ni la fidelidad.
 1. Leer `AGENTS.md`, `PORTING-STATUS.md`, esta sección y la fila de la tanda elegida;
    comprobar `git status` y la rama. Un agente a la vez en `main`, sin ramas,
    worktrees, subagentes ni push. Preservar cambios ajenos.
-2. Empezar por **R1**. No volver a implementar flags, Corte, guardado de poses
-   observadas, proyección de clones ni los predicados de aparición: ya están conectados. Confirmar el
+2. Empezar por **R1** (validación jugable) o **R2**. No volver a implementar flags, Corte, guardado de poses
+   observadas, proyección de clones, predicados de aparición ni sincronía de plantillas fuera de spawn: ya están conectados. Confirmar el
    estado vivo antes de editar; los commits citados son evidencia, no un permiso
    para restaurar archivos completos ni descartar cambios posteriores.
 3. Una tanda integrada por archivo/familia o dependencia funcional completa;
@@ -122,6 +122,8 @@ mide esa integración ni la fidelidad.
 | `059a1a25` | Predicados C compartidos de árboles/rocas; siete identidades/coordenadas de clones contrastadas; Corte y Ruta 9↔Celeste con aparición/retención comprobadas | No demuestra sincronización completa de clones NPC ni de todos los bordes |
 | `c46538b4` | Proyección cargado↔propietario, observación/retiradas por identidad, hidratación y guardado v2 de clones observados; v1 compatible; clon Ruta 9 desde Celeste sobrevive menú/guardar/Continuar/recarga y culling | Selección de scripts, actores nunca cargados y captura fresca durante SAVE fuente siguen pendientes |
 | `20c7e4e8` | Selección/interacción de clones por `{ mapId, localId }` vía `GetObjectEventScriptPointerByObjectEventId` (`GetObjectEventTemplateByLocalIdAndMap` en cabeceras foráneas sin colisión de `localId` homónimos) y captura fresca de `viewerObjects` en SAVE fuente/visor (`check:viewer-warps` PREPARED PASS) | Validación jugable en navegador, actores fuera de spawn (`addobjectat`/`removeobjectat`/movimientos) y campos extra siguen pendientes |
+| `d5986c54` | `addobjectat`/`removeobjectat`/`setobjectxyperm`/`copyobjectxytoperm`/`setobjectmovementtype` sincronizan `save.objectEventTemplates` y `viewerObjects` fuera de spawn; `prepareObjects` instancia con `TrySpawnObjectEvent` en cámara y sincroniza `graphicsId`/`elevation`/`movementType` (`check:viewer-warps` PREPARED PASS) | Validación jugable en navegador de los scripts del alcance pendiente |
+| `a2eed273` | `FieldCB_RushInjuredPokemonToCenter` + `EventScript_AfterWhiteOutHeal`/`EventScript_AfterWhiteOutMomHeal` integrados en `EngineInteraction` tras derrota, con `PrintWhiteOutRecoveryMessage` corregido a coordenadas píxel `(x, y)` y velocidad `1` | Validación jugable en navegador pendiente |
 
 Las pruebas de juego citadas emplean entradas PREPARED declaradas en los jobs.
 No equivalen a un recorrido desde Nueva partida ni a comparación audiovisual ROM.
@@ -145,19 +147,17 @@ cuando el C los conserva. Corresponde a la fila abierta B de objetos dinámicos.
    resuelven por `{ mapId, localId }` y `GetObjectEventScriptPointerByObjectEventId`
    sin confundir `localId` homónimos (`check:viewer-warps` con fixtures PREPARED PASS).
    Pendiente comprobarlo jugando en navegador con un caller real del alcance autorizado.
-3. **Siguiente tanda: resolver actores fuera de spawn desde sus callers C reales:**
-   `addobjectat`, `removeobjectat`, movimientos y cambios de coordenadas/plantillas.
-   Hoy `prepareObjects` omite objetos no cargados. No convertir culling de cámara en
-   eliminación explícita ni fabricar un sprite/retorno para un objeto ausente.
-4. **Persistencia observada v2 (`c46538b4`) y captura fresca en SAVE (`20c7e4e8`); cierre de actores no cargados pendiente.**
+3. **Actores fuera de spawn conectados en `d5986c54` (validación jugable pendiente):**
+   `addobjectat`, `removeobjectat`, movimientos y cambios de coordenadas/plantillas
+   (`setobjectxyperm`, `copyobjectxytoperm`, `setobjectmovementtype`) persisten en
+   `save.objectEventTemplates` y `viewerObjects`, y `prepareObjects` instancia con
+   `TrySpawnObjectEvent` cuando entran en la cámara sin convertir culling en retirada.
+4. **Persistencia observada v2 (`c46538b4`), captura fresca en SAVE (`20c7e4e8`) y plantillas fuera de spawn (`d5986c54`); validación en navegador pendiente.**
    `observeObjects`/`onScriptObjectRemoved` y el guardado del visor actualizan
-   `save.viewerObjects` antes de serializar `saveStore.write(save)`. Falta cubrir
-   actores nunca observados/cargados y verificar en navegador el flujo de SAVE fuente
-   con cambios previos. Reutilizar el guardado completo del motor cuando encaje; no
-   sustituirlo por esta proyección.
-5. Cerrar los otros campos que requieran los callers de la tanda: gráficos,
-   elevación y tipo de movimiento. Revisar todos los consumidores al ampliar
-   `ViewerObjectState`; conservar pendientes los campos/casos todavía no tratados.
+   `save.viewerObjects` y `save.objectEventTemplates` antes de serializar `saveStore.write(save)`.
+   Falta verificar en navegador el flujo de SAVE fuente con cambios previos.
+5. **Campos `graphicsId`, `elevation` y `movementType` conectados en `d5986c54` (`check:viewer-warps` PREPARED PASS).**
+   Conservar pendientes otros campos o casos que aparezcan en la validación jugable.
 
 **Archivos de entrada y fuente:**
 
