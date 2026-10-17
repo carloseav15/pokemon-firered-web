@@ -121,9 +121,10 @@ mide esa integración ni la fidelidad.
 | `31dfe405` | Guardar/Continuar/recargar conserva pose, orientación y colisión de Liam; SAVE fuente escribe la misma partida | Proyección del visor de un mapa; no es el snapshot completo de slots del motor |
 | `059a1a25` | Predicados C compartidos de árboles/rocas; siete identidades/coordenadas de clones contrastadas; Corte y Ruta 9↔Celeste con aparición/retención comprobadas | No demuestra sincronización completa de clones NPC ni de todos los bordes |
 | `c46538b4` | Proyección cargado↔propietario, observación/retiradas por identidad, hidratación y guardado v2 de clones observados; v1 compatible; clon Ruta 9 desde Celeste sobrevive menú/guardar/Continuar/recarga y culling | Selección de scripts, actores nunca cargados y captura fresca durante SAVE fuente siguen pendientes |
-| `20c7e4e8` | Selección/interacción de clones por `{ mapId, localId }` vía `GetObjectEventScriptPointerByObjectEventId` (`GetObjectEventTemplateByLocalIdAndMap` en cabeceras foráneas sin colisión de `localId` homónimos) y captura fresca de `viewerObjects` en SAVE fuente/visor (`check:viewer-warps` PREPARED PASS) | Validación jugable en navegador, actores fuera de spawn (`addobjectat`/`removeobjectat`/movimientos) y campos extra siguen pendientes |
-| `d5986c54` | `addobjectat`/`removeobjectat`/`setobjectxyperm`/`copyobjectxytoperm`/`setobjectmovementtype` sincronizan `save.objectEventTemplates` y `viewerObjects` fuera de spawn; `prepareObjects` instancia con `TrySpawnObjectEvent` en cámara y sincroniza `graphicsId`/`elevation`/`movementType` (`check:viewer-warps` PREPARED PASS) | Validación jugable en navegador de los scripts del alcance pendiente |
-| `a2eed273` | `FieldCB_RushInjuredPokemonToCenter` + `EventScript_AfterWhiteOutHeal`/`EventScript_AfterWhiteOutMomHeal` integrados en `EngineInteraction` tras derrota, con `PrintWhiteOutRecoveryMessage` corregido a coordenadas píxel `(x, y)` y velocidad `1` | Validación jugable en navegador pendiente |
+| `20c7e4e8` | Selección/interacción de clones por `{ mapId, localId }` vía `GetObjectEventScriptPointerByObjectEventId` (`GetObjectEventTemplateByLocalIdAndMap` en cabeceras foráneas sin colisión de `localId` homónimos) y captura fresca de `viewerObjects` en SAVE fuente/visor (`check:viewer-warps` PREPARED PASS) | Validación jugable en navegador de R1 verificada en smoke job Brock |
+| `d5986c54` | `addobjectat`/`removeobjectat`/`setobjectxyperm`/`copyobjectxytoperm`/`setobjectmovementtype` sincronizan `save.objectEventTemplates` y `viewerObjects` fuera de spawn; `prepareObjects` instancia con `TrySpawnObjectEvent` en cámara y sincroniza `graphicsId`/`elevation`/`movementType` (`check:viewer-warps` PREPARED PASS) | Validación jugable en navegador de R1 verificada en smoke job Brock |
+| `a2eed273` | `FieldCB_RushInjuredPokemonToCenter` + `EventScript_AfterWhiteOutHeal`/`EventScript_AfterWhiteOutMomHeal` integrados en `EngineInteraction` tras derrota, con `PrintWhiteOutRecoveryMessage` corregido a coordenadas píxel `(x, y)` y velocidad `1` | Validación jugable en navegador de C.75 verificada en smoke job whiteout |
+| `a6d44c03` | Corrección de ciclo TDZ en `fieldMoves.ts` (`DIR_EAST`); validación jugable completa en navegador con smoke jobs `viewer-game-whiteout` (derrota, curación y reaparición en casa) y `viewer-game-brock` (gimnasio Brock, MT39, objetos dinámicos de Ciudad Plateada y persistencia de guardado PASS) | No cubre el resto de gimnasios ni mapas no visitados en los smoke tests |
 
 Las pruebas de juego citadas emplean entradas PREPARED declaradas en los jobs.
 No equivalen a un recorrido desde Nueva partida ni a comparación audiovisual ROM.
@@ -142,22 +143,20 @@ cuando el C los conserva. Corresponde a la fila abierta B de objetos dinámicos.
    propietario y normaliza sus coordenadas desde el mapa realmente cargado del
    motor; la hidratación hace la transformación inversa. Observación y retiradas
    ya no descartan clones por pertenecer a otro mapa. Conservar estos contratos.
-2. **Selección/interacción de clones conectada en `20c7e4e8` (validación jugable pendiente).**
+2. **Selección/interacción de clones conectada en `20c7e4e8` (validado en navegador con `viewer-game-brock`).**
    `show`, `present`, `close`, `interactWithEntity` y `GetObjectEventTemplateByLocalIdAndMap`
    resuelven por `{ mapId, localId }` y `GetObjectEventScriptPointerByObjectEventId`
-   sin confundir `localId` homónimos (`check:viewer-warps` con fixtures PREPARED PASS).
-   Pendiente comprobarlo jugando en navegador con un caller real del alcance autorizado.
-3. **Actores fuera de spawn conectados en `d5986c54` (validación jugable pendiente):**
+   sin confundir `localId` homónimos (`check:viewer-warps` PREPARED PASS y smoke job Brock PASS).
+3. **Actores fuera de spawn conectados en `d5986c54` (validado en navegador con `viewer-game-brock`):**
    `addobjectat`, `removeobjectat`, movimientos y cambios de coordenadas/plantillas
    (`setobjectxyperm`, `copyobjectxytoperm`, `setobjectmovementtype`) persisten en
    `save.objectEventTemplates` y `viewerObjects`, y `prepareObjects` instancia con
-   `TrySpawnObjectEvent` cuando entran en la cámara sin convertir culling en retirada.
-4. **Persistencia observada v2 (`c46538b4`), captura fresca en SAVE (`20c7e4e8`) y plantillas fuera de spawn (`d5986c54`); validación en navegador pendiente.**
+   `TrySpawnObjectEvent` cuando entran en la cámara (comprobado con ayudante de Deportivas tras victoria en Brock).
+4. **Persistencia observada v2 (`c46538b4`), captura fresca en SAVE (`20c7e4e8`) y plantillas fuera de spawn (`d5986c54`) (validado en navegador con `viewer-game-brock`).**
    `observeObjects`/`onScriptObjectRemoved` y el guardado del visor actualizan
-   `save.viewerObjects` y `save.objectEventTemplates` antes de serializar `saveStore.write(save)`.
-   Falta verificar en navegador el flujo de SAVE fuente con cambios previos.
-5. **Campos `graphicsId`, `elevation` y `movementType` conectados en `d5986c54` (`check:viewer-warps` PREPARED PASS).**
-   Conservar pendientes otros campos o casos que aparezcan en la validación jugable.
+   `save.viewerObjects` y `save.objectEventTemplates` antes de serializar `saveStore.write(save)` (verificado con recarga de partida en Ciudad Plateada).
+5. **Campos `graphicsId`, `elevation` y `movementType` conectados en `d5986c54` (`check:viewer-warps` PREPARED PASS y `viewer-game-brock` PASS).**
+   Conservar pendientes otros campos o casos que aparezcan en mapas avanzados.
 
 **Archivos de entrada y fuente:**
 
