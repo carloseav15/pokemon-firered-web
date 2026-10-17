@@ -105,3 +105,36 @@ assert.equal(objects.findAt(2,8)?.element.map,'MAP_ROUTE10');
 objects.resetRemovedObjects();objects.syncPresence(isViewerObjectPresent);
 assert.equal(objects.findAt(2,8)?.element.map,'MAP_ROUTE9');
 console.log('PREPARED flags/vars and template fixtures; Viewer map events PASS: map change/same-map warp reset, same-map interaction/continue preservation, persistent progress and retained templates');
+
+// PREPARED: runtime object inputs, not a prepared movement/script result.
+await import('./setupNodeGbaMock');
+const { ObjectEvent, ObjectEvents } = await import('../../src/core/field/objectEvents');
+const { readViewerObjectState } = await import('../../src/viewer/objectState');
+const actor=new ObjectEvent();actor.localId=1;actor.currentCoords={x:11,y:16};actor.facingDirection=C.DIR_WEST;actor.invisible=true;
+const moved=readViewerObjectState(actor,'MAP_ROUTE9');
+objects.applyObjectState(moved,{...tree,flag:0},0,0);objects.syncPresence(isViewerObjectPresent);
+assert.equal(objects.findAt(4,9)?.element.map,'MAP_ROUTE9','invisible active object still occupies its tile');
+assert.equal(objects.findAt(2,8)?.element.map,'MAP_ROUTE10','other map with same ID remains in place');
+assert.equal(objects.entities[0]!.dir,'west');
+assert.equal(objects.entities[0]!.scriptInvisible,true);
+assert.ok(objects.takeVacatedTiles().some(p=>p.gx===2&&p.gy===8),'old occupancy invalidated');
+objects.resetRemovedObjects();objects.syncPresence(isViewerObjectPresent);
+assert.equal(objects.findAt(2,8)?.element.map,'MAP_ROUTE9');
+assert.equal(objects.entities[0]!.scriptInvisible,false);
+assert.equal(objects.entities[0]!.dir,'south');
+assert.ok(objects.takeVacatedTiles().some(p=>p.gx===4&&p.gy===9),'moved tile invalidated on map reload');
+// No graphics/hook calls are needed to remove a bare ObjectEvent: assert the
+// observer reports explicit removal after deactivation, but not camera culling.
+const runtime=new ObjectEvents({} as ConstructorParameters<typeof ObjectEvents>[0]);
+const notices:boolean[]=[];runtime.onScriptObjectRemoved=o=>notices.push(o.active);
+const addBare=()=>{const o=new ObjectEvent();o.localId=1;o.mapNum=0;o.mapGroup=0;runtime.objects[1]=o;return o;};
+runtime.RemoveObjectEventByLocalIdAndMap(1,0,0);assert.equal(notices.length,0);
+addBare();runtime.RemoveObjectEventByLocalIdAndMap(1,0,0);assert.deepEqual(notices,[false]);
+runtime.remove(addBare());assert.deepEqual(notices,[false],'culling is not a script remove');
+console.log('PREPARED object fixtures; viewer object pose, invisible collision, identity, map reset and explicit-removal observer PASS');
+
+// An explicitly removed actor may never have been in the viewer's static index.
+objects.applyObjectState({...moved,localId:77,removed:true},{...tree,localId:77,flag:0},0,0);
+objects.syncPresence(isViewerObjectPresent);
+const retired=objects.entities.find(e=>e.element.localId===77)!;
+assert.equal(retired.removed,true);assert.equal(retired.hidden,true);assert.equal(retired.engineState,true);

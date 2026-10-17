@@ -764,6 +764,8 @@ const MOVEMENT_TYPE_STEPS: Readonly<Record<string, readonly string[]>> = {
 };
 
 export class ObjectEvents {
+  /** Web observers distinguish explicit script removal from camera culling. */
+  onScriptObjectRemoved?: (object: ObjectEvent) => void;
   readonly objects: Array<ObjectEvent | null> = new Array(OBJECT_EVENTS_COUNT).fill(null);
   /** Installed by TrainerSee for the buried-trainer REVEAL_TRAINER task. */
   revealTrainerMovementAction?: (object: ObjectEvent) => boolean;
@@ -954,6 +956,7 @@ export class ObjectEvents {
     if (!object || object.isPlayer) return;
     flagSet(this.GetObjectEventFlagIdByObjectEventId(this.indexOf(object)));
     this.remove(object);
+    this.onScriptObjectRemoved?.(object);
   }
 
   /** GetBaseTemplateForObjectEvent (event_object_movement.c). */

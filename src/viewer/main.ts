@@ -588,6 +588,7 @@ function syncEntityPresence(): boolean {
   const changed = entityManager.syncPresence(isViewerObjectPresent);
   if (changed) {
     // Clear first, then rebuild the union: conditional templates may share a tile.
+    for (const tile of entityManager.takeVacatedTiles()) worldGrid.setNpc(tile.gx,tile.gy,false);
     for (const ent of entityManager.entities) worldGrid.setNpc(ent.gx, ent.gy, false);
     for (const ent of entityManager.entities) if (!ent.hidden) worldGrid.setNpc(ent.gx, ent.gy, true);
   }
@@ -1689,8 +1690,7 @@ async function build(): Promise<void> {
       const egwy = info.y + e.y;
       const isSolidEntity = e.layer !== "puerta" && e.layer !== "activador";
       if (isSolidEntity && grid.inBounds(egwx, egwy)) {
-        const removed = streaming && entityManager.entities.some(ent => ent.element === e && ent.removed);
-        if (!streaming || !removed && isViewerObjectPresent(e)) grid.npc[grid.idx(egwx, egwy)] = 1;
+        if (!streaming) grid.npc[grid.idx(egwx, egwy)] = 1;
 
         let dir: Direction = "south";
         if (e.direction === "up") dir = "north";
@@ -1769,7 +1769,14 @@ async function build(): Promise<void> {
     fillSources.set(id, { info, layout, renderer });
     metatilePainters.set(id, { info, layout, renderer, bctx, grid, primary, secondary });
     avatarDepth?.add(id,{x:info.x,y:info.y,width:info.width,height:info.height,blocks:layout.blocks,renderer});
-    if (streaming) worldGrid.addSector(id, grid);
+    if (streaming) {
+      // Object instances may have moved or been added since this sector unloaded.
+      for (const ent of entityManager.entities) {
+        if (ent.element.map!==id||ent.removed||!isViewerObjectPresent(ent.element)||!grid.inBounds(ent.gx,ent.gy)) continue;
+        grid.npc[grid.idx(ent.gx,ent.gy)]=1;
+      }
+      worldGrid.addSector(id, grid);
+    }
     content.appendChild(wrap);
 
     return { bytes: grid.retainedBytes + [...wrap.querySelectorAll("canvas")].reduce((sum, c) => sum + c.width * c.height * 4, 0),
@@ -1900,14 +1907,26 @@ function setupUi(): void {
       if(canvas.parentElement!==content)content.append(canvas);
     },
     relocate: nav => { void relocateViewer(nav); },
-    removeObject: (mapId, localId) => {
-      entityManager.removeObject(mapId, localId);
+    readObjects: mapId => {
+      const info=index.maps[mapId];
+      if(!info)return [];
+      return entityManager.entities.filter(e=>e.element.map===mapId&&e.element.localId!==undefined&&e.engineState).map(e=>({mapId,localId:e.element.localId!,x:e.gx-info.x,y:e.gy-info.y,direction:e.dir,invisible:!!e.scriptInvisible,removed:!!e.removed||!!e.hidden}));
+    },
+    syncObjects: states => {
+      for (const state of states) {
+        const info=index.maps[state.mapId];
+        const template=rom.cachedMap(state.mapId)?.objects.find(o=>!o.clone&&o.localId===state.localId);
+        if (!info||!template||template.clone) continue;
+        const element:Element={map:state.mapId,localId:template.localId,x:template.x,y:template.y,flag:template.flag,graphics:template.graphicsName,movementType:template.movementType,layer:'npc',
+          direction:template.movementType===C.MOVEMENT_TYPE_FACE_UP?'up':template.movementType===C.MOVEMENT_TYPE_FACE_LEFT?'left':template.movementType===C.MOVEMENT_TYPE_FACE_RIGHT?'right':'down'};
+        entityManager.applyObjectState(state,element,info.x,info.y);
+      }
       updateEntitiesView();
     },
     setBike: on => { if (on !== (playerMode === "bike")) toggleBike(); },
-    hideObjects: (hidden,localId) => {
+    hideObjects: (hidden,mapId,localId) => {
       if(playerEl)playerEl.style.visibility=hidden?"hidden":"";
-      const ent=entityManager.entities.find(e=>e.element.localId===localId);
+      const ent=entityManager.entities.find(e=>e.element.map===mapId&&e.element.localId===localId);
       if(ent?.el)ent.el.style.visibility=hidden?"hidden":"";
     },
   });

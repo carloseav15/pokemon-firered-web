@@ -1,4 +1,5 @@
 import * as C from "@game/generated/constants";
+import type { ViewerObjectState } from "../objectState";
 import type { Element } from "../types";
 import { TILE } from "../constants";
 import { DATA_ROOT } from "@core/rom";
@@ -13,17 +14,21 @@ export type LiveEntity = {
   defeated?: boolean;
   hidden?: boolean;
   removed?: boolean;
+  scriptInvisible?: boolean;
+  engineState?: boolean;
+  initialGx: number; initialGy: number; initialDir: Direction;
 };
 
 export class EntityManager {
   readonly entities: LiveEntity[] = [];
   private container: HTMLElement | null = null;
   private presenceDirty = true;
+  private vacatedTiles: {gx:number;gy:number}[] = [];
 
   constructor(private readonly content: HTMLElement, private readonly minX: number, private readonly minY: number) {}
 
   addEntity(element: Element, gx: number, gy: number, dir: Direction): void {
-    this.entities.push({ element, gx, gy, dir });
+    this.entities.push({ element, gx, gy, dir, initialGx:gx, initialGy:gy, initialDir:dir });
     this.presenceDirty = true;
   }
 
@@ -34,10 +39,33 @@ export class EntityManager {
   }
 
   resetRemovedObjects(): void {
-    for (const ent of this.entities) ent.removed = false;
+    for (const ent of this.entities) {
+      this.vacatedTiles.push({gx:ent.gx,gy:ent.gy});
+      ent.removed=false;ent.scriptInvisible=false;ent.engineState=false;
+      ent.gx=ent.initialGx;ent.gy=ent.initialGy;ent.dir=ent.initialDir;
+      ent.el?.remove();ent.el=undefined;
+    }
     // Resident sector grids can predate a map reset even if every entity keeps
     // the same visibility. Rebuild their occupancy from the current state.
     this.presenceDirty = true;
+  }
+
+  takeVacatedTiles(): {gx:number;gy:number}[] { return this.vacatedTiles.splice(0); }
+
+  applyObjectState(state: ViewerObjectState, element: Element, originX: number, originY: number): void {
+    let ent=this.entities.find(e=>e.element.map===state.mapId&&e.element.localId===state.localId);
+    if (!ent) {
+      const initialDir:Direction=element.direction==='up'?'north':element.direction==='left'?'west':element.direction==='right'?'east':'south';
+      this.addEntity(element,originX+element.x,originY+element.y,initialDir);
+      ent=this.entities.at(-1)!;
+    }
+    const gx=originX+state.x,gy=originY+state.y;
+    if (ent.gx!==gx||ent.gy!==gy||ent.dir!==state.direction||!!ent.scriptInvisible!==state.invisible||!!ent.removed!==state.removed) {
+      this.vacatedTiles.push({gx:ent.gx,gy:ent.gy});
+      ent.el?.remove();ent.el=undefined;
+      this.presenceDirty=true;
+    }
+    ent.gx=gx;ent.gy=gy;ent.dir=state.direction;ent.scriptInvisible=state.invisible;ent.removed=state.removed;ent.engineState=true;
   }
 
   /** Retain hidden templates so clearing a flag can restore them without reloading. */
@@ -77,7 +105,7 @@ export class EntityManager {
       const px = (ent.gx - this.minX) * TILE;
       const py = (ent.gy - this.minY) * TILE;
 
-      const inView = !ent.hidden && px >= viewLeft && px <= viewRight && py >= viewTop && py <= viewBottom;
+      const inView = !ent.hidden && !ent.scriptInvisible && px >= viewLeft && px <= viewRight && py >= viewTop && py <= viewBottom;
       if (!inView) {
         if (ent.el) {
           ent.el.remove();

@@ -22,20 +22,23 @@ import { preloadEggHatch } from '@game/eggHatch';
 import { sound } from '@core/audio/sound';
 import { MAP_OFFSET } from '@core/field/fieldmap';
 import { PLAYER_AVATAR_FLAG_ACRO_BIKE, PLAYER_AVATAR_FLAG_MACH_BIKE, PLAYER_AVATAR_FLAG_ON_FOOT, PLAYER_AVATAR_FLAG_SURFING } from '@core/field/playerAvatar';
+import { objectStateKey, readViewerObjectState, objectDirection, type ViewerObjectState } from './objectState';
 import { syncViewerLocation, type NavigationSave } from './session';
 
 type Hooks = {
   pause(active: boolean): void;
   project(canvas: HTMLCanvasElement, game: Game): void;
-  hideObjects(hidden: boolean, localId: number): void;
+  hideObjects(hidden: boolean, mapId: string, localId: number): void;
   /** Engine moved the player (white-out respawn): continue the viewer from here. */
   relocate(nav: NavigationSave): void;
-  /** An object event the script removed (cut tree, smashed rock): drop it from the viewer map. */
-  removeObject(mapId: string, localId: number): void;
+  readObjects(mapId: string): ViewerObjectState[];
+  syncObjects(states: ViewerObjectState[]): void;
   /** The bag's Bicycle (or its dismount) changed the avatar state. */
   setBike(on: boolean): void;
 };
 export class EngineInteraction {
+  private interactionMapId = '';
+  private observedObjects = new Map<string, ViewerObjectState>();
   readonly root = document.createElement('section');
   private readonly ui = document.createElement('canvas');
   private readonly field = document.createElement('canvas');
@@ -77,11 +80,43 @@ export class EngineInteraction {
     // Wild encounters and trainer battles run the source battle scene.
     await Promise.all([preloadBattleAssets(), sound.loadCryData(), preloadEggHatch()]);
     this.game = new Game(this.engineCanvas);
+    this.game.overworld.objects.onScriptObjectRemoved = object => {
+      if (!this.open || object.isPlayer || !this.matchesObjectMap(object)) return;
+      const state = readViewerObjectState(object,this.interactionMapId,true);
+      this.observedObjects.set(objectStateKey(state),state);
+    };
     installBattleHost(this.game);
     joy.attach(); joy.setExternalInputEnabled(false);
   }
+  private matchesObjectMap(object: {mapNum: number;mapGroup: number}): boolean {
+    const num=rom.mapNum(this.interactionMapId);
+    return object.mapNum===(num&255)&&object.mapGroup===(num>>>8);
+  }
+  private observeObjects(): void {
+    if (!this.game || !this.interactionMapId) return;
+    for (const object of this.game.overworld.objects.list) {
+      if (object.isPlayer || !this.matchesObjectMap(object)) continue;
+      const state=readViewerObjectState(object,this.interactionMapId);
+      this.observedObjects.set(objectStateKey(state),state);
+    }
+  }
+  private async prepareObjects(nav: NavigationSave): Promise<void> {
+    const ow=this.game!.overworld;
+    await ow.prepareViewerInteraction(nav.mapId);
+    const num=rom.mapNum(nav.mapId);
+    for (const state of this.hooks.readObjects(nav.mapId)) {
+      const object=ow.objects.byLocalIdAndMap(state.localId,num&255,num>>>8);
+      if (!object) continue; // Source spawning/view limits remain authoritative.
+      if (state.removed) { ow.objects.remove(object); continue; }
+      ow.objects.MoveObjectEventToMapCoords(object,state.x+MAP_OFFSET,state.y+MAP_OFFSET);
+      ow.objects.turn(object,objectDirection(state.direction));
+      object.invisible=state.invisible;
+    }
+  }
   /** The engine may have moved the player (white-out): hand its position back to the viewer. */
   private finish(nav: NavigationSave): void {
+    this.observeObjects();
+    this.hooks.syncObjects([...this.observedObjects.values()]);
     this.close();
     this.wildMap = '';
     if (!this.game) return;
@@ -90,8 +125,6 @@ export class EngineInteraction {
       if (bike !== (this.menuVehicle === 'bike')) this.hooks.setBike(bike);
     }
     this.menuVehicle = null;
-    // removeobject (scrcmd.c) on the interacted object: cut trees, smashed rocks.
-    if (this.localId && !this.game.overworld.objects.list.some(o => o.localId === this.localId)) this.hooks.removeObject(nav.mapId, this.localId);
     // DoWhiteOut/warps update save.location before the engine's own map load
     // completes, so the destination is read from the record, not the loaded map.
     const { mapGroup, mapNum, x, y } = save.location;
@@ -104,7 +137,7 @@ export class EngineInteraction {
   private close(): void {
     cancelAnimationFrame(this.frame); this.root.hidden = true; this.field.remove();
     joy.initKeys(); joy.setExternalInputEnabled(false);
-    this.hooks.hideObjects(false, this.localId); this.hooks.pause(false);
+    this.hooks.hideObjects(false, this.interactionMapId, this.localId); this.hooks.pause(false);
     document.getElementById('viewport')?.focus({preventScroll:true});
   }
   private present(): void {
@@ -146,7 +179,7 @@ export class EngineInteraction {
       const object = ow.objects.list.find(o=>o.localId===localId);
       const template = ow.header.objects.find(o=>!o.clone&&o.localId===localId);
       if(!object||!template||template.clone||!template.script)throw Error('NPC sin script fuente');
-      this.hooks.hideObjects(true,localId);
+      this.hooks.hideObjects(true,nav.mapId,localId);
       ow.selectedObject=ow.objects.indexOf(object);
       varSet(SV.LAST_TALKED,localId);varSet(SV.FACING,save.facing);
       ow.script.ScriptContext_SetupScript(template.script);
@@ -167,6 +200,7 @@ export class EngineInteraction {
   private menuVehicle: 'walk' | 'bike' | 'surf' | null = null;
   private async run(nav: NavigationSave, localId: number, fullScreen: boolean, start: (game: Game) => void, prepared = false): Promise<void> {
     if (this.open) return;
+    this.interactionMapId=nav.mapId;this.observedObjects.clear();
     this.localId=localId; this.fullScreen=fullScreen; this.hooks.pause(true); this.root.hidden=false;
     this.root.dataset.loading='true';
     try {
@@ -174,8 +208,9 @@ export class EngineInteraction {
       const game = this.game!, ow = game.overworld;
       if (!prepared) {
         syncViewerLocation(nav);
-        await ow.prepareViewerInteraction(nav.mapId);
+        await this.prepareObjects(nav);
       }
+      this.observeObjects();
       this.initialSprites=new Set(ow.sprites.sprites);
       start(game);
       joy.initKeys();joy.setExternalInputEnabled(true);
@@ -187,6 +222,7 @@ export class EngineInteraction {
         if(!this.open)return;
         this.accumulator+=Math.min(100,now-this.last);this.last=now;
         while(this.accumulator>=FRAME_MS){game.frame();this.accumulator-=FRAME_MS;}
+        this.observeObjects();
         this.present();
         this.root.dataset.scriptActive=String(ow.script.isActive()||(fullScreen&&ow.controlsLocked));
         this.root.dataset.script=ow.script.global.entry;
@@ -227,7 +263,7 @@ export class EngineInteraction {
       await (this.loading ??= this.initialize());
       const ow = this.game!.overworld;
       syncViewerLocation(nav);
-      await ow.prepareViewerInteraction(nav.mapId);
+      await this.prepareObjects(nav);
       this.wildMap = nav.mapId;
       ow.RunOnTransitionMapScript();
     } finally { this.testingWild = false; }
@@ -245,7 +281,7 @@ export class EngineInteraction {
       await (this.loading ??= this.initialize());
       const ow = this.game!.overworld;
       syncViewerLocation(from);
-      if (this.wildMap !== from.mapId) { await ow.prepareViewerInteraction(from.mapId); this.wildMap = from.mapId; }
+      if (this.wildMap !== from.mapId) { await this.prepareObjects(from); this.wildMap = from.mapId; }
       const target = rom.mapNum(toMapId);
       ow.warpDestination = { mapGroup: target >>> 8, mapNum: target & 255, warpId: -1, x: -1, y: -1 };
       ow.objects.turn(ow.player.object, save.facing);
@@ -265,7 +301,7 @@ export class EngineInteraction {
       await (this.loading ??= this.initialize());
       const game = this.game!, ow = game.overworld;
       syncViewerLocation(nav);
-      if (this.wildMap !== nav.mapId) { await ow.prepareViewerInteraction(nav.mapId); this.wildMap = nav.mapId; }
+      if (this.wildMap !== nav.mapId) { await this.prepareObjects(nav); this.wildMap = nav.mapId; }
       const player = ow.player.object;
       ow.objects.MoveObjectEventToMapCoords(player, nav.x + MAP_OFFSET, nav.y + MAP_OFFSET);
       ow.objects.turn(player, save.facing);
@@ -303,7 +339,7 @@ export class EngineInteraction {
       await (this.loading ??= this.initialize());
       const game = this.game!, ow = game.overworld;
       syncViewerLocation(nav);
-      if (this.wildMap !== nav.mapId) { await ow.prepareViewerInteraction(nav.mapId); this.wildMap = nav.mapId; }
+      if (this.wildMap !== nav.mapId) { await this.prepareObjects(nav); this.wildMap = nav.mapId; }
       // Place the engine avatar (and camera) exactly where the viewer player stands.
       const player = ow.player.object;
       ow.objects.MoveObjectEventToMapCoords(player, nav.x + MAP_OFFSET, nav.y + MAP_OFFSET);
@@ -315,7 +351,7 @@ export class EngineInteraction {
       if (ow.effects.checkForTrainersWantingBattle()) {
         const trainerId = (game.trainerSee as unknown as { approaching?: { trainer: { localId: number } } }).approaching?.trainer.localId ?? 0;
         started = true;
-        await this.run(nav, trainerId, true, () => { if (trainerId) this.hooks.hideObjects(true, trainerId); }, true);
+        await this.run(nav, trainerId, true, () => { if (trainerId) this.hooks.hideObjects(true, nav.mapId, trainerId); }, true);
         return true;
       }
       // ProcessPlayerFieldInput tookStep (field_control_avatar.c): step stat, then the
