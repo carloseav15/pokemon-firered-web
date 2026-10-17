@@ -70,7 +70,7 @@ Anotados el 2026-10-16 a partir de lo que esa sesión dejó sin probar, sin veri
 - [ ] Entrada táctil/móvil para el menú del juego (Enter no existe; solo hay botón) y para los combates.
 - [x] Presencia general por flags de guardado, exteriores/interiores, dibujo/colisión/interacción y banderas iniciales fuente solo en partidas nuevas — `2fc61ad4`. Chromium: ocultar/restaurar, guardado cambiado/recarga, interior numérico, Corte y sesión PASS; victoria real Liam/Brock (equipo Nv.40 PREPARED), medalla/MT y carga de Plateada (URL PREPARED): guía oculto/ayudante visible PASS. 49 flags iniciales contrastadas con fuente; 58 checks/tipos/honesty/build PASS.
 - [x] Ciclo temporal por mapa y conservación de plantillas retiradas — `50350097`. Reutiliza `clearTempFieldEventData` en conexiones/puertas/warps del motor; menú/continuar conservan el estado del mapa y los flags temporales no se propagan a otros sectores. Chromium: Corte real→guardar/Continuar/recarga→Celeste, puerta/menú de Paleta, presencia general, Cuerda Huida y Excavar PASS; entradas PREPARED según jobs. Check existente cubre warp al mismo mapa y retirada/restauración sin flag (fixtures PREPARED); 58 checks/tipos/honesty/build PASS.
-- [ ] Visor: conservar las posiciones/direcciones/invisibilidad/retiradas dinámicas al guardar y continuar; hoy el puente las mantiene entre interacciones, pero la reconstrucción del mapa las restablece.
+- [x] Visor: persistencia de posiciones/direcciones/invisibilidad/retiradas **observadas del mapa actual** — `31dfe405`: Liam real conserva pose y colisiones tras guardar/Continuar/recargar URL; compatibilidad legacy y serialización con fixtures PREPARED. La persistencia completa de clones y actores no observados sigue abierta en B y R1.
 - [ ] Quest Log conectado a los eventos del visor.
 - [ ] Tarea de curación del Centro tras derrota (`FieldCB_RushInjuredPokemonToCenter`) y su diálogo: hoy solo se reubica.
 - [ ] Contadores por paso fuera de pasos reales (bici rápida, saltos) y sincronía de pasos en mapas distintos.
@@ -86,6 +86,160 @@ Anotados el 2026-10-16 a partir de lo que esa sesión dejó sin probar, sin veri
 **E. Fuera de las prioridades 1–8 (solo por petición expresa)**
 - [ ] NPC genéricos y eventos de mapa (punto 9): hoy corren enfermeras, tenderos, obstáculos de campo, entrenadores y gimnasios; el resto muestra un texto genérico.
 - [ ] Revisión general de navegación, gráficos, animaciones y sonido (punto 10) e inicio definitivo (punto 11).
+
+## Hoja de ruta para el siguiente agente
+
+Punto de entrega: 2026-10-16, código `059a1a25`, estado `33362fb5`.
+Esta sección ordena las tareas abiertas de arriba; no sustituye sus límites ni
+abre otra lista de trabajo. La meta es completar el juego de un jugador dentro
+del visor, con lógica fuente y guardado compartido; la cobertura por nombres no
+mide esa integración ni la fidelidad.
+
+### Arranque y reglas de continuidad
+
+1. Leer `AGENTS.md`, `PORTING-STATUS.md`, esta sección y la fila de la tanda elegida;
+   comprobar `git status` y la rama. Un agente a la vez en `main`, sin ramas,
+   worktrees, subagentes ni push. Preservar cambios ajenos.
+2. Empezar por **R1**. No volver a implementar flags, Corte, guardado de poses
+   observadas ni los predicados de aparición: ya están conectados. Confirmar el
+   estado vivo antes de editar; los commits citados son evidencia, no un permiso
+   para restaurar archivos completos ni descartar cambios posteriores.
+3. Una tanda integrada por archivo/familia o dependencia funcional completa;
+   leer C, tipos, tablas y callers. No inventar retornos, stubs ni progreso de
+   historia para cerrar una prueba. Los puntos 9–11 siguen sin autorización.
+4. No lanzar una revisión general ni todas las suites por rutina. Navegador solo
+   cuando lo pida el usuario o para diagnosticar un fallo concreto. Si una tanda
+   no se prueba jugando, dejar explícito ese límite.
+
+### Lo que ya se entregó y no se debe rehacer
+
+| Entrega | Estado comprobado | Límite que conserva |
+| --- | --- | --- |
+| `2fc61ad4` | Flags controlan presencia, colisión e interacción; inicialización desde fuente solo en partidas nuevas | No ejecuta toda la historia |
+| `50350097` | Ciclo temporal por mapa; menús/Continuar conservan temporales | No sustituye las reglas de spawn |
+| `f5e80a9c` | Poses/invisibilidad/retiradas explícitas observadas pasan del motor al visor; Liam se mueve realmente tras acercarse | Solo objetos observados del mapa actual |
+| `31dfe405` | Guardar/Continuar/recargar conserva pose, orientación y colisión de Liam; SAVE fuente escribe la misma partida | Proyección del visor de un mapa; no es el snapshot completo de slots del motor |
+| `059a1a25` | Predicados C compartidos de árboles/rocas; siete identidades/coordenadas de clones contrastadas; Corte y Ruta 9↔Celeste con aparición/retención comprobadas | No demuestra sincronización completa de clones NPC ni de todos los bordes |
+
+Las pruebas de juego citadas emplean entradas PREPARED declaradas en los jobs.
+No equivalen a un recorrido desde Nueva partida ni a comparación audiovisual ROM.
+Los contadores vivos están exclusivamente en `PENDING.md` y `PORT-INVENTORY.md`.
+
+### R1. Completar el puente de objetos antes de construir más eventos
+
+**Objetivo:** un objeto conserva identidad fuente, posición y estado correctos
+cuando se representa como clon o sale de la ventana de spawn. Los cambios hechos
+por scripts deben verse y colisionar correctamente, y sobrevivir al guardado
+cuando el C los conserva. Corresponde a la fila abierta B de objetos dinámicos.
+
+**Inspección concreta pendiente, en este orden:**
+
+1. Separar identidad y espacio de coordenadas. Un clon conserva `mapNum/mapGroup`
+   del objeto original, pero sus coordenadas están en el mapa cargado. No basta
+   con quitar `matchesObjectMap`: convertir coordenadas usando el origen del mapa
+   cargado y el mapa propietario, evitando duplicados y IDs locales homónimos.
+2. Conectar observación, interacción y retiradas de clones. Hoy `observeObjects`
+   y el observador de retiradas filtran el mapa actual; `show` busca por `localId`
+   y una plantilla normal de la cabecera actual. Revisar juntos selección,
+   script fuente, `LAST_TALKED`, ocultación visual y restauración. No habilitar
+   todos los diálogos genéricos ni scripts automáticos de historia.
+3. Resolver actores fuera de spawn desde sus callers C reales: `addobjectat`,
+   `removeobjectat`, movimientos y cambios de coordenadas/plantillas. Hoy
+   `prepareObjects` omite objetos no cargados. No convertir culling de cámara en
+   eliminación explícita ni fabricar un sprite/retorno para un objeto ausente.
+4. Extender la persistencia solo después de fijar identidad/coordenadas. Hoy
+   `viewerObjects` es versión 1, pertenece a un único mapa cargado y contiene
+   posición, dirección, invisibilidad y retirada. Diseñar migración compatible,
+   propiedad de temporales y carga antes de reconstruir sprites/colisiones.
+   Reutilizar el guardado completo del motor cuando encaje; no sustituirlo por
+   esta proyección. Verificar SAVE fuente y guardar desde ajustes por separado.
+5. Cerrar los otros campos que requieran los callers de la tanda: gráficos,
+   elevación y tipo de movimiento. Revisar todos los consumidores al ampliar
+   `ViewerObjectState`; conservar pendientes los campos/casos todavía no tratados.
+
+**Archivos de entrada y fuente:**
+
+- `src/viewer/engineInteraction.ts`: `matchesObjectMap`, `observeObjects`,
+  `prepareObjects`, `show`, `finish` y observador `onScriptObjectRemoved`.
+- `src/viewer/main.ts`: `readObjects`/`syncObjects`, `applyViewerObjects`,
+  `continueViewerSession`, `renderMap` y cambios de mundo/mapa.
+- `src/viewer/objectState.ts`, `session.ts`, `mapEvents.ts`,
+  `render/entities.ts`, `data/objectPresence.ts`, `data/objectSpawns.ts`.
+- `src/core/field/objectEvents.ts`, `objectSpawnRules.ts`, `overworld.ts`;
+  `src/games/firered/loadSave.ts` y `save.ts` para slots y serialización.
+- Fuente: `../pokefirered/src/event_object_movement.c` (inicialización de clones,
+  spawn/culling, coordenadas y retirada), `overworld.c`, `scrcmd.c`,
+  `load_save.c` y scripts de los mapas elegidos. Leer los cuerpos completos y
+  los callers de la familia, sin recuperar el procedimiento histórico.
+
+**Precauciones de la implementación vigente:**
+
+- `ViewerObjectSpawns` conserva obstáculos activos entre conexiones; warp forzado
+  reinicia el estado. `retainedViewerObjects` es una adaptación temporal durante
+  `prepareViewerInteraction`, se limpia en `finally` y evita volver a aplicar
+  efectos de inicialización a identidades ya activas. No es un estado C persistente.
+- La ausencia de un objeto en `objects.list` no acredita `removeobject`.
+  `onScriptObjectRemoved` distingue retirada explícita de culling.
+- Los siete clones del índice son cinco árboles y dos NPC. El de Ruta 21 Norte
+  apunta al objeto 2 de Paleta; el de Ruta 4 al objeto 12 de Celeste. Usar datos
+  exportados para confirmar flags, coordenadas y scripts, no resultados inventados.
+- No editar a mano `public/fr/` ni `src/games/firered/generated/`.
+
+**Criterios para cerrar R1:** identidad por mapa sin duplicados ni confusión entre
+IDs homónimos; transformación de coordenadas correcta; culling distinto de
+retirada; colisión/invisibilidad coherentes; menú no reinicia posiciones;
+conexión y warp respetan sus ciclos; SAVE/Continuar/recarga conserva los estados
+que correspondan; partidas antiguas siguen cargando. Usar NPC/objetos reales y
+resultados producidos por scripts cuando se haga comprobación de juego. Si solo
+hay fixtures estáticos PREPARED, declarar esa cobertura y mantener la revisión
+jugable abierta. No cerrar toda la fila B con un único caso de clon.
+
+### R2–R7. Orden posterior dentro de las prioridades 1–8
+
+| Orden | Trabajo | Condición de cierre |
+| --- | --- | --- |
+| R2 | Fuerza y bloques en interiores/cuevas | Movimiento fuente, colisión, interruptores/pozos, cambios de mapa y guardado coherentes; resolver primero las dependencias de R1 que use |
+| R3 | Pesca, Golpe Roca, olor dulce y Safari; después fantasmas/merodeadores que necesiten esas rutas | Seleccionar cada familia completa y sus callers; encuentro/combate/retorno y estado persistente. No ampliar a toda la historia |
+| R4 | Evolución y aprendizaje de movimientos | Subida de nivel desde combate salvaje y entrenador, aceptar/cancelar según C, retorno al visor y guardado |
+| R5 | Surf mediante MO y acciones desde equipo; Flash/Corte/Fuerza aplicables | Requisitos, rechazo sin permiso, selección/uso fuente y transición correcta; sustituir el embarque automático solo al conectar la vía real |
+| R6 | Animaciones completas de Vuelo/Teletransporte/Cuerda Huida | Terminar las callbacks/tareas necesarias antes de entregar navegación a `save.location`; mantener retorno/destino correctos |
+| R7 | Otros siete gimnasios: Misty, Surge, Erika, Koga, Sabrina, Blaine y Giovanni | Una tanda integrada por gimnasio/familia viable: acceso autorizado, puzzle, entrenadores, líder, recompensa y medalla persistentes; no preparar la victoria |
+
+Antes de dar R7 y las prioridades 1–8 por cerradas, resolver los pendientes A/C:
+tiendas/centros/menús, derrota y reaparición, pasos/precargas, entrada táctil,
+Quest Log y curación tras derrota según sus filas. Las dependencias pueden
+adelantarse justificadamente; una ruta bloqueada no autoriza inventar datos ni
+iniciar el resto de la historia. Al completar 1–8, detenerse y pedir la siguiente
+dirección: no iniciar automáticamente 9, 10 ni 11.
+
+### Verificación y entrega para cada tanda
+
+- Código: `npm run check:port`, `npm run check:honesty`, `npm run build`,
+  `git diff --check`; ejecutar además el check focalizado de la regla modificada.
+  Cambios críticos en guardado/API/scheduler necesitan comprobación focal antes
+  de construir la siguiente tanda. No ampliar baselines de honestidad.
+- Harness existente: `npm run check:viewer-warps` cubre identidad, temporales,
+  poses, serialización y límites de aparición. Extenderlo con casos significativos.
+- Para un diagnóstico de navegador, reutilizar
+  `node tools/playtest/pw.mjs tools/playtest/smoke/<job>.job.mjs /tmp/<salida>`;
+  levantar Vite en 5173 y usar `PW_TIMEOUT_MS=240000` si el caso lo necesita.
+  Jobs relevantes: `viewer-game-object-movement`, `viewer-game-cut`,
+  `viewer-game-object-flags`, `viewer-game-session`, `viewer-game-startmenu-save`,
+  `viewer-game-escape` y `viewer-game-brock` (todos `.job.mjs`).
+- Declarar PREPARED para ubicación, equipo, objetos o flags de entrada. No preparar
+  el movimiento, victoria, retirada o guardado que se afirma demostrar. Un cambio
+  solo del fragmento URL no reconstruye el visor: usar recarga/navegación completa.
+  Evitar HMR durante el recorrido; dejar terminar los cambios de código primero.
+- Un commit local de código por tanda, inglés imperativo y coautor de Codex,
+  sin archivos de estado. Al final de sesión (o cada cinco tandas), ejecutar
+  `npm run inventory` y después `npm run pending`; actualizar estado/tareas y
+  `KNOWN_GAPS` en un único commit documental. Si cambia `KNOWN_GAPS`, regenerar
+  de nuevo pendientes. No cambiar el algoritmo para aumentar cobertura.
+- Reportar cuerpos C nuevos y equivalencias/wrappers por separado, incluso si
+  ambos son cero por tratarse de integración. Mantener el estado en ocho líneas,
+  las revisiones abiertas y el árbol limpio cuando no haya cambios ajenos.
+- Si la entrega es solo documental: coherencia/enlaces/diff y `check:honesty`;
+  no ejecutar tipos, build, inventario ni juego por rutina.
 
 ## 0. Cómo trabajar
 
