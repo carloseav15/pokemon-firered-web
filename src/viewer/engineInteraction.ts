@@ -201,6 +201,7 @@ export class EngineInteraction {
   private async run(nav: NavigationSave, localId: number, fullScreen: boolean, start: (game: Game) => void, prepared = false): Promise<void> {
     if (this.open) return;
     this.interactionMapId=nav.mapId;this.observedObjects.clear();
+    for(const state of this.hooks.readObjects(nav.mapId))this.observedObjects.set(objectStateKey(state),state);
     this.localId=localId; this.fullScreen=fullScreen; this.hooks.pause(true); this.root.hidden=false;
     this.root.dataset.loading='true';
     try {

@@ -1,5 +1,6 @@
+import { savedViewerObjects, storeViewerObjects, type ViewerObjectState } from "./objectState";
 import { initializeViewerSession, saveViewerSession, viewerCheckpoint, type NavigationSave } from "./session";
-import { enterViewerEventMap, restoreViewerEventMap } from "./mapEvents";
+import { enterViewerEventMap, restoreViewerEventMap, viewerEventMap } from "./mapEvents";
 import { isViewerObjectPresent } from "./data/objectPresence";
 import { EngineInteraction } from "./engineInteraction";
 import { save as gameSave } from "@game/save";
@@ -171,6 +172,9 @@ async function continueViewerSession(): Promise<void> {
   state.playerChar = gameSave.playerGender === C.FEMALE ? "leaf" : "red";
   (document.getElementById("player-char") as HTMLSelectElement).value = state.playerChar;
   await changeNavigationWorld(nav.mapId);
+  await rom.loadMap(nav.mapId);
+  entityManager.resetRemovedObjects();
+  applyViewerObjects(savedViewerObjects(nav.mapId));
   const info = index.maps[nav.mapId]!;
   navigationWarps.restore(nav.dynamic);
   await startExploration(info.x+nav.x, info.y+nav.y);
@@ -1897,6 +1901,17 @@ async function build(): Promise<void> {
 
 }
 
+function applyViewerObjects(states: ViewerObjectState[]): void {
+  for (const state of states) {
+    const info=index.maps[state.mapId];
+    const template=rom.cachedMap(state.mapId)?.objects.find(o=>!o.clone&&o.localId===state.localId);
+    if (!info||!template||template.clone) continue;
+    const element:Element={map:state.mapId,localId:template.localId,x:template.x,y:template.y,flag:template.flag,graphics:template.graphicsName,movementType:template.movementType,layer:'npc',
+      direction:template.movementType===C.MOVEMENT_TYPE_FACE_UP?'up':template.movementType===C.MOVEMENT_TYPE_FACE_LEFT?'left':template.movementType===C.MOVEMENT_TYPE_FACE_RIGHT?'right':'down'};
+    entityManager.applyObjectState(state,element,info.x,info.y);
+  }
+}
+
 function setupUi(): void {
   if (!HOENN) engineInteraction = new EngineInteraction({
     pause: pauseInteraction,
@@ -1913,14 +1928,9 @@ function setupUi(): void {
       return entityManager.entities.filter(e=>e.element.map===mapId&&e.element.localId!==undefined&&e.engineState).map(e=>({mapId,localId:e.element.localId!,x:e.gx-info.x,y:e.gy-info.y,direction:e.dir,invisible:!!e.scriptInvisible,removed:!!e.removed||!!e.hidden}));
     },
     syncObjects: states => {
-      for (const state of states) {
-        const info=index.maps[state.mapId];
-        const template=rom.cachedMap(state.mapId)?.objects.find(o=>!o.clone&&o.localId===state.localId);
-        if (!info||!template||template.clone) continue;
-        const element:Element={map:state.mapId,localId:template.localId,x:template.x,y:template.y,flag:template.flag,graphics:template.graphicsName,movementType:template.movementType,layer:'npc',
-          direction:template.movementType===C.MOVEMENT_TYPE_FACE_UP?'up':template.movementType===C.MOVEMENT_TYPE_FACE_LEFT?'left':template.movementType===C.MOVEMENT_TYPE_FACE_RIGHT?'right':'down'};
-        entityManager.applyObjectState(state,element,info.x,info.y);
-      }
+      const mapId=viewerEventMap();
+      if(mapId)storeViewerObjects(mapId,states.filter(s=>s.mapId===mapId));
+      applyViewerObjects(states);
       updateEntitiesView();
     },
     setBike: on => { if (on !== (playerMode === "bike")) toggleBike(); },
@@ -2345,6 +2355,11 @@ build()
     if (startExplore) {
       if (!HOENN) await initializeViewerSession(index.initialFlags);
       if (!HOENN && startMapId && !index.maps[startMapId]) await changeNavigationWorld(startMapId);
+      const checkpoint=!HOENN?viewerCheckpoint():undefined;
+      if(checkpoint&&(!startMapId||startMapId===checkpoint.mapId)){
+        await rom.loadMap(checkpoint.mapId);
+        applyViewerObjects(savedViewerObjects(checkpoint.mapId));
+      }
       const valid = startPlayer && startPlayer.x >= minX && startPlayer.y >= minY
         && startPlayer.x < minX + index.world.width && startPlayer.y < minY + index.world.height;
       if (!HOENN && !startPlayer && viewerCheckpoint()) await continueViewerSession();

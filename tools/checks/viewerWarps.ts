@@ -138,3 +138,28 @@ objects.applyObjectState({...moved,localId:77,removed:true},{...tree,localId:77,
 objects.syncPresence(isViewerObjectPresent);
 const retired=objects.entities.find(e=>e.element.localId===77)!;
 assert.equal(retired.removed,true);assert.equal(retired.hidden,true);assert.equal(retired.engineState,true);
+
+// PREPARED projection fixtures exercise JSON compatibility and map ownership.
+const projections=await import('../../src/viewer/objectState');
+const projection={mapId:'MAP_PEWTER_CITY_GYM',localId:2,x:5,y:8,direction:'east' as const,invisible:true,removed:false};
+projections.storeViewerObjects(projection.mapId,[projection]);
+S.setSave(JSON.parse(JSON.stringify(S.save)));
+assert.deepEqual(projections.savedViewerObjects(projection.mapId),[projection]);
+assert.deepEqual(projections.savedViewerObjects('MAP_ROUTE9'),[]);
+const projectionCopy=projections.savedViewerObjects(projection.mapId);
+projectionCopy[0]!.x=99;
+assert.equal(projections.savedViewerObjects(projection.mapId)[0]!.x,5);
+projections.storeViewerObjects(projection.mapId,[{...projection,x:NaN}]); // PREPARED malformed input
+assert.deepEqual(projections.savedViewerObjects(projection.mapId),[]);
+projections.storeViewerObjects(projection.mapId,[projection,projection]); // PREPARED duplicate identities
+assert.deepEqual(projections.savedViewerObjects(projection.mapId),[]);
+projections.storeViewerObjects(projection.mapId,[projection]);
+
+events.restoreViewerEventMap(projection.mapId);
+assert.equal(events.enterViewerEventMap(projection.mapId),false);
+assert.equal(projections.savedViewerObjects(projection.mapId).length,1);
+events.enterViewerEventMap('MAP_ROUTE9');
+assert.deepEqual(projections.savedViewerObjects(projection.mapId),[]);
+S.setSave(S.newSaveData());
+assert.deepEqual(projections.savedViewerObjects(projection.mapId),[]);
+console.log('PREPARED projection fixtures; JSON round trip, legacy save and map ownership PASS');

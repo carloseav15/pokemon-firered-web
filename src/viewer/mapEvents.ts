@@ -1,3 +1,4 @@
+import { clearViewerObjects } from "./objectState";
 import { clearTempFieldEventData } from "@game/save";
 
 // The live SaveBlock's TEMP_FLAGS/TEMP_VARS describe one loaded map, not every
@@ -13,6 +14,7 @@ export function restoreViewerEventMap(mapId: string | null): void { currentMap =
 export function enterViewerEventMap(mapId: string, warp = false): boolean {
   if (currentMap === mapId && !warp) return false;
   if (currentMap !== null) clearTempFieldEventData();
+  clearViewerObjects();
   currentMap = mapId;
   return true;
 }

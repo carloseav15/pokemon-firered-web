@@ -28,6 +28,15 @@ export default async function run(ctx) {
  await p.locator('#explore-game-menu').click();await p.locator('#engine-interaction').waitFor({state:'visible'});await p.waitForTimeout(2000);
  await press('x',100);await p.locator('#engine-interaction').waitFor({state:'hidden'});
  const afterMenu=await pose();if(JSON.stringify(afterMenu)!==JSON.stringify(after))throw Error('Menu reset trainer pose '+JSON.stringify({after,afterMenu}));
+ // Persist the actual trainer approach; no saved NPC outcome is prepared.
+ await p.getByRole('button',{name:'Menú · Esc'}).click();
+ await p.getByRole('button',{name:'Guardar partida',exact:true}).click();
+ await p.keyboard.press('Escape');
+ await p.getByRole('button',{name:'Menú · Esc'}).click();
+ await p.locator('#explore-continue').click();await p.waitForTimeout(1500);
+ if(JSON.stringify(await pose())!==JSON.stringify(after))throw Error('Continue reset trainer pose');
+ await p.reload();await p.waitForFunction(()=>performance.getEntriesByName('viewer-interactive').length);await p.waitForTimeout(1500);
+ if(JSON.stringify(await pose())!==JSON.stringify(after))throw Error('Reload reset trainer pose');
  await p.locator('#viewport').focus();await press('ArrowLeft');
  if(JSON.stringify(await pos())!==JSON.stringify(player))throw Error('Moved trainer failed to block its destination tile');
  // Observe the actual grid to plan around the gym rocks; inputs still walk the
