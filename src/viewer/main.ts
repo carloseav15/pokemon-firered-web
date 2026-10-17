@@ -4,7 +4,7 @@ import { initializeViewerSession, saveViewerSession, viewerCheckpoint, type Navi
 import { enterViewerEventMap, restoreViewerEventMap, viewerEventMap } from "./mapEvents";
 import { isViewerObjectPresent } from "./data/objectPresence";
 import { EngineInteraction } from "./engineInteraction";
-import { save as gameSave } from "@game/save";
+import { flagClear, flagGet, flagSet, save as gameSave } from "@game/save";
 import { ElevatorAnimation } from "@core/field/elevatorAnimation";
 import { ElevatorMenu } from "./ui/elevator";
 import { loadElevators, type ElevatorDefinition, type ElevatorChoice } from "./elevators";
@@ -26,7 +26,7 @@ import { SurfSupport } from "./render/surf";
 // colisiones, bici, surf, salientes, efectos de campo (hierba, agua, polvo, huellas de arena y bici),
 // interacción y deambulación de NPCs, música ambiental dinámica (12 pistas BGM) y efectos de sonido (SE).
 
-import type { MapHeader, TilesetData } from "@core/rom";
+import type { MapHeader, MapObjectTemplate, TilesetData } from "@core/rom";
 import { NavigationWarps, warpAt, stepWarpBehavior, inputWarpBehavior, warpArrivalDirection, type WarpAddress } from "./navigation";
 import { Rom, rom, setDataRoot } from "@core/rom";
 import { TileRenderer } from "@core/field/tileRenderer";
@@ -837,6 +837,154 @@ function toggleBike(): void {
 
 const keysDown = new Set<string>();
 
+function tryPushBoulder(boulderEnt: LiveEntity, direction: Direction): boolean {
+  if (HOENN || !playerActive || isStepping || warpBusy || elevatorBusy) return false;
+  if (playerMode === "surf") return false;
+  const flagId = C.FLAG_SYS_USE_STRENGTH;
+  if (!flagGet(flagId)) return false;
+
+  const dx = direction === "east" ? 1 : direction === "west" ? -1 : 0;
+  const dy = direction === "south" ? 1 : direction === "north" ? -1 : 0;
+  const bx = boulderEnt.gx + dx;
+  const by = boulderEnt.gy + dy;
+
+  if (!worldGrid.isLoaded(bx, by)) return false;
+  if (entityManager.findAt(bx, by)) return false;
+
+  const behavior = worldGrid.behaviorAt(bx, by);
+  const isHole = behavior === C.MB_FALL_WARP;
+  const isDoor = MB.MetatileBehavior_IsNonAnimDoor(behavior);
+  const walkable = worldGrid.isWalkable(bx, by, "walk");
+  if (!isHole && (!walkable || isDoor)) return false;
+
+  isStepping = true;
+  playerMoving = true;
+  stepRunning = false;
+  audioController.playSE(C.SE_M_STRENGTH);
+
+  const startTick = viewerClock.tick;
+  avatarAnimator?.begin(state.playerChar, playerMode, direction, "walk", startTick);
+
+  const fromX = boulderEnt.gx, fromY = boulderEnt.gy;
+  const startPxX = (fromX - minX) * TILE;
+  const startPxY = (fromY - minY) * TILE;
+  const destPxX = (bx - minX) * TILE;
+  const destPxY = (by - minY) * TILE;
+  const gfxInfo = gfxInfoOf(boulderEnt.element.graphics ?? "") ?? fallbackGfx();
+  const duration = 32 * GBA_FRAME_MS;
+
+  const unsubscribe = viewerClock.subscribe(frame => {
+    const elapsed = (frame.tick - startTick) * GBA_FRAME_MS;
+    const progress = Math.min(1, elapsed / duration);
+    if (boulderEnt.el) {
+      const curPxX = startPxX + (destPxX - startPxX) * progress;
+      const curPxY = startPxY + (destPxY - startPxY) * progress;
+      boulderEnt.el.style.left = `${curPxX - (gfxInfo.w > 16 ? (gfxInfo.w - 16) / 2 : 0)}px`;
+      boulderEnt.el.style.top = `${curPxY - (gfxInfo.h - 16)}px`;
+    }
+    updatePlayerDisplay();
+
+    if (progress >= 1) {
+      unsubscribe();
+      avatarAnimator?.stop(state.playerChar, playerMode, direction, frame.tick);
+      isStepping = false;
+      playerMoving = false;
+
+      if (isHole) {
+        audioController.playSE(C.SE_FALL);
+        boulderEnt.hidden = true;
+        boulderEnt.removed = true;
+        boulderEnt.el?.remove();
+        boulderEnt.el = undefined;
+        worldGrid.setNpc(fromX, fromY, false);
+
+        const mapId = boulderEnt.element.map;
+        const states = savedViewerObjects(mapId);
+        const existing = states.find(s => s.localId === boulderEnt.element.localId);
+        if (existing) {
+          existing.removed = true;
+        } else {
+          states.push({
+            mapId,
+            localId: boulderEnt.element.localId!,
+            x: fromX,
+            y: fromY,
+            direction: "south",
+            invisible: false,
+            removed: true,
+            graphicsId: C.OBJ_EVENT_GFX_PUSHABLE_BOULDER,
+          });
+        }
+        storeViewerObjects(mapId, states);
+
+        const flag = boulderEnt.element.flag;
+        const flagNum = typeof flag === "string" ? (/^(?:0x[\da-f]+|\d+)$/i.test(flag) ? Number(flag) : rom.c(flag)) : flag ?? 0;
+        if (flagNum) flagSet(flagNum);
+
+        const header = mapHeaders.get(mapId);
+        const template = header?.objects.find((o): o is MapObjectTemplate => !o.clone && o.localId === boulderEnt.element.localId);
+        const reveal = template?.trainerType;
+        const revealNum = typeof reveal === "string" ? (/^(?:0x[\da-f]+|\d+)$/i.test(reveal) ? Number(reveal) : rom.c(reveal)) : reveal ?? 0;
+        if (revealNum) flagClear(revealNum);
+      } else {
+        worldGrid.setNpc(fromX, fromY, false);
+        worldGrid.setNpc(bx, by, true);
+        boulderEnt.gx = bx;
+        boulderEnt.gy = by;
+        if (boulderEnt.el) {
+          boulderEnt.el.style.left = `${destPxX - (gfxInfo.w > 16 ? (gfxInfo.w - 16) / 2 : 0)}px`;
+          boulderEnt.el.style.top = `${destPxY - (gfxInfo.h - 16)}px`;
+        }
+
+        const mapId = boulderEnt.element.map;
+        const states = savedViewerObjects(mapId);
+        const existing = states.find(s => s.localId === boulderEnt.element.localId);
+        if (existing) {
+          existing.x = bx;
+          existing.y = by;
+        } else {
+          states.push({
+            mapId,
+            localId: boulderEnt.element.localId!,
+            x: bx,
+            y: by,
+            direction: "south",
+            invisible: false,
+            removed: false,
+            graphicsId: C.OBJ_EVENT_GFX_PUSHABLE_BOULDER,
+          });
+        }
+        storeViewerObjects(mapId, states);
+
+        if (gameSave.objectEventTemplates) {
+          const t = gameSave.objectEventTemplates.find(s => s.localId === boulderEnt.element.localId);
+          if (t) { t.x = bx; t.y = by; }
+        }
+
+        if (behavior === C.MB_STRENGTH_BUTTON) {
+          const hit = findMapAt(bx, by);
+          if (hit) {
+            const [mid, info] = hit;
+            const lx = bx - info.x, ly = by - info.y;
+            const trigger = index.triggers.find(t => t.map === mid && t.x === lx && t.y === ly)
+              ?? mapHeaders.get(mid)?.coords.find(c => c.x === lx && c.y === ly);
+            if (trigger && engineInteraction) {
+              const script = typeof (trigger as { script?: unknown }).script === "string"
+                ? (trigger as { script: string }).script
+                : (trigger as { scriptName?: string }).scriptName;
+              if (script) void engineInteraction.triggerScript(navigationSnapshot(), script);
+            }
+          }
+        }
+      }
+      updatePlayerDisplay();
+      if (keysDown.size) processPlayerStep();
+    }
+  });
+
+  return true;
+}
+
 function processPlayerStep(): void {
   if (!playerActive || engineInteraction?.open || elevatorBusy || fallPreventStep || warpBusy || isStepping || dialogManager.isOpen() || interiorViewer.isOpen() || explorationUi?.paused) return;
 
@@ -1007,6 +1155,10 @@ function processPlayerStep(): void {
     };
     cancelPlayerMotion = viewerClock.subscribe(frame => animateStep(frame.tick));
   } else {
+    const frontEnt = entityManager.findAt(targetX, targetY);
+    if (frontEnt && !frontEnt.hidden && (frontEnt.element.graphics === "OBJ_EVENT_GFX_PUSHABLE_BOULDER" || frontEnt.graphicsId === C.OBJ_EVENT_GFX_PUSHABLE_BOULDER)) {
+      if (tryPushBoulder(frontEnt, playerDir)) return;
+    }
     if (!isStepping) {
       isStepping = true;
       playerMoving = true;
@@ -1867,12 +2019,20 @@ async function build(): Promise<void> {
       elementsByMap.set(mapId, objects);
       const layout = await data.loadLayout(header.layout);
       const padding = 32;
+      const indoorTriggers: Trigger[] = header.coords.map(c => ({
+        map: mapId,
+        x: c.x,
+        y: c.y,
+        var: rom.nameOf("VAR_", c.var) ?? String(c.var),
+        value: c.value,
+        script: c.scriptName ?? "",
+      }));
       next = { minX: -padding, minY: -padding, index: {
         ...exteriorWorld.index,
         world: { width: layout.width + padding*2, height: layout.height + padding*2, origin: mapId },
         maps: { [mapId]: { x:0,y:0,width:layout.width,height:layout.height,layout:header.layout,
           title:header.name,section:header.regionMapSectionName,music:header.music,musicName:header.musicName,weather:header.weather } },
-        elements: [], triggers: [], conflicts: [],
+        elements: [], triggers: indoorTriggers, conflicts: [],
       } };
     }
     // Drain any asynchronous sector before replacing the globals its renderer uses.
@@ -1979,6 +2139,10 @@ function setupUi(): void {
       updateEntitiesView();
     },
     setBike: on => { if (on !== (playerMode === "bike")) toggleBike(); },
+    onSetMetatile: (mapId, lx, ly, metatileId) => {
+      const origin = index.maps[mapId];
+      if (origin) paintNavigationMetatile(origin.x + lx, origin.y + ly, metatileId);
+    },
     hideObjects: (hidden,mapId,localId) => {
       if(playerEl)playerEl.style.visibility=hidden?"hidden":"";
       const ent=entityManager.entities.find(e=>e.element.map===mapId&&e.element.localId===localId);

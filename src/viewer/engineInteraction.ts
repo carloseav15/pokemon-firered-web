@@ -38,6 +38,7 @@ type Hooks = {
   syncObjects(states: ViewerObjectState[]): void;
   /** The bag's Bicycle (or its dismount) changed the avatar state. */
   setBike(on: boolean): void;
+  onSetMetatile?: (mapId: string, x: number, y: number, metatile: number) => void;
 };
 export class EngineInteraction {
   private interactionMapId = '';
@@ -84,6 +85,12 @@ export class EngineInteraction {
     // Wild encounters and trainer battles run the source battle scene.
     await Promise.all([preloadBattleAssets(), sound.loadCryData(), preloadEggHatch()]);
     this.game = new Game(this.engineCanvas);
+    this.game.overworld.map.onChange = (x, y) => {
+      if (!this.game) return;
+      const id = this.game.overworld.map.metatileIdAt(x, y);
+      const header = this.game.overworld.header;
+      this.hooks.onSetMetatile?.(header.id, x - MAP_OFFSET, y - MAP_OFFSET, id);
+    };
     this.game.overworld.objects.onScriptObjectRemoved = object => {
       if (!this.open || object.isPlayer) return;
       const state = this.objectState(object,true);
@@ -409,6 +416,23 @@ export class EngineInteraction {
       return true;
     } finally {
       this.testingWild = false;
+      if (!started) this.root.dataset.loading = 'false';
+    }
+  }
+  /** Execute an arbitrary script (e.g. Victory Road boulder floor switch). */
+  async triggerScript(nav: NavigationSave, scriptLabelOrPtr: string | number): Promise<boolean> {
+    if (this.busy) return false;
+    let started = false;
+    try {
+      await (this.loading ??= this.initialize());
+      const script = typeof scriptLabelOrPtr === 'string' ? rom.label(scriptLabelOrPtr) : scriptLabelOrPtr;
+      if (!script) return false;
+      started = true;
+      await this.run(nav, 0, false, (game) => {
+        game.overworld.script.ScriptContext_SetupScript(script);
+      }, false);
+      return true;
+    } finally {
       if (!started) this.root.dataset.loading = 'false';
     }
   }
