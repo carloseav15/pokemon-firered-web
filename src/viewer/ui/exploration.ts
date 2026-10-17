@@ -45,8 +45,8 @@ export class ExplorationUi {
     this.menu.innerHTML = `<h2 id="explore-menu-title">Explorar Kanto</h2>
       <p>Flechas / WASD: caminar · Mayús: correr · B: bicicleta · Z: interactuar · M: audio.</p>
       <label>Personaje <select id="explore-character"><option value="red">Rojo</option><option value="leaf">Hoja</option></select></label>
-      <label>Presentación <select id="explore-format"><option value="viewport">Todo el viewport</option><option value="wide">16:9</option></select></label>
-      <label>Escala <select id="explore-scale"><option value="1">1×</option><option value="2" selected>2×</option><option value="3">3×</option><option value="4">4×</option></select></label>
+      <label>Presentación <select id="explore-format"><option value="viewport">Todo el viewport</option><option value="wide">16:9</option><option value="gba">GBA 3:2 (15×10)</option></select></label>
+      <label>Escala <select id="explore-scale"><option value="auto" selected>Auto (GBA)</option><option value="1">1×</option><option value="2">2×</option><option value="3">3×</option><option value="4">4×</option></select></label>
       <label><input type="checkbox" id="explore-radar"> Mostrar minimapa</label>
       <label><input type="checkbox" id="explore-metrics"> Mostrar rendimiento</label>
       <button class="btn" id="explore-open-game-menu">Abrir menú del juego</button><button class="btn" id="explore-save">Guardar partida</button><button class="btn" id="explore-continue">Continuar guardado</button><p id="explore-save-result" role="status"></p>
@@ -71,11 +71,14 @@ export class ExplorationUi {
       original.value = character.value; original.dispatchEvent(new Event("change"));
     });
     this.menu.querySelector("#explore-format")!.addEventListener("change", event => {
-      document.body.classList.toggle("explore-wide", (event.target as HTMLSelectElement).value === "wide");
+      const format = (event.target as HTMLSelectElement).value;
+      document.body.classList.toggle("explore-wide", format === "wide");
+      document.body.classList.toggle("explore-gba", format === "gba");
       this.hooks.resize();
     });
     this.menu.querySelector("#explore-scale")!.addEventListener("change", event => {
-      window.dispatchEvent(new CustomEvent("explore-scale", { detail: Number((event.target as HTMLSelectElement).value) }));
+      const raw = (event.target as HTMLSelectElement).value;
+      window.dispatchEvent(new CustomEvent("explore-scale", { detail: raw === "auto" ? 0 : Number(raw) }));
     });
     this.menu.querySelector("#explore-radar")!.addEventListener("change", event => {
       document.body.classList.toggle("explore-radar", (event.target as HTMLInputElement).checked);
@@ -112,7 +115,7 @@ export class ExplorationUi {
     this.active = false;
     if (this.menu.open) this.menu.close();
     this.hooks.pause(false);
-    document.body.classList.remove("exploring", "explore-wide", "explore-radar");
+    document.body.classList.remove("exploring", "explore-wide", "explore-gba", "explore-radar");
     this.root.hidden = true;
     if (this.frame !== null) cancelAnimationFrame(this.frame);
     this.frame = null;

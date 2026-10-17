@@ -149,13 +149,16 @@ export class EngineInteraction {
     cancelAnimationFrame(this.frame); this.root.hidden = true; this.field.remove();
     joy.initKeys(); joy.setExternalInputEnabled(false);
     this.hooks.hideObjects(false, this.interactionMapId, this.localId); this.hooks.pause(false);
+    delete this.root.dataset.scene;
     document.getElementById('viewport')?.focus({preventScroll:true});
   }
   private present(): void {
     const game = this.game!, ow = game.overworld;
     const ui = this.ui.getContext('2d')!;
     ui.clearRect(0,0,240,160);
-    if (game.scene && this.fullScreen) {
+    const fullScene = Boolean(game.scene && this.fullScreen);
+    if (this.root.dataset.scene !== String(fullScene)) this.root.dataset.scene = String(fullScene);
+    if (fullScene) {
       game.render();
       ui.drawImage(this.engineCanvas,0,0);
       this.field.getContext('2d')!.clearRect(0,0,240,160);

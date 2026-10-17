@@ -694,6 +694,13 @@ async function preloadExplorationSprites(): Promise<void> {
   await Promise.all([...urls].map(async url => { const image = new Image(); image.src = url; await image.decode(); }));
 }
 
+let exploreManualZoom = 0;
+function exploreAutoZoom(): number {
+  const w = viewport.clientWidth || window.innerWidth;
+  const h = viewport.clientHeight || window.innerHeight;
+  return Math.max(2, Math.min(4, Math.floor(Math.min(w / C.DISPLAY_WIDTH, h / C.DISPLAY_HEIGHT)) || 2));
+}
+
 async function startExploration(targetGx?: number, targetGy?: number): Promise<void> {
   if (!HOENN && !streaming) {
     writeHash();
@@ -702,7 +709,7 @@ async function startExploration(targetGx?: number, targetGy?: number): Promise<v
     if (targetGx !== undefined && targetGy !== undefined) { h.set("px", String(targetGx)); h.set("py", String(targetGy)); }
     location.hash = h.toString(); location.reload(); return;
   }
-  if (!playerActive && !HOENN) camera.setZoom(2);
+  if (!playerActive && !HOENN) camera.setZoom(exploreManualZoom || exploreAutoZoom());
   if (!HOENN) { await initializeViewerSession(index.initialFlags); gameSave.playerGender = state.playerChar === "leaf" ? C.FEMALE : C.MALE; }
   if (!HOENN) window.setTimeout(() => void engineInteraction?.warm().catch(() => {}), 1500);
   resetExploreSession();
@@ -1974,7 +1981,11 @@ function setupUi(): void {
       keysDown.clear(); playerRunning = false;
       if (paused) viewerClock.pause("explore-menu"); else viewerClock.resume("explore-menu");
     },
-    resize: () => { if (playerActive) updatePlayerDisplay(); scheduleSectors(); },
+    resize: () => {
+      if (playerActive && !HOENN && !exploreManualZoom) camera.setZoom(exploreAutoZoom());
+      if (playerActive) updatePlayerDisplay();
+      scheduleSectors();
+    },
     exit: () => document.getElementById("mode-viewer-btn")?.click(),
     startMenu: () => {
       if (!engineInteraction || engineInteraction.open || !playerActive || isStepping || warpBusy || elevatorBusy || dialogManager.isOpen()) return;
@@ -1984,7 +1995,8 @@ function setupUi(): void {
       bytes: (sectorLoader?.bytes ?? 0) + (sectorBorder?.bytes ?? 0) + (avatarDepth?.bytes ?? 0), pending: sectorLoader?.pending ?? 0, error: sectorLoader?.error ?? "" }),
   });
   window.addEventListener("explore-scale", event => {
-    setZoom((event as CustomEvent<number>).detail);
+    exploreManualZoom = (event as CustomEvent<number>).detail;
+    setZoom(exploreManualZoom || exploreAutoZoom());
     if (playerActive) updatePlayerDisplay();
     scheduleSectors();
   });

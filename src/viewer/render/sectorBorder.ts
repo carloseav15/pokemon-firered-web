@@ -21,8 +21,9 @@ export class SectorBorder {
   invalidate(renderer: FillSource["renderer"]): void { if (this.source?.renderer === renderer) this.dirty = true; }
   draw(source: FillSource | undefined, view: { x: number; y: number; width: number; height: number }, minX: number, minY: number): void {
     if (!source) return;
-    const left = Math.floor(view.x / TILE) * TILE, top = Math.floor(view.y / TILE) * TILE;
-    const width = Math.ceil(view.width / TILE) * TILE + TILE, height = Math.ceil(view.height / TILE) * TILE + TILE;
+    const margin = 6 * TILE;
+    const left = Math.floor((view.x - margin) / TILE) * TILE, top = Math.floor((view.y - margin) / TILE) * TILE;
+    const width = Math.ceil((view.width + margin * 2) / TILE) * TILE + TILE, height = Math.ceil((view.height + margin * 2) / TILE) * TILE + TILE;
     if (source !== this.source || this.dirty) {
       const motif = document.createElement("canvas");
       const { layout, renderer } = source;
