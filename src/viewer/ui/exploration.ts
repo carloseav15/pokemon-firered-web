@@ -46,7 +46,7 @@ export class ExplorationUi {
       <p>Flechas / WASD: caminar · Mayús: correr · B: bicicleta · Z: interactuar · M: audio.</p>
       <label>Personaje <select id="explore-character"><option value="red">Rojo</option><option value="leaf">Hoja</option></select></label>
       <label>Presentación <select id="explore-format"><option value="viewport">Todo el viewport</option><option value="wide">16:9</option><option value="gba">GBA 3:2 (15×10)</option></select></label>
-      <label>Escala <select id="explore-scale"><option value="auto" selected>Auto (GBA)</option><option value="1">1×</option><option value="2">2×</option><option value="3">3×</option><option value="4">4×</option></select></label>
+      <label>Escala <select id="explore-scale"><option value="auto" selected>Auto (GBA)</option><option value="1">1×</option><option value="2">2×</option><option value="3">3×</option><option value="4">4×</option><option value="5">5×</option><option value="6">6×</option></select></label>
       <label><input type="checkbox" id="explore-radar"> Mostrar minimapa</label>
       <label><input type="checkbox" id="explore-metrics"> Mostrar rendimiento</label>
       <button class="btn" id="explore-open-game-menu">Abrir menú del juego</button><button class="btn" id="explore-save">Guardar partida</button><button class="btn" id="explore-continue">Continuar guardado</button><p id="explore-save-result" role="status"></p>

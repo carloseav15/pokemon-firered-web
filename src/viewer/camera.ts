@@ -37,7 +37,7 @@ export class ViewerCamera {
   }
 
   private applyZoom(next: number): void {
-    this.zoom = Math.round(Math.min(4, Math.max(0.25, next)) * 1000) / 1000;
+    this.zoom = Math.round(Math.min(6, Math.max(0.25, next)) * 1000) / 1000;
     this.stage.style.width = `${this.width * this.zoom}px`;
     this.stage.style.height = `${this.height * this.zoom}px`;
     this.content.style.transform = `scale(${this.zoom})`;

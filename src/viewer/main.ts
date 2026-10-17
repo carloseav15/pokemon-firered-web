@@ -314,7 +314,7 @@ function parseHash(): void {
   const z = Number(h.get("z"));
   startX = h.get("x") !== null && Number.isFinite(x) ? x : null;
   startY = h.get("y") !== null && Number.isFinite(y) ? y : null;
-  if (z !== 0 && Number.isFinite(z)) initialZoom = Math.min(4, Math.max(0.25, Math.round(z * 1000) / 1000));
+  if (z !== 0 && Number.isFinite(z)) initialZoom = Math.min(6, Math.max(0.25, Math.round(z * 1000) / 1000));
   const capas = h.get("capas");
   if (capas !== null) {
     state.activeLayers.clear();
@@ -701,7 +701,7 @@ let exploreManualZoom = 0;
 function exploreAutoZoom(): number {
   const w = viewport.clientWidth || window.innerWidth;
   const h = viewport.clientHeight || window.innerHeight;
-  return Math.max(2, Math.min(4, Math.floor(Math.min(w / C.DISPLAY_WIDTH, h / C.DISPLAY_HEIGHT)) || 2));
+  return Math.max(2, Math.min(6, Math.floor(Math.min(w / C.DISPLAY_WIDTH, h / C.DISPLAY_HEIGHT)) || 2));
 }
 
 async function startExploration(targetGx?: number, targetGy?: number): Promise<void> {
