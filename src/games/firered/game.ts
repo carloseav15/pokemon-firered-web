@@ -139,6 +139,7 @@ export class Game {
   /** new_game.c gDifferentSaveFile: preserve a prior save until the new file is confirmed. */
   private differentSaveFile = false;
   private whiteOutFrames = 0;
+  whitingOut = false;
   private returnToFieldState = 0;
   readonly weather = new FieldWeather();
   readonly trades = {
@@ -1123,7 +1124,9 @@ export class Game {
 
   /** CB2_WhiteOut: respawn at the last heal location. */
   whiteOut(): void {
+    this.whitingOut = true;
     this.whiteOutFrames = 0;
+    paletteFade.fill(RGB_BLACK);
     this.setCallbacks(null, () => this.CB2_WhiteOut());
   }
 
@@ -1134,6 +1137,9 @@ export class Game {
 
   private DoWhiteOut(): void {
     const ow = this.overworld;
+    this.whitingOut = false;
+    ow.whitingOut = true;
+    ow.whiteOutReady = false;
     this.scene = null;
     sound.stopMapMusic(); // CB2_WhiteOut: StopMapMusic() before DoWhiteOut(); ResetSafariZoneFlag_ is part of the state reset below
     ow.script.RunScriptImmediately(rom.label("EventScript_ResetEliteFourEnd"));

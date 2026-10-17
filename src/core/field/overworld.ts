@@ -171,8 +171,10 @@ export class Overworld {
   private mapCache = new Map<string, Promise<LoadedMap>>();
   private bgMosaicCanvas?: HTMLCanvasElement;
   private bgMosaicContext?: CanvasRenderingContext2D;
-  private whiteOutWindow?: Window;
-  private whiteOutPrinter?: TextPrinter;
+  whiteOutWindow?: Window;
+  whiteOutPrinter?: TextPrinter;
+  whitingOut = false;
+  whiteOutReady = false;
   warpDestination: WarpData = dummyWarp();
   lastUsedWarp: WarpData = dummyWarp();
   fixedDiveWarp: WarpData = dummyWarp();
@@ -314,6 +316,10 @@ export class Overworld {
     tasks.reset();
     this.sprites.clear();
     this.windows.clear();
+    this.whiteOutWindow = undefined;
+    this.whiteOutPrinter = undefined;
+    this.whitingOut = false;
+    this.whiteOutReady = false;
     paletteFade.clear();
     this.effects.reset();
     this.messageBox.reset();
@@ -1052,11 +1058,12 @@ export class Overworld {
     const d = tasks.data(taskId);
     switch (d[2]) {
       case 0: {
+        const window = this.whiteOutWindow!;
+        window.fill(0);
         const text = expandPlaceholders(rom.text(textSymbol));
         textFlags.canABSpeedUpPrint = false;
-        const window = this.whiteOutWindow!;
         this.whiteOutPrinter = new TextPrinter(window, FONT_NORMAL, text, {
-          x: x * 8, y: y * 8, speed: 2, fg: 1, bg: 0, shadow: 2, letterSpacing: 1, lineSpacing: 0,
+          x, y, speed: 1, fg: 1, bg: 0, shadow: 2, letterSpacing: 1, lineSpacing: 0,
         });
         d[2] = 1;
         break;
@@ -1107,6 +1114,8 @@ export class Overworld {
       case 3:
       case 6:
         if (!paletteFade.active) {
+          this.whitingOut = false;
+          this.whiteOutReady = false;
           tasks.destroy(taskId);
           this.script.ScriptContext_SetupScript(rom.label(d[0] === 3 ? "EventScript_AfterWhiteOutHeal" : "EventScript_AfterWhiteOutMomHeal"));
         }
@@ -1117,6 +1126,7 @@ export class Overworld {
   /** FieldCB_RushInjuredPokemonToCenter from field_screen_effect.c. */
   FieldCB_RushInjuredPokemonToCenter(): void {
     this.controlsLocked = true;
+    this.whiteOutReady = true;
     paletteFade.fill(RGB_BLACK);
     tasks.create((taskId) => this.Task_RushInjuredPokemonToCenter(taskId), 10);
   }

@@ -10,11 +10,13 @@ import { rom } from '@core/rom';
 import { loadTrig } from '@core/hw/trig';
 import { gWindows } from '@core/hw/window';
 import { GetBgTilemapBuffer } from '@core/hw/bg';
-import { incrementGameStat, save, SV, varSet } from '@game/save';
+import { incrementGameStat, save, SV, varGet, varSet } from '@game/save';
 import * as MB from '@game/generated/metatileBehavior';
 import * as C from '@game/generated/constants';
 import type { Sprite } from '@core/gba/sprite';
+import { paletteFade } from '@core/gba/fade';
 import { tasks } from '@core/gba/tasks';
+import { gMain } from '@core/hw/runtime';
 import { gBattlerControllerFuncs } from '@core/battle/globals';
 import { installBattleHost } from '@core/battle/host';
 import { preloadBattleAssets } from '@game/battle/preload';
@@ -30,7 +32,7 @@ type Hooks = {
   project(canvas: HTMLCanvasElement, game: Game): void;
   hideObjects(hidden: boolean, mapId: string, localId: number): void;
   /** Engine moved the player (white-out respawn): continue the viewer from here. */
-  relocate(nav: NavigationSave): void;
+  relocate(nav: NavigationSave): Promise<void> | void;
   readObjects(mapId: string): ViewerObjectState[];
   mapOrigin(mapId: string): ViewerMapOrigin | undefined;
   syncObjects(states: ViewerObjectState[]): void;
@@ -178,24 +180,29 @@ export class EngineInteraction {
     // completes, so the destination is read from the record, not the loaded map.
     const { mapGroup, mapNum, x, y } = save.location;
     const mapId = rom.mapIdByNum(((mapGroup & 0xff) << 8) | (mapNum & 0xff));
-    if (mapId && (mapId !== nav.mapId || x !== nav.x || y !== nav.y)) {
-      const direction = ({ [C.DIR_SOUTH]: 'south', [C.DIR_NORTH]: 'north', [C.DIR_WEST]: 'west', [C.DIR_EAST]: 'east' } as const)[save.facing] ?? nav.direction;
-      this.hooks.relocate({ mapId, x, y, direction, dynamic: null });
+    const direction = ({ [C.DIR_SOUTH]: 'south', [C.DIR_NORTH]: 'north', [C.DIR_WEST]: 'west', [C.DIR_EAST]: 'east' } as const)[save.facing] ?? nav.direction;
+    if (mapId && (mapId !== nav.mapId || x !== nav.x || y !== nav.y || direction !== nav.direction)) {
+      void this.hooks.relocate({ mapId, x, y, direction, dynamic: null });
     }
   }
   private close(): void {
     cancelAnimationFrame(this.frame); this.root.hidden = true; this.field.remove();
     joy.initKeys(); joy.setExternalInputEnabled(false);
+    paletteFade.clear();
     this.hooks.hideObjects(false, this.objectMapId || this.interactionMapId, this.localId); this.hooks.pause(false);
     delete this.root.dataset.scene;
+    delete this.root.dataset.whiteout;
     document.getElementById('viewport')?.focus({preventScroll:true});
   }
   private present(): void {
     const game = this.game!, ow = game.overworld;
     const ui = this.ui.getContext('2d')!;
     ui.clearRect(0,0,240,160);
-    const fullScene = Boolean(game.scene && this.fullScreen);
+    const whiteOut = Boolean(game.whitingOut || ow.whitingOut || (!game.scene && paletteFade.level > 0));
+    const inBattleScene = Boolean(game.scene && (gMain.inBattle || game.scene.constructor.name === 'BattleTransitionScene'));
+    const fullScene = Boolean(game.scene && (this.fullScreen || inBattleScene));
     if (this.root.dataset.scene !== String(fullScene)) this.root.dataset.scene = String(fullScene);
+    if (this.root.dataset.whiteout !== String(whiteOut)) this.root.dataset.whiteout = String(whiteOut);
     if (fullScene) {
       game.render();
       ui.drawImage(this.engineCanvas,0,0);
@@ -215,7 +222,11 @@ export class EngineInteraction {
         ui.fillStyle='#e5edf0';ui.fillRect(x-1,y-1,w+2,h+2);
         ui.drawImage(this.engineCanvas,x,y,w,h,x,y,w,h);
       }
-    } else ow.windows.render(ui);
+    } else {
+      ow.windows.render(ui);
+      paletteFade.render(ui);
+      ow.whiteOutWindow?.render(ui);
+    }
     const ctx = this.field.getContext('2d')!;ctx.clearRect(0,0,240,160);
     // Step events (repel, poison) leave the viewer's own avatar in place.
     const targetNum = this.localId && this.objectMapId ? rom.mapNum(this.objectMapId) : 0;
@@ -273,32 +284,52 @@ export class EngineInteraction {
       joy.initKeys();joy.setExternalInputEnabled(true);
       this.root.dataset.loading='false';this.ui.focus({preventScroll:true});
       this.last=performance.now();this.accumulator=0;
-      let idle=0, warpFrames=0;
+      let idle=0, warpFrames=0, whiteOutRelocated=false;
       const startNum=save.location.mapNum, startGroup=save.location.mapGroup;
       const loop=(now:number)=>{
         if(!this.open)return;
         this.accumulator+=Math.min(100,now-this.last);this.last=now;
         while(this.accumulator>=FRAME_MS){game.frame();this.accumulator-=FRAME_MS;}
+        const inWhiteOut=Boolean(game.whitingOut||ow.whitingOut);
+        if(ow.whiteOutReady&&!whiteOutRelocated){
+          const at=save.location;
+          const destId=rom.mapIdByNum(((at.mapGroup&0xff)<<8)|(at.mapNum&0xff));
+          if(destId){
+            whiteOutRelocated=true;
+            this.hooks.hideObjects(false,this.objectMapId||this.interactionMapId,this.localId);
+            nav={mapId:destId,x:at.x,y:at.y,direction:'north',dynamic:null};
+            this.interactionMapId=destId;
+            this.objectMapId=destId;
+            this.localId=varGet(SV.LAST_TALKED);
+            this.observedObjects.clear();
+            this.initialSprites=new Set(ow.sprites.sprites);
+            if(this.localId)this.hooks.hideObjects(true,destId,this.localId);
+            void Promise.resolve(this.hooks.relocate(nav)).then(()=>{
+              if(this.open&&this.localId)this.hooks.hideObjects(true,destId,this.localId);
+            });
+          }
+        }
         this.observeObjects();
         this.present();
-        this.root.dataset.scriptActive=String(ow.script.isActive()||(fullScreen&&ow.controlsLocked));
+        const activeFull=fullScreen||inWhiteOut||whiteOutRelocated;
+        this.root.dataset.scriptActive=String(ow.script.isActive()||(activeFull&&ow.controlsLocked));
         this.root.dataset.script=ow.script.global.entry;
         this.root.dataset.native=ow.script.global.nativePtr?.name??'';
         this.root.dataset.mode=String(ow.script.global.mode);
         this.root.dataset.money=String(save.money);
         this.root.dataset.battle=game.scene?gBattlerControllerFuncs[0]?.name??'':'';
-        const finished=fullScreen?!ow.controlsLocked&&!ow.script.isActive():!ow.script.isActive();
+        const finished=activeFull?!ow.controlsLocked&&!ow.script.isActive()&&!inWhiteOut:!ow.script.isActive()&&!inWhiteOut;
         // Field moves and warps run as tasks after the menu has unlocked the field:
         // wait until the task list stays empty (or, with a leaked task, a long while).
         idle=finished&&!game.scene?idle+1:0;
-        // The engine decided on a warp (teleport, fly, escape rope, white-out): its own map
+        // The engine decided on a warp (teleport, fly, escape rope, dig): its own map
         // load is not run here, so after the fade-out the viewer follows save.location.
         const at=save.location;
-        const warped=fullScreen&&!game.scene&&(at.mapGroup!==startGroup||at.mapNum!==startNum||at.x!==nav.x||at.y!==nav.y);
+        const warped=fullScreen&&!game.scene&&!inWhiteOut&&!whiteOutRelocated&&(at.mapGroup!==startGroup||at.mapNum!==startNum||at.x!==nav.x||at.y!==nav.y);
         warpFrames=warped?warpFrames+1:0;
         if(warpFrames>=90){this.finish(nav);return;}
-        const busyTasks=fullScreen&&tasks.tasks.some(t=>t.isActive);
-        if(finished&&!game.scene&&(!fullScreen||(!busyTasks&&idle>=20)||idle>=600)){this.finish(nav);return;}
+        const busyTasks=activeFull&&tasks.tasks.some(t=>t.isActive);
+        if(finished&&!game.scene&&(!activeFull||(!busyTasks&&idle>=20)||idle>=600)){this.finish(nav);return;}
         this.frame=requestAnimationFrame(loop);
       };
       this.frame=requestAnimationFrame(loop);

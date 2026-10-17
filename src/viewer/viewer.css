@@ -712,9 +712,10 @@ body.exploring .loading-overlay.hidden { display: none; }
 
 /* Game UI is layered on the current world; full GBA scenes (battles, party, bag, Pokédex) frame the stage. */
 #engine-interaction { position:fixed; z-index:1000; bottom:18px; left:50%; transform:translateX(-50%); width:min(calc(var(--explore-zoom, 5) * 240px),96vw,calc((100dvh - 36px) * 3 / 2)); pointer-events:none; }
-#engine-interaction[data-scene="true"] { inset:0; bottom:0; left:0; transform:none; width:100vw; height:100dvh; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; background:rgba(8,11,16,0.92); }
+#engine-interaction[data-scene="true"], #engine-interaction[data-whiteout="true"] { inset:0; bottom:0; left:0; transform:none; width:100vw; height:100dvh; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; background:rgba(8,11,16,0.92); }
+#engine-interaction[data-whiteout="true"] { background:#000; }
 #engine-interaction[hidden] { display:none !important; }
 #engine-interaction canvas { display:block; width:100%; height:auto; image-rendering:pixelated; outline:none; pointer-events:auto; }
-#engine-interaction[data-scene="true"] canvas { width:min(calc(var(--explore-zoom, 5) * 240px),96vw,calc((100dvh - 44px) * 3 / 2)); border-radius:4px; box-shadow:0 16px 48px rgba(0,0,0,0.85),0 0 0 1px rgba(255,255,255,0.1); }
+#engine-interaction[data-scene="true"] canvas, #engine-interaction[data-whiteout="true"] canvas { width:min(calc(var(--explore-zoom, 5) * 240px),96vw,calc((100dvh - 44px) * 3 / 2)); border-radius:4px; box-shadow:0 16px 48px rgba(0,0,0,0.85),0 0 0 1px rgba(255,255,255,0.1); }
 #engine-interaction p { margin:0; text-align:center; color:#fff; text-shadow:0 1px 3px #000; font-size:13px; }
 #engine-interaction[data-loading="true"]::after { content:"Preparando interacción…"; display:block; padding:12px; background:#173944; color:white; }

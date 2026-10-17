@@ -1969,7 +1969,7 @@ function setupUi(): void {
       canvas.style.cssText=`position:absolute;pointer-events:none;image-rendering:pixelated;left:${(info.x-minX-MAP_OFFSET)*TILE+game.overworld.camX}px;top:${(info.y-minY-MAP_OFFSET)*TILE+game.overworld.camY}px;width:240px;height:160px;z-index:25`;
       if(canvas.parentElement!==content)content.append(canvas);
     },
-    relocate: nav => { void relocateViewer(nav); },
+    relocate: nav => relocateViewer(nav),
     mapOrigin: mapId=>index.maps[mapId],
     readObjects: readViewerMapObjects,
     syncObjects: states => {
