@@ -67,7 +67,8 @@ Anotados el 2026-10-16 a partir de lo que esa sesión dejó sin probar, sin veri
 **C. Cambios de tamaño medio**
 - [x] Retirar la lista DOM de equipo/mochila y añadir acceso desde ajustes al menú del motor — `5af2a378`. Chromium: apertura/retorno, resumen/orden del equipo, Poción, opciones persistentes, sesión y compra/recarga PASS; precondiciones PREPARED de los jobs conservadas. 58 checks/tipos/honesty/build PASS; táctil y paridad audiovisual siguen pendientes.
 - [ ] Entrada táctil/móvil para el menú del juego (Enter no existe; solo hay botón) y para los combates.
-- [ ] Estado de Ciudad Plateada tras Brock (el guía desaparece, aparece el hombre de las zapatillas): el visor no refresca esos objetos.
+- [x] Presencia general por flags de guardado, exteriores/interiores, dibujo/colisión/interacción y banderas iniciales fuente solo en partidas nuevas — `2fc61ad4`. Chromium: ocultar/restaurar, guardado cambiado/recarga, interior numérico, Corte y sesión PASS; victoria real Liam/Brock (equipo Nv.40 PREPARED), medalla/MT y carga de Plateada (URL PREPARED): guía oculto/ayudante visible PASS. 49 flags iniciales contrastadas con fuente; 58 checks/tipos/honesty/build PASS.
+- [ ] Revisar ciclo de `FLAG_TEMP_*` al cambiar de mapa y restauración de objetos retirados sin bandera: el visor aún conserva esos estados; la presencia general lee los flags vivos, sin sustituir el ciclo de carga C.
 - [ ] Quest Log conectado a los eventos del visor.
 - [ ] Tarea de curación del Centro tras derrota (`FieldCB_RushInjuredPokemonToCenter`) y su diálogo: hoy solo se reubica.
 - [ ] Contadores por paso fuera de pasos reales (bici rápida, saltos) y sincronía de pasos en mapas distintos.
