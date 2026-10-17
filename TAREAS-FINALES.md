@@ -61,8 +61,8 @@ Anotados el 2026-10-16 a partir de lo que esa sesión dejó sin probar, sin veri
 **B. Comparar o revisar contra la ROM / el C**
 - [ ] Fondo magenta del resumen del Pokémon: la paleta fuente tiene magenta como color 0; comparar con la ROM.
 - [ ] Rótulos y orden de las pantallas del motor proyectadas a pantalla completa frente a la captura de ROM (paridad audiovisual).
-- [ ] Posición de entrenadores tras el combate (el visor los deja en su sitio original; el motor los mueve en el acercamiento).
-- [ ] Objetos que el motor oculta/desplaza al final de un script (más allá de `removeobject`) y su sincronía con las entidades del visor.
+- [x] Posición de entrenadores al terminar el combate — `f5e80a9c`. Chromium: Liam se acerca (3,8)→(5,8), premio al jugador 3.000→3.220, conserva posición/orientación tras menú, bloquea casilla nueva y permite caminar a la antigua (URL/equipo/movimiento de ataque PREPARED; sin preparar victoria ni movimiento). Tipos/honesty/build y 58 checks PASS; persistencia dinámica queda abierta abajo.
+- [ ] Objetos que el motor oculta/desplaza al final de un script y su sincronía con el visor. PARCIAL `f5e80a9c`: puente de posición/dirección/invisibilidad y retiradas explícitas de objetos observados del mapa actual; hidrata instancias ya cargadas en la siguiente interacción y actualiza colisiones/sectores. Invisibilidad con colisión, identidad por mapa y retiradas no indexadas comprobadas con fixtures PREPARED; Corte y flags en Chromium PASS. Faltan persistencia, clones/actores fuera de spawn, gráficos/elevación/tipos de movimiento y revisión de todos los scripts del alcance.
 - [ ] Aparición especial de árboles/rocas y clones junto a conexiones (`TemplateIsObstacleAndVisibleFromConnectingMap`/`TemplateIsObstacleAndWithinView`, `event_object_movement.c:1389–1466`): predicados del motor todavía sin conectar al visor; el reinicio temporal no valida esas reglas de aparición.
 
 **C. Cambios de tamaño medio**
@@ -70,6 +70,7 @@ Anotados el 2026-10-16 a partir de lo que esa sesión dejó sin probar, sin veri
 - [ ] Entrada táctil/móvil para el menú del juego (Enter no existe; solo hay botón) y para los combates.
 - [x] Presencia general por flags de guardado, exteriores/interiores, dibujo/colisión/interacción y banderas iniciales fuente solo en partidas nuevas — `2fc61ad4`. Chromium: ocultar/restaurar, guardado cambiado/recarga, interior numérico, Corte y sesión PASS; victoria real Liam/Brock (equipo Nv.40 PREPARED), medalla/MT y carga de Plateada (URL PREPARED): guía oculto/ayudante visible PASS. 49 flags iniciales contrastadas con fuente; 58 checks/tipos/honesty/build PASS.
 - [x] Ciclo temporal por mapa y conservación de plantillas retiradas — `50350097`. Reutiliza `clearTempFieldEventData` en conexiones/puertas/warps del motor; menú/continuar conservan el estado del mapa y los flags temporales no se propagan a otros sectores. Chromium: Corte real→guardar/Continuar/recarga→Celeste, puerta/menú de Paleta, presencia general, Cuerda Huida y Excavar PASS; entradas PREPARED según jobs. Check existente cubre warp al mismo mapa y retirada/restauración sin flag (fixtures PREPARED); 58 checks/tipos/honesty/build PASS.
+- [ ] Visor: conservar las posiciones/direcciones/invisibilidad/retiradas dinámicas al guardar y continuar; hoy el puente las mantiene entre interacciones, pero la reconstrucción del mapa las restablece.
 - [ ] Quest Log conectado a los eventos del visor.
 - [ ] Tarea de curación del Centro tras derrota (`FieldCB_RushInjuredPokemonToCenter`) y su diálogo: hoy solo se reubica.
 - [ ] Contadores por paso fuera de pasos reales (bici rápida, saltos) y sincronía de pasos en mapas distintos.
