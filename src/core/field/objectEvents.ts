@@ -1,3 +1,4 @@
+import { ShouldInitObjectEventStateFromTemplate } from "./objectSpawnRules";
 // Port of event_object_movement.c: object events, movement types (NPC AI),
 // movement actions (the steps used by applymovement and the player), and
 // collision rules.
@@ -773,6 +774,9 @@ export class ObjectEvents {
   private ssAnneExteriorMapNumber?: number;
   templates: MapObjectTemplate[] = [];
   spawnTemplates: SpawnObjectEventTemplate[] = [];
+  // Viewer interaction rebuild only: these identities already passed init in
+  // the field. A real camera transition retains their slots before spawn checks.
+  retainedViewerObjects?: ReadonlySet<string>;
   mapNum = 0;
   mapGroup = 0;
   /** Set by lock/lockall (FreezeObjectEvents) */
@@ -1107,7 +1111,7 @@ export class ObjectEvents {
   InitObjectEventStateFromTemplate(template: MapObjectTemplate, mapNum: number, mapGroup: number, cloneCoords?: { x: number; y: number }): number {
     const slot = this.GetAvailableObjectEventId(template.localId, mapNum, mapGroup);
     if (slot === OBJECT_EVENTS_COUNT) return OBJECT_EVENTS_COUNT;
-    if (!this.ShouldInitObjectEventStateFromTemplate(template, cloneCoords !== undefined, cloneCoords?.x ?? 0, cloneCoords?.y ?? 0)) return OBJECT_EVENTS_COUNT;
+    if (!this.retainedViewerObjects?.has(`${mapGroup}:${mapNum}:${template.localId}`) && !ShouldInitObjectEventStateFromTemplate(this.hooks, template, cloneCoords !== undefined, cloneCoords?.x ?? 0, cloneCoords?.y ?? 0)) return OBJECT_EVENTS_COUNT;
     const object = new ObjectEvent();
     this.ClearObjectEvent(object);
     object.active = true;
@@ -1428,49 +1432,6 @@ export class ObjectEvents {
         this.TrySpawnObjectEventTemplate(entry.template, entry.mapNum, entry.mapGroup, entry.isClone ? entry : undefined);
       }
     }
-  }
-
-  /** ShouldInitObjectEventStateFromTemplate (event_object_movement.c). */
-  ShouldInitObjectEventStateFromTemplate(template: MapObjectTemplate, isClone: boolean, x: number, y: number): boolean {
-    if (isClone && !this.TemplateIsObstacleAndWithinView(template, x, y)) return false;
-    return this.TemplateIsObstacleAndVisibleFromConnectingMap(template, x, y);
-  }
-
-  /** TemplateIsObstacleAndWithinView (event_object_movement.c). */
-  TemplateIsObstacleAndWithinView(template: MapObjectTemplate, x: number, y: number): boolean {
-    if (template.graphicsId !== C.OBJ_EVENT_GFX_CUT_TREE && template.graphicsId !== C.OBJ_EVENT_GFX_ROCK_SMASH_ROCK) return true;
-    const player = this.hooks.playerMapPosition();
-    x = (x << 16) >> 16;
-    y = (y << 16) >> 16;
-    if (player.x < x) {
-      if (player.x + (MAP_OFFSET + 1) < x) return true;
-      if (player.y - (MAP_OFFSET - 1) <= y && player.y + (MAP_OFFSET - 1) >= y) return false;
-    } else {
-      if (player.x - (MAP_OFFSET + 1) > x) return true;
-      if (player.y - (MAP_OFFSET - 1) <= y && player.y + (MAP_OFFSET - 1) >= y) return false;
-    }
-    return true;
-  }
-
-  /** TemplateIsObstacleAndVisibleFromConnectingMap (event_object_movement.c). */
-  TemplateIsObstacleAndVisibleFromConnectingMap(template: MapObjectTemplate, _x: number, _y: number): boolean {
-    const type = this.hooks.mapType();
-    if (type !== C.MAP_TYPE_ROUTE && type !== C.MAP_TYPE_TOWN && type !== C.MAP_TYPE_UNDERWATER && type !== C.MAP_TYPE_CITY && type !== C.MAP_TYPE_OCEAN_ROUTE) return true;
-    if (template.graphicsId !== C.OBJ_EVENT_GFX_CUT_TREE && template.graphicsId !== C.OBJ_EVENT_GFX_ROCK_SMASH_ROCK) return true;
-    const map = this.hooks.map();
-    const width = map.xSize - MAP_OFFSET_W - 1;
-    const height = map.ySize - MAP_OFFSET_H - 1;
-    const player = this.hooks.playerMapPosition();
-    if (player.x === 0 && template.x <= MAP_OFFSET + 1) { this.SetHideObstacleFlag(template); return false; }
-    if (player.x === width && template.x >= width - (MAP_OFFSET + 1)) { this.SetHideObstacleFlag(template); return false; }
-    if (player.y === 0 && template.y <= MAP_OFFSET - 1) { this.SetHideObstacleFlag(template); return false; }
-    if (player.y === height && template.y >= height - (MAP_OFFSET - 1)) { this.SetHideObstacleFlag(template); return false; }
-    return true;
-  }
-
-  /** SetHideObstacleFlag (event_object_movement.c). */
-  SetHideObstacleFlag(template: MapObjectTemplate): void {
-    if (template.flag >= C.FLAG_TEMP_11 && template.flag <= C.FLAG_TEMP_1F) flagSet(template.flag);
   }
 
   /** RemoveObjectEventsOutsideView */

@@ -1,3 +1,4 @@
+import { ViewerObjectSpawns, cloneElement } from "./data/objectSpawns";
 import { savedViewerObjects, storeViewerObjects, type ViewerObjectState } from "./objectState";
 import { initializeViewerSession, saveViewerSession, viewerCheckpoint, type NavigationSave } from "./session";
 import { enterViewerEventMap, restoreViewerEventMap, viewerEventMap } from "./mapEvents";
@@ -173,7 +174,7 @@ async function continueViewerSession(): Promise<void> {
   (document.getElementById("player-char") as HTMLSelectElement).value = state.playerChar;
   await changeNavigationWorld(nav.mapId);
   await rom.loadMap(nav.mapId);
-  entityManager.resetRemovedObjects();
+  { entityManager.resetRemovedObjects(); objectSpawns.reset(); }
   applyViewerObjects(savedViewerObjects(nav.mapId));
   const info = index.maps[nav.mapId]!;
   navigationWarps.restore(nav.dynamic);
@@ -184,7 +185,7 @@ async function continueViewerSession(): Promise<void> {
 /** The engine moved the player (white-out): continue from its new map and tile. */
 async function relocateViewer(nav: NavigationSave): Promise<void> {
   // The engine hands off its warp before running its own map loader.
-  if (enterViewerEventMap(nav.mapId, true)) entityManager.resetRemovedObjects();
+  if (enterViewerEventMap(nav.mapId, true)) { entityManager.resetRemovedObjects(); objectSpawns.reset(); }
   await changeNavigationWorld(nav.mapId);
   const info = index.maps[nav.mapId]!;
   navigationWarps.restore(nav.dynamic);
@@ -587,9 +588,13 @@ function updatePlayerDisplay(): void {
 
 let enteredMapId = "";
 let lastOutdoorNav: NavigationSave | null = null;
+const objectSpawns=new ViewerObjectSpawns();
 function syncEntityPresence(): boolean {
   if (HOENN || !playerActive || !entityManager) return false;
-  const changed = entityManager.syncPresence(isViewerObjectPresent);
+  const here=findMapAt(playerX,playerY)?.[0];
+  const header=here?mapHeaders.get(here):undefined,info=here?index.maps[here]:undefined;
+  if(header&&info)objectSpawns.update(header,{x:playerX-info.x,y:playerY-info.y},info.width,info.height,mapHeaders);
+  const changed = entityManager.syncPresence(e=>isViewerObjectPresent(e)&&objectSpawns.present(e));
   if (changed) {
     // Clear first, then rebuild the union: conditional templates may share a tile.
     for (const tile of entityManager.takeVacatedTiles()) worldGrid.setNpc(tile.gx,tile.gy,false);
@@ -1399,7 +1404,7 @@ async function followNavigationWarp(source: MapHeader, warpId: number, phase: "i
     viewerClock.pause("warp");
     content.style.visibility = "hidden";
     resetExploreSession();warpOffsetX=warpOffsetY=0;warpPriority=null;teleportFixedPriority=false;
-    if (enterViewerEventMap(destination.mapId, true)) entityManager.resetRemovedObjects();
+    if (enterViewerEventMap(destination.mapId, true)) { entityManager.resetRemovedObjects(); objectSpawns.reset(); }
     await changeNavigationWorld(destination.mapId); switched = true;
     const info = index.maps[destination.mapId]!;
     if(destination.arrival.x<0||destination.arrival.y<0||destination.arrival.x>=info.width||destination.arrival.y>=info.height)throw Error("Warp coordinates outside destination layout");
@@ -1606,6 +1611,22 @@ async function build(): Promise<void> {
     const data = contextData ?? (streaming ? new Rom() : rom);
     const layout = layoutsByMap.get(id) ?? await data.loadLayout(info.layout);
     if (!HOENN && !mapHeaders.has(id)) mapHeaders.set(id, await data.loadMap(id));
+    if(streaming&&!HOENN){
+      const header=mapHeaders.get(id)!;
+      for(const entry of header.objects){
+        if(!entry.clone)continue;
+        const target=mapHeaders.get(entry.targetMap)??await data.loadMap(entry.targetMap);
+        mapHeaders.set(entry.targetMap,target);
+        const source=target.objects[entry.targetLocalId-1],origin=index.maps[entry.targetMap];
+        if(!source||source.clone||!origin)throw Error(`Clone sin plantilla: ${id} -> ${entry.targetMap}#${entry.targetLocalId}`);
+        if(origin.x+source.x!==info.x+entry.x||origin.y+source.y!==info.y+entry.y)throw Error(`Clone fuera de la conexión: ${id}`);
+        if(!entityManager.entities.some(e=>e.element.map===entry.targetMap&&e.element.localId===source.localId)){
+          const element=cloneElement(entry.targetMap,source);
+          const dir:Direction=element.direction==='up'?'north':element.direction==='left'?'west':element.direction==='right'?'east':'south';
+          entityManager.addEntity(element,origin.x+source.x,origin.y+source.y,dir);
+        }
+      }
+    }
     const grid = streaming ? new WorldGrid(info.width, info.height, info.x, info.y) : worldGrid;
     const [primary, secondary] = await Promise.all([data.loadTileset(layout.primary), data.loadTileset(layout.secondary)]);
     const renderer = new TileRenderer(primary, secondary);
@@ -1776,7 +1797,7 @@ async function build(): Promise<void> {
     if (streaming) {
       // Object instances may have moved or been added since this sector unloaded.
       for (const ent of entityManager.entities) {
-        if (ent.element.map!==id||ent.removed||!isViewerObjectPresent(ent.element)||!grid.inBounds(ent.gx,ent.gy)) continue;
+        if (ent.element.map!==id||ent.removed||!isViewerObjectPresent(ent.element)||!objectSpawns.present(ent.element)||!grid.inBounds(ent.gx,ent.gy)) continue;
         grid.npc[grid.idx(ent.gx,ent.gy)]=1;
       }
       worldGrid.addSector(id, grid);
@@ -1909,6 +1930,7 @@ function applyViewerObjects(states: ViewerObjectState[]): void {
     const element:Element={map:state.mapId,localId:template.localId,x:template.x,y:template.y,flag:template.flag,graphics:template.graphicsName,movementType:template.movementType,layer:'npc',
       direction:template.movementType===C.MOVEMENT_TYPE_FACE_UP?'up':template.movementType===C.MOVEMENT_TYPE_FACE_LEFT?'left':template.movementType===C.MOVEMENT_TYPE_FACE_RIGHT?'right':'down'};
     entityManager.applyObjectState(state,element,info.x,info.y);
+    if(!state.removed)objectSpawns.adopt(element);
   }
 }
 
@@ -1925,7 +1947,7 @@ function setupUi(): void {
     readObjects: mapId => {
       const info=index.maps[mapId];
       if(!info)return [];
-      return entityManager.entities.filter(e=>e.element.map===mapId&&e.element.localId!==undefined&&e.engineState).map(e=>({mapId,localId:e.element.localId!,x:e.gx-info.x,y:e.gy-info.y,direction:e.dir,invisible:!!e.scriptInvisible,removed:!!e.removed||!!e.hidden}));
+      return entityManager.entities.filter(e=>e.element.map===mapId&&e.element.localId!==undefined&&(e.engineState||objectSpawns.isActive(e.element))).map(e=>({mapId,localId:e.element.localId!,x:e.gx-info.x,y:e.gy-info.y,direction:e.dir,invisible:!!e.scriptInvisible,removed:!!e.removed||!!e.hidden}));
     },
     syncObjects: states => {
       const mapId=viewerEventMap();

@@ -39,6 +39,15 @@ export default async function run(ctx){
  // Westward input crosses the real Route9 -> Cerulean connection.
  const after=await p.evaluate(async()=>{const s=await import('/src/games/firered/save.ts');const C=await import('/src/games/firered/generated/constants.ts');const {viewerEventMap}=await import('/src/viewer/mapEvents.ts');return {map:viewerEventMap(),temporary:s.flagGet(C.FLAG_TEMP_12),badge:s.flagGet(C.FLAG_BADGE02_GET)};});
  if(after.map!=='MAP_CERULEAN_CITY'||after.temporary||!after.badge)throw Error('Map transition did not clear only temporary progress '+JSON.stringify(after));
+ // event_object_movement.c:1400-1422 rejects a newly loaded obstacle clone
+ // inside +/-8,+/-6 of the player, even after the old TEMP flag was cleared.
+ await cutTree.waitFor({state:'hidden'});
+ for(let i=0;i<6;i++)await hold('ArrowLeft',200);
  await cutTree.waitFor({state:'visible'});
- return {start,end,cutState,after,saveContinue:'cut retained',connection:'temporaries cleared; permanent badge retained; template restored',errors:ctx.errors()};
+ // Camera connections retain an existing clone instead of initializing it again.
+ for(let i=0;i<7;i++)await hold('ArrowRight',200);
+ await cutTree.waitFor({state:'visible'});
+ const retained=await p.evaluate(async()=>{const S=await import('/src/games/firered/save.ts');const E=await import('/src/viewer/mapEvents.ts');return {map:E.viewerEventMap(),flag:S.flagGet(18)};});
+ if(retained.map!=='MAP_ROUTE9'||retained.flag)throw Error('Connection lost active clone '+JSON.stringify(retained));
+ return {start,end,cutState,after,retained,saveContinue:'cut retained',connection:'temporaries cleared; permanent badge retained; near clone suppressed; clone spawned beyond source exclusion',errors:ctx.errors()};
 }

@@ -308,7 +308,7 @@ export class Overworld {
   /** Viewer interaction adapter: restore the existing field runtime at the navigation
    * position without running automatic map/story scripts. Explicit NPC bytecode is
    * still executed by ScriptContext. This is not a normal story map load. */
-  async prepareViewerInteraction(mapId: string): Promise<void> {
+  async prepareViewerInteraction(mapId: string, retainedLocalIds: readonly number[] = []): Promise<void> {
     this.LoadCurrentMapData(await this.prepareMap(mapId));
     this.script.ScriptContext_Init();
     tasks.reset();
@@ -320,7 +320,10 @@ export class Overworld {
     this.map.InitMapLayoutData(this.loaded);
     this.map.onChange = () => this.renderer?.invalidate();
     this.loadObjEventTemplatesFromHeader();
-    this.initObjectEventsLocal(false);
+    const num=this.header.num;
+    this.objects.retainedViewerObjects=new Set(retainedLocalIds.map(id=>`${num>>>8}:${num&255}:${id}`));
+    try { this.initObjectEventsLocal(false); }
+    finally { this.objects.retainedViewerObjects=undefined; }
     this.objects.turn(this.player.object, save.facing);
     this.InitViewGraphics();
     this.game.setCallbacks(null, () => this.cb2());

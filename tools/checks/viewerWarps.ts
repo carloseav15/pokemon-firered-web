@@ -163,3 +163,65 @@ assert.deepEqual(projections.savedViewerObjects(projection.mapId),[]);
 S.setSave(S.newSaveData());
 assert.deepEqual(projections.savedViewerObjects(projection.mapId),[]);
 console.log('PREPARED projection fixtures; JSON round trip, legacy save and map ownership PASS');
+
+// Source predicates: inclusive +/-8, +/-6 clone exclusion and border flags.
+// PREPARED template/player inputs; these are not script or gameplay outcomes.
+const rules=await import('../../src/core/field/objectSpawnRules');
+const {ViewerObjectSpawns}=await import('../../src/viewer/data/objectSpawns');
+const route9=await load('MAP_ROUTE9'),cerulean=await load('MAP_CERULEAN_CITY');
+const cut=route9.objects.find(o=>!o.clone&&o.localId===10)!;
+if(cut.clone)throw Error('Missing source tree');
+let rulePlayer={x:0,y:8};
+const ruleHooks={playerMapPosition:()=>rulePlayer,mapType:()=>C.MAP_TYPE_ROUTE,map:()=>({xSize:30+15,ySize:20+14})};
+S.setSave(S.newSaveData());
+assert.equal(rules.ShouldInitObjectEventStateFromTemplate(ruleHooks,cut,false,0,0),false);
+assert.equal(S.flagGet(C.FLAG_TEMP_12),true,'west entry hides source TEMP tree');
+S.flagClear(C.FLAG_TEMP_12); // PREPARED reset between boundary inputs
+rulePlayer={x:1,y:8};
+assert.equal(rules.ShouldInitObjectEventStateFromTemplate(ruleHooks,cut,false,0,0),true);
+for(const [dx,dy,expected] of [[8,6,false],[8,-6,false],[-8,6,false],[-8,-6,false],[9,0,true],[-9,0,true],[0,7,true],[0,-7,true]] as const){
+ rulePlayer={x:50-dx,y:18-dy};
+ assert.equal(rules.TemplateIsObstacleAndWithinView(ruleHooks,cut,50,18),expected,`${dx},${dy}`);
+}
+// PREPARED boundary matrix for all four sides, indoor bypass and flag range.
+for(const [playerInput,coords] of [
+ [{x:0,y:10},{x:8,y:10}],[{x:29,y:10},{x:21,y:10}],
+ [{x:10,y:0},{x:10,y:6}],[{x:10,y:19},{x:10,y:13}],
+] as const){
+ rulePlayer={...playerInput};S.flagClear(C.FLAG_TEMP_1F); // PREPARED independent boundary input
+ assert.equal(rules.ShouldInitObjectEventStateFromTemplate(ruleHooks,{...cut,...coords,flag:C.FLAG_TEMP_1F},false,0,0),false);
+ assert.equal(S.flagGet(C.FLAG_TEMP_1F),true);
+}
+rulePlayer={x:0,y:8};S.flagClear(C.FLAG_BADGE01_GET); // PREPARED permanent flag input
+assert.equal(rules.ShouldInitObjectEventStateFromTemplate(ruleHooks,{...cut,flag:C.FLAG_BADGE01_GET},false,0,0),false);
+assert.equal(S.flagGet(C.FLAG_BADGE01_GET),false,'obstacle initialization must never set a permanent flag');
+assert.equal(rules.ShouldInitObjectEventStateFromTemplate({...ruleHooks,mapType:()=>C.MAP_TYPE_INDOOR},cut,false,0,0),true);
+assert.equal(rules.ShouldInitObjectEventStateFromTemplate(ruleHooks,{...cut,graphicsId:C.OBJ_EVENT_GFX_FAT_MAN},true,0,8),true);
+const treeElement={map:route9.id,localId:cut.localId,x:cut.x,y:cut.y,graphics:cut.graphicsName,layer:'npc'};
+const spawns=new ViewerObjectSpawns(),sourceHeaders=new Map([[route9.id,route9],[cerulean.id,cerulean]]);
+events.restoreViewerEventMap(cerulean.id);
+spawns.update(cerulean,{x:47,y:18},index.maps[cerulean.id].width,index.maps[cerulean.id].height,sourceHeaders);
+assert.equal(spawns.present(treeElement),false,'nearby obstacle clone must not spawn');
+spawns.update(cerulean,{x:41,y:18},index.maps[cerulean.id].width,index.maps[cerulean.id].height,sourceHeaders);
+assert.equal(spawns.present(treeElement),true,'clone spawns one tile beyond horizontal exclusion');
+spawns.update(cerulean,{x:47,y:18},index.maps[cerulean.id].width,index.maps[cerulean.id].height,sourceHeaders);
+assert.equal(spawns.present(treeElement),true,'existing clone remains active when approached');
+events.restoreViewerEventMap(route9.id);S.flagClear(C.FLAG_TEMP_12); // PREPARED camera transition after existing clone
+spawns.update(route9,{x:0,y:8},index.maps[route9.id].width,index.maps[route9.id].height,sourceHeaders);
+assert.equal(spawns.present(treeElement),true,'camera transition retains the active clone identity');
+assert.equal(S.flagGet(C.FLAG_TEMP_12),false,'retained instance bypasses initialization flag side effect');
+events.restoreViewerEventMap(cerulean.id);
+
+spawns.reset();spawns.update(cerulean,{x:47,y:18},index.maps[cerulean.id].width,index.maps[cerulean.id].height,sourceHeaders);
+assert.equal(spawns.present(treeElement),false,'map reload retries clone initialization');
+let cloneCount=0;
+for(const id of Object.keys(index.maps)){
+ const h=await load(id),origin=index.maps[id];
+ for(const clone of h.objects){if(!clone.clone)continue;
+  const target=await load(clone.targetMap),source=target.objects[clone.targetLocalId-1],targetOrigin=index.maps[clone.targetMap];
+  assert.ok(source&&!source.clone&&targetOrigin,`${id} clone source`);
+  assert.equal(origin.x+clone.x,targetOrigin.x+source.x);
+  assert.equal(origin.y+clone.y,targetOrigin.y+source.y);cloneCount++;
+ }
+}
+console.log(`PREPARED boundary inputs; source clone/border predicates, latched spawning and ${cloneCount} real clone identities/coordinates PASS`);

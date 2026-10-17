@@ -102,9 +102,10 @@ export class EngineInteraction {
   }
   private async prepareObjects(nav: NavigationSave): Promise<void> {
     const ow=this.game!.overworld;
-    await ow.prepareViewerInteraction(nav.mapId);
+    const states=this.hooks.readObjects(nav.mapId);
+    await ow.prepareViewerInteraction(nav.mapId,states.filter(s=>!s.removed).map(s=>s.localId));
     const num=rom.mapNum(nav.mapId);
-    for (const state of this.hooks.readObjects(nav.mapId)) {
+    for (const state of states) {
       const object=ow.objects.byLocalIdAndMap(state.localId,num&255,num>>>8);
       if (!object) continue; // Source spawning/view limits remain authoritative.
       if (state.removed) { ow.objects.remove(object); continue; }
