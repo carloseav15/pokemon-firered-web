@@ -254,3 +254,95 @@ const foreign={...projection,mapId:'MAP_ROUTE9',removed:true};
 projections.storeViewerObjects(projection.mapId,[projection,foreign]);S.setSave(JSON.parse(JSON.stringify(S.save)));
 assert.equal(projections.savedViewerObjects(projection.mapId).length,2,'same localId in different maps is distinct');
 console.log(`PREPARED clone records; ${cloneProjectionCount} source identity/frame conversions, v2 JSON and v1 migration PASS`);
+
+// PREPARED: populate rom map lookup + cached headers for homonymous localId and clone script/removeobject checks.
+const mapsIndex = JSON.parse(await readFile('public/fr/maps.json','utf8')) as typeof rom.mapIndex;
+rom.mapIndex = mapsIndex;
+const romInternals = rom as unknown as { mapById: Map<number,string>; maps: Map<string,MapHeader> };
+for (const [k, v] of Object.entries(mapsIndex.maps)) romInternals.mapById.set(v.num, k);
+const pallet = await load('MAP_PALLET_TOWN'), route21N = await load('MAP_ROUTE21_NORTH');
+const celadon = await load('MAP_CELADON_CITY'), route16 = await load('MAP_ROUTE16');
+for (const h of [cerulean, route9, pallet, route21N, celadon, route16]) romInternals.maps.set(h.id, h);
+
+// R1.2 & R1.3:
+// 1. MAP_CERULEAN_CITY has no non-clone localId=10 (slot 10 is the clone targeting MAP_ROUTE9:10),
+//    so GetObjectEventScriptPointerByObjectEventId must resolve MAP_ROUTE9:10's EventScript_CutTree.
+// 2. Homonymous localIds (MAP_CELADON_CITY:7 SoftboiledTutor vs MAP_ROUTE16:7 CutTree clone;
+//    MAP_ROUTE21_NORTH:2 Wade vs MAP_PALLET_TOWN:2 FatMan clone) must resolve distinct templates,
+//    scripts and flags by full { mapId, localId } identity, and RemoveObjectEventByLocalIdAndMap
+//    must remove only the selected clone while setting its source flag (FLAG_TEMP_12).
+const ceruleanNum = rom.mapNum('MAP_CERULEAN_CITY'), route9Num = rom.mapNum('MAP_ROUTE9');
+const celadonNum = rom.mapNum('MAP_CELADON_CITY'), route16Num = rom.mapNum('MAP_ROUTE16');
+const route21Num = rom.mapNum('MAP_ROUTE21_NORTH'), palletNum = rom.mapNum('MAP_PALLET_TOWN');
+const cloneRuntime = new ObjectEvents({} as ConstructorParameters<typeof ObjectEvents>[0]);
+cloneRuntime.mapNum = ceruleanNum & 0xff; cloneRuntime.mapGroup = ceruleanNum >>> 8;
+cloneRuntime.templates = cerulean.objects.filter((o): o is Exclude<typeof cerulean.objects[number], {clone:true}> => !o.clone);
+const route9Clone10 = new ObjectEvent();
+route9Clone10.active = true; route9Clone10.localId = 10; route9Clone10.mapNum = route9Num & 0xff; route9Clone10.mapGroup = route9Num >>> 8;
+cloneRuntime.objects[1] = route9Clone10;
+assert.equal(cloneRuntime.FindObjectEventTemplateByLocalId(10), undefined, 'Cerulean has no local non-clone template 10');
+assert.equal(cloneRuntime.byLocalIdAndMap(10, route9Num & 0xff, route9Num >>> 8), route9Clone10);
+assert.ok(!cut.clone && cut.script);
+assert.equal(cloneRuntime.GetObjectEventScriptPointerByObjectEventId(1), cut.script);
+assert.equal(cloneRuntime.GetObjectEventFlagIdByObjectEventId(1), C.FLAG_TEMP_12);
+
+// Homonymous localId=7 in MAP_CELADON_CITY (SoftboiledTutor) vs MAP_ROUTE16 (CutTree clone).
+cloneRuntime.mapNum = celadonNum & 0xff; cloneRuntime.mapGroup = celadonNum >>> 8;
+cloneRuntime.templates = celadon.objects.filter((o): o is Exclude<typeof celadon.objects[number], {clone:true}> => !o.clone);
+const celadonTutor7 = new ObjectEvent();
+celadonTutor7.active = true; celadonTutor7.localId = 7; celadonTutor7.mapNum = celadonNum & 0xff; celadonTutor7.mapGroup = celadonNum >>> 8;
+const route16Clone7 = new ObjectEvent();
+route16Clone7.active = true; route16Clone7.localId = 7; route16Clone7.mapNum = route16Num & 0xff; route16Clone7.mapGroup = route16Num >>> 8;
+cloneRuntime.objects[1] = celadonTutor7;
+cloneRuntime.objects[2] = route16Clone7;
+assert.equal(cloneRuntime.byLocalIdAndMap(7, celadonNum & 0xff, celadonNum >>> 8), celadonTutor7);
+assert.equal(cloneRuntime.byLocalIdAndMap(7, route16Num & 0xff, route16Num >>> 8), route16Clone7);
+const tutorTemplate = celadon.objects.find(o => !o.clone && o.localId === 7)!;
+const route16CutTemplate = route16.objects.find(o => !o.clone && o.localId === 7)!;
+assert.ok(!tutorTemplate.clone && !route16CutTemplate.clone && tutorTemplate.script !== route16CutTemplate.script);
+assert.equal(cloneRuntime.GetObjectEventScriptPointerByObjectEventId(1), tutorTemplate.script);
+assert.equal(cloneRuntime.GetObjectEventScriptPointerByObjectEventId(2), route16CutTemplate.script);
+assert.equal(cloneRuntime.GetObjectEventFlagIdByObjectEventId(1), 0);
+assert.equal(cloneRuntime.GetObjectEventFlagIdByObjectEventId(2), C.FLAG_TEMP_12);
+
+// Homonymous localId=2 in MAP_ROUTE21_NORTH (Wade) vs MAP_PALLET_TOWN (FatMan clone).
+cloneRuntime.mapNum = route21Num & 0xff; cloneRuntime.mapGroup = route21Num >>> 8;
+cloneRuntime.templates = route21N.objects.filter((o): o is Exclude<typeof route21N.objects[number], {clone:true}> => !o.clone);
+const wade2 = new ObjectEvent();
+wade2.active = true; wade2.localId = 2; wade2.mapNum = route21Num & 0xff; wade2.mapGroup = route21Num >>> 8;
+const fatManClone2 = new ObjectEvent();
+fatManClone2.active = true; fatManClone2.localId = 2; fatManClone2.mapNum = palletNum & 0xff; fatManClone2.mapGroup = palletNum >>> 8;
+cloneRuntime.objects[3] = wade2;
+cloneRuntime.objects[4] = fatManClone2;
+const wadeTemplate = route21N.objects.find(o => !o.clone && o.localId === 2)!;
+const fatManTemplate = pallet.objects.find(o => !o.clone && o.localId === 2)!;
+assert.ok(!wadeTemplate.clone && !fatManTemplate.clone && wadeTemplate.script !== fatManTemplate.script);
+assert.equal(cloneRuntime.GetObjectEventScriptPointerByObjectEventId(3), wadeTemplate.script);
+assert.equal(cloneRuntime.GetObjectEventScriptPointerByObjectEventId(4), fatManTemplate.script);
+
+// Removing the clone by its map identity (RemoveObjectEventByLocalIdAndMap(7, route16Num)) must remove MAP_ROUTE16:7,
+// set FLAG_TEMP_12, notify onScriptObjectRemoved with MAP_ROUTE16 identity, and keep MAP_CELADON_CITY:7 intact.
+cloneRuntime.mapNum = celadonNum & 0xff; cloneRuntime.mapGroup = celadonNum >>> 8;
+cloneRuntime.templates = celadon.objects.filter((o): o is Exclude<typeof celadon.objects[number], {clone:true}> => !o.clone);
+S.flagClear(C.FLAG_TEMP_12); // PREPARED flag state before cutting clone tree
+const removedIdentities: string[] = [];
+cloneRuntime.onScriptObjectRemoved = o => removedIdentities.push(`${rom.mapIdByNum((o.mapGroup << 8) | o.mapNum)}:${o.localId}`);
+cloneRuntime.RemoveObjectEventByLocalIdAndMap(7, route16Num & 0xff, route16Num >>> 8);
+assert.equal(S.flagGet(C.FLAG_TEMP_12), true, 'cutting clone sets source FLAG_TEMP_12');
+assert.deepEqual(removedIdentities, ['MAP_ROUTE16:7']);
+assert.equal(cloneRuntime.objects[1], celadonTutor7, 'loaded map localId 7 remains untouched');
+assert.equal(cloneRuntime.objects[2], null, 'selected clone slot is removed');
+
+// R1.3: After crossing from MAP_CERULEAN_CITY into MAP_ROUTE9 with the clone retained,
+// cutting the retained tree in MAP_ROUTE9 resolves EventScript_CutTree and sets FLAG_TEMP_12.
+S.flagClear(C.FLAG_TEMP_12); // PREPARED retained clone after crossing border
+cloneRuntime.mapNum = route9Num & 0xff; cloneRuntime.mapGroup = route9Num >>> 8;
+cloneRuntime.templates = route9.objects.filter((o): o is Exclude<typeof route9.objects[number], {clone:true}> => !o.clone);
+const retainedTree = new ObjectEvent();
+retainedTree.active = true; retainedTree.localId = 10; retainedTree.mapNum = route9Num & 0xff; retainedTree.mapGroup = route9Num >>> 8;
+cloneRuntime.objects[2] = retainedTree;
+assert.equal(cloneRuntime.GetObjectEventScriptPointerByObjectEventId(2), cut.script);
+cloneRuntime.RemoveObjectEventByLocalIdAndMap(10, route9Num & 0xff, route9Num >>> 8);
+assert.equal(S.flagGet(C.FLAG_TEMP_12), true);
+assert.deepEqual(removedIdentities, ['MAP_ROUTE16:7', 'MAP_ROUTE9:10']);
+console.log('PREPARED homonymous localId & retained-clone fixtures; R1.2/R1.3 clone script lookup and removeobject PASS');

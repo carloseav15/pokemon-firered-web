@@ -921,8 +921,13 @@ export class ObjectEvents {
 
   /** GetObjectEventTemplateByLocalIdAndMap (event_object_movement.c). */
   GetObjectEventTemplateByLocalIdAndMap(localId: number, mapNum: number, mapGroup: number): MapObjectTemplate | undefined {
-    if (mapNum === this.mapNum && mapGroup === this.mapGroup) return this.FindObjectEventTemplateByLocalId(localId);
-    return this.byLocalIdAndMap(localId, mapNum, mapGroup)?.template;
+    const id = localId & 0xff, num = mapNum & 0xff, group = mapGroup & 0xff;
+    if (num === this.mapNum && group === this.mapGroup) return this.FindObjectEventTemplateByLocalId(id);
+    const mapId = rom.mapIdByNum((group << 8) | num);
+    const foreign = mapId ? rom.cachedMap(mapId)?.objects.filter((o): o is MapObjectTemplate => !o.clone) : undefined;
+    if (foreign) return this.FindObjectEventTemplateByLocalId(id, foreign, foreign.length);
+    return this.spawnTemplates.find(e => e.mapNum === num && e.mapGroup === group && e.template.localId === id)?.template
+      ?? this.byLocalIdAndMap(id, num, group)?.template;
   }
 
   /** GetObjectEventScriptPointerByLocalIdAndMap (event_object_movement.c). */

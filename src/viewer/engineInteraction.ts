@@ -22,7 +22,7 @@ import { preloadEggHatch } from '@game/eggHatch';
 import { sound } from '@core/audio/sound';
 import { MAP_OFFSET } from '@core/field/fieldmap';
 import { PLAYER_AVATAR_FLAG_ACRO_BIKE, PLAYER_AVATAR_FLAG_MACH_BIKE, PLAYER_AVATAR_FLAG_ON_FOOT, PLAYER_AVATAR_FLAG_SURFING } from '@core/field/playerAvatar';
-import { objectStateKey, readViewerObjectState, objectDirection, translateViewerObjectCoords, type ViewerMapOrigin, type ViewerObjectState } from './objectState';
+import { objectStateKey, readViewerObjectState, objectDirection, storeViewerObjects, translateViewerObjectCoords, type ViewerMapOrigin, type ViewerObjectState } from './objectState';
 import { syncViewerLocation, type NavigationSave } from './session';
 
 type Hooks = {
@@ -53,6 +53,7 @@ export class EngineInteraction {
   private accumulator = 0;
   private initialSprites = new Set<Sprite>();
   private localId = 0;
+  private objectMapId = '';
   // Start-menu scenes (Pokédex, party, bag, summary...) own the whole GBA screen,
   // so their full frame is shown. Field interactions keep the window-only mode.
   private fullScreen = false;
@@ -86,6 +87,7 @@ export class EngineInteraction {
       const state = this.objectState(object,true);
       if(!state)return;
       this.observedObjects.set(objectStateKey(state),state);
+      if (this.interactionMapId) storeViewerObjects(this.interactionMapId, [...this.observedObjects.values()]);
     };
     installBattleHost(this.game);
     joy.attach(); joy.setExternalInputEnabled(false);
@@ -106,6 +108,7 @@ export class EngineInteraction {
       if(!state)continue;
       this.observedObjects.set(objectStateKey(state),state);
     }
+    storeViewerObjects(this.interactionMapId, [...this.observedObjects.values()]);
   }
   private async prepareObjects(nav: NavigationSave): Promise<void> {
     const ow=this.game!.overworld;
@@ -148,7 +151,7 @@ export class EngineInteraction {
   private close(): void {
     cancelAnimationFrame(this.frame); this.root.hidden = true; this.field.remove();
     joy.initKeys(); joy.setExternalInputEnabled(false);
-    this.hooks.hideObjects(false, this.interactionMapId, this.localId); this.hooks.pause(false);
+    this.hooks.hideObjects(false, this.objectMapId || this.interactionMapId, this.localId); this.hooks.pause(false);
     delete this.root.dataset.scene;
     document.getElementById('viewport')?.focus({preventScroll:true});
   }
@@ -180,24 +183,28 @@ export class EngineInteraction {
     } else ow.windows.render(ui);
     const ctx = this.field.getContext('2d')!;ctx.clearRect(0,0,240,160);
     // Step events (repel, poison) leave the viewer's own avatar in place.
-    const objects = this.localId ? [ow.player.object, ow.objects.list.find(o=>o.localId===this.localId)] : [];
+    const targetNum = this.localId && this.objectMapId ? rom.mapNum(this.objectMapId) : 0;
+    const objects = this.localId ? [ow.player.object, ow.objects.byLocalIdAndMap(this.localId, targetNum & 255, targetNum >>> 8)] : [];
     for (const object of objects) if(object?.sprite && !object.sprite.invisible) ow.sprites.drawSprite(ctx,object.sprite);
     // Healing balls/glow and other actual field-effect sprites stay at their
     // original map coordinates. General NPC rendering remains a later integration.
     for(const sprite of ow.sprites.sprites) if(!this.initialSprites.has(sprite)&&!sprite.invisible&&!sprite.destroyed) ow.sprites.drawSprite(ctx,sprite);
     this.hooks.project(this.field,game);
   }
-  async show(nav: NavigationSave, localId: number): Promise<void> {
+  async show(nav: NavigationSave, target: number | { mapId?: string; localId: number }): Promise<void> {
+    const localId = typeof target === 'number' ? target : target.localId;
+    const objectMapId = (typeof target === 'number' ? undefined : target.mapId) ?? nav.mapId;
     await this.run(nav, localId, false, (game) => {
-      const ow = game.overworld;
-      const object = ow.objects.list.find(o=>o.localId===localId);
-      const template = ow.header.objects.find(o=>!o.clone&&o.localId===localId);
-      if(!object||!template||template.clone||!template.script)throw Error('NPC sin script fuente');
-      this.hooks.hideObjects(true,nav.mapId,localId);
-      ow.selectedObject=ow.objects.indexOf(object);
-      varSet(SV.LAST_TALKED,localId);varSet(SV.FACING,save.facing);
-      ow.script.ScriptContext_SetupScript(template.script);
-    });
+      const ow = game.overworld, num = rom.mapNum(objectMapId);
+      const object = ow.objects.byLocalIdAndMap(localId, num & 255, num >>> 8);
+      const objectEventId = object ? ow.objects.indexOf(object) : C.OBJECT_EVENTS_COUNT;
+      const script = objectEventId < C.OBJECT_EVENTS_COUNT ? ow.objects.GetObjectEventScriptPointerByObjectEventId(objectEventId) : 0;
+      if (!object || !script) throw Error('NPC sin script fuente');
+      this.hooks.hideObjects(true, objectMapId, localId);
+      ow.selectedObject = objectEventId;
+      varSet(SV.LAST_TALKED, object.localId); varSet(SV.FACING, save.facing);
+      ow.script.ScriptContext_SetupScript(script);
+    }, false, objectMapId);
   }
   /** ShowStartMenu (start_menu.c) over the current viewer map. */
   async showStartMenu(nav: NavigationSave, vehicle: 'walk' | 'bike' | 'surf' = 'walk'): Promise<void> {
@@ -212,11 +219,11 @@ export class EngineInteraction {
     });
   }
   private menuVehicle: 'walk' | 'bike' | 'surf' | null = null;
-  private async run(nav: NavigationSave, localId: number, fullScreen: boolean, start: (game: Game) => void, prepared = false): Promise<void> {
+  private async run(nav: NavigationSave, localId: number, fullScreen: boolean, start: (game: Game) => void, prepared = false, objectMapId = nav.mapId): Promise<void> {
     if (this.open) return;
     this.interactionMapId=nav.mapId;this.observedObjects.clear();
     for(const state of this.hooks.readObjects(nav.mapId))this.observedObjects.set(objectStateKey(state),state);
-    this.localId=localId; this.fullScreen=fullScreen; this.hooks.pause(true); this.root.hidden=false;
+    this.localId=localId; this.objectMapId=objectMapId; this.fullScreen=fullScreen; this.hooks.pause(true); this.root.hidden=false;
     this.root.dataset.loading='true';
     try {
       await (this.loading ??= this.initialize());
@@ -364,9 +371,11 @@ export class EngineInteraction {
       // checkForTrainersWantingBattle (trainer_see.c) runs first in ProcessPlayerFieldInput:
       // the source approach, exclamation, walk and battle script for a trainer in sight.
       if (ow.effects.checkForTrainersWantingBattle()) {
-        const trainerId = (game.trainerSee as unknown as { approaching?: { trainer: { localId: number } } }).approaching?.trainer.localId ?? 0;
+        const trainer = (game.trainerSee as unknown as { approaching?: { trainer: { localId: number; mapNum: number; mapGroup: number } } }).approaching?.trainer;
+        const trainerId = trainer?.localId ?? 0;
+        const trainerMapId = (trainer ? rom.mapIdByNum((trainer.mapGroup << 8) | trainer.mapNum) : undefined) ?? nav.mapId;
         started = true;
-        await this.run(nav, trainerId, true, () => { if (trainerId) this.hooks.hideObjects(true, nav.mapId, trainerId); }, true);
+        await this.run(nav, trainerId, true, () => { if (trainerId) this.hooks.hideObjects(true, trainerMapId, trainerId); }, true, trainerMapId);
         return true;
       }
       // ProcessPlayerFieldInput tookStep (field_control_avatar.c): step stat, then the

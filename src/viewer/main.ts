@@ -631,8 +631,11 @@ function interactWithEntity(ent: LiveEntity): void {
       const dx = playerDir === "east" ? 1 : playerDir === "west" ? -1 : 0;
       const dy = playerDir === "south" ? 1 : playerDir === "north" ? -1 : 0;
       const reach = MB.MetatileBehavior_IsCounter(worldGrid.behaviorAt(playerX+dx,playerY+dy)) ? 2 : 1;
-      if (ent.element.map !== findMapAt(playerX,playerY)?.[0] || ent.gx !== playerX+dx*reach || ent.gy !== playerY+dy*reach) return;
-      void engineInteraction.show(navigationSnapshot(), npc.localId).catch(error => dialogManager.show("Interacción", [String(error)]));
+      const here = findMapAt(playerX, playerY)?.[0];
+      const reachableInMap = ent.element.map === here
+        || (here ? mapHeaders.get(here)?.objects.some(o => o.clone && o.targetMap === ent.element.map && o.targetLocalId === ent.element.localId) : false);
+      if (!reachableInMap || ent.gx !== playerX+dx*reach || ent.gy !== playerY+dy*reach) return;
+      void engineInteraction.show(navigationSnapshot(), { mapId: ent.element.map, localId: npc.localId }).catch(error => dialogManager.show("Interacción", [String(error)]));
       return;
     }
   }
@@ -1941,6 +1944,16 @@ function applyViewerObjects(states: ViewerObjectState[]): void {
   }
 }
 
+function readViewerMapObjects(mapId: string): ViewerObjectState[] {
+  const header=mapHeaders.get(mapId)??rom.cachedMap(mapId);
+  if(!header)return [];
+  const identities=new Set(header.objects.map(o=>o.clone?`${o.targetMap}:${o.targetLocalId}`:`${mapId}:${o.localId}`));
+  return entityManager.entities.filter(e=>e.element.localId!==undefined&&identities.has(`${e.element.map}:${e.element.localId}`)&&(e.engineState||objectSpawns.isActive(e.element))).flatMap(e=>{
+    const owner=index.maps[e.element.map];
+    return owner?[{mapId:e.element.map,localId:e.element.localId!,x:e.gx-owner.x,y:e.gy-owner.y,direction:e.dir,invisible:!!e.scriptInvisible,removed:!!e.removed||!isViewerObjectPresent(e.element)}]:[];
+  });
+}
+
 function setupUi(): void {
   if (!HOENN) engineInteraction = new EngineInteraction({
     pause: pauseInteraction,
@@ -1952,15 +1965,7 @@ function setupUi(): void {
     },
     relocate: nav => { void relocateViewer(nav); },
     mapOrigin: mapId=>index.maps[mapId],
-    readObjects: mapId => {
-      const header=mapHeaders.get(mapId)??rom.cachedMap(mapId);
-      if(!header)return [];
-      const identities=new Set(header.objects.map(o=>o.clone?`${o.targetMap}:${o.targetLocalId}`:`${mapId}:${o.localId}`));
-      return entityManager.entities.filter(e=>e.element.localId!==undefined&&identities.has(`${e.element.map}:${e.element.localId}`)&&(e.engineState||objectSpawns.isActive(e.element))).flatMap(e=>{
-        const owner=index.maps[e.element.map];
-        return owner?[{mapId:e.element.map,localId:e.element.localId!,x:e.gx-owner.x,y:e.gy-owner.y,direction:e.dir,invisible:!!e.scriptInvisible,removed:!!e.removed||!isViewerObjectPresent(e.element)}]:[];
-      });
-    },
+    readObjects: readViewerMapObjects,
     syncObjects: states => {
       const mapId=viewerEventMap();
       if(mapId)storeViewerObjects(mapId,states);
@@ -1975,7 +1980,11 @@ function setupUi(): void {
     },
   });
   if (!HOENN) explorationUi = new ExplorationUi({
-    save: () => saveViewerSession(navigationSnapshot()),
+    save: () => {
+      const nav = navigationSnapshot();
+      storeViewerObjects(nav.mapId, readViewerMapObjects(nav.mapId));
+      return saveViewerSession(nav);
+    },
     continue: () => continueViewerSession(),
     pause: paused => {
       keysDown.clear(); playerRunning = false;
