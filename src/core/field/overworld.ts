@@ -319,7 +319,10 @@ export class Overworld {
     this.messageBox.reset();
     this.map.InitMapLayoutData(this.loaded);
     this.map.onChange = () => this.renderer?.invalidate();
-    this.loadObjEventTemplatesFromHeader();
+    const savedTemplates = save.objectEventTemplates?.length ? save.objectEventTemplates : undefined;
+    this.loadObjEventTemplatesFromHeader(savedTemplates);
+    if (savedTemplates) this.LoadSaveblockObjEventScripts();
+    save.objectEventTemplates = this.objects.templates;
     this.objects.retainedViewerObjects=new Set(retainedObjects.map(object=>{
       const num=rom.mapNum(object.mapId);
       return `${num>>>8}:${num&255}:${object.localId}`;
@@ -1166,7 +1169,7 @@ export class Overworld {
     }
     this.objects.templates = templates;
     this.objects.spawnTemplates = spawnTemplates;
-    save.objectEventTemplates = templates.map((template) => ({ ...template }));
+    save.objectEventTemplates = templates;
     this.objects.mapNum = save.location.mapNum;
     this.objects.mapGroup = save.location.mapGroup;
   }
@@ -1183,7 +1186,7 @@ export class Overworld {
         template.scriptName = source.scriptName;
       }
     }
-    save.objectEventTemplates = this.objects.templates.map((template) => ({ ...template }));
+    save.objectEventTemplates = this.objects.templates;
   }
 
   /** SetObjEventTemplateCoords (overworld.c): equivalent to the inline lookup ScrCmd_setobjectxyperm
@@ -1193,7 +1196,7 @@ export class Overworld {
     if (t) {
       t.x = (x << 16) >> 16;
       t.y = (y << 16) >> 16;
-      save.objectEventTemplates = this.objects.templates.map((template) => ({ ...template }));
+      save.objectEventTemplates = this.objects.templates;
     }
   }
 
@@ -1203,7 +1206,7 @@ export class Overworld {
     const t = this.objects.templates.find((tt) => tt.localId === localId);
     if (t) {
       t.movementType = movementType;
-      save.objectEventTemplates = this.objects.templates.map((template) => ({ ...template }));
+      save.objectEventTemplates = this.objects.templates;
     }
   }
 

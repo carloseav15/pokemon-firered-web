@@ -1,12 +1,14 @@
 import { save, type SaveData } from '@game/save';
 import * as C from '@game/generated/constants';
 import { MAP_OFFSET } from '@core/field/fieldmap';
-import type { ObjectEvent } from '@core/field/objectEvents';
+import { initialMovementTypeFacingDirection, type ObjectEvent } from '@core/field/objectEvents';
+import type { MapObjectTemplate } from '@core/rom';
 import type { Direction } from './render/sprites';
 
 export type ViewerObjectState = {
   mapId: string; localId: number; x: number; y: number;
   direction: Direction; invisible: boolean; removed: boolean;
+  graphicsId?: number; elevation?: number; movementType?: number;
 };
 export const objectStateKey = (state: Pick<ViewerObjectState,'mapId'|'localId'>): string => `${state.mapId}:${state.localId}`;
 export type ViewerMapOrigin = {x:number;y:number};
@@ -14,10 +16,19 @@ export type ViewerMapOrigin = {x:number;y:number};
 export function translateViewerObjectCoords(coords:ViewerMapOrigin, from:ViewerMapOrigin, to:ViewerMapOrigin):ViewerMapOrigin {
   return {x:coords.x+from.x-to.x,y:coords.y+from.y-to.y};
 }
+const directionByGba = (dir: number): Direction =>
+  ({[C.DIR_SOUTH]:'south',[C.DIR_NORTH]:'north',[C.DIR_WEST]:'west',[C.DIR_EAST]:'east'} as const)[dir] ?? 'south';
 export function readViewerObjectState(object: ObjectEvent, mapId: string, removed = false, offset:ViewerMapOrigin={x:0,y:0}): ViewerObjectState {
   return {mapId,localId:object.localId,x:object.currentCoords.x-MAP_OFFSET+offset.x,y:object.currentCoords.y-MAP_OFFSET+offset.y,
-    direction:({[C.DIR_SOUTH]:'south',[C.DIR_NORTH]:'north',[C.DIR_WEST]:'west',[C.DIR_EAST]:'east'} as const)[object.facingDirection] ?? 'south',
-    invisible:object.invisible,removed};
+    direction:directionByGba(object.facingDirection),
+    invisible:object.invisible,removed,
+    graphicsId:object.graphicsId,elevation:object.currentElevation,movementType:object.movementType};
+}
+export function readViewerTemplateState(template: MapObjectTemplate, mapId: string, removed = false, offset:ViewerMapOrigin={x:0,y:0}, graphicsId = template.graphicsId): ViewerObjectState {
+  return {mapId,localId:template.localId,x:template.x+offset.x,y:template.y+offset.y,
+    direction:directionByGba(initialMovementTypeFacingDirection(template.movementType)),
+    invisible:false,removed,
+    graphicsId,elevation:template.elevation,movementType:template.movementType};
 }
 export const objectDirection = (direction: Direction): number => ({south:C.DIR_SOUTH,north:C.DIR_NORTH,west:C.DIR_WEST,east:C.DIR_EAST})[direction];
 
@@ -29,13 +40,15 @@ export function storeViewerObjects(mapId: string, states: ViewerObjectState[]): 
   (save as ViewerObjectSave).viewerObjects = {version:2,mapId,states:structuredClone(states)};
 }
 export function clearViewerObjects(): void { delete (save as ViewerObjectSave).viewerObjects; }
+const validOptionalByte = (v: unknown): boolean => v === undefined || (Number.isInteger(v) && (v as number) >= 0 && (v as number) < 256);
 export function savedViewerObjects(mapId: string): ViewerObjectState[] {
   const snapshot=(save as ViewerObjectSave).viewerObjects;
   if(!snapshot||(snapshot.version!==1&&snapshot.version!==2)||snapshot.mapId!==mapId||!Array.isArray(snapshot.states))return [];
   // Older saves have no projection. Reject malformed snapshots as a whole.
   if(!snapshot.states.every(s=>s&&typeof s.mapId==='string'&&s.mapId.startsWith('MAP_')&&(snapshot.version===2||s.mapId===mapId)&&Number.isInteger(s.localId)&&s.localId>0&&s.localId<256
     &&Number.isInteger(s.x)&&s.x>=-32768&&s.x<=32767&&Number.isInteger(s.y)&&s.y>=-32768&&s.y<=32767
-    &&['north','south','east','west'].includes(s.direction)&&typeof s.invisible==='boolean'&&typeof s.removed==='boolean')
+    &&['north','south','east','west'].includes(s.direction)&&typeof s.invisible==='boolean'&&typeof s.removed==='boolean'
+    &&validOptionalByte(s.graphicsId)&&validOptionalByte(s.elevation)&&validOptionalByte(s.movementType))
     ||new Set(snapshot.states.map(objectStateKey)).size!==snapshot.states.length)return [];
   return structuredClone(snapshot.states);
 }

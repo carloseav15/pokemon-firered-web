@@ -22,7 +22,7 @@ import { preloadEggHatch } from '@game/eggHatch';
 import { sound } from '@core/audio/sound';
 import { MAP_OFFSET } from '@core/field/fieldmap';
 import { PLAYER_AVATAR_FLAG_ACRO_BIKE, PLAYER_AVATAR_FLAG_MACH_BIKE, PLAYER_AVATAR_FLAG_ON_FOOT, PLAYER_AVATAR_FLAG_SURFING } from '@core/field/playerAvatar';
-import { objectStateKey, readViewerObjectState, objectDirection, storeViewerObjects, translateViewerObjectCoords, type ViewerMapOrigin, type ViewerObjectState } from './objectState';
+import { objectStateKey, readViewerObjectState, readViewerTemplateState, objectDirection, storeViewerObjects, translateViewerObjectCoords, type ViewerMapOrigin, type ViewerObjectState } from './objectState';
 import { syncViewerLocation, type NavigationSave } from './session';
 
 type Hooks = {
@@ -102,11 +102,29 @@ export class EngineInteraction {
   }
   private observeObjects(): void {
     if (!this.game || !this.interactionMapId) return;
-    for (const object of this.game.overworld.objects.list) {
+    const ow = this.game.overworld;
+    const activeKeys = new Set<string>();
+    for (const object of ow.objects.list) {
       if (object.isPlayer) continue;
       const state=this.objectState(object);
       if(!state)continue;
-      this.observedObjects.set(objectStateKey(state),state);
+      const key = objectStateKey(state);
+      activeKeys.add(key);
+      this.observedObjects.set(key,state);
+    }
+    const loadedId = ow.header.id;
+    const baseTemplates = new Map<number, (typeof ow.objects.templates)[number]>();
+    for (const o of ow.header.objects) if (!o.clone) baseTemplates.set(o.localId, o);
+    for (const t of ow.objects.templates) {
+      const key = `${loadedId}:${t.localId}`;
+      if (activeKeys.has(key)) continue;
+      const base = baseTemplates.get(t.localId);
+      const resolvedGfx = ow.objects.resolveGraphicsId(t.graphicsId);
+      const baseGfx = base ? ow.objects.resolveGraphicsId(base.graphicsId) : resolvedGfx;
+      const prev = this.observedObjects.get(key);
+      if (prev || !base || t.x !== base.x || t.y !== base.y || t.movementType !== base.movementType || t.elevation !== base.elevation || resolvedGfx !== baseGfx) {
+        this.observedObjects.set(key, readViewerTemplateState(t, loadedId, prev?.removed ?? false, {x:0,y:0}, resolvedGfx));
+      }
     }
     storeViewerObjects(this.interactionMapId, [...this.observedObjects.values()]);
   }
@@ -115,17 +133,34 @@ export class EngineInteraction {
     const states=this.hooks.readObjects(nav.mapId);
     await ow.prepareViewerInteraction(nav.mapId,states.filter(s=>!s.removed).map(s=>({mapId:s.mapId,localId:s.localId})));
     const loaded=this.hooks.mapOrigin(nav.mapId);
+    const left=save.pos.x+MAP_OFFSET-2,right=save.pos.x+MAP_OFFSET+17,top=save.pos.y+MAP_OFFSET,bottom=save.pos.y+MAP_OFFSET+16;
+    let spawned=false;
     for (const state of states) {
       const num=rom.mapNum(state.mapId),owner=this.hooks.mapOrigin(state.mapId);
       if(!loaded||!owner)continue;
-      const object=ow.objects.byLocalIdAndMap(state.localId,num&255,num>>>8);
+      const coords=translateViewerObjectCoords(state,owner,loaded);
+      const tx=coords.x+MAP_OFFSET,ty=coords.y+MAP_OFFSET;
+      let object=ow.objects.byLocalIdAndMap(state.localId,num&255,num>>>8);
+      if (!object && !state.removed && tx>=left && tx<=right && ty>=top && ty<=bottom) {
+        const slot=ow.objects.TrySpawnObjectEvent(state.localId,num&255,num>>>8);
+        if (slot < 16) { object = ow.objects.objects[slot] ?? undefined; spawned = true; }
+      }
       if (!object) continue; // Source spawning/view limits remain authoritative.
       if (state.removed) { ow.objects.remove(object); continue; }
-      const coords=translateViewerObjectCoords(state,owner,loaded);
-      ow.objects.MoveObjectEventToMapCoords(object,coords.x+MAP_OFFSET,coords.y+MAP_OFFSET);
+      ow.objects.MoveObjectEventToMapCoords(object,tx,ty);
+      if (state.movementType !== undefined && state.movementType !== object.movementType) {
+        ow.objects.setTrainerMovementType(object, state.movementType);
+      }
       ow.objects.turn(object,objectDirection(state.direction));
+      if (state.graphicsId !== undefined && state.graphicsId !== object.graphicsId) {
+        ow.objects.ObjectEventSetGraphicsId(object, state.graphicsId);
+      }
+      if (state.elevation !== undefined) {
+        object.currentElevation = object.previousElevation = state.elevation & 0xff;
+      }
       object.invisible=state.invisible;
     }
+    if (spawned) ow.syncObjectSprites();
   }
   /** The engine may have moved the player (white-out): hand its position back to the viewer. */
   private finish(nav: NavigationSave): void {

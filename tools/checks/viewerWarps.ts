@@ -64,6 +64,7 @@ console.log(`Viewer elevator coordinate destinations PASS: ${floorDestinations}`
 
 // Field temporaries follow the source map loaders (overworld.c:753-797), not
 // menus. PREPARED: flags/vars are test inputs; no story outcome is manufactured.
+await import('./setupNodeGbaMock');
 const { rom } = await import('../../src/core/rom');
 rom.constants = JSON.parse(await readFile('public/fr/constants.json','utf8'));
 const S = await import('../../src/games/firered/save');
@@ -107,7 +108,6 @@ assert.equal(objects.findAt(2,8)?.element.map,'MAP_ROUTE9');
 console.log('PREPARED flags/vars and template fixtures; Viewer map events PASS: map change/same-map warp reset, same-map interaction/continue preservation, persistent progress and retained templates');
 
 // PREPARED: runtime object inputs, not a prepared movement/script result.
-await import('./setupNodeGbaMock');
 const { ObjectEvent, ObjectEvents } = await import('../../src/core/field/objectEvents');
 const { readViewerObjectState } = await import('../../src/viewer/objectState');
 const actor=new ObjectEvent();actor.localId=1;actor.currentCoords={x:11,y:16};actor.facingDirection=C.DIR_WEST;actor.invisible=true;
@@ -346,3 +346,66 @@ cloneRuntime.RemoveObjectEventByLocalIdAndMap(10, route9Num & 0xff, route9Num >>
 assert.equal(S.flagGet(C.FLAG_TEMP_12), true);
 assert.deepEqual(removedIdentities, ['MAP_ROUTE16:7', 'MAP_ROUTE9:10']);
 console.log('PREPARED homonymous localId & retained-clone fixtures; R1.2/R1.3 clone script lookup and removeobject PASS');
+
+// R1.3 & R1.5: Off-spawn template overrides (setobjectxyperm / setobjectmovementtype),
+// clone TrySpawnObjectEvent coordinates, and graphicsId / elevation / movementType sync.
+const { MAP_OFFSET } = await import('../../src/core/field/fieldmap');
+const { registerCData } = await import('../../src/core/hw/assets');
+registerCData('event_object_movement', JSON.parse(await readFile('public/fr/cdata/event_object_movement.json', 'utf8')).defs);
+rom.objects = JSON.parse(await readFile('public/fr/objects.json', 'utf8'));
+const spawnRuntime = new ObjectEvents({
+  playerMapPosition: () => ({ x: 20, y: 20 }),
+  mapType: () => C.MAP_TYPE_TOWN,
+  map: () => ({ xSize: 60, ySize: 50, behaviorAt: () => 0, elevationAt: () => 3 }),
+  groundEffect: () => {},
+} as unknown as ConstructorParameters<typeof ObjectEvents>[0]);
+spawnRuntime.templates = cerulean.objects.filter((o): o is Exclude<typeof cerulean.objects[number], {clone:true}> => !o.clone).map(o => ({ ...o }));
+spawnRuntime.mapNum = ceruleanNum & 0xff;
+spawnRuntime.mapGroup = ceruleanNum >>> 8;
+spawnRuntime.spawnTemplates = [{ template: { ...cut }, mapNum: route9Num & 0xff, mapGroup: route9Num >>> 8, x: 50, y: 18, isClone: true }];
+S.flagClear(C.FLAG_TEMP_12); // PREPARED clear flag so TrySpawnObjectEvent can spawn the clone
+const cloneSlot = spawnRuntime.TrySpawnObjectEvent(10, route9Num & 0xff, route9Num >>> 8);
+assert.ok(cloneSlot < 16, 'TrySpawnObjectEvent spawns clone from spawnTemplates');
+const spawnedClone = spawnRuntime.objects[cloneSlot]!;
+assert.equal(spawnedClone.currentCoords.x, 50 + MAP_OFFSET, 'clone spawns at clone x, not foreign template x');
+assert.equal(spawnedClone.currentCoords.y, 18 + MAP_OFFSET, 'clone spawns at clone y, not foreign template y');
+
+// Template modified via OverrideTemplateCoordsForObjectEvent and OverrideMovementTypeForObjectEvent
+const localActor = new ObjectEvent();
+localActor.localId = 1;
+localActor.mapNum = ceruleanNum & 0xff;
+localActor.mapGroup = ceruleanNum >>> 8;
+localActor.currentCoords = { x: 33 + MAP_OFFSET, y: 27 + MAP_OFFSET };
+spawnRuntime.OverrideTemplateCoordsForObjectEvent(localActor);
+spawnRuntime.OverrideMovementTypeForObjectEvent(localActor, C.MOVEMENT_TYPE_FACE_LEFT);
+const overriddenTemplate = spawnRuntime.FindObjectEventTemplateByLocalId(1)!;
+const templateState = projections.readViewerTemplateState(overriddenTemplate, 'MAP_CERULEAN_CITY');
+assert.equal(templateState.x, 33);
+assert.equal(templateState.y, 27);
+assert.equal(templateState.direction, 'west');
+assert.equal(templateState.movementType, C.MOVEMENT_TYPE_FACE_LEFT);
+
+// GraphicsId, elevation, and movementType sync in ViewerObjectState and EntityManager
+spawnedClone.graphicsId = C.OBJ_EVENT_GFX_LITTLE_BOY;
+spawnedClone.currentElevation = 4;
+spawnedClone.movementType = C.MOVEMENT_TYPE_FACE_UP;
+const richState = projections.readViewerObjectState(spawnedClone, 'MAP_ROUTE9');
+assert.equal(richState.graphicsId, C.OBJ_EVENT_GFX_LITTLE_BOY);
+assert.equal(richState.elevation, 4);
+assert.equal(richState.movementType, C.MOVEMENT_TYPE_FACE_UP);
+projections.storeViewerObjects('MAP_ROUTE9', [richState]);
+assert.deepEqual(projections.savedViewerObjects('MAP_ROUTE9'), [richState]);
+
+const gfxEntities = new EntityManager(null as unknown as HTMLElement, 0, 0);
+gfxEntities.applyObjectState(richState, { ...treeElement, movementType: C.MOVEMENT_TYPE_LOOK_AROUND }, 0, 0);
+const syncedEnt = gfxEntities.entities[0]!;
+assert.equal(syncedEnt.graphicsId, C.OBJ_EVENT_GFX_LITTLE_BOY);
+assert.equal(syncedEnt.element.graphics, 'OBJ_EVENT_GFX_LITTLE_BOY');
+assert.equal(syncedEnt.elevation, 4);
+assert.equal(syncedEnt.movementType, C.MOVEMENT_TYPE_FACE_UP);
+assert.equal(syncedEnt.element.movementType, C.MOVEMENT_TYPE_FACE_UP);
+gfxEntities.resetRemovedObjects();
+assert.equal(syncedEnt.graphicsId, undefined);
+assert.equal(syncedEnt.element.graphics, cut.graphicsName);
+assert.equal(syncedEnt.element.movementType, C.MOVEMENT_TYPE_LOOK_AROUND);
+console.log('PREPARED template/clone fixtures; R1.3/R1.5 off-spawn template overrides, clone TrySpawnObjectEvent and graphics/elevation/movementType sync PASS');

@@ -2,8 +2,20 @@ import * as C from "@game/generated/constants";
 import type { ViewerObjectState } from "../objectState";
 import type { Element } from "../types";
 import { TILE } from "../constants";
-import { DATA_ROOT } from "@core/rom";
+import { DATA_ROOT, rom } from "@core/rom";
 import { facingFrame, fallbackGfx, gfxInfoOf, type Direction } from "./sprites";
+
+let gfxTable: Map<number, string> | undefined;
+function gfxNameById(id: number): string | undefined {
+  if (rom.constants) return rom.nameOf("OBJ_EVENT_GFX_", id);
+  if (!gfxTable) {
+    gfxTable = new Map();
+    for (const [k, v] of Object.entries(C)) {
+      if (k.startsWith("OBJ_EVENT_GFX_") && typeof v === "number" && !gfxTable.has(v)) gfxTable.set(v, k);
+    }
+  }
+  return gfxTable.get(id);
+}
 
 export type LiveEntity = {
   element: Element;
@@ -16,7 +28,11 @@ export type LiveEntity = {
   removed?: boolean;
   scriptInvisible?: boolean;
   engineState?: boolean;
+  graphicsId?: number;
+  elevation?: number;
+  movementType?: number;
   initialGx: number; initialGy: number; initialDir: Direction;
+  initialGraphics?: string; initialMovementType?: number;
 };
 
 export class EntityManager {
@@ -28,7 +44,11 @@ export class EntityManager {
   constructor(private readonly content: HTMLElement, private readonly minX: number, private readonly minY: number) {}
 
   addEntity(element: Element, gx: number, gy: number, dir: Direction): void {
-    this.entities.push({ element, gx, gy, dir, initialGx:gx, initialGy:gy, initialDir:dir });
+    this.entities.push({
+      element, gx, gy, dir,
+      initialGx: gx, initialGy: gy, initialDir: dir,
+      initialGraphics: element.graphics, initialMovementType: element.movementType,
+    });
     this.presenceDirty = true;
   }
 
@@ -43,6 +63,8 @@ export class EntityManager {
       this.vacatedTiles.push({gx:ent.gx,gy:ent.gy});
       ent.removed=false;ent.scriptInvisible=false;ent.engineState=false;
       ent.gx=ent.initialGx;ent.gy=ent.initialGy;ent.dir=ent.initialDir;
+      ent.graphicsId=undefined;ent.elevation=undefined;ent.movementType=undefined;
+      ent.element.graphics=ent.initialGraphics;ent.element.movementType=ent.initialMovementType;
       ent.el?.remove();ent.el=undefined;
     }
     // Resident sector grids can predate a map reset even if every entity keeps
@@ -60,12 +82,16 @@ export class EntityManager {
       ent=this.entities.at(-1)!;
     }
     const gx=originX+state.x,gy=originY+state.y;
-    if (ent.gx!==gx||ent.gy!==gy||ent.dir!==state.direction||!!ent.scriptInvisible!==state.invisible||!!ent.removed!==state.removed) {
+    const nextGraphics = state.graphicsId !== undefined ? (gfxNameById(state.graphicsId) ?? ent.element.graphics) : ent.element.graphics;
+    if (ent.gx!==gx||ent.gy!==gy||ent.dir!==state.direction||!!ent.scriptInvisible!==state.invisible||!!ent.removed!==state.removed||ent.element.graphics!==nextGraphics) {
       this.vacatedTiles.push({gx:ent.gx,gy:ent.gy});
       ent.el?.remove();ent.el=undefined;
       this.presenceDirty=true;
     }
     ent.gx=gx;ent.gy=gy;ent.dir=state.direction;ent.scriptInvisible=state.invisible;ent.removed=state.removed;ent.engineState=true;
+    if (state.graphicsId !== undefined) { ent.graphicsId = state.graphicsId; ent.element.graphics = nextGraphics; }
+    if (state.elevation !== undefined) ent.elevation = state.elevation;
+    if (state.movementType !== undefined) { ent.movementType = state.movementType; ent.element.movementType = state.movementType; }
   }
 
   /** Retain hidden templates so clearing a flag can restore them without reloading. */

@@ -342,7 +342,14 @@ function ScrCmd_waitmovementat(ctx: ScriptRunner): boolean {
   return true;
 }
 function ScrCmd_removeobject(ctx: ScriptRunner): boolean { removeObject(ctx, varGet(ctx.ScriptReadHalfword())); return false; }
-function ScrCmd_removeobjectat(ctx: ScriptRunner): boolean { removeResolvedObject(ctx, readObjectAt(ctx)); return false; }
+function ScrCmd_removeobjectat(ctx: ScriptRunner): boolean {
+  const objectId = varGet(ctx.ScriptReadHalfword());
+  const mapGroup = ctx.readByte();
+  const mapNum = ctx.readByte();
+  ctx.ow.objects.RemoveObjectEventByLocalIdAndMap(objectId, mapNum, mapGroup);
+  ctx.ow.syncObjectSprites();
+  return false;
+}
 function ScrCmd_addobject(ctx: ScriptRunner): boolean { addObject(ctx, varGet(ctx.ScriptReadHalfword())); return false; }
 function ScrCmd_addobjectat(ctx: ScriptRunner): boolean {
   const id = varGet(ctx.ScriptReadHalfword()) & 0xff;
@@ -354,13 +361,10 @@ function ScrCmd_addobjectat(ctx: ScriptRunner): boolean {
   }
   const mapId = rom.mapIdByNum((mapGroup << 8) | mapNum);
   if (!mapId) throw new Error(`Unknown object map ${mapGroup}.${mapNum}`);
-  const spawn = (header: MapHeader): void => {
-    const template = header.objects.find(t => !t.clone && t.localId === id);
-    if (!template || template.clone) return;
-    if (ctx.ow.objects.spawnFromTemplate({ ...template }, mapNum, mapGroup)) ctx.ow.syncObjectSprites();
+  const spawn = (): void => {
+    if (ctx.ow.objects.TrySpawnObjectEvent(id, mapNum, mapGroup) !== OBJECT_EVENTS_COUNT) ctx.ow.syncObjectSprites();
   };
-  const cached = rom.cachedMap(mapId);
-  if (cached) { spawn(cached); return false; }
+  if (rom.cachedMap(mapId)) { spawn(); return false; }
   // Browser adaptation: wait for the source map data before resuming bytecode.
   let loaded: MapHeader | undefined;
   let failed = false;
@@ -369,7 +373,7 @@ function ScrCmd_addobjectat(ctx: ScriptRunner): boolean {
   ctx.SetupNativeScript(() => {
     if (failed) throw failure;
     if (!loaded) return false;
-    spawn(loaded);
+    spawn();
     return true;
   });
   return true;

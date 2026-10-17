@@ -102,6 +102,9 @@ const INITIAL_FACING: Record<number, number> = {};
     [0x40, 1], [0x41, 2], [0x42, 3], [0x43, 4], [0x44, 1], [0x45, 2], [0x46, 3], [0x47, 4], [0x48, 1], [0x49, 2], [0x4a, 3], [0x4b, 4], [0x4c, 1], [0x4d, 1], [0x4e, 1], [0x4f, 1], [0x50, 1]];
   for (const [t, d] of rest) INITIAL_FACING[t] = d;
 }
+export function initialMovementTypeFacingDirection(movementType: number): number {
+  return INITIAL_FACING[movementType & 0xff] ?? DIR_SOUTH;
+}
 
 // WALK_SEQUENCE types 0x1D..0x34: directions + the index/axis shortcut rule.
 const SEQUENCES: Array<[number[], number, "x" | "y"]> = [
@@ -1079,9 +1082,11 @@ export class ObjectEvents {
 
   /** TrySpawnObjectEvent (event_object_movement.c): look up an object template and return its u8 slot/sentinel. */
   TrySpawnObjectEvent(localId: number, mapNum: number, mapGroup: number): number {
-    const template = this.GetObjectEventTemplateByLocalIdAndMap(localId & 0xff, mapNum & 0xff, mapGroup & 0xff);
+    const id = localId & 0xff, num = mapNum & 0xff, group = mapGroup & 0xff;
+    const template = this.GetObjectEventTemplateByLocalIdAndMap(id, num, group);
     if (!template) return OBJECT_EVENTS_COUNT;
-    const object = this.TrySpawnObjectEventTemplate(template, mapNum, mapGroup);
+    const clone = this.spawnTemplates.find(e => e.isClone && e.mapNum === num && e.mapGroup === group && e.template.localId === id);
+    const object = this.TrySpawnObjectEventTemplate(template, num, group, clone);
     return object ? this.indexOf(object) : OBJECT_EVENTS_COUNT;
   }
 

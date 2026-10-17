@@ -1950,7 +1950,13 @@ function readViewerMapObjects(mapId: string): ViewerObjectState[] {
   const identities=new Set(header.objects.map(o=>o.clone?`${o.targetMap}:${o.targetLocalId}`:`${mapId}:${o.localId}`));
   return entityManager.entities.filter(e=>e.element.localId!==undefined&&identities.has(`${e.element.map}:${e.element.localId}`)&&(e.engineState||objectSpawns.isActive(e.element))).flatMap(e=>{
     const owner=index.maps[e.element.map];
-    return owner?[{mapId:e.element.map,localId:e.element.localId!,x:e.gx-owner.x,y:e.gy-owner.y,direction:e.dir,invisible:!!e.scriptInvisible,removed:!!e.removed||!isViewerObjectPresent(e.element)}]:[];
+    return owner?[{
+      mapId:e.element.map,localId:e.element.localId!,x:e.gx-owner.x,y:e.gy-owner.y,
+      direction:e.dir,invisible:!!e.scriptInvisible,removed:!!e.removed||!isViewerObjectPresent(e.element),
+      ...(e.graphicsId !== undefined ? { graphicsId: e.graphicsId } : {}),
+      ...(e.elevation !== undefined ? { elevation: e.elevation } : {}),
+      ...(e.movementType !== undefined ? { movementType: e.movementType } : e.element.movementType !== undefined ? { movementType: e.element.movementType } : {}),
+    }]:[];
   });
 }
 
