@@ -18,7 +18,7 @@ import { DATA_ROOT, rom } from "../rom";
 import { flagGet, flagSet, incrementGameStat, save, varSet, SV } from "@game/save";
 import { stringVars } from "../gba/charmap";
 import { IsWeatherNotFadingIn, SetWeatherScreenFadeOut, WeatherProcessingIdle } from "./weather";
-import { canvas, rgb555, spriteSheet, tilemapCanvas } from "./gfx4bpp";
+import { spriteSheet, tilemapCanvas } from "./gfx4bpp";
 import { MAP_OFFSET, MapGridGetElevationAt, MapGridGetMetatileAttributeAt, MapGridGetMetatileIdAt, MapGridSetMetatileIdAt, METATILE_ATTRIBUTE_TERRAIN } from "./fieldmap";
 import { actionFace, actionJumpSpecial, actionWalkSlower, DIR_EAST, DIR_NONE, DIR_NORTH, DIR_SOUTH, DIR_WEST, DIRECTION_VECTORS, type ObjectEvent } from "./objectEvents";
 import { isMapTypeOutdoors, type Overworld } from "./overworld";
@@ -1876,6 +1876,3 @@ export function CutMoveRuinValleyCheck(ow: Overworld): boolean {
     && p.currentCoords.y - MAP_OFFSET === 25
     && p.facingDirection === DIR_NORTH;
 }
-
-// Referenced for completeness of the palette helpers.
-void rgb555; void canvas; void DIR_EAST; void DIR_WEST;
