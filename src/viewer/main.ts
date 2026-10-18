@@ -626,8 +626,8 @@ function interactWithEntity(ent: LiveEntity): void {
   if (!HOENN && playerActive && engineInteraction) {
     const header = mapHeaders.get(ent.element.map);
     const npc = header?.objects.find(o => !o.clone && o.localId === ent.element.localId);
-    // Scope: source nurse/clerk scripts, not a generic replacement for story VM integration.
-    if (npc && !npc.clone && /(?:_(?:Nurse|Clerk(?:Items|TMs|XItems|Vitamins)?|MartClerk)|^EventScript_(?:CutTree|RockSmash|StrengthBoulder))$|_Gym_EventScript_/.test(npc.scriptName ?? "")) {
+    // Scope: source nurse/clerk scripts (marts, Game Corner coins and prizes), not a generic replacement for story VM integration.
+    if (npc && !npc.clone && /(?:_(?:Nurse|Clerk(?:Items|TMs|XItems|Vitamins)?|MartClerk|CoinsClerk|PrizeClerk(?:Mons|TMs|Items))|^EventScript_(?:CutTree|RockSmash|StrengthBoulder))$|_Gym_EventScript_/.test(npc.scriptName ?? "")) {
       if (isStepping || warpBusy || explorationUi?.paused || engineInteraction.open) return;
       const dx = playerDir === "east" ? 1 : playerDir === "west" ? -1 : 0;
       const dy = playerDir === "south" ? 1 : playerDir === "north" ? -1 : 0;

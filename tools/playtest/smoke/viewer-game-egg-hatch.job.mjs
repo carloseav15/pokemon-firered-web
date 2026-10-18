@@ -31,6 +31,7 @@ export default async function run(ctx){
  for(let i=0;i<120;i++){
   if((await engine())==='CB2_NamingScreen'){named=true;break;}
   await p.keyboard.press('z');await p.waitForTimeout(700);
+  if(i%3===0&&i<=15)await ctx.shot('hatch-scene-'+i);
  }
  if(!named){await ctx.shot('no-naming');throw Error('Naming screen did not open');}
  await p.waitForTimeout(1500);
