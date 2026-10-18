@@ -58,10 +58,9 @@ export default async function run(ctx) {
     const s = await import('/src/games/firered/save.ts');
     const C = await import('/src/games/firered/generated/constants.ts');
     s.flagSet(C.FLAG_BADGE06_GET);
-    s.save.party[0].level = 50;
-    s.save.party[0].hp = 200;
-    s.save.party[0].maxHP = 200;
-    s.save.party[0].speed = 200;
+    // A real Lv50 lead (createMon computes stats); setting level/hp alone kept Lv5 stats.
+    const { createMon } = await import('/src/core/pokemon/pokemon.ts');
+    s.save.party[0] = createMon(s.save.party[0].species, 50);
     s.save.party[0].moves[0] = C.MOVE_ROCK_SMASH;
     s.save.party[0].pp[0] = 15;
   });
@@ -97,8 +96,9 @@ export default async function run(ctx) {
     await p.waitForTimeout(200);
   }
 
-  // If we fled battle, advance any post-battle dialogue until closed
-  for (let i = 0; i < 40; i++) {
+  // If we fled battle, advance any post-battle dialogue until closed. Rock Smash may start a
+  // random wild battle (RockSmashWildEncounter); mashing A wins it with the Lv50 lead.
+  for (let i = 0; i < 400; i++) {
     const isVisible = await p.locator('#engine-interaction').isVisible();
     if (!isVisible) break;
     await hold('z', 80);
@@ -151,10 +151,9 @@ export default async function run(ctx) {
   await p.evaluate(async () => {
     const s = await import('/src/games/firered/save.ts');
     const C = await import('/src/games/firered/generated/constants.ts');
-    s.save.party[0].level = 50;
-    s.save.party[0].hp = 200;
-    s.save.party[0].maxHP = 200;
-    s.save.party[0].speed = 200;
+    // A real Lv50 lead (createMon computes stats); setting level/hp alone kept Lv5 stats.
+    const { createMon } = await import('/src/core/pokemon/pokemon.ts');
+    s.save.party[0] = createMon(s.save.party[0].species, 50);
     s.save.party[0].moves[1] = C.MOVE_SWEET_SCENT;
     s.save.party[0].pp[1] = 20;
   });
