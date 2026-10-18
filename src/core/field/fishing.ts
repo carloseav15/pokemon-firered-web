@@ -107,7 +107,7 @@ export function startFishing(ow: Overworld, rod: number): void {
   function Fishing6(): boolean {
     AlignFishingAnimationFrames();
     step++;
-    if (!ow.game.wild.hasFishingMons() || random() & 1) step = NO_BITE;
+    if (!ow.game.wild.hasFishingMons() || (random() & 1)) step = NO_BITE;
     else sprite.startAnim(GetFishingBiteDirectionAnimNum(player.facingDirection));
     return true;
   }

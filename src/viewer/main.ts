@@ -2398,6 +2398,11 @@ function setupUi(): void {
       if (!HOENN) toggleBike();
       return;
     }
+    if ((key === "backspace" || key === "f") && playerActive && !HOENN && engineInteraction && !isStepping && !warpBusy && !elevatorBusy && !dialogManager.isOpen()) {
+      e.preventDefault();
+      void engineInteraction.useRegisteredKeyItem(navigationSnapshot());
+      return;
+    }
     if (key === "shift") {
       playerRunning = true;
     }

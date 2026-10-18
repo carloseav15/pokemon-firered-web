@@ -235,9 +235,10 @@ export class EngineInteraction {
       ow.whiteOutWindow?.render(ui);
     }
     const ctx = this.field.getContext('2d')!;ctx.clearRect(0,0,240,160);
-    // Step events (repel, poison) leave the viewer's own avatar in place.
     const targetNum = this.localId && this.objectMapId ? rom.mapNum(this.objectMapId) : 0;
-    const objects = this.localId ? [ow.player.object, ow.objects.byLocalIdAndMap(this.localId, targetNum & 255, targetNum >>> 8)] : [];
+    const target = this.localId ? ow.objects.byLocalIdAndMap(this.localId, targetNum & 255, targetNum >>> 8) : null;
+    const drawPlayer = Boolean(this.localId || ow.player.preventStep || ow.player.isSurfing());
+    const objects = [...(drawPlayer ? [ow.player.object] : []), ...(target ? [target] : [])];
     for (const object of objects) if(object?.sprite && !object.sprite.invisible) ow.sprites.drawSprite(ctx,object.sprite);
     // Healing balls/glow and other actual field-effect sprites stay at their
     // original map coordinates. General NPC rendering remains a later integration.
@@ -436,6 +437,34 @@ export class EngineInteraction {
       if (!started) this.root.dataset.loading = 'false';
     }
   }
+  /** Use registered key item (e.g. Fishing Rod on water) on the field. */
+  async useRegisteredKeyItem(nav: NavigationSave): Promise<boolean> {
+    if (this.busy) return false;
+    let started = false;
+    try {
+      await (this.loading ??= this.initialize());
+      const game = this.game!;
+      const ow = game.overworld;
+      syncViewerLocation(nav);
+      if (this.wildMap !== nav.mapId) { await this.prepareObjects(nav); this.wildMap = nav.mapId; }
+      const player = ow.player.object;
+      const elevation = ow.map.elevationAt(nav.x + MAP_OFFSET, nav.y + MAP_OFFSET) || 3;
+      player.currentElevation = elevation;
+      player.previousElevation = elevation;
+      ow.objects.MoveObjectEventToMapCoords(player, nav.x + MAP_OFFSET, nav.y + MAP_OFFSET);
+      ow.objects.turn(player, save.facing);
+      ow.SetCameraToTrackPlayer();
+      started = true;
+      this.hooks.hideObjects(true, nav.mapId, 0);
+      await this.run(nav, 0, true, (g) => {
+        g.UseRegisteredKeyItemOnField();
+      }, true);
+      return true;
+    } finally {
+      this.hooks.hideObjects(false, nav.mapId, 0);
+      if (!started) this.root.dataset.loading = 'false';
+    }
+  }
   /**
    * CheckStandardWildEncounter (field_control_avatar.c) for the tile the viewer
    * player just reached. The engine decides (rate, repel, tables, level) and
@@ -454,6 +483,9 @@ export class EngineInteraction {
       if (this.wildMap !== nav.mapId) { await this.prepareObjects(nav); this.wildMap = nav.mapId; }
       // Place the engine avatar (and camera) exactly where the viewer player stands.
       const player = ow.player.object;
+      const elevation = ow.map.elevationAt(nav.x + MAP_OFFSET, nav.y + MAP_OFFSET) || 3;
+      player.currentElevation = elevation;
+      player.previousElevation = elevation;
       ow.objects.MoveObjectEventToMapCoords(player, nav.x + MAP_OFFSET, nav.y + MAP_OFFSET);
       ow.objects.turn(player, save.facing);
       ow.SetCameraToTrackPlayer();

@@ -387,8 +387,9 @@ export function FieldUseFunc_Bike(game: Game, route: {
 }
 
 /** ItemUseOnFieldCB_Rod (item_use.c): start the selected rod's fishing state. */
-function ItemUseOnFieldCB_Rod(game: Game, rodType: number): void {
-  startFishing(game.overworld, rodType);
+function ItemUseOnFieldCB_Rod(game: Game, rodType: number | string): void {
+  const rod = typeof rodType === "string" ? (C as Record<string, number>)[rodType] ?? rom.c(rodType) : rodType;
+  startFishing(game.overworld, rod);
 }
 
 /** ItemUseOutOfBattle_Itemfinder (item_use.c): count the use before entering its field callback. */

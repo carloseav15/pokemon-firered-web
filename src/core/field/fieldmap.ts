@@ -137,7 +137,7 @@ export function MapGridGetMetatileAttributeAt(x: number, y: number, attributeTyp
 
 /** TestMetatileAttributeBit (metatile_behavior.c), used by cut and Dive terrain checks. */
 export function TestMetatileAttributeBit(attribute: number, bitmask: number): boolean {
-  return ((attribute >>> 0) & (bitmask & 0xff)) !== 0;
+  return MB.TestMetatileAttributeBit(attribute, bitmask);
 }
 
 /** MetatileAtCoordsIsWaterTile (field_player_avatar.c). */

@@ -1116,8 +1116,7 @@ export class PlayerAvatar {
 
   /** MetatileAtCoordsIsWaterTile (field_player_avatar.c). */
   MetatileAtCoordsIsWaterTile(x: number, y: number): boolean {
-    const terrain = this.ow.map.attributeAt(x, y, C.METATILE_ATTRIBUTE_TERRAIN);
-    return (terrain & (1 << C.TILE_TERRAIN_WATER)) !== 0;
+    return MB.TestMetatileAttributeBit(this.ow.map.attributeAt(x, y, C.METATILE_ATTRIBUTE_TERRAIN), C.TILE_TERRAIN_WATER);
   }
 
   /**
@@ -1130,6 +1129,7 @@ export class PlayerAvatar {
     const [dx, dy] = DIRECTION_VECTORS[o.facingDirection];
     const x = o.currentCoords.x + dx, y = o.currentCoords.y + dy;
     return this.ow.objects.GetCollisionAtCoords(o, x, y, o.facingDirection) === COLLISION_ELEVATION_MISMATCH
-      && PlayerGetElevation() === 3 && this.MetatileAtCoordsIsWaterTile(x, y);
+      && PlayerGetElevation() === 3
+      && this.MetatileAtCoordsIsWaterTile(x, y);
   }
 }
