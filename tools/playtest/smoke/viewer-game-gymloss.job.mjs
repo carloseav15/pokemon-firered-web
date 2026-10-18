@@ -1,3 +1,4 @@
+// Run with PW_TIMEOUT_MS=300000 (the unprepared Lv5 lead needs more than the default budget).
 // PREPARED: Pewter Gym URL start at the entrance with the unmodified Lv5 starter.
 // Mashing the first move loses to the gym trainers; the engine's white-out must
 // heal the party and move the viewer to the respawn point (Pallet Town by default).
