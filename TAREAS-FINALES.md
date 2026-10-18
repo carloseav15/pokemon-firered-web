@@ -78,7 +78,7 @@ Anotados el 2026-10-16 a partir de lo que esa sesión dejó sin probar, sin veri
 **D. Integración nueva**
 - [x] Empujar bloques con Fuerza (mover entidad con colisión, interruptores y pozos) — `b4f81dc5`.
 - [x] Pesca (cerrada en `151c6bbb`; smoke test `viewer-game-fishing` PASS), Golpe Roca, olor dulce y Zona Safari (cerrados en `0d86ddb4`; smoke test `viewer-game-r3` PASS); pendientes fantasmas de Pokémon Tower, merodeadores.
-- [ ] Evolución tras subir de nivel y aprendizaje de movimientos en combate salvaje y de entrenador.
+- [x] Evolución tras subir de nivel y aprendizaje de movimientos en combate salvaje y de entrenador (cerrado en `a91d31b3`; `check:viewer-warps`, `driver-evolution`, `driver-learn-move` y smoke test `viewer-game-r4` PASS).
 - [ ] Surf con la MO real (hoy el visor embarca solo al llegar al agua), Flash, Corte y Fuerza desde el equipo.
 - [ ] Vuelo/Teletransporte/Cuerda Huida con animación completa (hoy el visor corta tras el fundido y sigue `save.location`).
 - [ ] Los otros siete gimnasios con sus puzzles y eventos propios (punto 8).
@@ -89,7 +89,7 @@ Anotados el 2026-10-16 a partir de lo que esa sesión dejó sin probar, sin veri
 
 ## Hoja de ruta para el siguiente agente
 
-Punto de entrega: 2026-10-17, código `f0e119c3` + `277bbbe6` (zoom `5×`/`6×`, preferencias y HUD), `d5986c54` (R1.3/R1.5 sincronía de plantillas y mutaciones de posición), `a2eed273` (C.75 curación tras whiteout), `6bfc21a5` (validación en navegador R1/C.75 PASS), `b4f81dc5` (R2: Fuerza y bloques de empuje en visor PASS), `151c6bbb` (R3 pesca y caña registrada PASS) y `0d86ddb4` (R3 Golpe Roca, Dulce Aroma y Zona Safari PASS). Continuar por R4 (evolución y aprendizaje de movimientos), luego R5–R7.
+Punto de entrega: 2026-10-17, código `f0e119c3` + `277bbbe6` (zoom `5×`/`6×`, preferencias y HUD), `d5986c54` (R1.3/R1.5 sincronía de plantillas y mutaciones de posición), `a2eed273` (C.75 curación tras whiteout), `6bfc21a5` (validación en navegador R1/C.75 PASS), `b4f81dc5` (R2: Fuerza y bloques de empuje en visor PASS), `151c6bbb` (R3 pesca y caña registrada PASS), `0d86ddb4` (R3 Golpe Roca, Dulce Aroma y Zona Safari PASS) y `a91d31b3` (R4 evolución tras subida de nivel, aprendizaje/reemplazo de movimientos, retorno a visor y guardado PASS). Continuar por R5 (Surf con MO y acciones desde equipo), luego R6–R7.
 Esta sección ordena las tareas abiertas de arriba; no sustituye sus límites ni
 abre otra lista de trabajo. La meta es completar el juego de un jugador dentro
 del visor, con lógica fuente y guardado compartido; la cobertura por nombres no
@@ -100,7 +100,7 @@ mide esa integración ni la fidelidad.
 1. Leer `AGENTS.md`, `PORTING-STATUS.md`, esta sección y la fila de la tanda elegida;
    comprobar `git status` y la rama. Un agente a la vez en `main`, sin ramas,
    worktrees, subagentes ni push. Preservar cambios ajenos.
-2. Empezar por **R4** (evolución y aprendizaje de movimientos). No volver a implementar flags, Corte, Fuerza, pesca, Golpe Roca, Dulce Aroma ni Safari: ya están conectados. Confirmar el
+2. Empezar por **R5** (Surf mediante MO y acciones desde equipo: Flash, Corte, Fuerza). No volver a implementar flags, Corte, Fuerza, pesca, Golpe Roca, Dulce Aroma, Safari, evolución ni aprendizaje de movimientos: ya están conectados. Confirmar el
    estado vivo antes de editar; los commits citados son evidencia, no un permiso
    para restaurar archivos completos ni descartar cambios posteriores.
 3. Una tanda integrada por archivo/familia o dependencia funcional completa;
@@ -200,7 +200,7 @@ jugable abierta. No cerrar toda la fila B con un único caso de clon.
 | --- | --- | --- |
 | R2 | Fuerza y bloques en interiores/cuevas | Cerrado en commit `b4f81dc5`: empuje de rocas OBJ_EVENT_GFX_PUSHABLE_BOULDER (32 ticks, SE_M_STRENGTH), colisión y límites, pozo MB_FALL_WARP (SE_FALL), botones MB_STRENGTH_BUTTON (Victory Road 1F), diálogo fuente de Fuerza y persistencia de coordenadas en save.viewerObjects; validado en viewer-game-strength.job.mjs PASS |
 | R3 | Pesca, Golpe Roca, olor dulce y Safari; después fantasmas/merodeadores que necesiten esas rutas | Cerrado en commits `151c6bbb` (pesca y caña registrada) y `0d86ddb4` (Golpe Roca en Túnel Roca B1F con rechazo, rotura, encuentro salvaje de roca, desbroce de casilla y persistencia; Dulce Aroma en campo con FLDEFF_SWEET_SCENT y encuentro salvaje; Zona Safari con pasos, bolas, aviso de fin de tiempo, warp y combate Safari); validado en `viewer-game-fishing.job.mjs` y `viewer-game-r3.job.mjs` PASS |
-| R4 | Evolución y aprendizaje de movimientos | Subida de nivel desde combate salvaje y entrenador, aceptar/cancelar según C, retorno al visor y guardado |
+| R4 | Evolución y aprendizaje de movimientos | Cerrado en commit `a91d31b3`: subida de nivel en combate salvaje y de entrenador, Everstone, renombramiento según C, aprendizaje y reemplazo de movimientos con pantalla de resumen, evolución fiel a Ivysaur con escena completa y música, retorno al visor y persistencia de guardado/recarga; validado en `check:viewer-warps`, `driver-evolution`, `driver-learn-move` y `viewer-game-r4.job.mjs` PASS |
 | R5 | Surf mediante MO y acciones desde equipo; Flash/Corte/Fuerza aplicables | Requisitos, rechazo sin permiso, selección/uso fuente y transición correcta; sustituir el embarque automático solo al conectar la vía real |
 | R6 | Animaciones completas de Vuelo/Teletransporte/Cuerda Huida | Terminar las callbacks/tareas necesarias antes de entregar navegación a `save.location`; mantener retorno/destino correctos |
 | R7 | Otros siete gimnasios: Misty, Surge, Erika, Koga, Sabrina, Blaine y Giovanni | Una tanda integrada por gimnasio/familia viable: acceso autorizado, puzzle, entrenadores, líder, recompensa y medalla persistentes; no preparar la victoria |
