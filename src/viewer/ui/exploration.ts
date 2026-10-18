@@ -1,3 +1,5 @@
+import { TouchPad } from "./touchPad";
+
 type Hooks = {
   save(): boolean;
   continue(): Promise<void>;
@@ -9,7 +11,7 @@ type Hooks = {
 };
 
 const PREFS_KEY = "pokemon-explore-prefs";
-type ExplorePrefs = { format?: string; scale?: string; radar?: boolean; clean?: boolean };
+type ExplorePrefs = { format?: string; scale?: string; radar?: boolean; clean?: boolean; touch?: boolean };
 function readPrefs(): ExplorePrefs {
   try { return JSON.parse(localStorage.getItem(PREFS_KEY) || "{}") as ExplorePrefs; } catch { return {}; }
 }
@@ -25,6 +27,7 @@ export class ExplorationUi {
   private readonly notice = document.createElement("span");
   private readonly performance = document.createElement("output");
   private readonly observer: ResizeObserver;
+  private readonly touchPad = new TouchPad();
   private frame: number | null = null;
   private previous = 0;
   private samples: number[] = [];
@@ -52,12 +55,13 @@ export class ExplorationUi {
     this.menu.id = "explore-menu";
     this.menu.setAttribute("aria-labelledby", "explore-menu-title");
     this.menu.innerHTML = `<h2 id="explore-menu-title">Explorar Kanto</h2>
-      <p>Flechas / WASD: caminar · Mayús: correr · B: bicicleta · Z: interactuar · M: audio · H: HUD.</p>
+      <p>Flechas / WASD: caminar · Mayús: correr · B: bicicleta · Z: interactuar · M: audio · H: HUD. En pantallas táctiles, cruceta y botones en pantalla.</p>
       <label>Personaje <select id="explore-character"><option value="red">Rojo</option><option value="leaf">Hoja</option></select></label>
       <label>Presentación <select id="explore-format"><option value="viewport">Todo el viewport</option><option value="wide">16:9</option><option value="gba">GBA 3:2 (15×10)</option></select></label>
       <label>Escala <select id="explore-scale"><option value="auto" selected>Auto (GBA)</option><option value="1">1×</option><option value="2">2×</option><option value="3">3×</option><option value="4">4×</option><option value="5">5×</option><option value="6">6×</option></select></label>
       <label><input type="checkbox" id="explore-radar"> Mostrar minimapa</label>
       <label><input type="checkbox" id="explore-clean"> Ocultar barra superior (H)</label>
+      <label><input type="checkbox" id="explore-touch"> Controles táctiles (cruceta, A, B, START, SELECT, L, R)</label>
       <label><input type="checkbox" id="explore-metrics"> Mostrar rendimiento</label>
       <button class="btn" id="explore-open-game-menu">Abrir menú del juego</button><button class="btn" id="explore-save">Guardar partida</button><button class="btn" id="explore-continue">Continuar guardado</button><p id="explore-save-result" role="status"></p>
       <p id="explore-note">Navegación por exteriores e interiores en desarrollo. Equipo, mochila y demás opciones están en Juego · Intro. Historia general pendiente.</p>
@@ -72,11 +76,15 @@ export class ExplorationUi {
     if (prefs.scale && ["auto", "1", "2", "3", "4", "5", "6"].includes(prefs.scale)) scaleSelect.value = prefs.scale;
     if (prefs.radar) radarInput.checked = true;
     if (prefs.clean) cleanInput.checked = true;
+    const touchInput = this.menu.querySelector<HTMLInputElement>("#explore-touch")!;
+    // Default: on for touch screens (coarse pointer), until the player chooses.
+    touchInput.checked = prefs.touch ?? window.matchMedia("(pointer: coarse)").matches;
     const saveCurrentPrefs = () => writePrefs({
       format: formatSelect.value,
       scale: scaleSelect.value,
       radar: radarInput.checked,
       clean: cleanInput.checked,
+      touch: touchInput.checked,
     });
     this.menu.querySelector("#explore-open-game-menu")!.addEventListener("click", () => {
       this.menu.close();
@@ -113,6 +121,10 @@ export class ExplorationUi {
       this.applyPresentation();
       saveCurrentPrefs();
     });
+    touchInput.addEventListener("change", () => {
+      this.applyPresentation();
+      saveCurrentPrefs();
+    });
     this.menu.querySelector("#explore-metrics")!.addEventListener("change", event => {
       this.performance.hidden = !(event.target as HTMLInputElement).checked;
     });
@@ -142,6 +154,9 @@ export class ExplorationUi {
     document.body.classList.toggle("explore-gba", this.active && format === "gba");
     document.body.classList.toggle("explore-radar", this.active && radar);
     document.body.classList.toggle("explore-clean", this.active && clean);
+    const touch = (this.menu.querySelector("#explore-touch") as HTMLInputElement).checked;
+    document.body.classList.toggle("explore-touch", this.active && touch);
+    this.touchPad.show(this.active && touch);
   }
   enter(): void {
     this.active = true;
@@ -159,7 +174,8 @@ export class ExplorationUi {
     this.active = false;
     if (this.menu.open) this.menu.close();
     this.hooks.pause(false);
-    document.body.classList.remove("exploring", "explore-wide", "explore-gba", "explore-radar", "explore-clean");
+    document.body.classList.remove("exploring", "explore-wide", "explore-gba", "explore-radar", "explore-clean", "explore-touch");
+    this.touchPad.show(false);
     this.root.hidden = true;
     if (this.frame !== null) cancelAnimationFrame(this.frame);
     this.frame = null;

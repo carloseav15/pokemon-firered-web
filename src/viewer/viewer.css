@@ -719,3 +719,24 @@ body.exploring .loading-overlay.hidden { display: none; }
 #engine-interaction[data-scene="true"] canvas, #engine-interaction[data-whiteout="true"] canvas { width:min(calc(var(--explore-zoom, 5) * 240px),96vw,calc((100dvh - 44px) * 3 / 2)); border-radius:4px; box-shadow:0 16px 48px rgba(0,0,0,0.85),0 0 0 1px rgba(255,255,255,0.1); }
 #engine-interaction p { margin:0; text-align:center; color:#fff; text-shadow:0 1px 3px #000; font-size:13px; }
 #engine-interaction[data-loading="true"]::after { content:"Preparando interacción…"; display:block; padding:12px; background:#173944; color:white; }
+
+/* On-screen GBA buttons (ui/touchPad.ts): above the map and engine scenes, thumbs at the bottom corners. */
+#touch-pad { position: fixed; inset: 0; z-index: 1100; pointer-events: none; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+#touch-pad[hidden] { display: none; }
+#touch-pad > * { pointer-events: auto; touch-action: none; }
+.touch-dpad { position: absolute; left: max(16px, env(safe-area-inset-left)); bottom: max(24px, env(safe-area-inset-bottom)); width: 132px; height: 132px; border-radius: 50%; background: #09090b66; }
+.touch-dpad span { position: absolute; width: 44px; height: 44px; border-radius: 8px; background: #27272ae6; border: 1px solid #52525b; }
+.touch-dpad-up { left: 44px; top: 0; } .touch-dpad-down { left: 44px; bottom: 0; } .touch-dpad-left { left: 0; top: 44px; } .touch-dpad-right { right: 0; top: 44px; }
+#touch-pad[data-direction="up"] .touch-dpad-up, #touch-pad[data-direction="down"] .touch-dpad-down,
+#touch-pad[data-direction="left"] .touch-dpad-left, #touch-pad[data-direction="right"] .touch-dpad-right { background: var(--accent); border-color: var(--accent); }
+.touch-btn { position: absolute; display: grid; place-items: center; padding: 0; border: 1px solid #52525b; background: #27272ae6; color: #fafafa; font: 600 13px/1 system-ui, sans-serif; }
+.touch-btn.pressed { background: var(--accent); border-color: var(--accent); color: #09090b; }
+.touch-a, .touch-b { width: 60px; height: 60px; border-radius: 50%; font-size: 18px; }
+.touch-a { right: max(16px, env(safe-area-inset-right)); bottom: max(64px, calc(env(safe-area-inset-bottom) + 40px)); }
+.touch-b { right: max(88px, calc(env(safe-area-inset-right) + 72px)); bottom: max(24px, env(safe-area-inset-bottom)); }
+.touch-start, .touch-select { bottom: max(12px, env(safe-area-inset-bottom)); width: 64px; height: 26px; border-radius: 13px; font-size: 10px; letter-spacing: 0.04em; }
+.touch-select { left: calc(50% - 72px); } .touch-start { left: calc(50% + 8px); }
+.touch-l, .touch-r { top: max(56px, calc(env(safe-area-inset-top) + 44px)); width: 64px; height: 32px; border-radius: 8px; }
+.touch-l { left: max(16px, env(safe-area-inset-left)); } .touch-r { right: max(16px, env(safe-area-inset-right)); }
+/* The on-screen pad replaces the keyboard hint under engine scenes. */
+body.explore-touch #engine-interaction > p { display: none; }
