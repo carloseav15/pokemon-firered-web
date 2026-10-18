@@ -1,5 +1,9 @@
 import { clearViewerObjects } from "./objectState";
-import { clearTempFieldEventData, save } from "@game/save";
+import { clearTempFieldEventData, flagClear, save } from "@game/save";
+import * as C from "@game/generated/constants";
+import { TrySetMapSaveWarpStatus } from "@core/pokemon/saveLocation";
+import { RestartWildEncounterImmunitySteps } from "@core/field/wildEncounter";
+import { isMapTypeOutdoors } from "@core/field/overworld";
 import { rom } from "@core/rom";
 import { TryRegenerateRenewableHiddenItems } from "@game/renewableHiddenItems";
 import { onCameraTransitionForRoamer, onWarpForRoamer } from "@core/pokemon/roamer";
@@ -16,15 +20,19 @@ export function restoreViewerEventMap(mapId: string | null): void { currentMap =
  */
 export function enterViewerEventMap(mapId: string, warp = false): boolean {
   if (currentMap === mapId && !warp) return false;
+  // LoadMapFromWarp / LoadMapFromCameraTransition bookkeeping for the map entered,
+  // in source order; the save's current map is the new one. Trainer rematches
+  // (VS Seeker), weather, ambient cries and music are not handled here.
+  const num = rom.mapNum(mapId);
+  save.location = { ...save.location, mapGroup: num >>> 8, mapNum: num & 0xff };
+  TrySetMapSaveWarpStatus();
   if (currentMap !== null) clearTempFieldEventData();
+  RestartWildEncounterImmunitySteps();
+  const mapType = rom.cachedMap(mapId)?.mapType;
+  if (warp && mapType !== undefined && isMapTypeOutdoors(mapType)) flagClear(C.FLAG_SYS_FLASH_ACTIVE);
   save.objectEventTemplates = [];
   clearViewerObjects();
   currentMap = mapId;
-  // LoadMapFromWarp / the camera transition then read the new map from the save:
-  // TryRegenerateRenewableHiddenItems, UpdateLocationHistoryForRoamer and
-  // RoamerMoveToOtherLocationSet (warp) or RoamerMove (connection).
-  const num = rom.mapNum(mapId);
-  save.location = { ...save.location, mapGroup: num >>> 8, mapNum: num & 0xff };
   TryRegenerateRenewableHiddenItems();
   if (warp) onWarpForRoamer(); else onCameraTransitionForRoamer();
   return true;
