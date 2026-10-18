@@ -48,13 +48,13 @@ Anotados el 2026-10-16 a partir de lo que esa sesión dejó sin probar, sin veri
 
 **A. Solo probar (el código ya existe)**
 - [ ] Tiendas: Isla Dos con cada etapa de historia (`VAR_MAP_SCENE_TWO_ISLAND` 2–4) y el resto de tiendas de las islas Sevii no cubiertas; Game Corner (monedas, otro sistema).
-- [ ] Centros: reaparición tras derrota en un Centro ya visitado (hoy solo se probó el respawn por defecto de Paleta y que el Centro lo registra).
+- [x] Centros: reaparición tras derrota en un Centro ya visitado — `e4036097` (`viewer-game-whiteout-center`: enfermera de Verde registra el respawn, guardar/recargar lo conserva, derrota en Ruta 1 y Mt. Moon 1F reaparece en el Centro de Verde curado; −40 ₽ como el C).
 - [ ] Menú: tarjeta de entrenador y Opciones más allá de abrir/cerrar (cambiar y persistir varios valores); Pokédex con más entradas y vistas.
 - [x] Objetos: cañas (probado en 151c6bbb con viewer-game-fishing), bayas y objetos de estado distintos de Antídoto, mochila con otros bolsillos (Poké Balls fuera de combate, Objetos clave variados), Poké Flauta.
-- [ ] Brock: segundo intento tras perder (volver a entrar al gimnasio) y ganar con el inicial sin preparar el nivel.
-- [ ] Reaparición: derrota dentro de cuevas e interiores (hoy solo campo abierto y gimnasio).
+- [ ] Brock: segundo intento tras perder hecho en `e4036097` (`viewer-game-gym-retry`: Liam vuelve a retar, medalla al segundo intento; regreso al gimnasio por URL, no caminando). Falta ganar con el inicial sin preparar el nivel (requiere entrenar; `viewer-game-gymloss` necesita `PW_TIMEOUT_MS=300000`).
+- [x] Reaparición: derrota dentro de cuevas e interiores — `e4036097` (Mt. Moon 1F y gimnasio de Plateada).
 - [ ] Rocas rompibles y bloques de Fuerza: no existen en exteriores de Kanto del índice; probar en cuevas/interiores.
-- [ ] Entrenadores fuera del gimnasio y los otros gimnasios: la vía es la misma (`_Gym_EventScript_*`), sin probar.
+- [x] Entrenadores fuera del gimnasio y los otros gimnasios — `e4036097` (`viewer-game-route-trainers`: Greg y Ben en Ruta 3, Rick en Bosque Verde; vista, premio 4×nivel×tasa de `battle_main.c`, flag persistente y sin nuevo combate) y `b5108d77` (`check:gyms`). Resto de entrenadores de ruta sin recorrer.
 - [ ] Precargas: primera carga del motor tras ~1,5 s (¿parón?) y pasos sin contar en los primeros ~2 s de un mapa sin tabla de encuentros.
 - [ ] Veneno hasta desmayo (script `EventScript_FieldPoison`) y eclosión con apodo/aceptar; huevos con ciclos > 0 sin preparar el contador de guardería.
 
