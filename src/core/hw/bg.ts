@@ -454,9 +454,11 @@ export function CopyToBgTilemapBuffer(bg: number, src: ArrayLike<number>, mode: 
   if (IsInvalidBg32(bg) || IsTileMapOutsideWram(bg)) return;
   const tm = configs2[bg & 0xff]!.tilemap!;
   const dst = bytesOf(tm);
+  // The C source is a raw byte pointer (size in bytes); a u16 tilemap array supplies its bytes.
+  const bytes = src instanceof Uint16Array ? bytesOf(src) : src;
   const start = destOffset * 32;
-  const size = mode !== 0 ? mode : src.length;
-  for (let i = 0; i < size && start + i < dst.length && i < src.length; i++) dst[start + i] = src[i];
+  const size = mode !== 0 ? mode : bytes.length;
+  for (let i = 0; i < size && start + i < dst.length && i < bytes.length; i++) dst[start + i] = bytes[i];
 }
 
 export function CopyBgTilemapBufferToVram(bg: number): void {

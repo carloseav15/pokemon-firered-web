@@ -8,7 +8,7 @@ import { A_BUTTON, B_BUTTON, DPAD_ANY, DPAD_DOWN, DPAD_LEFT, DPAD_RIGHT, JOY_HEL
 import { tasks, type TaskFunc } from "@core/gba/tasks";
 import {
   ChangeBgX, CopyBgTilemapBufferToVram, CopyToBgTilemapBuffer, FillBgTilemapBufferRect_Palette0,
-  GetBgTilemapBuffer, HideBg, InitBgsFromTemplates, LoadBgTilemap, LoadBgTiles,
+  GetBgTilemapBuffer, HideBg, InitBgsFromTemplates, LoadBgTilemap,
   ResetBgsAndClearDma3BusyFlags, SetBgTilemapBuffer, ShowBg, type BgTemplate,
 } from "@core/hw/bg";
 import {
@@ -18,7 +18,7 @@ import {
   CreateYesNoMenu, DestroyYesNoMenu, GetTextWindowPalette, LoadStdWindowGfx, LoadStdWindowGfxOnBg,
   LoadUserWindowGfx, LoadUserWindowGfx2, Menu_MoveCursorNoWrapAround, Menu_ProcessInputNoWrapClearOnChoose,
 } from "@core/hw/menu";
-import { DrawTextBorderOuter } from "@core/hw/menuHelpers";
+import { DecompressAndCopyTileDataToVram, DrawTextBorderOuter, FreeTempTileDataBuffersIfPossible, ResetTempTileDataBuffers } from "@core/hw/menuHelpers";
 import {
   BeginNormalPaletteFade, BlendPalettes, gPaletteFade, gPlttBufferFaded, gPlttBufferUnfaded,
   LoadPalette, ResetPaletteFade, TransferPlttBuffer, UpdatePaletteFade,
@@ -1273,8 +1273,9 @@ function SlotsTask_GraphicsInit(subtask: SlotMachineSubTask, ptr: SlotMachineSet
       FillBgTilemapBufferRect_Palette0(3, 0, 0, 0, 32, 32);
       CopyBgTilemapBufferToVram(3);
 
-      LoadBgTiles(2, incbin("slot_machine.c:sBg_Tiles"), 0, 0x00);
-      LoadBgTiles(2, incbin("slot_machine.c:sButtonPressed_Tiles"), 0, 0xc0);
+      ResetTempTileDataBuffers();
+      DecompressAndCopyTileDataToVram(2, incbin("slot_machine.c:sBg_Tiles"), 0, 0x00, 0);
+      DecompressAndCopyTileDataToVram(2, incbin("slot_machine.c:sButtonPressed_Tiles"), 0, 0xc0, 0);
       SetBgTilemapBuffer(2, ptr.bg2TilemapBuffer);
       CopyToBgTilemapBuffer(2, incbin16("slot_machine.c:sBg_Tilemap"), 0, 0x00);
       CopyBgTilemapBufferToVram(2);
@@ -1288,9 +1289,8 @@ function SlotsTask_GraphicsInit(subtask: SlotMachineSubTask, ptr: SlotMachineSet
 
       SetBgTilemapBuffer(0, ptr.bg0TilemapBuffer);
       FillBgTilemapBufferRect_Palette0(0, 0, 0, 2, 32, 30);
-      LoadBgTiles(1, incbin("slot_machine.c:sCombosWindow_Tiles"), 0, 0);
-      SetBgTilemapBuffer(1, ptr.bg1TilemapBuffer);
-      CopyToBgTilemapBuffer(1, incbin16("slot_machine.c:sCombosWindow_Tilemap"), 0, 0);
+      DecompressAndCopyTileDataToVram(1, incbin("slot_machine.c:sCombosWindow_Tiles"), 0, 0, 0);
+      DecompressAndCopyTileDataToVram(1, incbin("slot_machine.c:sCombosWindow_Tilemap"), 0, 0, 1);
       CopyBgTilemapBufferToVram(1);
 
       LoadPalette(GetTextWindowPalette(2), BG_PLTT_ID(14), 32);
@@ -1321,6 +1321,7 @@ function SlotsTask_GraphicsInit(subtask: SlotMachineSubTask, ptr: SlotMachineSet
       subtask.state++;
       break;
     case 2:
+      if (FreeTempTileDataBuffersIfPossible()) break;
       ShowBg(0);
       ShowBg(3);
       ShowBg(2);
