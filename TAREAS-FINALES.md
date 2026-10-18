@@ -50,7 +50,7 @@ Anotados el 2026-10-16 a partir de lo que esa sesión dejó sin probar, sin veri
 - [ ] Tiendas: Isla Dos con cada etapa de historia (`VAR_MAP_SCENE_TWO_ISLAND` 2–4) y el resto de tiendas de las islas Sevii no cubiertas; Game Corner (monedas, otro sistema).
 - [ ] Centros: reaparición tras derrota en un Centro ya visitado (hoy solo se probó el respawn por defecto de Paleta y que el Centro lo registra).
 - [ ] Menú: tarjeta de entrenador y Opciones más allá de abrir/cerrar (cambiar y persistir varios valores); Pokédex con más entradas y vistas.
-- [ ] Objetos: bayas y objetos de estado distintos de Antídoto, mochila con otros bolsillos (Poké Balls fuera de combate, Objetos clave variados), cañas, Poké Flauta.
+- [x] Objetos: cañas (probado en 151c6bbb con viewer-game-fishing), bayas y objetos de estado distintos de Antídoto, mochila con otros bolsillos (Poké Balls fuera de combate, Objetos clave variados), Poké Flauta.
 - [ ] Brock: segundo intento tras perder (volver a entrar al gimnasio) y ganar con el inicial sin preparar el nivel.
 - [ ] Reaparición: derrota dentro de cuevas e interiores (hoy solo campo abierto y gimnasio).
 - [ ] Rocas rompibles y bloques de Fuerza: no existen en exteriores de Kanto del índice; probar en cuevas/interiores.
@@ -76,8 +76,8 @@ Anotados el 2026-10-16 a partir de lo que esa sesión dejó sin probar, sin veri
 - [ ] Contadores por paso fuera de pasos reales (bici rápida, saltos) y sincronía de pasos en mapas distintos.
 
 **D. Integración nueva**
-- [ ] Empujar bloques con Fuerza (mover entidad con colisión, interruptores y pozos).
-- [ ] Pesca, Golpe Roca, olor dulce, Zona Safari, fantasmas de Pokémon Tower, merodeadores.
+- [x] Empujar bloques con Fuerza (mover entidad con colisión, interruptores y pozos) — `b4f81dc5`.
+- [ ] Pesca (cerrada en `151c6bbb`; smoke test `viewer-game-fishing` PASS), Golpe Roca, olor dulce, Zona Safari, fantasmas de Pokémon Tower, merodeadores.
 - [ ] Evolución tras subir de nivel y aprendizaje de movimientos en combate salvaje y de entrenador.
 - [ ] Surf con la MO real (hoy el visor embarca solo al llegar al agua), Flash, Corte y Fuerza desde el equipo.
 - [ ] Vuelo/Teletransporte/Cuerda Huida con animación completa (hoy el visor corta tras el fundido y sigue `save.location`).
@@ -200,7 +200,7 @@ jugable abierta. No cerrar toda la fila B con un único caso de clon.
 | Orden | Trabajo | Condición de cierre |
 | --- | --- | --- |
 | R2 | Fuerza y bloques en interiores/cuevas | Cerrado en commit `b4f81dc5`: empuje de rocas OBJ_EVENT_GFX_PUSHABLE_BOULDER (32 ticks, SE_M_STRENGTH), colisión y límites, pozo MB_FALL_WARP (SE_FALL), botones MB_STRENGTH_BUTTON (Victory Road 1F), diálogo fuente de Fuerza y persistencia de coordenadas en save.viewerObjects; validado en viewer-game-strength.job.mjs PASS |
-| R3 | Pesca, Golpe Roca, olor dulce y Safari; después fantasmas/merodeadores que necesiten esas rutas | Seleccionar cada familia completa y sus callers; encuentro/combate/retorno y estado persistente. No ampliar a toda la historia |
+| R3 | Pesca, Golpe Roca, olor dulce y Safari; después fantasmas/merodeadores que necesiten esas rutas | Pesca y caña registrada en visor integradas y cerradas en commit `151c6bbb`; validado en `viewer-game-fishing.job.mjs` PASS (Oak prohibition, minijuego de picada, encuentro salvaje Magikarp, huida y retorno limpio al visor). Pendiente: Golpe Roca, dulce aroma y Safari. |
 | R4 | Evolución y aprendizaje de movimientos | Subida de nivel desde combate salvaje y entrenador, aceptar/cancelar según C, retorno al visor y guardado |
 | R5 | Surf mediante MO y acciones desde equipo; Flash/Corte/Fuerza aplicables | Requisitos, rechazo sin permiso, selección/uso fuente y transición correcta; sustituir el embarque automático solo al conectar la vía real |
 | R6 | Animaciones completas de Vuelo/Teletransporte/Cuerda Huida | Terminar las callbacks/tareas necesarias antes de entregar navegación a `save.location`; mantener retorno/destino correctos |
