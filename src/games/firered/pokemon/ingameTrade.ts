@@ -22,12 +22,12 @@ import { tasks, type TaskFunc } from "@core/gba/tasks";
 import { cdata, incbin, incbin16, loadCData, preloadPacks } from "@core/hw/assets";
 import { affineAnimsFrom, animsFrom, oamFrom, templateFrom, type CSpriteTemplate } from "@core/hw/cdataSprite";
 import {
-  BG_SCREEN_SIZE, CopyToBgTilemapBuffer, InitBgsFromTemplates, LoadBgTiles,
+  BG_SCREEN_SIZE, ChangeBgX, ChangeBgY, CopyToBgTilemapBuffer, InitBgsFromTemplates, LoadBgTiles,
   ResetBgsAndClearDma3BusyFlags, SetBgTilemapBuffer, ShowBg, type BgTemplate,
 } from "@core/hw/bg";
 import { GetGpuReg, SetGpuReg, SetGpuRegBits, ClearGpuRegBits } from "@core/hw/gpu";
 import {
-  BeginNormalPaletteFade, BG_PLTT_ID, BlendPalettes, gPaletteFade, LoadPalette,
+  BeginNormalPaletteFade, BG_PLTT_ID, BlendPalettes, gPaletteFade, LoadPalette, PLTT_SIZE_4BPP,
   OBJ_PLTT_ID, PALETTES_ALL, RGB, RGB_BLACK, RGB_WHITE, TransferPlttBuffer,
   UpdatePaletteFade,
 } from "@core/hw/palette";
@@ -48,6 +48,7 @@ import {
   ST_OAM_AFFINE_DOUBLE, StartSpriteAffineAnim, StartSpriteAnim, type Sprite, type SpriteTemplate,
 } from "@core/hw/sprite";
 import { AddTextPrinterParameterized4, DeactivateAllTextPrinters, RunTextPrinters } from "@core/hw/text";
+import { DecompressAndLoadBgGfxUsingHeap } from "@core/hw/menuHelpers";
 import {
   CopyWindowToVram, COPYWIN_FULL, FillWindowPixelBuffer, FreeAllWindowBuffers,
   InitWindows, PIXEL_FILL, PutWindowTilemap, type WindowTemplate,
@@ -182,7 +183,7 @@ const rd = <T>(name: string): T => cdata<T>("trade_scene", name);
 
 export async function preloadTradeScene(): Promise<void> {
   await Promise.all([
-    preloadPacks(["graphics_trade", "graphics_battle_anims", "graphics_interface"]),
+    preloadPacks(["graphics_trade", "graphics_battle_anims", "graphics_interface", "graphics_battle_interface"]),
     loadCData("trade_scene", "trade", "pokeball", "strings"),
   ]);
 }
@@ -357,12 +358,25 @@ function TradeAnimInit_LoadGfx(): void {
   SetGpuReg(REG_OFFSET_DISPCNT, 0);
   ResetBgsAndClearDma3BusyFlags(false);
   InitBgsFromTemplates(0, rd<BgTemplate[]>("sBgTemplates"), 4);
-  SetBgTilemapBuffer(0, new Uint16Array(BG_SCREEN_SIZE));
-  SetBgTilemapBuffer(1, new Uint16Array(BG_SCREEN_SIZE));
-  SetBgTilemapBuffer(2, new Uint16Array(BG_SCREEN_SIZE));
-  SetBgTilemapBuffer(3, new Uint16Array(BG_SCREEN_SIZE));
+  ChangeBgX(0, 0, 0);
+  ChangeBgY(0, 0, 0);
+  SetBgTilemapBuffer(0, new Uint16Array(BG_SCREEN_SIZE / 2));
+  SetBgTilemapBuffer(1, new Uint16Array(BG_SCREEN_SIZE / 2));
+  // Adaptation: the C DMA-copies BG2's tilemaps straight to BG_SCREEN_ADDR(18);
+  // the port stages them in a BG2 buffer (CopyToBgTilemapBuffer(2, ...)).
+  SetBgTilemapBuffer(2, new Uint16Array(BG_SCREEN_SIZE / 2));
+  SetBgTilemapBuffer(3, new Uint16Array(BG_SCREEN_SIZE / 2));
   DeactivateAllTextPrinters();
+  // Doing the graphics load...
+  const loadTextbox = () => {
+    DecompressAndLoadBgGfxUsingHeap(0, incbin("gBattleInterface_Textbox_Gfx"), 0, 0, 0);
+    CopyToBgTilemapBuffer(0, incbin("gBattleInterface_Textbox_Tilemap"), BG_SCREEN_SIZE, 0);
+    LoadPalette(incbin("gBattleInterface_Textbox_Pal"), BG_PLTT_ID(0), PLTT_SIZE_4BPP);
+  };
+  loadTextbox();
   InitWindows(rd<WindowTemplate[]>("sTradeMessageWindowTemplates"));
+  // ... and doing the same load again
+  loadTextbox();
 }
 
 /** LoadTradeAnimGfx (trade_scene.c). */

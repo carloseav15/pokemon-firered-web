@@ -60,6 +60,9 @@ registerPack('graphics_trade', new Uint8Array(tradePack.buffer, tradePack.byteOf
 
 const battleAnimsPack = readFileSync(root + 'incbin/graphics_battle_anims.bin');
 registerPack('graphics_battle_anims', new Uint8Array(battleAnimsPack.buffer, battleAnimsPack.byteOffset, battleAnimsPack.byteLength));
+// TradeAnimInit_LoadGfx loads gBattleInterface_Textbox_* (trade_scene.c:939-948).
+const battleInterfacePack = readFileSync(root + 'incbin/graphics_battle_interface.bin');
+registerPack('graphics_battle_interface', new Uint8Array(battleInterfacePack.buffer, battleInterfacePack.byteOffset, battleInterfacePack.byteLength));
 
 assert.ok(incbinIndex.symbols['sGbaAffine_Gfx'], 'sGbaAffine_Gfx in incbin');
 assert.ok(incbinIndex.symbols['sGbaMapCable'], 'sGbaMapCable in incbin');
