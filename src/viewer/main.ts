@@ -2403,6 +2403,11 @@ function setupUi(): void {
       void engineInteraction.useRegisteredKeyItem(navigationSnapshot());
       return;
     }
+    if (key === "u" && playerActive && !HOENN && engineInteraction && !isStepping && !warpBusy && !elevatorBusy && !dialogManager.isOpen()) {
+      e.preventDefault();
+      void engineInteraction.useSweetScent(navigationSnapshot());
+      return;
+    }
     if (key === "shift") {
       playerRunning = true;
     }

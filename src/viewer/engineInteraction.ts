@@ -465,6 +465,35 @@ export class EngineInteraction {
       if (!started) this.root.dataset.loading = 'false';
     }
   }
+  /** Use Sweet Scent on the field (fldeff_sweetscent.c). */
+  async useSweetScent(nav: NavigationSave, partyIndex = 0): Promise<boolean> {
+    if (this.busy) return false;
+    let started = false;
+    try {
+      await (this.loading ??= this.initialize());
+      const game = this.game!;
+      const ow = game.overworld;
+      syncViewerLocation(nav);
+      if (this.wildMap !== nav.mapId) { await this.prepareObjects(nav); this.wildMap = nav.mapId; }
+      const player = ow.player.object;
+      const elevation = ow.map.elevationAt(nav.x + MAP_OFFSET, nav.y + MAP_OFFSET) || 3;
+      player.currentElevation = elevation;
+      player.previousElevation = elevation;
+      ow.objects.MoveObjectEventToMapCoords(player, nav.x + MAP_OFFSET, nav.y + MAP_OFFSET);
+      ow.objects.turn(player, save.facing);
+      ow.SetCameraToTrackPlayer();
+      started = true;
+      this.hooks.hideObjects(true, nav.mapId, 0);
+      await this.run(nav, 0, true, (g) => {
+        g.fieldEffectArguments[0] = partyIndex;
+        g.overworld.effects.start(C.FLDEFF_SWEET_SCENT);
+      }, true);
+      return true;
+    } finally {
+      this.hooks.hideObjects(false, nav.mapId, 0);
+      if (!started) this.root.dataset.loading = 'false';
+    }
+  }
   /**
    * CheckStandardWildEncounter (field_control_avatar.c) for the tile the viewer
    * player just reached. The engine decides (rate, repel, tables, level) and
