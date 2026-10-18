@@ -26,6 +26,9 @@ import { MAP_OFFSET } from '@core/field/fieldmap';
 import { PLAYER_AVATAR_FLAG_ACRO_BIKE, PLAYER_AVATAR_FLAG_MACH_BIKE, PLAYER_AVATAR_FLAG_ON_FOOT, PLAYER_AVATAR_FLAG_SURFING } from '@core/field/playerAvatar';
 import { objectStateKey, readViewerObjectState, readViewerTemplateState, objectDirection, storeViewerObjects, translateViewerObjectCoords, type ViewerMapOrigin, type ViewerObjectState } from './objectState';
 import { syncViewerLocation, type NavigationSave } from './session';
+import { IncrementRenewableHiddenItemStepCounter } from '@game/renewableHiddenItems';
+import { WonderNews_IncrementStepCounter } from '@game/wonderNews';
+import { IncrementBirthIslandRockStepCount, IncrementResortGorgeousStepCounter, RunMassageCooldownStepCounter } from '@core/field/fieldStepCounters';
 
 type Hooks = {
   pause(active: boolean): void;
@@ -570,10 +573,17 @@ export class EngineInteraction {
       // ProcessPlayerFieldInput tookStep (field_control_avatar.c): step stat, then the
       // step-count scripts (happiness, poison, egg hatch, Safari) and repel; those
       // that set up a script run it before the encounter check, as in the C.
+      // FieldGetPlayerInput: arriving on a forced-movement tile sets neither tookStep
+      // nor checkStandardWildEncounter.
       const behavior = ow.map.behaviorAt(nav.x + MAP_OFFSET, nav.y + MAP_OFFSET);
+      if (MB.MetatileBehavior_IsForcedMovementTile(behavior)) return false;
       incrementGameStat(C.GAME_STAT_STEPS);
-      const forced = MB.MetatileBehavior_IsForcedMovementTile(behavior);
-      if (ow.control.tryStartStepCountScript(behavior) || (!forced && ow.effects.updateRepelCounter())) {
+      WonderNews_IncrementStepCounter();
+      IncrementRenewableHiddenItemStepCounter();
+      RunMassageCooldownStepCounter();
+      IncrementResortGorgeousStepCounter();
+      IncrementBirthIslandRockStepCount();
+      if (ow.control.tryStartStepCountScript(behavior) || ow.effects.updateRepelCounter()) {
         started = true;
         await this.run(nav, 0, true, () => {}, true);
         return true;
