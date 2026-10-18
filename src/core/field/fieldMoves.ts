@@ -869,7 +869,7 @@ export class FieldMoveEffects {
       data[8] = this.SpinObjectEvent(player, data, 9, 10);
       if (data[6]! >= 50 && data[8] === data[15]) data[7] = 1;
     }
-    if (!moving && data[8] === data[15] && this.ow.objects.ObjectEventCheckHeldMovementStatus(player) === 1) {
+    if (!moving && data[8] === data[15] && this.ow.objects.ObjectEventCheckHeldMovementStatus(player) !== 0) {
       player.invisible = false;
       player.fixedPriority = false;
       this.ow.UnlockPlayerFieldControls();
@@ -1030,7 +1030,7 @@ export class FieldMoveEffects {
     const spin = [DIR_SOUTH, DIR_WEST, DIR_EAST, DIR_NORTH, DIR_SOUTH];
     if (--d[1] === 0) {
       this.ow.objects.turn(p, spin[p.facingDirection] ?? DIR_SOUTH); d[1] = 8;
-      if (++d[2] > 4 && d[14] === p.facingDirection) {
+      if (++d[2] > 4 && d[15] === p.facingDirection) {
         this.ow.objects.unfreezeAll(); this.ow.controlsLocked = false; tasks.destroy(this.teleportInTaskId);
       }
     }

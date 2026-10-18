@@ -198,7 +198,9 @@ export class EngineInteraction {
     // completes, so the destination is read from the record, not the loaded map.
     const { mapGroup, mapNum, x, y } = save.location;
     const mapId = rom.mapIdByNum(((mapGroup & 0xff) << 8) | (mapNum & 0xff));
-    const direction = ({ [C.DIR_SOUTH]: 'south', [C.DIR_NORTH]: 'north', [C.DIR_WEST]: 'west', [C.DIR_EAST]: 'east' } as const)[save.facing] ?? nav.direction;
+    const finalFacing = playerObj ? playerObj.facingDirection : save.facing;
+    save.facing = finalFacing;
+    const direction = ({ [C.DIR_SOUTH]: 'south', [C.DIR_NORTH]: 'north', [C.DIR_WEST]: 'west', [C.DIR_EAST]: 'east' } as const)[finalFacing] ?? nav.direction;
 
     const finalX = (mapId && mapId === nav.mapId) ? currentX : x;
     const finalY = (mapId && mapId === nav.mapId) ? currentY : y;
@@ -256,7 +258,9 @@ export class EngineInteraction {
     const ctx = this.field.getContext('2d')!;ctx.clearRect(0,0,240,160);
     const targetNum = this.localId && this.objectMapId ? rom.mapNum(this.objectMapId) : 0;
     const target = this.localId ? ow.objects.byLocalIdAndMap(this.localId, targetNum & 255, targetNum >>> 8) : null;
-    const drawPlayer = Boolean(this.localId || ow.player.preventStep || ow.player.isSurfing());
+    const inFieldAnim = Boolean(this.localId || ow.player.preventStep || ow.player.isSurfing() || ow.controlsLocked);
+    if (inFieldAnim) this.hooks.hideObjects(true, this.objectMapId || this.interactionMapId, this.localId);
+    const drawPlayer = inFieldAnim;
     const objects = [...(drawPlayer ? [ow.player.object] : []), ...(target ? [target] : [])];
     for (const object of objects) if(object?.sprite && !object.sprite.invisible) ow.sprites.drawSprite(ctx,object.sprite);
     // Healing balls/glow and other actual field-effect sprites stay at their
@@ -311,7 +315,7 @@ export class EngineInteraction {
       joy.initKeys();joy.setExternalInputEnabled(true);
       this.root.dataset.loading='false';this.ui.focus({preventScroll:true});
       this.last=performance.now();this.accumulator=0;
-      let idle=0, warpFrames=0, whiteOutRelocated=false;
+      let idle=0, warpFrames=0, whiteOutRelocated=false, warpRelocated=false;
       const startNum=save.location.mapNum, startGroup=save.location.mapGroup;
       const loop=(now:number)=>{
         if(!this.open)return;
@@ -336,9 +340,28 @@ export class EngineInteraction {
             });
           }
         }
+        const at=save.location;
+        const warped=fullScreen&&!game.scene&&!inWhiteOut&&!whiteOutRelocated&&(at.mapGroup!==startGroup||at.mapNum!==startNum||at.x!==nav.x||at.y!==nav.y);
+        if(warped&&!warpRelocated&&(paletteFade.level>0||paletteFade.active)){
+          const destId=rom.mapIdByNum(((at.mapGroup&0xff)<<8)|(at.mapNum&0xff));
+          if(destId){
+            warpRelocated=true;
+            this.hooks.hideObjects(false,this.objectMapId||this.interactionMapId,this.localId);
+            const direction = ({ [C.DIR_SOUTH]: 'south', [C.DIR_NORTH]: 'north', [C.DIR_WEST]: 'west', [C.DIR_EAST]: 'east' } as const)[save.facing] ?? nav.direction;
+            nav={mapId:destId,x:at.x,y:at.y,direction,dynamic:null};
+            this.interactionMapId=destId;
+            this.objectMapId=destId;
+            this.observedObjects.clear();
+            this.initialSprites=new Set(ow.sprites.sprites);
+            this.hooks.hideObjects(true,destId,0);
+            void Promise.resolve(this.hooks.relocate(nav)).then(()=>{
+              if(this.open)this.hooks.hideObjects(true,destId,0);
+            });
+          }
+        }
         this.observeObjects();
         this.present();
-        const activeFull=fullScreen||inWhiteOut||whiteOutRelocated;
+        const activeFull=fullScreen||inWhiteOut||whiteOutRelocated||warpRelocated;
         this.root.dataset.scriptActive=String(ow.script.isActive()||(activeFull&&ow.controlsLocked));
         this.root.dataset.script=ow.script.global.entry;
         this.root.dataset.native=ow.script.global.nativePtr?.name??'';
@@ -349,12 +372,8 @@ export class EngineInteraction {
         // Field moves and warps run as tasks after the menu has unlocked the field:
         // wait until the task list stays empty (or, with a leaked task, a long while).
         idle=finished&&!game.scene?idle+1:0;
-        // The engine decided on a warp (teleport, fly, escape rope, dig): its own map
-        // load is not run here, so after the fade-out the viewer follows save.location.
-        const at=save.location;
-        const warped=fullScreen&&!game.scene&&!inWhiteOut&&!whiteOutRelocated&&(at.mapGroup!==startGroup||at.mapNum!==startNum||at.x!==nav.x||at.y!==nav.y);
         warpFrames=warped?warpFrames+1:0;
-        if(warpFrames>=90){this.finish(nav);return;}
+        if(warpFrames>=1800){this.finish(nav);return;}
         const busyTasks=activeFull&&tasks.tasks.some(t=>t.isActive);
         if(finished&&!game.scene&&(!activeFull||(!busyTasks&&idle>=20)||idle>=600)){this.finish(nav);return;}
         this.frame=requestAnimationFrame(loop);

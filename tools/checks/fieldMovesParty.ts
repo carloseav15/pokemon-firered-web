@@ -4,7 +4,7 @@ import * as C from "../../src/games/firered/generated/constants";
 import { rom } from "../../src/core/rom";
 import { flagClear, flagGet, flagSet, newSaveData, save, setSave } from "../../src/games/firered/save";
 import { createMon } from "../../src/core/pokemon/pokemon";
-import { trySetUpFieldMove, FIELD_MOVE_FLASH, FIELD_MOVE_CUT, FIELD_MOVE_FLY, FIELD_MOVE_STRENGTH, FIELD_MOVE_SURF, FIELD_MOVE_ROCK_SMASH, FIELD_MOVE_WATERFALL } from "../../src/games/firered/menus/fieldMoveMenu";
+import { trySetUpFieldMove, FIELD_MOVE_FLASH, FIELD_MOVE_CUT, FIELD_MOVE_FLY, FIELD_MOVE_STRENGTH, FIELD_MOVE_SURF, FIELD_MOVE_ROCK_SMASH, FIELD_MOVE_WATERFALL, FIELD_MOVE_TELEPORT, FIELD_MOVE_DIG } from "../../src/games/firered/menus/fieldMoveMenu";
 import { Game } from "../../src/games/firered/game";
 import { MAP_OFFSET } from "../../src/core/field/fieldmap";
 import { loadCData, preloadPacks } from "../../src/core/hw/assets";
@@ -16,7 +16,7 @@ await rom.load();
 await loadFieldFx();
 await preloadFieldAssets();
 await preloadPacks(["graphics_fonts", "graphics_help_system", "graphics_quest_log"]);
-await loadCData("event_object_movement", "text_printer", "text", "wild_encounter", "field_specials");
+await loadCData("event_object_movement", "text_printer", "text", "wild_encounter", "field_specials", "pokemon");
 
 setSave(newSaveData());
 const mon = createMon(C.SPECIES_POLIWAG, 25);
@@ -161,4 +161,84 @@ if (surfSuccess.kind === "close") {
   assert.equal((game.overworld.player.flags & C.PLAYER_AVATAR_FLAG_SURFING) !== 0, true, "Player should be surfing");
 }
 
-console.log("Field moves party checks PASS (Flash, Cut, Strength, Surf badge gates, field checks and activations)");
+// 6. Teleport full animation and warp cycle (R6)
+mon.moves[0] = C.MOVE_TELEPORT;
+await game.overworld.prepareViewerInteraction("MAP_ROUTE1");
+game.overworld.player.InitPlayerAvatar(10 + MAP_OFFSET, 10 + MAP_OFFSET, C.DIR_SOUTH, 0);
+// Set last heal location to Pallet Town player house door (mapGroup 3, mapNum 0, x 6, y 8)
+const palletNum = rom.mapNum("MAP_PALLET_TOWN");
+game.overworld.SetWarpData(save.lastHealLocation, palletNum >>> 8, palletNum & 255, -1, 6, 8);
+const teleportRes = trySetUpFieldMove(game, FIELD_MOVE_TELEPORT, 0);
+assert.equal(teleportRes.kind, "confirm");
+if (teleportRes.kind === "confirm") {
+  teleportRes.post();
+  // Runs FLDEFF_USE_TELEPORT -> Task_DoTeleportFieldEffect -> warp -> Task_DoTeleportInFieldEffect
+  let reachedPallet = false;
+  let teleportArrivalStarted = false;
+  for (let frame = 0; frame < 600; frame++) {
+    game.frame();
+    await new Promise(r => setTimeout(r, 1));
+    if (game.overworld.header.id === "MAP_PALLET_TOWN" && tasks.tasks.some(t => t.isActive)) teleportArrivalStarted = true;
+    if (teleportArrivalStarted && !game.overworld.controlsLocked && !tasks.tasks.some(t => t.isActive)) {
+      reachedPallet = true;
+      break;
+    }
+  }
+  assert.equal(reachedPallet, true, "Teleport should complete full animation and arrival controls unlock at last heal location");
+  assert.equal(save.location.mapGroup, palletNum >>> 8);
+  assert.equal(save.location.mapNum, palletNum & 255);
+  assert.equal(game.overworld.player.object.currentCoords.x - MAP_OFFSET, 6);
+  assert.equal(game.overworld.player.object.currentCoords.y - MAP_OFFSET, 8);
+}
+
+// 7. Escape Rope / Dig full animation and warp cycle (R6)
+await game.overworld.prepareViewerInteraction("MAP_MT_MOON_1F");
+game.overworld.player.InitPlayerAvatar(15 + MAP_OFFSET, 15 + MAP_OFFSET, C.DIR_SOUTH, 0);
+const route4Num = rom.mapNum("MAP_ROUTE4");
+game.overworld.SetEscapeWarp(route4Num >>> 8, route4Num & 255, -1, 11, 5);
+game.overworld.effects.moves.startEscapeRope();
+let escapedToRoute4 = false;
+let ropeArrivalStarted = false;
+for (let frame = 0; frame < 600; frame++) {
+  game.frame();
+  await new Promise(r => setTimeout(r, 1));
+  if (game.overworld.header.id === "MAP_ROUTE4" && tasks.tasks.some(t => t.isActive)) ropeArrivalStarted = true;
+  if (ropeArrivalStarted && !game.overworld.controlsLocked && !tasks.tasks.some(t => t.isActive)) {
+    escapedToRoute4 = true;
+    break;
+  }
+}
+assert.equal(escapedToRoute4, true, "Escape Rope should complete full animation and arrive at escape warp location");
+assert.equal(save.location.mapGroup, route4Num >>> 8);
+assert.equal(save.location.mapNum, route4Num & 255);
+assert.equal(game.overworld.player.object.currentCoords.x - MAP_OFFSET, 11);
+assert.equal(game.overworld.player.object.currentCoords.y - MAP_OFFSET, 5);
+
+// 8. Fly full animation and warp cycle (R6)
+flagSet(C.FLAG_BADGE03_GET);
+mon.moves[0] = C.MOVE_FLY;
+await game.overworld.prepareViewerInteraction("MAP_PALLET_TOWN");
+game.overworld.player.InitPlayerAvatar(6 + MAP_OFFSET, 8 + MAP_OFFSET, C.DIR_SOUTH, 0);
+// Target destination: Cerulean City
+const ceruleanNum = rom.mapNum("MAP_CERULEAN_CITY");
+game.overworld.warpDestination = { mapGroup: ceruleanNum >>> 8, mapNum: ceruleanNum & 255, warpId: -1, x: 19, y: 17 };
+game.overworld.effects.moves.ReturnToFieldFromFlyMapSelect(0);
+let arrivedViaFly = false;
+let flyArrivalStarted = false;
+for (let frame = 0; frame < 600; frame++) {
+  game.frame();
+  await new Promise(r => setTimeout(r, 1));
+  if (game.overworld.header.id === "MAP_CERULEAN_CITY" && tasks.tasks.some(t => t.isActive)) flyArrivalStarted = true;
+  if (flyArrivalStarted && !game.overworld.controlsLocked && !tasks.tasks.some(t => t.isActive)) {
+    arrivedViaFly = true;
+    break;
+  }
+}
+assert.equal(arrivedViaFly, true, "Fly should complete full animation (takeoff, load, landing, return to ball) and arrival controls unlock");
+assert.equal(save.location.mapGroup, ceruleanNum >>> 8);
+assert.equal(save.location.mapNum, ceruleanNum & 255);
+assert.equal(game.overworld.player.object.currentCoords.x - MAP_OFFSET, 19);
+assert.equal(game.overworld.player.object.currentCoords.y - MAP_OFFSET, 17);
+assert.equal(game.overworld.player.object.facingDirection, C.DIR_SOUTH, "Fly landing should face south");
+
+console.log("Field moves party checks PASS (Flash, Cut, Strength, Surf, Teleport, Escape Rope and Fly full animations and warp cycles)");
