@@ -75,7 +75,7 @@ Anotados el 2026-10-16 a partir de lo que esa sesión dejó sin probar, sin veri
 - [x] Presencia general por flags de guardado, exteriores/interiores, dibujo/colisión/interacción y banderas iniciales fuente solo en partidas nuevas — `2fc61ad4`. Chromium: ocultar/restaurar, guardado cambiado/recarga, interior numérico, Corte y sesión PASS; victoria real Liam/Brock (equipo Nv.40 PREPARED), medalla/MT y carga de Plateada (URL PREPARED): guía oculto/ayudante visible PASS. 49 flags iniciales contrastadas con fuente; 58 checks/tipos/honesty/build PASS.
 - [x] Ciclo temporal por mapa y conservación de plantillas retiradas — `50350097`. Reutiliza `clearTempFieldEventData` en conexiones/puertas/warps del motor; menú/continuar conservan el estado del mapa y los flags temporales no se propagan a otros sectores. Chromium: Corte real→guardar/Continuar/recarga→Celeste, puerta/menú de Paleta, presencia general, Cuerda Huida y Excavar PASS; entradas PREPARED según jobs. Check existente cubre warp al mismo mapa y retirada/restauración sin flag (fixtures PREPARED); 58 checks/tipos/honesty/build PASS.
 - [x] Visor: persistencia de posiciones/direcciones/invisibilidad/retiradas **observadas del mapa actual** — `31dfe405`: Liam real conserva pose y colisiones tras guardar/Continuar/recargar URL; compatibilidad legacy y serialización con fixtures PREPARED. La persistencia de clones y plantillas fuera de spawn se amplió en `c46538b4` y `d5986c54` (validación jugable abierta en B y R1).
-- [ ] Quest Log conectado a los eventos del visor.
+- [ ] Quest Log conectado a los eventos del visor. Evaluado el 2026-10-18: requiere decisión de diseño — el C graba escenas en cada cambio de mapa y la entrada del jugador por frame, y el visor mueve al jugador sin el motor; la reproducción necesita el mapa del motor a pantalla completa dentro del visor. El juego independiente sí reproduce (`questlog-continue` PASS).
 - [x] Tarea de curación del Centro tras derrota (`FieldCB_RushInjuredPokemonToCenter`) y su diálogo — `a2eed273`: `PrintWhiteOutRecoveryMessage` usa coordenadas píxel `x, y` y velocidad `1` como `AddTextPrinterParameterized4` en `field_screen_effect.c`; `EngineInteraction` mantiene la pantalla en negro durante `CB2_WhiteOut` y `Task_RushInjuredPokemonToCenter`, reubica el visor al mapa de curación al iniciar `FieldCB_RushInjuredPokemonToCenter` y ejecuta `EventScript_AfterWhiteOutHeal` o `EventScript_AfterWhiteOutMomHeal` antes de devolver el control. Validación jugable en navegador pendiente.
 - [x] Contadores por paso fuera de pasos reales — `ec0033ba`: en casillas de movimiento forzado no hay paso ni encuentro (hielo del Salón de la Fama 9 casillas → 0 pasos, antes 9) y cada paso avanza los mismos contadores que `ProcessPlayerFieldInput`; bici 22/22, saltos de saliente 1 paso por salto como el C; cambio de mapa sin perder pasos (Paleta→Ruta 1 13/13).
 
@@ -711,14 +711,13 @@ Receta:
   en `:311,328,331,337`.
 - [x] `start_menu.c` — `d15dc8f8`: barra de ayuda solo en modo HELP, `SE_SELECT` en
   `CloseStartMenu`, redibujado sin refreeze, ventana Safari en (1,1), ancho u32 en
-  `PrintSaveStats`. Sin corregir: colores `sTextColor_*` de `PrintSaveStats`
-  (`start_menu.c:184-186`), orden de `SaveQuestLogData` (C:786, TS en `writeSave`).
+  `PrintSaveStats`. Colores `sTextColor_*` (`start_menu.c:184-186`) y orden de
+  `SaveQuestLogData` (C:786) corregidos en `baf7f8f4`; falta comparar con la ROM el color final de los índices 4–7.
 - [x] `vs_seeker.c` — `e07840ac`: `Task_ResetObjectsRematchWantedState` llama a
   `HandleEnforcedLookDirectionOnPlayerStopMoving` y `StopPlayerAvatar` como el C
   (`:603-633`); `Reset...` (`:636-661`) sin diferencias.
-- [ ] `trainer_card.c`: `Unref_InitTrainerCard`; `battle_setup.c`: `SetBattledTrainerFlag2`.
-- [ ] `trainer_tower.c`: `TT_ConvertEasyChatMessageToString`, `GetTrainerTowerTrainerFrontSpriteId`,
-  `CB2_EndTrainerTowerBattle`, `Task_DoTrainerTowerBattle`.
+- [x] `trainer_card.c`: `Unref_InitTrainerCard` — `baf7f8f4` repite `SetMainCallback2(CB2_InitTrainerCard)` como el C; `battle_setup.c`: `SetBattledTrainerFlag2` igual (mismo cuerpo que `SetBattledTrainerFlag`, `battle_setup.c:876-879` frente a `battleSetup.ts:246`). `ShowPlayerTrainerCard` fija `isLink=false` porque el Union Room es de enlace.
+- [x] `trainer_tower.c` revisado el 2026-10-18: `TT_ConvertEasyChatMessageToString` (`convertTowerSpeech`, mismo 3×2→2×3 y `\n`→`\l`, guardas de límite inocuas), `GetTrainerTowerTrainerFrontSpriteId` (igual; `?? 0` defensivo), `CB2_EndTrainerTowerBattle` (`returnToFieldContinueScript(true)` = `CB2_ReturnToFieldContinueScriptPlayMapMusic`) y `Task_DoTrainerTowerBattle` (adaptado al host de combate, que espera la transición y fija el callback).
 - [ ] `battle_tower.c`: `Task_WaitBT` (adapta el scheduler a `game.startBattle`).
 - [x] `trade_scene.c`: `LoadTradeAnimGfx`; `mail.c`: `GetInGameTradeMail` (`attachTradeMail`).
   Iguales: `LoadTradeAnimGfx` delega en una línea (`trade_scene.c:2803` frente a
@@ -726,7 +725,7 @@ Receta:
   máscaras explícitas, especie y objeto (`trade_scene.c:2500-2512` frente a
   `pokemon/mail.ts:259-276`, con guardas benignas ante cdata ausente y firma adaptada a
   anexar al mon). `MAIL_WORDS_COUNT` 9 en ambos.
-- [ ] `trade_scene.c`: `TradeAnimInit_LoadGfx` no sigue el cuerpo C: el C hace
+- [x] `trade_scene.c`: `TradeAnimInit_LoadGfx` — `596a16e7` sigue el cuerpo C (offsets BG0, textbox cargado dos veces, buffers de `BG_SCREEN_SIZE` bytes); el buffer BG2 se mantiene como sustituto del DMA directo a `BG_SCREEN_ADDR(18)`.
   `ChangeBgX/Y(0, 0, 0)`, carga dos veces gráficos, tilemap y paleta del textbox
   (`gBattleInterface_Textbox_*`) y no asigna buffer a BG2; el TS asigna BG2 y no carga
   el textbox. Comprobar si esa carga ocurre en otro sitio.
