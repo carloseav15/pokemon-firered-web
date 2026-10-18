@@ -409,3 +409,102 @@ assert.equal(syncedEnt.graphicsId, undefined);
 assert.equal(syncedEnt.element.graphics, cut.graphicsName);
 assert.equal(syncedEnt.element.movementType, C.MOVEMENT_TYPE_LOOK_AROUND);
 console.log('PREPARED template/clone fixtures; R1.3/R1.5 off-spawn template overrides, clone TrySpawnObjectEvent and graphics/elevation/movementType sync PASS');
+
+// R4: Evolution after level up and move learning in wild and trainer battles,
+// accept/cancel per C, overworld return and save persistence.
+const speciesRaw = JSON.parse(await readFile('public/fr/data/species.json', 'utf8'));
+rom.species = speciesRaw.species;
+rom.pokedex = speciesRaw.pokedex;
+rom.expTables = speciesRaw.exp;
+rom.charmap = JSON.parse(await readFile('public/fr/charmap.json', 'utf8'));
+const movesRaw = JSON.parse(await readFile('public/fr/data/moves.json', 'utf8'));
+rom.moves = movesRaw.moves;
+rom.abilities = movesRaw.abilities;
+rom.natures = movesRaw.natures;
+const itemsRaw = JSON.parse(await readFile('public/fr/data/items.json', 'utf8'));
+rom.items = itemsRaw.items;
+
+const { createMon, evolveMon, levelUpEvolution, EvolutionRenameMon, getDexFlag } = await import('../../src/core/pokemon/pokemon');
+const { MonTryLearningNewMove, SetMonMoveSlot, SetMonData } = await import('../../src/core/pokemon/mon');
+const { GetEvolutionTargetSpecies } = await import('../../src/games/firered/battle/ext');
+const { decode, encode } = await import('../../src/core/gba/charmap');
+
+// 1. Level-up evolution triggers and Everstone prevention
+const bulba15 = createMon(C.SPECIES_BULBASAUR, 15);
+assert.equal(levelUpEvolution(bulba15), C.SPECIES_NONE, 'Bulbasaur L15 cannot evolve yet');
+const bulba16 = createMon(C.SPECIES_BULBASAUR, 16);
+assert.equal(levelUpEvolution(bulba16), C.SPECIES_IVYSAUR, 'Bulbasaur L16 evolves into Ivysaur');
+const caterpie7 = createMon(C.SPECIES_CATERPIE, 7);
+assert.equal(levelUpEvolution(caterpie7), C.SPECIES_METAPOD, 'Caterpie L7 evolves into Metapod');
+
+// Everstone hold effect blocks evolution mode NORMAL
+SetMonData(bulba16 as unknown as import('../../src/core/pokemon/mon').Mon, C.MON_DATA_HELD_ITEM, C.ITEM_EVERSTONE);
+assert.equal(GetEvolutionTargetSpecies(bulba16 as unknown as import('../../src/core/pokemon/mon').Mon, C.EVO_MODE_NORMAL, 0), C.SPECIES_NONE, 'Everstone prevents level-up evolution');
+SetMonData(bulba16 as unknown as import('../../src/core/pokemon/mon').Mon, C.MON_DATA_HELD_ITEM, C.ITEM_NONE);
+assert.equal(GetEvolutionTargetSpecies(bulba16 as unknown as import('../../src/core/pokemon/mon').Mon, C.EVO_MODE_NORMAL, 0), C.SPECIES_IVYSAUR, 'Without Everstone, evolution proceeds');
+
+// 2. Nickname handling on evolution (EvolutionRenameMon)
+// Default nickname follows new species name
+const unnamedBulba = createMon(C.SPECIES_BULBASAUR, 16);
+assert.equal(decode(unnamedBulba.nickname), 'BULBASAUR');
+EvolutionRenameMon(unnamedBulba, C.SPECIES_BULBASAUR, C.SPECIES_IVYSAUR);
+assert.equal(decode(unnamedBulba.nickname), 'IVYSAUR', 'Unnicknamed mon adopts new species name');
+
+// Custom nickname is preserved
+const customBulba = createMon(C.SPECIES_BULBASAUR, 16);
+customBulba.nickname = Array.from(encode('SAUR'));
+EvolutionRenameMon(customBulba, C.SPECIES_BULBASAUR, C.SPECIES_IVYSAUR);
+assert.equal(decode(customBulba.nickname), 'SAUR', 'Custom nickname preserved across evolution');
+
+// 3. Move learning: learn with < 4 moves, replace with 4 moves, decline/cancel
+const bulbaL20 = createMon(C.SPECIES_BULBASAUR, 20);
+bulbaL20.moves = [C.MOVE_TACKLE, C.MOVE_GROWL, C.MOVE_LEECH_SEED];
+bulbaL20.pp = bulbaL20.moves.map(m => rom.moves[m]?.pp ?? 0);
+let moveToLearn = 0;
+const learnRes1 = MonTryLearningNewMove(bulbaL20 as unknown as import('../../src/core/pokemon/mon').Mon, true, m => { moveToLearn = m; });
+assert.equal(moveToLearn, C.MOVE_RAZOR_LEAF, 'Bulbasaur L20 learns Razor Leaf');
+assert.equal(learnRes1, C.MOVE_RAZOR_LEAF, 'Fewer than 4 moves learns new move directly');
+assert.equal(bulbaL20.moves[3], C.MOVE_RAZOR_LEAF, 'Razor Leaf added to slot 3');
+assert.equal(bulbaL20.pp[3], 25, 'Base PP for Razor Leaf initialized');
+
+// When mon already has 4 moves:
+const bulbaFull = createMon(C.SPECIES_BULBASAUR, 20);
+bulbaFull.moves = [C.MOVE_TACKLE, C.MOVE_GROWL, C.MOVE_LEECH_SEED, C.MOVE_VINE_WHIP];
+bulbaFull.pp = bulbaFull.moves.map(m => rom.moves[m]?.pp ?? 0);
+moveToLearn = 0;
+const learnRes2 = MonTryLearningNewMove(bulbaFull as unknown as import('../../src/core/pokemon/mon').Mon, true, m => { moveToLearn = m; });
+assert.equal(moveToLearn, C.MOVE_RAZOR_LEAF);
+assert.equal(learnRes2, C.MON_HAS_MAX_MOVES, 'Full moveset returns MON_HAS_MAX_MOVES');
+
+// Move replacement (Cmd_yesnoboxlearnmove flow): slot 0 replaced
+SetMonMoveSlot(bulbaFull as unknown as import('../../src/core/pokemon/mon').Mon, moveToLearn, 0);
+assert.equal(bulbaFull.moves[0], C.MOVE_RAZOR_LEAF, 'Slot 0 replaced with Razor Leaf');
+assert.equal(bulbaFull.pp[0], 25, 'Slot 0 PP reset to Razor Leaf base PP');
+assert.equal(bulbaFull.moves[1], C.MOVE_GROWL, 'Slot 1 unchanged');
+
+// 4. Evolution completion and save persistence
+S.setSave(S.newSaveData());
+const partyMon = createMon(C.SPECIES_BULBASAUR, 16);
+evolveMon(partyMon, C.SPECIES_IVYSAUR);
+assert.equal(partyMon.species, C.SPECIES_IVYSAUR, 'Species updated to Ivysaur');
+S.save.party[0] = partyMon;
+S.save.partyCount = 1;
+S.incrementGameStat(C.GAME_STAT_EVOLVED_POKEMON);
+assert.equal(getDexFlag(C.SPECIES_IVYSAUR, true), true, 'Pokedex caught flag set for evolved species');
+
+// Persistence round-trip to saveStore
+const storage = new Map<string, string>();
+(globalThis as unknown as { localStorage: { getItem: (k: string) => string | null; setItem: (k: string, v: string) => void; removeItem: (k: string) => void } }).localStorage = {
+  getItem: (k: string) => storage.get(k) ?? null,
+  setItem: (k: string, v: string) => { storage.set(k, v); },
+  removeItem: (k: string) => { storage.delete(k); },
+};
+S.saveStore.write(S.save);
+const reloaded = S.saveStore.load();
+assert.ok(reloaded, 'SaveStore reloads cleanly');
+assert.equal(reloaded!.party[0].species, C.SPECIES_IVYSAUR, 'Evolved species persists across save/load');
+assert.equal(reloaded!.party[0].level, 16);
+assert.equal(reloaded!.party[0].moves[0], partyMon.moves[0]);
+S.setSave(reloaded!);
+assert.equal(getDexFlag(C.SPECIES_IVYSAUR, true), true, 'Pokedex caught persists');
+console.log('PREPARED R4 battle level-up, Everstone, nickname, move learning, evolution and save persistence PASS');

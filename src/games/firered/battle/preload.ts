@@ -4,6 +4,8 @@
 import { loadCData, preloadPacks } from "@core/hw/assets";
 import { preloadNamingScreen } from "@core/namingScreen";
 import { preloadPokedexScreen } from "../pokedexScreen";
+import { preloadEvolutionScene } from "../evolutionScene";
+import { preloadSummaryScreen } from "../pokemonSummaryScreen";
 import { loadBattleScripts } from "@core/battle/bscript";
 import "@core/battle/anims";
 
@@ -28,5 +30,13 @@ const PACKS = [
 let loading: Promise<void> | null = null;
 
 export function preloadBattleAssets(): Promise<void> {
-  return (loading ??= Promise.all([loadCData(...CDATA_FILES), preloadPacks(PACKS), loadBattleScripts(), preloadNamingScreen(), preloadPokedexScreen()]).then(() => undefined));
+  return (loading ??= Promise.all([
+    loadCData(...CDATA_FILES),
+    preloadPacks(PACKS),
+    loadBattleScripts(),
+    preloadNamingScreen(),
+    preloadPokedexScreen(),
+    preloadEvolutionScene(),
+    preloadSummaryScreen(),
+  ]).then(() => undefined));
 }
