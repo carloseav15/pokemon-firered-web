@@ -6,7 +6,7 @@ import { createMon } from '@core/pokemon/pokemon';
 import { addBagItem } from '@core/pokemon/items';
 import { encode } from '@core/gba/charmap';
 import { InitPlayerTrainerId, SeedRngAndSetTrainerId } from '@core/random';
-import { newSaveData, save, saveStore, setSave, setSaveStorageKey, flagGet, flagSet, type SaveData } from '@game/save';
+import { newSaveData, save, saveStore, setSave, setSaveStorageKey, flagGet, flagSet, PlayTimeCounter_Start, type SaveData } from '@game/save';
 import { HandleSetPokedexFlag } from '@core/pokemon/mon_extra';
 import { GetHealLocationIndexFromMapGroupAndNum, GetHealLocation } from '@core/field/overworld';
 import * as C from '@game/generated/constants';
@@ -40,6 +40,8 @@ export async function initializeViewerSession(initialFlags: Record<string, numbe
   restoreViewerEventMap((save as ViewerSave).viewerNavigation?.mapId ?? null);
   grantTemporaryPokedex();
   seedTemporaryRespawn();
+  // CB2_NewGame / CB2_ContinueSavedGame start the play time counter.
+  PlayTimeCounter_Start();
   initialized = true;
 }
 // Temporary start only: new_game.c leaves Pallet Town as the white-out respawn

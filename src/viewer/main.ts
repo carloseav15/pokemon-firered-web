@@ -4,7 +4,7 @@ import { initializeViewerSession, saveViewerSession, viewerCheckpoint, type Navi
 import { enterViewerEventMap, restoreViewerEventMap, viewerEventMap } from "./mapEvents";
 import { isViewerObjectPresent } from "./data/objectPresence";
 import { EngineInteraction } from "./engineInteraction";
-import { flagClear, flagGet, flagSet, save as gameSave } from "@game/save";
+import { flagClear, flagGet, flagSet, PlayTimeCounter_Start, PlayTimeCounter_Update, save as gameSave } from "@game/save";
 import { ElevatorAnimation } from "@core/field/elevatorAnimation";
 import { ElevatorMenu } from "./ui/elevator";
 import { loadElevators, type ElevatorDefinition, type ElevatorChoice } from "./elevators";
@@ -168,6 +168,7 @@ async function continueViewerSession(): Promise<void> {
   const stored = saveStore.load();
   if (!stored) throw Error("No se pudo leer la partida");
   setSave(stored);
+  PlayTimeCounter_Start();
   const nav = viewerCheckpoint()!;
   restoreViewerEventMap(nav.mapId);
   state.playerChar = gameSave.playerGender === C.FEMALE ? "leaf" : "red";
@@ -1705,6 +1706,8 @@ async function build(): Promise<void> {
   const unbindVisibility = bindViewerClockVisibility();
   const unsubscribeSimulation = viewerClock.subscribe(frame => {
     audioController.frame();
+    // One GBA frame of exploration; the engine counts its own frames while the clock is paused for it.
+    if (!HOENN) PlayTimeCounter_Update();
     playerReflection?.tick(frame.tick);
     if(playerActive&&!interiorViewer.isOpen())avatarDepth?.update(playerVisualX,isStepping?groundVisualY:playerVisualY,minX,minY,playerElevation);
     if (playerActive && playerEl && avatarAnimator && !isStepping && !interiorViewer.isOpen()) {
