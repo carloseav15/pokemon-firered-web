@@ -26,7 +26,7 @@ import { cdata, cdataAny, incbin, incbin16, isSym, loadCData, preloadPacks, symN
 import {
   ChangeBgX, ChangeBgY, CopyBgTilemapBufferToVram, CopyToBgTilemapBuffer, FillBgTilemapBufferRect,
   FillBgTilemapBufferRect_Palette0, HideBg, InitBgsFromTemplates,
-  LoadBgTiles, ResetBgsAndClearDma3BusyFlags, SetBgTilemapBuffer, ShowBg, type BgTemplate,
+  ResetBgsAndClearDma3BusyFlags, SetBgTilemapBuffer, ShowBg, type BgTemplate,
 } from "@core/hw/bg";
 import { SetGpuRegBits, ClearGpuRegBits, SetGpuReg, GetGpuReg } from "@core/hw/gpu";
 import {
@@ -58,6 +58,7 @@ import { BlitMenuInfoIcon, MenuInfoIconOfType, ListMenuLoadStdPalAt } from "@cor
 import { FONT_NORMAL, FONT_SMALL, GetStringWidth } from "@core/gba/font";
 import { EOS, encode, intToDecimal, StringCompareWithoutExtCtrlCodes, StringCopy, STR_CONV_MODE_LEADING_ZEROS, STR_CONV_MODE_LEFT_ALIGN, STR_CONV_MODE_RIGHT_ALIGN } from "@core/gba/charmap";
 import { TEXT_SKIP_DRAW } from "@core/gba/textPrinter";
+import { DecompressAndCopyTileDataToVram, FreeTempTileDataBuffersIfPossible, ResetTempTileDataBuffers } from "@core/hw/menuHelpers";
 import { A_BUTTON, B_BUTTON, DPAD_DOWN, DPAD_LEFT, DPAD_RIGHT, DPAD_UP, JOY_NEW, L_BUTTON, R_BUTTON } from "@core/gba/input";
 import { tasks, type TaskFunc } from "@core/gba/tasks";
 import { SetMainCallback2, SetMainCallback2WhenLoaded, SetVBlankCallback, SetHBlankCallback } from "@core/hw/runtime";
@@ -370,7 +371,9 @@ function resolveText(ref: unknown): Uint8Array {
   try {
     return rom.text(name);
   } catch {
-    return EOS_ARRAY;
+    // gNatureNamePointers points at static strings of data/text/nature_names.h,
+    // exported under that header's scope.
+    try { return rom.text(`nature_names.${name}`); } catch { return EOS_ARRAY; }
   }
 }
 
@@ -743,11 +746,14 @@ function PokeSum_HandleLoadBgGfx(): boolean {
       LoadPalette(incbin16("sTextHeaderPalette"), BG_PLTT_ID(7), PLTT_SIZE_4BPP);
       break;
     case 2:
+      ResetTempTileDataBuffers();
       break;
     case 3:
-      LoadBgTiles(2, incbin("gSummaryScreen_Bg_Gfx"), 0, 0);
+      DecompressAndCopyTileDataToVram(2, incbin("gSummaryScreen_Bg_Gfx"), 0, 0, 0);
       break;
     case 4:
+      if (FreeTempTileDataBuffersIfPossible()) return false;
+      break;
     case 5:
     case 6:
       break;
