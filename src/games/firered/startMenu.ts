@@ -1,6 +1,7 @@
 // start_menu.c: start-menu list construction and the shared list helper used
 // by party_menu.c.
 
+import { SaveQuestLogData } from "./questLogEvents";
 import type { Game } from "./game";
 import * as C from "./generated/constants";
 import { IsWeatherNotFadingIn, PlayRainStoppingSoundEffect } from "@core/field/weather";
@@ -316,10 +317,13 @@ export function PrintSaveStats(game: Game): Window {
   stats.frameType = save.options.frameType;
   stats.fill(1);
 
+  // sTextColor_StatName {1,2,3}, sTextColor_StatValue {1,4,5}, sTextColor_LocationHeader {1,6,7}
+  // (start_menu.c:184-186), as AddTextPrinterParameterized3 {bg, fg, shadow}.
+  const statName = { bg: 1, fg: 2, shadow: 3 }, statValue = { bg: 1, fg: 4, shadow: 5 }, locationHeader = { bg: 1, fg: 6, shadow: 7 };
   const location = SaveStatToString(C.SAVE_STAT_LOCATION, 8, ow.header.regionMapSection);
-  printText(stats, FONT_NORMAL, location, Math.trunc(((112 - GetStringWidth(FONT_NORMAL, location)) >>> 0) / 2) & 0xff, 0);
-  const label = (y: number, name: string) => printText(stats, FONT_SMALL, rom.text(name), 2, y);
-  const value = (y: number, text: ArrayLike<number>) => printText(stats, FONT_SMALL, text, 60, y);
+  printText(stats, FONT_NORMAL, location, Math.trunc(((112 - GetStringWidth(FONT_NORMAL, location)) >>> 0) / 2) & 0xff, 0, locationHeader);
+  const label = (y: number, name: string) => printText(stats, FONT_SMALL, rom.text(name), 2, y, statName);
+  const value = (y: number, text: ArrayLike<number>) => printText(stats, FONT_SMALL, text, 60, y, statValue);
   label(14, "gSaveStatName_Player");
   value(14, SaveStatToString(C.SAVE_STAT_NAME, 2));
   label(28, "gSaveStatName_Badges");
@@ -548,6 +552,7 @@ export function SaveDialogCB_AskOverwriteOrReplacePreviousFileHandleInput(dialog
 
 /** SaveDialogCB_PrintSavingDontTurnOffPower (start_menu.c). */
 export function SaveDialogCB_PrintSavingDontTurnOffPower(dialog: SaveDialogRuntime): number {
+  SaveQuestLogData();
   PrintSaveTextWithFollowupFunc(dialog, "gText_SavingDontTurnOffThePower", SaveDialogCB_DoSave);
   return SAVECB_RETURN_CONTINUE;
 }

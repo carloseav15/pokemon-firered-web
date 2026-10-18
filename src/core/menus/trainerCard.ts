@@ -1458,10 +1458,10 @@ export function ShowPlayerTrainerCard(callback: (() => void) | null = null): voi
   SetMainCallback2(CB2_InitTrainerCard);
 }
 
-/** Unref_InitTrainerCard (trainer_card.c): already folded into ShowPlayerTrainerCard above, which
- * also does the SetMainCallback2(CB2_InitTrainerCard) this function adds on top of it in C. */
+/** Unref_InitTrainerCard (trainer_card.c): unused; repeats ShowPlayerTrainerCard's SetMainCallback2. */
 export function Unref_InitTrainerCard(callback: (() => void) | null = null): void {
   ShowPlayerTrainerCard(callback);
+  SetMainCallback2(CB2_InitTrainerCard);
 }
 
 /** Unref_InitTrainerCardLink (trainer_card.c) */
