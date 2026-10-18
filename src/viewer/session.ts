@@ -1,7 +1,9 @@
 // Temporary, explicitly separate from the definitive new_game.c story opening.
 // Uses the engine's live SaveBlock, Pokemon, bag and save serialization.
 import { rom } from '@core/rom';
+import { loadCData } from '@core/hw/assets';
 import { restoreViewerEventMap } from './mapEvents';
+import { onWarpForRoamer } from '@core/pokemon/roamer';
 import { createMon } from '@core/pokemon/pokemon';
 import { addBagItem } from '@core/pokemon/items';
 import { encode } from '@core/gba/charmap';
@@ -19,10 +21,12 @@ type ViewerSave = SaveData & { viewerNavigation?: NavigationSave; viewerStart?: 
 let initialized = false;
 export async function initializeViewerSession(initialFlags: Record<string, number>): Promise<void> {
   if (initialized) return;
-  await rom.load();
+  // rom data, plus the map-entry bookkeeping tables mapEvents.ts runs before the engine loads.
+  await Promise.all([rom.load(), loadCData('renewable_hidden_items')]);
   setSaveStorageKey(VIEWER_SAVE_KEY);
   const stored = saveStore.load() as ViewerSave | undefined;
-  if (stored?.viewerStart === 'temporary-kanto-v1') setSave(stored);
+  // Overworld_ResetStateOnContinue: the roamer's location is not saved; continuing places it again.
+  if (stored?.viewerStart === 'temporary-kanto-v1') { setSave(stored); onWarpForRoamer(); }
   else {
     SeedRngAndSetTrainerId(Math.floor(Math.random() * 65536));
     setSave(newSaveData());

@@ -1,6 +1,7 @@
 import { ViewerObjectSpawns, cloneElement } from "./data/objectSpawns";
 import { savedViewerObjects, storeViewerObjects, type ViewerObjectState } from "./objectState";
 import { initializeViewerSession, saveViewerSession, viewerCheckpoint, type NavigationSave } from "./session";
+import { onWarpForRoamer } from "@core/pokemon/roamer";
 import { enterViewerEventMap, restoreViewerEventMap, viewerEventMap } from "./mapEvents";
 import { isViewerObjectPresent } from "./data/objectPresence";
 import { EngineInteraction } from "./engineInteraction";
@@ -169,6 +170,7 @@ async function continueViewerSession(): Promise<void> {
   if (!stored) throw Error("No se pudo leer la partida");
   setSave(stored);
   PlayTimeCounter_Start();
+  onWarpForRoamer(); // Overworld_ResetStateOnContinue
   const nav = viewerCheckpoint()!;
   restoreViewerEventMap(nav.mapId);
   state.playerChar = gameSave.playerGender === C.FEMALE ? "leaf" : "red";
