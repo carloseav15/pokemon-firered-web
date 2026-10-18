@@ -185,8 +185,9 @@ export class ExplorationUi {
       cleanInput.dispatchEvent(new Event("change"));
       return;
     }
+    // START inside an engine screen (naming screen OK, Pokédex search...) belongs to the engine.
     if (this.active && event.key === "Enter" && !event.repeat && !(event.target instanceof HTMLButtonElement)
-      && document.getElementById("interior")?.style.display === "none") { event.preventDefault(); event.stopImmediatePropagation(); this.openGameMenu(); return; }
+      && document.getElementById("interior")?.style.display === "none" && document.getElementById("engine-interaction")?.hidden !== false) { event.preventDefault(); event.stopImmediatePropagation(); this.openGameMenu(); return; }
     if (!this.active || document.getElementById("engine-interaction")?.hidden === false || event.key !== "Escape" || document.querySelector("dialog[open]") || this.menu.open || document.getElementById("interior")?.style.display !== "none") return;
     event.preventDefault(); event.stopImmediatePropagation(); this.openMenu();
   };
