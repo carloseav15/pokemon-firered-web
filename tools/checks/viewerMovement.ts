@@ -17,7 +17,11 @@ grid.solid[grid.idx(0, 1)] = 0;
 grid.water[grid.idx(-1, -1)] = 1;grid.npc[grid.idx(-1, -1)] = 1;
 assert.equal(planStep(grid, -2, -1, "east", "bike").vehicle, "bike");
 grid.npc[grid.idx(-1, -1)] = 0;
-assert.equal(planStep(grid, -2, -1, "east", "bike").vehicle, "surf");
+// Default (real game): walking or biking into water is blocked; boarding requires HM Surf.
+assert.equal(planStep(grid, -2, -1, "east", "bike").status, "blocked");
+assert.equal(planStep(grid, -2, -1, "east", "bike").vehicle, "bike");
+// Explicit sandbox allowAutoSurf allows automatic boarding.
+assert.equal(planStep(grid, -2, -1, "east", "bike", undefined, true).vehicle, "surf");
 grid.npc[grid.idx(-2, -1)] = 1;
 assert.equal(planStep(grid, -1, -1, "west", "surf").vehicle, "surf");
 grid.npc[grid.idx(-2, -1)] = 0;

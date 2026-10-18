@@ -533,7 +533,7 @@ export class FieldMoveEffects {
     this.ow.controlsLocked = true;
     this.ow.objects.freezeAll();
     this.ow.player.preventStep = true;
-    this.ow.player.flags |= PLAYER_AVATAR_FLAG_SURFING;
+    this.ow.player.SetPlayerAvatarStateMask(PLAYER_AVATAR_FLAG_SURFING);
     const [dx, dy] = DIRECTION_VECTORS[player.movementDirection]!;
     task.data[1] = player.currentCoords.x;
     task.data[2] = player.currentCoords.y;

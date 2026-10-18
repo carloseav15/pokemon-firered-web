@@ -1046,7 +1046,8 @@ function processPlayerStep(): void {
   }
 
   if (!forcedStep && !HOENN && tryNavigationWarp("front", playerDir)) return;
-  const plan = forcedStep?.plan ?? planStep(worldGrid, playerX, playerY, playerDir, playerMode, playerCurrentElevation);
+  const allowAutoSurf = HOENN || new URLSearchParams(location.hash.slice(1)).get("autosurf") === "1" || new URLSearchParams(location.hash.slice(1)).get("autoSurf") === "1";
+  const plan = forcedStep?.plan ?? planStep(worldGrid, playerX, playerY, playerDir, playerMode, playerCurrentElevation, allowAutoSurf);
   const targetX = plan.x, targetY = plan.y;
   const isLedgeJump = plan.jump;
   if (plan.status === "loading" && findMapAt(targetX, targetY)) {
@@ -2139,6 +2140,20 @@ function setupUi(): void {
       updateEntitiesView();
     },
     setBike: on => { if (on !== (playerMode === "bike")) toggleBike(); },
+    setVehicle: vehicle => {
+      if (vehicle === playerMode) return;
+      if (vehicle === "surf") {
+        if (playerMode === "bike") toggleBike();
+        playerMode = "surf";
+      } else if (vehicle === "bike") {
+        if (playerMode === "surf") playerMode = "walk";
+        if (playerMode !== "bike") toggleBike();
+      } else {
+        if (playerMode === "bike") toggleBike();
+        playerMode = "walk";
+      }
+      updatePlayerDisplay();
+    },
     onSetMetatile: (mapId, lx, ly, metatileId) => {
       const origin = index.maps[mapId];
       if (origin) paintNavigationMetatile(origin.x + lx, origin.y + ly, metatileId);

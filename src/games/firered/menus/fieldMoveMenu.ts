@@ -199,6 +199,7 @@ export function trySetUpFieldMove(game: Game, fieldMove: number, partyIndex: num
       const boulder = frontObject(C.OBJ_EVENT_GFX_PUSHABLE_BOULDER);
       if (!SetUpFieldMove_Strength(ow.player.isSurfing(), !!boulder)) return { kind: "fail", message: text(FAIL_MESSAGES[fieldMove]) };
       varSet(SV.RESULT, partyIndex);
+      if (boulder) varSet(SV.LAST_TALKED, boulder.localId);
       return { kind: "close", post: () => { args[0] = partyIndex; ow.script.ScriptContext_SetupScript(rom.label("EventScript_FldEffStrength")); } };
     }
     case FIELD_MOVE_SURF:

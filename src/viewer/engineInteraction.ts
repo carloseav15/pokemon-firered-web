@@ -38,6 +38,7 @@ type Hooks = {
   syncObjects(states: ViewerObjectState[]): void;
   /** The bag's Bicycle (or its dismount) changed the avatar state. */
   setBike(on: boolean): void;
+  setVehicle?: (vehicle: 'walk' | 'bike' | 'surf') => void;
   onSetMetatile?: (mapId: string, x: number, y: number, metatile: number) => void;
 };
 export class EngineInteraction {
@@ -178,18 +179,36 @@ export class EngineInteraction {
     this.close();
     this.wildMap = '';
     if (!this.game) return;
-    if (this.menuVehicle && this.menuVehicle !== 'surf') {
-      const bike = (this.game.overworld.player.flags & (PLAYER_AVATAR_FLAG_MACH_BIKE | PLAYER_AVATAR_FLAG_ACRO_BIKE)) !== 0;
-      if (bike !== (this.menuVehicle === 'bike')) this.hooks.setBike(bike);
+    const player = this.game.overworld.player;
+    const isSurfing = (player.flags & PLAYER_AVATAR_FLAG_SURFING) !== 0;
+    const isBiking = (player.flags & (PLAYER_AVATAR_FLAG_MACH_BIKE | PLAYER_AVATAR_FLAG_ACRO_BIKE)) !== 0;
+    const currentVehicle: 'walk' | 'bike' | 'surf' = isSurfing ? 'surf' : isBiking ? 'bike' : 'walk';
+    if (this.hooks.setVehicle) {
+      this.hooks.setVehicle(currentVehicle);
+    } else if (this.menuVehicle && this.menuVehicle !== 'surf') {
+      if (isBiking !== (this.menuVehicle === 'bike')) this.hooks.setBike(isBiking);
     }
     this.menuVehicle = null;
+
+    const playerObj = player.object;
+    const currentX = playerObj.currentCoords.x - MAP_OFFSET;
+    const currentY = playerObj.currentCoords.y - MAP_OFFSET;
+
     // DoWhiteOut/warps update save.location before the engine's own map load
     // completes, so the destination is read from the record, not the loaded map.
     const { mapGroup, mapNum, x, y } = save.location;
     const mapId = rom.mapIdByNum(((mapGroup & 0xff) << 8) | (mapNum & 0xff));
     const direction = ({ [C.DIR_SOUTH]: 'south', [C.DIR_NORTH]: 'north', [C.DIR_WEST]: 'west', [C.DIR_EAST]: 'east' } as const)[save.facing] ?? nav.direction;
-    if (mapId && (mapId !== nav.mapId || x !== nav.x || y !== nav.y || direction !== nav.direction)) {
-      void this.hooks.relocate({ mapId, x, y, direction, dynamic: null });
+
+    const finalX = (mapId && mapId === nav.mapId) ? currentX : x;
+    const finalY = (mapId && mapId === nav.mapId) ? currentY : y;
+    save.location.x = finalX;
+    save.location.y = finalY;
+    save.pos.x = finalX;
+    save.pos.y = finalY;
+
+    if (mapId && (mapId !== nav.mapId || finalX !== nav.x || finalY !== nav.y || direction !== nav.direction)) {
+      void this.hooks.relocate({ mapId, x: finalX, y: finalY, direction, dynamic: null });
     }
   }
   private close(): void {
