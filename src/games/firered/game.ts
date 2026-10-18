@@ -220,7 +220,9 @@ export class Game {
 
   /** One GBA frame: ReadKeys, callback1, callback2, sound. */
   frame(): void {
+    // The source reads these options from gSaveBlock2Ptr each time; refresh the port's live copies.
     joy.buttonMode = save.options.buttonMode;
+    textOptions.speed = save.options.textSpeed;
     ReadKeys();
     this.frameCount++;
     // main.c CallCallbacks: the help overlay pre-empts callback1/callback2 while it runs.
@@ -392,7 +394,6 @@ export class Game {
     save.facing = p?.facingDirection ?? 1;
     save.playerAvatarFlags = this.overworld.player.flags;
     save.savedMusic = this.overworld.savedMusic;
-    save.options.textSpeed = textOptions.speed;
     SaveMapView(this.overworld.map, save.pos, save.mapView);
     ApplyNewEncryptionKeyToGameStats(save.trainerId);
     ApplyNewEncryptionKeyToBagItems_(save.trainerId);
