@@ -389,12 +389,11 @@ export class EngineInteraction {
     return (this.loading ??= this.initialize().catch(error => { this.loading = undefined; throw error; }));
   }
   /**
-   * Arrival in a Pokémon Center: its OnTransition map script (`setrespawn`,
-   * overworld.c RunOnTransitionMapScript) registers the white-out respawn point.
-   * Other maps' transition scripts belong to the story VM and are not run here.
+   * Arrival in a map: runs its OnTransition map script (e.g. setrespawn in Centers,
+   * boulder resets in caves/Route 20, etc.) as in overworld.c RunOnTransitionMapScript.
    */
   async enterMap(nav: NavigationSave): Promise<void> {
-    if (!/_POKEMON_CENTER_1F$/.test(nav.mapId) || this.busy) return;
+    if (this.busy) return;
     this.testingWild = true;
     try {
       await (this.loading ??= this.initialize());
@@ -584,6 +583,11 @@ export class EngineInteraction {
       IncrementResortGorgeousStepCounter();
       IncrementBirthIslandRockStepCount();
       if (ow.control.tryStartStepCountScript(behavior) || ow.effects.updateRepelCounter()) {
+        started = true;
+        await this.run(nav, 0, true, () => {}, true);
+        return true;
+      }
+      if (ow.control.tryStartCoordEventScript({ x: nav.x + MAP_OFFSET, y: nav.y + MAP_OFFSET, elevation })) {
         started = true;
         await this.run(nav, 0, true, () => {}, true);
         return true;
