@@ -222,7 +222,9 @@ export class EngineInteraction {
     cancelAnimationFrame(this.frame); this.root.hidden = true; this.field.remove();
     joy.initKeys(); joy.setExternalInputEnabled(false);
     paletteFade.clear();
-    this.hooks.hideObjects(false, this.objectMapId || this.interactionMapId, this.localId); this.hooks.pause(false);
+    this.hooks.hideObjects(false, this.objectMapId || this.interactionMapId, this.localId);
+    this.hooks.hideObjects(false, this.objectMapId || this.interactionMapId, 0);
+    this.hooks.pause(false);
     delete this.root.dataset.scene;
     delete this.root.dataset.whiteout;
     document.getElementById('viewport')?.focus({preventScroll:true});
@@ -302,12 +304,28 @@ export class EngineInteraction {
     const inFieldAnim = Boolean(this.localId || ow.player.preventStep || ow.player.isSurfing() || ow.controlsLocked);
     if (inFieldAnim) this.hooks.hideObjects(true, this.objectMapId || this.interactionMapId, this.localId);
     const drawPlayer = inFieldAnim;
-    const objects = [...(drawPlayer ? [ow.player.object] : []), ...(target ? [target] : [])];
-    for (const object of objects) if(object?.sprite && !object.sprite.invisible) ow.sprites.drawSprite(ctx,object.sprite);
+    const activeObjects: (typeof ow.player.object)[] = [];
+    if (drawPlayer && ow.player.object) activeObjects.push(ow.player.object);
+    if (target) activeObjects.push(target);
+    if (inFieldAnim) {
+      for (const obj of ow.objects.list) {
+        if (!obj || obj.isPlayer || obj === target) continue;
+        if (obj.sprite && !obj.sprite.invisible) {
+          activeObjects.push(obj);
+          this.hooks.hideObjects(true, this.objectMapId || this.interactionMapId, obj.localId);
+        }
+      }
+    }
+    for (const object of activeObjects) if (object?.sprite && !object.sprite.invisible) ow.sprites.drawSprite(ctx, object.sprite);
     // Healing balls/glow and other actual field-effect sprites stay at their
     // original map coordinates. General NPC rendering remains a later integration.
-    for(const sprite of ow.sprites.sprites) if(!this.initialSprites.has(sprite)&&!sprite.invisible&&!sprite.destroyed) ow.sprites.drawSprite(ctx,sprite);
-    this.hooks.project(this.field,game);
+    for (const sprite of ow.sprites.sprites) {
+      if (!this.initialSprites.has(sprite) && !sprite.invisible && !sprite.destroyed) {
+        if (!sprite.coordOffsetEnabled) ow.sprites.drawSprite(ui, sprite);
+        else ow.sprites.drawSprite(ctx, sprite);
+      }
+    }
+    this.hooks.project(this.field, game);
   }
   async show(nav: NavigationSave, target: number | { mapId?: string; localId: number }): Promise<void> {
     const localId = typeof target === 'number' ? target : target.localId;
@@ -433,6 +451,7 @@ export class EngineInteraction {
   async enterMap(nav: NavigationSave): Promise<void> {
     if (this.busy) return;
     this.testingWild = true;
+    let started = false;
     try {
       await (this.loading ??= this.initialize());
       const ow = this.game!.overworld;
@@ -440,7 +459,15 @@ export class EngineInteraction {
       await this.prepareObjects(nav);
       this.wildMap = nav.mapId;
       ow.RunOnTransitionMapScript();
-    } finally { this.testingWild = false; }
+      ow.tryRunOnWarpIntoMapScript();
+      if (ow.tryRunOnFrameMapScript()) {
+        started = true;
+        await this.run(nav, 0, true, () => {}, true);
+      }
+    } finally {
+      this.testingWild = false;
+      if (!started) this.root.dataset.loading = 'false';
+    }
   }
   /**
    * Leaving an outdoor map for a cave or building stores the escape warp
@@ -608,6 +635,11 @@ export class EngineInteraction {
         await this.run(nav, trainerId, true, () => { if (trainerId) this.hooks.hideObjects(true, trainerMapId, trainerId); }, true, trainerMapId);
         return true;
       }
+      if (ow.tryRunOnFrameMapScript()) {
+        started = true;
+        await this.run(nav, 0, true, () => {}, true);
+        return true;
+      }
       // ProcessPlayerFieldInput tookStep (field_control_avatar.c): step stat, then the
       // step-count scripts (happiness, poison, egg hatch, Safari) and repel; those
       // that set up a script run it before the encounter check, as in the C.
@@ -621,7 +653,7 @@ export class EngineInteraction {
       RunMassageCooldownStepCounter();
       IncrementResortGorgeousStepCounter();
       IncrementBirthIslandRockStepCount();
-      if (ow.control.tryStartStepCountScript(behavior) || ow.effects.updateRepelCounter()) {
+      if (ow.control.tryStartStepBasedScript({ x: nav.x + MAP_OFFSET, y: nav.y + MAP_OFFSET, elevation }, behavior, save.facing)) {
         started = true;
         await this.run(nav, 0, true, () => {}, true);
         return true;

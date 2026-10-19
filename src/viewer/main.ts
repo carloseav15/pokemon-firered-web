@@ -218,6 +218,8 @@ async function relocateViewer(nav: NavigationSave): Promise<void> {
       navigationWarps.restore(nav.dynamic);
       await startExploration(info.x + nav.x, info.y + nav.y);
       playerDir = nav.direction; updatePlayerDisplay(); writeHash();
+      enteredMapId = nav.mapId;
+      void engineInteraction?.enterMap(nav).catch(error => console.error("Entrada de mapa tras relocate", error));
     } finally {
       warpBusy = prevWarpBusy;
     }
@@ -2276,6 +2278,10 @@ function setupUi(): void {
     },
     hideObjects: (hidden,mapId,localId) => {
       if(playerEl)playerEl.style.visibility=hidden?"hidden":"";
+      if (!localId && !hidden) {
+        for (const e of entityManager.entities) if (e.el && (!mapId || e.element.map === mapId)) e.el.style.visibility = "";
+        return;
+      }
       const ent=entityManager.entities.find(e=>e.element.map===mapId&&e.element.localId===localId);
       if(ent?.el)ent.el.style.visibility=hidden?"hidden":"";
     },

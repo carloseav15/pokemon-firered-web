@@ -59,7 +59,7 @@ export async function initializeViewerSession(
 ): Promise<void> {
   if (initialized) return;
   // rom data, plus the map-entry bookkeeping tables mapEvents.ts runs before the engine loads.
-  await Promise.all([rom.load(), loadCData('renewable_hidden_items')]);
+  await Promise.all([rom.load(), loadCData('renewable_hidden_items', 'wild_encounter')]);
   setSaveStorageKey(VIEWER_SAVE_KEY);
   const stored = saveStore.load() as ViewerSave | undefined;
   // Overworld_ResetStateOnContinue: the roamer's location is not saved; continuing places it again.
