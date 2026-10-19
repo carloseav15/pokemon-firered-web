@@ -21,19 +21,25 @@ export const gTrainerBackPicTable = () => table<CSheet>("gTrainerBackPicTable");
 export const gTrainerFrontPicPaletteTable = () => table<CPalette>("gTrainerFrontPicPaletteTable");
 export const gTrainerBackPicPaletteTable = () => table<CPalette>("gTrainerBackPicPaletteTable");
 
-/** Bytes of a symbol reference (optionally with an offset), as the C pointer would address them. */
+/** Bytes of a symbol reference (optionally with an offset or array index), as the C pointer would address them. */
 export function symBytes(ref: unknown): Uint8Array {
   const name = symName(ref);
   if (!name) return new Uint8Array(0);
   const bytes = incbin(name);
-  const offset = (ref as { offset?: number }).offset ?? 0;
+  let offset = (ref as { offset?: number }).offset ?? 0;
+  if (!offset && (ref as { index?: number }).index !== undefined) {
+    const idx = (ref as { index: number }).index;
+    const stride = (ref as { stride?: number }).stride ?? 32;
+    offset = idx * stride;
+  }
   return offset ? bytes.subarray(offset) : bytes;
 }
 
-/** A palette symbol as u16 colors. */
+/** A palette symbol as u16 colors (16 colors / 32 bytes per palette). */
 export function symPalette(ref: unknown): Uint16Array {
   const b = symBytes(ref);
-  return new Uint16Array(b.buffer.slice(b.byteOffset, b.byteOffset + (b.length & ~1)));
+  const len = Math.min(b.length, 32);
+  return new Uint16Array(b.buffer.slice(b.byteOffset, b.byteOffset + (len & ~1)));
 }
 
 export function sheetBytes(sheet: CSheet): Uint8Array {
