@@ -11,10 +11,10 @@ const BUTTONS: Button[] = [
   // code "" keeps Shift out of KEYMAP (ShiftLeft/Right are SELECT there).
   { id: "b", label: "B", keys: [{ key: "x", code: "KeyX" }, { key: "Shift", code: "" }] },
   { id: "start", label: "START", keys: [{ key: "Enter", code: "Enter" }] },
-  { id: "select", label: "SELECT", keys: [{ key: "Backspace", code: "Backspace" }] },
+  { id: "select", label: "SELECT", keys: [{ key: " ", code: "Space" }, { key: "Backspace", code: "Backspace" }] },
   // key "Unidentified": the viewer reads W/A/S/D as movement, the engine reads only the code.
   { id: "l", label: "L", keys: [{ key: "Unidentified", code: "KeyQ" }] },
-  { id: "r", label: "R", keys: [{ key: "Unidentified", code: "KeyW" }] },
+  { id: "r", label: "R", keys: [{ key: "Unidentified", code: "KeyE" }] },
 ];
 const DIRECTIONS: Record<"up" | "down" | "left" | "right", KeySpec> = {
   up: { key: "ArrowUp", code: "ArrowUp" },

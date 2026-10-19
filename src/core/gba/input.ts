@@ -13,22 +13,30 @@ export const L_BUTTON = 0x0200;
 export const DPAD_ANY = DPAD_RIGHT | DPAD_LEFT | DPAD_UP | DPAD_DOWN;
 
 const KEYMAP: Record<string, number> = {
+  // Botones de acción principales
   KeyZ: A_BUTTON,
-  KeyA: A_BUTTON,
-  Space: A_BUTTON,
   KeyX: B_BUTTON,
   KeyB: B_BUTTON,
   Escape: B_BUTTON,
+  Enter: START_BUTTON,
+  Space: SELECT_BUTTON,
   Backspace: SELECT_BUTTON,
   ShiftRight: SELECT_BUTTON,
   ShiftLeft: SELECT_BUTTON,
-  Enter: START_BUTTON,
+
+  // Flechas y WASD para movimiento
   ArrowRight: DPAD_RIGHT,
+  KeyD: DPAD_RIGHT,
   ArrowLeft: DPAD_LEFT,
+  KeyA: DPAD_LEFT,
   ArrowUp: DPAD_UP,
+  KeyW: DPAD_UP,
   ArrowDown: DPAD_DOWN,
+  KeyS: DPAD_DOWN,
+
+  // Gatillos L y R
   KeyQ: L_BUTTON,
-  KeyW: R_BUTTON,
+  KeyE: R_BUTTON,
 };
 
 class Joypad {

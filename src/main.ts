@@ -2,6 +2,11 @@ import "./styles.css";
 import { launchFireRed } from "./games/firered/boot";
 import { launchStartup } from "./games/firered/startup";
 import { launchAnimHarness } from "./games/firered/animHarness";
+import { ResponsiveManager } from "./web/responsiveControls";
+
+// Inicializa visualización responsive (Consola 3:2, Pantalla Completa, Visor Extendido) y controles
+const responsive = new ResponsiveManager();
+responsive.init();
 
 // ?fr=new / ?fr=continue / ?fr=sandbox skip the intro and boot the FireRed engine directly.
 // ?fr=anims&a=<species>&t=<species> boots a battle harness that plays move animations on demand (window.frAnim).
