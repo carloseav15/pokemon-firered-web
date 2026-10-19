@@ -34,8 +34,10 @@ body {
   min-height: 50px;
   min-width: 0;
   padding: 8px 16px;
-  background: var(--bg-header);
-  border-bottom: 1px solid var(--border-color);
+  background: rgba(18, 19, 24, 0.88);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   flex-wrap: wrap;
   row-gap: 8px;
   user-select: none;
