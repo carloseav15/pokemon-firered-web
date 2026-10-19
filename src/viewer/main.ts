@@ -678,8 +678,19 @@ function interactWithEntity(ent: LiveEntity): void {
   if (!HOENN && playerActive && engineInteraction) {
     const header = mapHeaders.get(ent.element.map);
     const npc = header?.objects.find(o => !o.clone && o.localId === ent.element.localId);
-    const hasScript = npc && !npc.clone && (npc.script || (npc.scriptName && npc.scriptName !== "0x0" && npc.scriptName !== "NULL"));
-    if (hasScript) {
+    let scriptName = npc && !npc.clone && (npc.script || (npc.scriptName && npc.scriptName !== "0x0" && npc.scriptName !== "NULL"))
+      ? (npc.scriptName || npc.script)
+      : undefined;
+
+    if (!scriptName && (ent.element.graphics === "OBJ_EVENT_GFX_CUT_TREE" || ent.element.layer === "corte")) {
+      scriptName = "EventScript_CutTree";
+    } else if (!scriptName && (ent.element.graphics === "OBJ_EVENT_GFX_ROCK_SMASH_ROCK" || ent.element.layer === "roca")) {
+      scriptName = "EventScript_RockSmash";
+    } else if (!scriptName && ent.element.layer === "snorlax") {
+      scriptName = "Route12_EventScript_Snorlax";
+    }
+
+    if (scriptName) {
       if (isStepping || warpBusy || explorationUi?.paused || engineInteraction.open) return;
       const dx = playerDir === "east" ? 1 : playerDir === "west" ? -1 : 0;
       const dy = playerDir === "south" ? 1 : playerDir === "north" ? -1 : 0;
@@ -688,7 +699,20 @@ function interactWithEntity(ent: LiveEntity): void {
       const reachableInMap = ent.element.map === here
         || (here ? mapHeaders.get(here)?.objects.some(o => o.clone && o.targetMap === ent.element.map && o.targetLocalId === ent.element.localId) : false);
       if (!reachableInMap || ent.gx !== playerX+dx*reach || ent.gy !== playerY+dy*reach) return;
-      void engineInteraction.show(navigationSnapshot(), { mapId: ent.element.map, localId: npc.localId }).catch(error => dialogManager.show("Interacción", [String(error)]));
+
+      if (npc && !npc.clone) {
+        void engineInteraction.show(navigationSnapshot(), { mapId: ent.element.map, localId: npc.localId }).catch(error => dialogManager.show("Interacción", [String(error)]));
+      } else {
+        void engineInteraction.triggerScript(navigationSnapshot(), scriptName).then(() => {
+          if (ent.element.layer === "corte" || ent.element.layer === "roca") {
+            ent.removed = true;
+            ent.hidden = true;
+            ent.el?.remove();
+            ent.el = undefined;
+            worldGrid.setNpc(ent.gx, ent.gy, false);
+          }
+        }).catch(error => dialogManager.show("Interacción", [String(error)]));
+      }
       return;
     }
   }
@@ -1783,7 +1807,7 @@ async function build(): Promise<void> {
         {x:playerX,y:playerY},{x:playerX,y:playerY},playerVisualX,playerVisualY,bob,minX,minY,frame.tick);
     }
     if (playerActive && syncEntityPresence()) updateEntitiesView();
-    if (playerActive && !interiorViewer.isOpen()) entityManager.updateAutonomousBehaviors(frame.elapsedMs, playerX, playerY);
+    if (playerActive && !interiorViewer.isOpen()) entityManager.updateAutonomousBehaviors(frame.elapsedMs, playerX, playerY, worldGrid);
     if (weatherOverlay && playerActive && !interiorViewer.isOpen()) {
       const screenX = (playerVisualX + minX * TILE) * camera.zoom - viewport.scrollLeft + (TILE * camera.zoom) / 2;
       const screenY = (playerVisualY + minY * TILE) * camera.zoom - viewport.scrollTop + (TILE * camera.zoom) / 2;
