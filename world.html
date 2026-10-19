@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pokémon Odyssey — Modo Mundo Abierto</title>
+    <link rel="stylesheet" href="/src/viewer/viewer.css" />
+  </head>
+  <body>
+    <header id="bar">
+      <a href="/" class="btn" title="Volver al Hub de Pokémon Odyssey" style="text-decoration:none; font-weight: 700;">🧭 Hub</a>
+      <a href="/atlas.html" class="btn" title="Índice de secciones y mapas" style="text-decoration:none">☰ Atlas</a>
+      <div class="app-title"><span></span> Kanto Continuo · Mundo Abierto</div>
+      <div class="search-wrap">
+        <input id="search" type="search" aria-label="Buscar mapa" placeholder="Buscar mapa..." title="Presiona '/' para buscar rápido" autocomplete="off" />
+        <span class="search-shortcut">/</span>
+        <div id="search-results" class="search-results" style="display:none;"></div>
+      </div>
+
+      <div class="btn-group">
+        <button id="zoom-in" class="btn btn-icon" title="Acercar (+)">+</button>
+        <button id="zoom-out" class="btn btn-icon" title="Alejar (−)">−</button>
+      </div>
+
+      <button id="layers-btn" class="btn" popovertarget="layers-menu" title="Alternar capas visibles">
+        Capas ▾
+      </button>
+
+      <div id="layers-menu" popover="auto">
+        <div class="menu-header">
+          <span class="menu-header-title">Capas Visibles</span>
+          <div class="layer-actions">
+            <button id="layers-all">Todas</button>
+            <button id="layers-none">Ninguna</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="btn-group" id="mode-group">
+        <a href="/play.html" class="btn" title="Modo Historia: Jugar en la consola GBA canónica" style="text-decoration:none">
+          🎮 Modo Historia
+        </a>
+        <button id="mode-viewer-btn" class="btn active-mode" title="Modo Visor: Navegar libremente y consultar mapas">
+          🗺️ Visor
+        </button>
+        <button id="mode-explore-btn" class="btn" title="Modo Exploración: Camina por el mapa con tu avatar">
+          🧭 Explorar Mapa
+        </button>
+        <button id="bike-btn" class="btn" style="display:none;" title="Alternar Bici (tecla B)">
+          🚲 Bici
+        </button>
+      </div>
+
+      <button id="audio-btn" class="btn" title="Activar/Silenciar Música y Sonido (M)">
+        🔇 Audio
+      </button>
+
+      <button id="panel-toggle" class="btn" title="Ocultar/mostrar panel lateral">Panel ◨</button>
+      <div style="flex: 1"></div>
+
+      <button id="overflow-btn" class="btn" popovertarget="overflow-menu" title="Opciones avanzadas">
+        Opciones ⚙
+      </button>
+
+      <div id="overflow-menu" popover="auto">
+        <div class="menu-header">
+          <span class="menu-header-title">Ajustes del Visor</span>
+        </div>
+        <label><input id="audio-toggle" type="checkbox" /> Música y Sonidos (BGM/SE)</label>
+        <label><input id="anim-toggle" type="checkbox" /> Animar tiles</label>
+        <label for="player-char" style="display:flex; justify-content:space-between; gap:12px;">
+          Personaje:
+          <select id="player-char">
+            <option value="red">Rojo (Red)</option>
+            <option value="leaf">Hoja (Leaf)</option>
+          </select>
+        </label>
+        <label for="fill-biome" style="display:flex; justify-content:space-between; gap:12px;">
+          Bioma de fondo:
+          <select id="fill-biome" title="El relleno automático es solo fondo visual, distinto del terreno pintado del proyecto">
+            <option value="auto">Automático (relleno visual)</option>
+            <option value="ocean">Solo Océano (Agua)</option>
+            <option value="trees">Solo Bosque (Árboles)</option>
+            <option value="mountain">Solo Montaña (Rocas)</option>
+          </select>
+        </label>
+        <label for="fill-mode" style="display:flex; justify-content:space-between; gap:12px;">
+          Relleno visual:
+          <select id="fill-mode">
+            <option value="full">Completo</option>
+            <option value="dim">Atenuado</option>
+            <option value="off">Desactivado</option>
+          </select>
+        </label>
+        <label><input id="radar-toggle" type="checkbox" checked /> Minimapa Radar</label>
+      </div>
+    </header>
+
+    <main id="main">
+      <div id="loading-overlay" class="loading-overlay">
+        <div class="loading-spinner"></div>
+        <div id="loading-text" class="loading-text">Cargando mapas de Kanto…</div>
+      </div>
+      <div id="viewport">
+        <div id="world-stage">
+          <div id="content">
+            <div id="selection-box"></div>
+            <div id="player-sprite"></div>
+          </div>
+        </div>
+      </div>
+      <div id="dialog-box" role="status" aria-labelledby="dialog-title">
+        <div id="dialog-title">MENSAJE</div>
+        <div id="dialog-text">...</div>
+        <div id="dialog-foot">
+          <span id="dialog-prompt">Presiona Z / Espacio / Enter para continuar</span>
+          <button id="dialog-close" class="btn" type="button">Cerrar</button>
+        </div>
+      </div>
+      <div id="minimap-wrap">
+        <div id="minimap-title">Mapa de Navegación</div>
+        <div id="minimap-canvas-wrap">
+          <canvas id="minimap-canvas" width="176" height="130"></canvas>
+          <div id="minimap-viewbox"></div>
+          <div id="minimap-player-dot"></div>
+        </div>
+      </div>
+      <aside id="panel"><p>Pincha una casilla para ver su ficha.</p></aside>
+    </main>
+
+    <footer id="statusbar">
+      <span id="status-meta">37 mapas exteriores · Kanto GBA · Pokémon Odyssey</span>
+      <span id="status-pos">Cursor: <code>--</code></span>
+    </footer>
+    <script type="module" src="/src/map-viewer/entry.ts"></script>
+  </body>
+</html>

@@ -43,7 +43,7 @@ export class ResponsiveManager {
 
   private applyMode(mode: DisplayMode): void {
     if (mode === "extended") {
-      window.location.href = "/viewer.html";
+      window.location.href = "/world.html";
       return;
     }
 

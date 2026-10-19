@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <title>Pokémon Odyssey — Modo Historia (Campaña GBA)</title>
+    <link rel="stylesheet" href="/src/styles.css" />
+  </head>
+  <body class="mode-console">
+    <div id="app-viewport">
+      <!-- Barra superior con selector de visualización y herramientas -->
+      <header id="top-nav" class="top-nav" role="toolbar" aria-label="Opciones de pantalla y controles">
+        <div class="nav-brand">
+          <a href="/" class="brand-link" title="Volver al Hub de Pokémon Odyssey">
+            <span class="brand-title">🧭 POKÉMON ODYSSEY</span>
+          </a>
+          <span class="brand-badge">Modo Historia</span>
+        </div>
+
+        <div class="display-mode-selector" role="radiogroup" aria-label="Modo de visualización">
+          <button id="mode-console-btn" class="view-btn active" data-mode="console" title="Modo Consola GBA (3:2): Pantalla centrada con aspect ratio nativo, borde oscuro elegante y controles limpios">
+            <span class="view-icon">🎮</span>
+            <span class="view-label">Consola GBA (3:2)</span>
+          </button>
+          <button id="mode-fullscreen-btn" class="view-btn" data-mode="fullscreen" title="Modo Pantalla Completa: Llena todo el alto o ancho de la ventana automáticamente">
+            <span class="view-icon">📺</span>
+            <span class="view-label">Pantalla Completa</span>
+          </button>
+          <a id="mode-extended-btn" href="/world.html" class="view-btn" data-mode="extended" title="Modo Mundo Abierto: Explora el mapa panorámico continuo con cámara libre y controles fluidos">
+            <span class="view-icon">🗺️</span>
+            <span class="view-label">Mundo Abierto</span>
+          </a>
+        </div>
+
+        <div class="nav-actions">
+          <a href="/" class="tool-btn" title="Volver al Hub Principal" aria-label="Hub">
+            🏠
+          </a>
+          <button id="toggle-audio-btn" class="tool-btn" title="Silenciar / Activar sonido (M)" aria-label="Audio">
+            🔊
+          </button>
+          <button id="toggle-touch-btn" class="tool-btn" title="Mostrar/Ocultar controles táctiles" aria-label="Controles táctiles">
+            📱
+          </button>
+          <button id="toggle-help-btn" class="tool-btn" title="Guía de controles (H)" aria-label="Ayuda de controles">
+            ⌨️
+          </button>
+          <button id="toggle-fs-native-btn" class="tool-btn" title="Pantalla completa del navegador (F11)" aria-label="Pantalla completa nativa">
+            ⛶
+          </button>
+        </div>
+      </header>
+
+      <!-- Escenario principal del juego -->
+      <div id="stage-container" class="stage-container">
+        <!-- Chasis de la consola GBA -->
+        <div id="gba-bezel" class="gba-bezel">
+          <div class="bezel-top-bar">
+            <div class="power-indicator" title="Consola encendida">
+              <span class="led-glow"></span>
+              <span class="led-label">POWER</span>
+            </div>
+            <div class="bezel-logo">GAME BOY <em>ADVANCE</em></div>
+            <div class="speaker-grille" aria-hidden="true">
+              <span></span><span></span><span></span><span></span>
+            </div>
+          </div>
+
+          <div class="screen-frame">
+            <main id="game"></main>
+          </div>
+
+          <div class="bezel-bottom-bar">
+            <div class="comm-mark">WIDE SCREEN 3:2 NATIVE · POKÉMON ODYSSEY</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Controles táctiles virtuales translúcidos para móvil o tablet -->
+      <div id="virtual-touch-controls" class="virtual-touch-controls" hidden aria-hidden="true">
+        <!-- Gatillos superiores -->
+        <div class="touch-shoulder-row">
+          <button type="button" class="touch-btn touch-shoulder touch-l" data-btn="l" aria-label="Botón L">L</button>
+          <button type="button" class="touch-btn touch-shoulder touch-r" data-btn="r" aria-label="Botón R">R</button>
+        </div>
+
+        <!-- Cruceta virtual táctil a la izquierda -->
+        <div class="touch-dpad-wrap">
+          <div class="touch-dpad" id="touch-dpad" role="group" aria-label="Cruceta direccional">
+            <div class="dpad-center"></div>
+            <button type="button" class="dpad-arm dpad-up" data-dir="up" aria-label="Arriba">▲</button>
+            <button type="button" class="dpad-arm dpad-right" data-dir="right" aria-label="Derecha">►</button>
+            <button type="button" class="dpad-arm dpad-down" data-dir="down" aria-label="Abajo">▼</button>
+            <button type="button" class="dpad-arm dpad-left" data-dir="left" aria-label="Izquierda">◄</button>
+          </div>
+        </div>
+
+        <!-- Botones Select y Start al centro inferior -->
+        <div class="touch-menu-btns">
+          <button type="button" class="touch-btn touch-pill touch-select" data-btn="select" aria-label="Select">SELECT</button>
+          <button type="button" class="touch-btn touch-pill touch-start" data-btn="start" aria-label="Start">START</button>
+        </div>
+
+        <!-- Botones de acción A y B a la derecha -->
+        <div class="touch-action-btns">
+          <button type="button" class="touch-btn touch-round touch-b" data-btn="b" aria-label="Botón B">B</button>
+          <button type="button" class="touch-btn touch-round touch-a" data-btn="a" aria-label="Botón A">A</button>
+        </div>
+      </div>
+
+      <!-- Diálogo modal de ayuda de controles -->
+      <dialog id="controls-dialog" class="controls-dialog">
+        <div class="dialog-content">
+          <div class="dialog-header">
+            <h3>🎮 Controles de Pokémon Odyssey (Modo Historia)</h3>
+            <button id="close-dialog-btn" class="close-btn" aria-label="Cerrar">✕</button>
+          </div>
+          <div class="dialog-body">
+            <div class="control-section">
+              <h4>En PC (Teclado Fluido)</h4>
+              <ul class="control-list">
+                <li><kbd>Flechas</kbd> o <kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd><span>Moverse por el mapa y menús</span></li>
+                <li><kbd>Z</kbd><span>Botón A (Hablar, interactuar, confirmar)</span></li>
+                <li><kbd>X</kbd><span>Botón B (Cancelar, volver, mantener para correr)</span></li>
+                <li><kbd>Enter</kbd><span>Start (Abrir menú del juego)</span></li>
+                <li><kbd>Espacio</kbd><span>Select (Usar objeto registrado)</span></li>
+                <li><kbd>Q</kbd> / <kbd>E</kbd><span>Gatillos L / R (Ayuda y navegación rápida)</span></li>
+                <li><kbd>M</kbd><span>Silenciar / Activar sonido</span></li>
+              </ul>
+            </div>
+            <div class="control-section">
+              <h4>En Móvil o Tablet (Controles Táctiles)</h4>
+              <p>Cruceta virtual táctil ergonómica y botones A / B / Start / Select translúcidos en los bordes que no estorban la pantalla de juego.</p>
+            </div>
+            <div class="control-section">
+              <h4>Modos de Pantalla</h4>
+              <ul class="control-list">
+                <li><span>🎮 <strong>Consola GBA (3:2):</strong> Marco elegante nativo estilo Game Boy Advance.</span></li>
+                <li><span>📺 <strong>Pantalla Completa:</strong> Llena el alto o ancho del navegador de forma automática.</span></li>
+                <li><span>🗺️ <strong>Mundo Abierto:</strong> Acceso directo a la exploración de mapa panorámico continuo.</span></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </dialog>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

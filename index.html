@@ -3,142 +3,246 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-    <title>Pokémon Rojo Fuego — GBA Web</title>
-    <link rel="stylesheet" href="/src/styles.css" />
+    <title>Pokémon Odyssey — La Gran Aventura GBA Unificada</title>
+    <link rel="stylesheet" href="/src/web/landing.css" />
   </head>
-  <body class="mode-console">
-    <div id="app-viewport">
-      <!-- Barra superior con selector de visualización y herramientas -->
-      <header id="top-nav" class="top-nav" role="toolbar" aria-label="Opciones de pantalla y controles">
-        <div class="nav-brand">
-          <span class="brand-title">POKÉMON GBA</span>
-          <span class="brand-badge">Rojo Fuego</span>
+  <body class="odyssey-hub">
+    <!-- Barra superior de navegación y accesos rápidos -->
+    <header class="hub-nav">
+      <a href="/" class="hub-brand">
+        <span class="hub-logo-icon">🧭</span>
+        <span class="hub-brand-name">POKÉMON ODYSSEY</span>
+        <span class="hub-tag">GBA Web</span>
+      </a>
+
+      <div class="hub-nav-links">
+        <a href="/play.html" class="hub-nav-btn primary">
+          <span>🎮 Modo Historia</span>
+        </a>
+        <a href="/world.html" class="hub-nav-btn">
+          <span>🗺️ Mundo Abierto</span>
+        </a>
+        <a href="/dex.html" class="hub-nav-btn">
+          <span>📕 Pokédex</span>
+        </a>
+        <a href="/atlas.html" class="hub-nav-btn">
+          <span>☰ Atlas</span>
+        </a>
+        <button id="btn-open-controls" class="hub-nav-btn" title="Ver guía de controles (H)">
+          <span>⌨️ Controles</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Contenido Principal -->
+    <main class="hub-main">
+      <!-- Hero de bienvenida -->
+      <section class="hub-hero">
+        <div class="hero-pill">
+          <span>✨ Expedición de Tercera Generación</span>
+        </div>
+        <h1 class="hero-title">POKÉMON ODYSSEY</h1>
+        <p class="hero-slogan">
+          La gran aventura Pokémon de tercera generación, unificada en la web moderna.
+          Disfruta de la campaña canónica oficial de GBA o sumérgete en un mundo abierto continuo sin barreras.
+        </p>
+      </section>
+
+      <!-- Tarjeta en vivo de detección de partida guardada -->
+      <section class="save-card-section" aria-label="Partida guardada">
+        <div id="save-card-slot">
+          <!-- Renderizado dinámicamente por landing.ts -->
+          <div class="save-card empty">
+            <div class="empty-save-content">
+              <div class="empty-icon">⏳</div>
+              <div class="empty-text">
+                <h3>Cargando datos de expedición…</h3>
+                <p>Verificando registro de guardado unificado en firered-save-v1.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Selector principal de experiencias / Modos de juego -->
+      <section class="modes-section" aria-label="Modos de juego principales">
+        <div class="section-heading">
+          <h2 class="section-title">Elige tu modo de expedición</h2>
+          <p class="section-subtitle">Dos formas de vivir la aventura sobre un mismo núcleo de datos y progresión unificada.</p>
         </div>
 
-        <div class="display-mode-selector" role="radiogroup" aria-label="Modo de visualización">
-          <button id="mode-console-btn" class="view-btn active" data-mode="console" title="Modo Consola GBA (3:2): Pantalla centrada con aspect ratio nativo, borde oscuro elegante y controles limpios">
-            <span class="view-icon">🎮</span>
-            <span class="view-label">Consola GBA (3:2)</span>
-          </button>
-          <button id="mode-fullscreen-btn" class="view-btn" data-mode="fullscreen" title="Modo Pantalla Completa: Llena todo el alto o ancho de la ventana automáticamente">
-            <span class="view-icon">📺</span>
-            <span class="view-label">Pantalla Completa</span>
-          </button>
-          <a id="mode-extended-btn" href="/viewer.html" class="view-btn" data-mode="extended" title="Modo Visor Extendido: La cámara se abre y te permite ver más terreno alrededor de tu personaje mientras caminas por el mapa">
-            <span class="view-icon">🗺️</span>
-            <span class="view-label">Visor Extendido</span>
+        <div class="modes-grid">
+          <!-- Modo Historia (Campaña Canónica) -->
+          <article class="mode-card story-mode">
+            <div class="mode-badge">Canónico GBA</div>
+            <div class="mode-card-header">
+              <div class="mode-icon-box">🎮</div>
+              <div class="mode-card-title">
+                <h3>Modo Historia</h3>
+                <p>Campaña oficial completa</p>
+              </div>
+            </div>
+
+            <p class="mode-desc">
+              Revive la experiencia clásica con total fidelidad al hardware de Game Boy Advance.
+              Secuencia de arranque de Game Freak, discurso del Prof. Oak, elección de inicial, gimnasios, rival y Liga Pokémon.
+            </p>
+
+            <ul class="mode-features-list">
+              <li><span class="check">✓</span> Pantalla retro con marco de consola GBA (3:2) o pantalla completa</li>
+              <li><span class="check">✓</span> Audio original M4A y WebAudio con desbloqueo táctil</li>
+              <li><span class="check">✓</span> Controles de teclado PC y mando táctil ergonómico en móvil</li>
+              <li><span class="check">✓</span> Progresión de eventos y cinemáticas oficiales 100% fieles</li>
+            </ul>
+
+            <a href="/play.html" class="mode-cta-btn">
+              <span>Jugar Modo Historia</span>
+              <span>→</span>
+            </a>
+          </article>
+
+          <!-- Modo Mundo Abierto (Exploración Libre) -->
+          <article class="mode-card world-mode">
+            <div class="mode-badge">Widescreen Libre</div>
+            <div class="mode-card-header">
+              <div class="mode-icon-box">🗺️</div>
+              <div class="mode-card-title">
+                <h3>Modo Mundo Abierto</h3>
+                <p>Exploración panorámica continua</p>
+              </div>
+            </div>
+
+            <p class="mode-desc">
+              Explora Kanto exterior en una vista panorámica continua en pantalla ancha.
+              Camina libremente con tu avatar sin bloqueos de historia, usa bicicleta o surf, disfruta del clima dinámico y observa a los NPCs con vida propia.
+            </p>
+
+            <ul class="mode-features-list">
+              <li><span class="check">✓</span> Mapa panorámico interconectado en pantalla ancha</li>
+              <li><span class="check">✓</span> Desplazamiento ágil en tiempo real, bicicleta (<kbd>B</kbd>) y surf</li>
+              <li><span class="check">✓</span> NPCs autónomos con deambular orgánico y scripts de campo</li>
+              <li><span class="check">✓</span> Minimapa radar en tiempo real y buscador rápido de mapas</li>
+            </ul>
+
+            <a href="/world.html" class="mode-cta-btn">
+              <span>Explorar Mundo Abierto</span>
+              <span>→</span>
+            </a>
+          </article>
+        </div>
+      </section>
+
+      <!-- Herramientas Satélite y Cartografía -->
+      <section class="modes-section" aria-label="Herramientas y cartografía">
+        <div class="section-heading">
+          <h2 class="section-title">Herramientas y Satélites</h2>
+          <p class="section-subtitle">Bases de datos, cartografía mundial y seguimiento de la historia.</p>
+        </div>
+
+        <div class="satellites-grid">
+          <a href="/dex.html" class="satellite-card">
+            <div class="satellite-icon">📕</div>
+            <div class="satellite-text">
+              <h4>Pokédex Nacional</h4>
+              <p>386 Pokémon con stats, tipos, movimientos y gritos audibles.</p>
+            </div>
+          </a>
+
+          <a href="/atlas.html" class="satellite-card">
+            <div class="satellite-icon">🧭</div>
+            <div class="satellite-text">
+              <h4>Atlas Cartográfico</h4>
+              <p>Índice completo de mapas, conexiones e interiores de Kanto.</p>
+            </div>
+          </a>
+
+          <a href="/story.html" class="satellite-card">
+            <div class="satellite-icon">📜</div>
+            <div class="satellite-text">
+              <h4>Diario de Misiones</h4>
+              <p>Registro de eventos canónicos y tramos de historia completados.</p>
+            </div>
+          </a>
+
+          <a href="/quests.html" class="satellite-card">
+            <div class="satellite-icon">🎒</div>
+            <div class="satellite-text">
+              <h4>Quest Log & Extras</h4>
+              <p>Revisión de escenas guardadas, eventos de Sevii y coleccionables.</p>
+            </div>
           </a>
         </div>
+      </section>
 
-        <div class="nav-actions">
-          <button id="toggle-audio-btn" class="tool-btn" title="Silenciar / Activar sonido (M)" aria-label="Audio">
-            🔊
-          </button>
-          <button id="toggle-touch-btn" class="tool-btn" title="Mostrar/Ocultar controles táctiles" aria-label="Controles táctiles">
-            📱
-          </button>
-          <button id="toggle-help-btn" class="tool-btn" title="Guía de controles (H)" aria-label="Ayuda de controles">
-            ⌨️
-          </button>
-          <button id="toggle-fs-native-btn" class="tool-btn" title="Pantalla completa del navegador (F11)" aria-label="Pantalla completa nativa">
-            ⛶
-          </button>
+      <!-- Guía Rápida de Controles -->
+      <section class="controls-card" aria-label="Guía rápida de controles">
+        <div class="section-heading">
+          <h2 class="section-title">🎮 Controles Unificados</h2>
+          <p class="section-subtitle">Mapeo óptimo diseñado tanto para teclado en PC como para pantallas táctiles.</p>
         </div>
-      </header>
 
-      <!-- Escenario principal del juego -->
-      <div id="stage-container" class="stage-container">
-        <!-- Chasis de la consola GBA -->
-        <div id="gba-bezel" class="gba-bezel">
-          <div class="bezel-top-bar">
-            <div class="power-indicator" title="Consola encendida">
-              <span class="led-glow"></span>
-              <span class="led-label">POWER</span>
-            </div>
-            <div class="bezel-logo">GAME BOY <em>ADVANCE</em></div>
-            <div class="speaker-grille" aria-hidden="true">
-              <span></span><span></span><span></span><span></span>
-            </div>
+        <div class="controls-grid">
+          <div class="control-item">
+            <kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> o <kbd>Flechas</kbd>
+            <span class="control-label">Mover personaje / Navegar menús</span>
           </div>
-
-          <div class="screen-frame">
-            <main id="game"></main>
+          <div class="control-item">
+            <kbd>Z</kbd>
+            <span class="control-label">Botón A (Interactuar, hablar, confirmar)</span>
           </div>
-
-          <div class="bezel-bottom-bar">
-            <div class="comm-mark">WIDE SCREEN 3:2 NATIVE</div>
+          <div class="control-item">
+            <kbd>X</kbd>
+            <span class="control-label">Botón B (Cancelar, volver, mantener para correr)</span>
+          </div>
+          <div class="control-item">
+            <kbd>Enter</kbd>
+            <span class="control-label">Start (Abrir menú del juego)</span>
+          </div>
+          <div class="control-item">
+            <kbd>Espacio</kbd>
+            <span class="control-label">Select (Usar objeto registrado / caña)</span>
+          </div>
+          <div class="control-item">
+            <kbd>M</kbd>
+            <span class="control-label">Música y efectos (Silenciar / Activar sonido)</span>
           </div>
         </div>
+      </section>
+    </main>
+
+    <!-- Modal de Controles Completo -->
+    <dialog id="controls-dialog" class="controls-dialog" style="background: rgba(18, 20, 28, 0.95); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 16px; color: #f8fafc; padding: 24px; max-width: 500px; backdrop-filter: blur(20px);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <h3 style="margin: 0; font-size: 18px; font-weight: 800;">⌨️ Guía de Controles</h3>
+        <button id="close-dialog-btn" style="background: none; border: none; color: #94a3b8; font-size: 18px; cursor: pointer;">✕</button>
       </div>
-
-      <!-- Controles táctiles virtuales translúcidos para móvil o tablet -->
-      <div id="virtual-touch-controls" class="virtual-touch-controls" hidden aria-hidden="true">
-        <!-- Gatillos superiores -->
-        <div class="touch-shoulder-row">
-          <button type="button" class="touch-btn touch-shoulder touch-l" data-btn="l" aria-label="Botón L">L</button>
-          <button type="button" class="touch-btn touch-shoulder touch-r" data-btn="r" aria-label="Botón R">R</button>
-        </div>
-
-        <!-- Cruceta virtual táctil a la izquierda -->
-        <div class="touch-dpad-wrap">
-          <div class="touch-dpad" id="touch-dpad" role="group" aria-label="Cruceta direccional">
-            <div class="dpad-center"></div>
-            <button type="button" class="dpad-arm dpad-up" data-dir="up" aria-label="Arriba">▲</button>
-            <button type="button" class="dpad-arm dpad-right" data-dir="right" aria-label="Derecha">►</button>
-            <button type="button" class="dpad-arm dpad-down" data-dir="down" aria-label="Abajo">▼</button>
-            <button type="button" class="dpad-arm dpad-left" data-dir="left" aria-label="Izquierda">◄</button>
-          </div>
-        </div>
-
-        <!-- Botones Select y Start al centro inferior -->
-        <div class="touch-menu-btns">
-          <button type="button" class="touch-btn touch-pill touch-select" data-btn="select" aria-label="Select">SELECT</button>
-          <button type="button" class="touch-btn touch-pill touch-start" data-btn="start" aria-label="Start">START</button>
-        </div>
-
-        <!-- Botones de acción A y B a la derecha -->
-        <div class="touch-action-btns">
-          <button type="button" class="touch-btn touch-round touch-b" data-btn="b" aria-label="Botón B">B</button>
-          <button type="button" class="touch-btn touch-round touch-a" data-btn="a" aria-label="Botón A">A</button>
-        </div>
+      <div style="font-size: 14px; color: #cbd5e1; display: flex; flex-direction: column; gap: 12px;">
+        <p>Los controles están 100% unificados en toda la plataforma Pokémon Odyssey:</p>
+        <ul style="padding-left: 20px; margin: 0; line-height: 1.8;">
+          <li><strong>Direcciones:</strong> <kbd style="background: rgba(255,255,255,0.1); padding: 2px 6px; border-radius: 4px;">WASD</kbd> o Flechas direccionales.</li>
+          <li><strong>Botón A:</strong> <kbd style="background: rgba(255,255,255,0.1); padding: 2px 6px; border-radius: 4px;">Z</kbd></li>
+          <li><strong>Botón B:</strong> <kbd style="background: rgba(255,255,255,0.1); padding: 2px 6px; border-radius: 4px;">X</kbd> (mantener para correr / activar bici)</li>
+          <li><strong>Start:</strong> <kbd style="background: rgba(255,255,255,0.1); padding: 2px 6px; border-radius: 4px;">Enter</kbd></li>
+          <li><strong>Select:</strong> <kbd style="background: rgba(255,255,255,0.1); padding: 2px 6px; border-radius: 4px;">Espacio</kbd></li>
+          <li><strong>Gatillos L / R:</strong> <kbd style="background: rgba(255,255,255,0.1); padding: 2px 6px; border-radius: 4px;">Q</kbd> / <kbd style="background: rgba(255,255,255,0.1); padding: 2px 6px; border-radius: 4px;">E</kbd></li>
+          <li><strong>Sonido:</strong> <kbd style="background: rgba(255,255,255,0.1); padding: 2px 6px; border-radius: 4px;">M</kbd></li>
+        </ul>
+        <p style="margin-top: 8px; color: #94a3b8; font-size: 13px;">
+          En móviles y tabletas, la cruceta táctil ergonómica y los botones virtuales aparecen automáticamente en los bordes de la pantalla.
+        </p>
       </div>
+    </dialog>
 
-      <!-- Diálogo modal de ayuda de controles -->
-      <dialog id="controls-dialog" class="controls-dialog">
-        <div class="dialog-content">
-          <div class="dialog-header">
-            <h3>🎮 Controles de Pokémon Rojo Fuego</h3>
-            <button id="close-dialog-btn" class="close-btn" aria-label="Cerrar">✕</button>
-          </div>
-          <div class="dialog-body">
-            <div class="control-section">
-              <h4>En PC (Teclado Fluido)</h4>
-              <ul class="control-list">
-                <li><kbd>Flechas</kbd> o <kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd><span>Moverse por el mapa y menús</span></li>
-                <li><kbd>Z</kbd><span>Botón A (Hablar, interactuar, confirmar)</span></li>
-                <li><kbd>X</kbd><span>Botón B (Cancelar, volver, mantener para correr)</span></li>
-                <li><kbd>Enter</kbd><span>Start (Abrir menú del juego)</span></li>
-                <li><kbd>Espacio</kbd><span>Select (Usar objeto registrado)</span></li>
-                <li><kbd>Q</kbd> / <kbd>E</kbd><span>Gatillos L / R (Ayuda y navegación rápida)</span></li>
-                <li><kbd>M</kbd><span>Silenciar / Activar sonido</span></li>
-              </ul>
-            </div>
-            <div class="control-section">
-              <h4>En Móvil o Tablet (Controles Táctiles)</h4>
-              <p>Cruceta virtual táctil ergonómica y botones A / B / Start / Select translúcidos en los bordes que no estorban la pantalla de juego.</p>
-            </div>
-            <div class="control-section">
-              <h4>Modos de Pantalla</h4>
-              <ul class="control-list">
-                <li><span>🎮 <strong>Consola GBA (3:2):</strong> Marco elegante nativo estilo Game Boy Advance.</span></li>
-                <li><span>📺 <strong>Pantalla Completa:</strong> Llena el alto o ancho del navegador de forma automática.</span></li>
-                <li><span>🗺️ <strong>Visor Extendido:</strong> Cámara abierta para ver más terreno del mapa de Kanto.</span></li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      </dialog>
-    </div>
-    <script type="module" src="/src/main.ts"></script>
+    <!-- Footer -->
+    <footer class="hub-footer">
+      <div class="footer-badge">
+        <span>🚀 Motor TypeScript Puro · 60 FPS · Basado en pret/pokefirered</span>
+      </div>
+      <div>
+        Pokémon Odyssey © Plataforma Web de Tercera Generación. Guardado unificado local.
+      </div>
+    </footer>
+
+    <script type="module" src="/src/web/landing.ts"></script>
   </body>
 </html>
