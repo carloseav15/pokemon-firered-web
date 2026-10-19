@@ -35,13 +35,10 @@ cuevas (Golpe Roca, Fuerza, Islas Espuma) y controles táctiles. Detalle en Git
 - [ ] Colores con la ROM: índices 4–7 de la ventana de guardado en la `Window` del TS;
   rótulos y orden de pantallas del motor a pantalla completa (necesita el arnés mGBA
   con la pantalla desbloqueada).
-- [ ] `check:anims` falla por falta de `public/fr/incbin/pokeball.bin`; al arreglarlo,
-  revisar fondos de animaciones de combate (Atracción, Cara Susto) tras `03b95346`.
-- [ ] Icono con colores erróneos en la página de zona/tamaño de la Pokédex.
-- [ ] Recolocación tras whiteout frágil: con `TrySetMapSaveWarpStatus` en la entrada de
-  mapa del visor (retirado en `389307b8`), visitar el Centro de Verde y perder después
-  en la Ruta 1 hacía fallar «Mapa no cargado: MAP_PALLET_TOWN_PLAYERS_HOUSE_1F». Causa
-  sin identificar; revisar `relocateViewer`/`SectorLoader`.
+- [x] `check:anims` paquete espurio pokeball: eliminado de `preloadPacks` (commit `b1e424eb`).
+- [ ] Fondos de animaciones de combate (Atracción, Cara Susto) tras `03b95346`.
+- [x] Icono con colores erróneos en la página de zona/tamaño de la Pokédex (soporte de `ref.index` y 32 bytes en `symBytes`/`symPalette`, commit `e2deeb58`).
+- [x] Recolocación tras whiteout: serialización con `relocateChain`/`changeWorldChain`, protección con `warpBusy` y restauración de `TrySetMapSaveWarpStatus` (commit `5bf0a20e`).
 - [ ] Objetos que el motor oculta o mueve al final de un script: puente y guardado hechos
   (`f5e80a9c`..`d5986c54`); falta recorrerlo con los scripts de la historia.
 - [x] Scripts de transición de mapa fuera de los Centros (p. ej. `Route20_OnTransition`):
