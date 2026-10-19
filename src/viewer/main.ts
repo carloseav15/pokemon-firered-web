@@ -70,8 +70,10 @@ import { WeatherOverlay } from "./render/weatherOverlay";
 // metatile. Se explora con Brendan o May (sus hojas de Emerald), sin bici, efectos de campo (hierba, polvo, huellas), combates
 // ni interiores; sin animación de tiles (transcrita de FireRed). La música sí es la de Emerald.
 type ViewerGame = "firered" | "emerald";
-const GAME: ViewerGame = new URLSearchParams(location.search).get("game") === "emerald" ? "emerald" : "firered";
-const HOENN = GAME === "emerald";
+const queryParams = new URLSearchParams(location.search);
+const isHoennParam = queryParams.get("game") === "emerald" || queryParams.get("region") === "hoenn";
+const GAME: ViewerGame = isHoennParam ? "emerald" : "firered";
+const HOENN = isHoennParam;
 const GAME_NAME = HOENN ? "Hoenn" : "Kanto";
 if (HOENN) {
   setDataRoot("/emerald");
@@ -483,16 +485,23 @@ function setupGameSelect(): void {
   select.addEventListener("change", () => {
     if (select.value === "hns") { location.href = "/hns.html"; return; }
     const url = new URL(location.href);
-    if (select.value === "emerald") url.searchParams.set("game", "emerald");
-    else url.searchParams.delete("game");
+    if (select.value === "emerald") {
+      url.searchParams.set("region", "hoenn");
+      url.searchParams.delete("game");
+      url.searchParams.delete("mapa");
+    } else {
+      url.searchParams.set("region", "kanto");
+      url.searchParams.delete("game");
+      url.searchParams.delete("mapa");
+    }
     url.hash = "";
     location.href = url.toString();
   });
   document.getElementById("layers-btn")?.before(select);
   if (HOENN) {
-    document.title = "Visor del mundo — Hoenn exterior";
+    document.title = "Pokémon Odyssey — Hoenn Exterior";
     const title = document.querySelector(".app-title");
-    if (title) title.lastChild!.textContent = " Hoenn Exterior";
+    if (title) title.lastChild!.textContent = " Hoenn Continuo · Mundo Abierto";
     document.getElementById("bike-btn")?.style.setProperty("display", "none");
     document.getElementById("anim-toggle")?.closest("label")?.style.setProperty("display", "none");
     const charSelect = document.getElementById("player-char") as HTMLSelectElement | null;
@@ -684,7 +693,7 @@ function interactWithEntity(ent: LiveEntity): void {
   if (ent.hidden) return;
   if (!HOENN && playerActive && engineInteraction) {
     const header = mapHeaders.get(ent.element.map);
-    const npc = header?.objects.find(o => !o.clone && o.localId === ent.element.localId);
+    const npc = header?.objects.find(o => !o.clone && "localId" in o && o.localId === ent.element.localId);
     let scriptName = npc && !npc.clone && (npc.script || (npc.scriptName && npc.scriptName !== "0x0" && npc.scriptName !== "NULL"))
       ? (npc.scriptName || npc.script)
       : undefined;
@@ -706,6 +715,57 @@ function interactWithEntity(ent: LiveEntity): void {
       const reachableInMap = ent.element.map === here
         || (here ? mapHeaders.get(here)?.objects.some(o => o.clone && o.targetMap === ent.element.map && o.targetLocalId === ent.element.localId) : false);
       if (!reachableInMap || ent.gx !== playerX+dx*reach || ent.gy !== playerY+dy*reach) return;
+
+      const isFerrySailor = scriptName === "VermilionCity_EventScript_FerrySailor"
+        || (ent.element.map === "MAP_VERMILION_CITY" && (ent.element.localId === 6 || (npc && !npc.clone && "localId" in npc && npc.localId === 6)));
+
+      if (!HOENN && isFerrySailor) {
+        dialogManager.showChoice(
+          "🚢 Ferry Transoceánico S.S. Anne",
+          [
+            "¡Saludos, explorador! El ferry transoceánico está listo para zarpar hacia nuevos horizontes.",
+            { text: " ¿Deseas navegar rumbo a Ciudad Portual (Slateport City) en la región de Hoenn?", strong: true },
+          ],
+          [
+            {
+              label: "🚢 ¡Zarpar hacia Hoenn!",
+              primary: true,
+              action: () => {
+                location.href = "/world.html?region=hoenn&mapa=MAP_SLATEPORT_CITY&modo=explore";
+              },
+            },
+            {
+              label: "Permanecer en Kanto",
+              action: () => dialogManager.close(),
+            },
+          ]
+        );
+        return;
+      }
+
+      if (HOENN && (scriptName === "SlateportCity_EventScript_Sailor1" || scriptName === "SlateportCity_EventScript_Sailor2" || (ent.element.map === "MAP_SLATEPORT_CITY" && (ent.gx >= 25 && ent.gy >= 40)))) {
+        dialogManager.showChoice(
+          "🚢 Ferry Transoceánico S.S. Tidal",
+          [
+            "¡Saludos desde el puerto de Hoenn! El gran ferry transoceánico tiene prevista su salida.",
+            { text: " ¿Deseas regresar a Ciudad Carmín (Vermilion City) en la región de Kanto?", strong: true },
+          ],
+          [
+            {
+              label: "🚢 ¡Regresar a Kanto!",
+              primary: true,
+              action: () => {
+                location.href = "/world.html?region=kanto&mapa=MAP_VERMILION_CITY&modo=explore";
+              },
+            },
+            {
+              label: "Permanecer en Hoenn",
+              action: () => dialogManager.close(),
+            },
+          ]
+        );
+        return;
+      }
 
       if (npc && !npc.clone) {
         void engineInteraction.show(navigationSnapshot(), { mapId: ent.element.map, localId: npc.localId }).catch(error => dialogManager.show("Interacción", [String(error)]));
