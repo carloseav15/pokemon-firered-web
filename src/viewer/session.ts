@@ -60,10 +60,15 @@ export async function initializeViewerSession(
   if (initialized) return;
   // rom data, plus the map-entry bookkeeping tables mapEvents.ts runs before the engine loads.
   await Promise.all([rom.load(), loadCData('renewable_hidden_items', 'wild_encounter')]);
-  setSaveStorageKey(VIEWER_SAVE_KEY);
-  const stored = saveStore.load() as ViewerSave | undefined;
+  // Prefer the main game save if available, so console mode and explore mode share the exact same playthrough.
+  setSaveStorageKey("firered-save-v1");
+  let stored = saveStore.load() as ViewerSave | undefined;
+  if (!stored) {
+    setSaveStorageKey(VIEWER_SAVE_KEY);
+    stored = saveStore.load() as ViewerSave | undefined;
+  }
   // Overworld_ResetStateOnContinue: the roamer's location is not saved; continuing places it again.
-  if (stored?.viewerStart === 'temporary-kanto-v1' || stored?.viewerStart === 'definitive-kanto-v1') {
+  if (stored && (stored.playerName?.length > 0 || stored.viewerStart === 'temporary-kanto-v1' || stored.viewerStart === 'definitive-kanto-v1')) {
     setSave(stored);
     onWarpForRoamer();
   } else if (options?.forceTemporary) {
@@ -125,4 +130,11 @@ export function syncViewerLocation(nav: NavigationSave): void {
   }
   (save as ViewerSave).viewerNavigation = structuredClone(nav);
 }
-export function saveViewerSession(nav: NavigationSave): boolean { syncViewerLocation(nav); return saveStore.write(); }
+export function saveViewerSession(nav: NavigationSave): boolean {
+  syncViewerLocation(nav);
+  setSaveStorageKey("firered-save-v1");
+  const ok = saveStore.write();
+  setSaveStorageKey(VIEWER_SAVE_KEY);
+  saveStore.write();
+  return ok;
+}
