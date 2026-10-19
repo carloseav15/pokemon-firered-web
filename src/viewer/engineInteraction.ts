@@ -21,6 +21,7 @@ import { gBattlerControllerFuncs } from '@core/battle/globals';
 import { installBattleHost } from '@core/battle/host';
 import { preloadBattleAssets } from '@game/battle/preload';
 import { preloadEggHatch } from '@game/eggHatch';
+import { GetSafariZoneFlag } from '@core/field/safariZone';
 import { sound } from '@core/audio/sound';
 import { MAP_OFFSET } from '@core/field/fieldmap';
 import { PLAYER_AVATAR_FLAG_ACRO_BIKE, PLAYER_AVATAR_FLAG_MACH_BIKE, PLAYER_AVATAR_FLAG_ON_FOOT, PLAYER_AVATAR_FLAG_SURFING } from '@core/field/playerAvatar';
@@ -226,13 +227,49 @@ export class EngineInteraction {
     delete this.root.dataset.whiteout;
     document.getElementById('viewport')?.focus({preventScroll:true});
   }
+  getSafariStats(): { active: boolean; balls: number; steps: number } {
+    const active = GetSafariZoneFlag();
+    const game = this.game;
+    return {
+      active,
+      balls: game?.safariBalls ?? (active ? 30 : 0),
+      steps: game?.safariSteps ?? (active ? 600 : 0),
+    };
+  }
+  private isFullScreenScene(): boolean {
+    const game = this.game;
+    if (!game?.scene) return false;
+    if (this.fullScreen || gMain.inBattle) return true;
+    if (game.scene.constructor.name === 'BattleTransitionScene') return true;
+    const cbName = gMain.callback2?.name ?? '';
+    return Boolean(
+      cbName.includes('EvolutionScene') ||
+      cbName.includes('TradeEvolutionScene') ||
+      cbName.includes('SlotMachine') ||
+      cbName.includes('InGameTrade') ||
+      cbName.includes('EggHatch') ||
+      cbName.includes('Hof') ||
+      cbName.includes('HallOfFame') ||
+      cbName.includes('NamingScreen') ||
+      cbName.includes('Credits') ||
+      cbName.includes('Battle') ||
+      cbName.includes('Summary') ||
+      cbName.includes('TrainerCard') ||
+      cbName.includes('Bag') ||
+      cbName.includes('BerryPouch') ||
+      cbName.includes('TMCase') ||
+      cbName.includes('TeachyTv') ||
+      cbName.includes('SeaGallop') ||
+      cbName.includes('MoveRelearner') ||
+      cbName.includes('Pokedex')
+    );
+  }
   private present(): void {
     const game = this.game!, ow = game.overworld;
     const ui = this.ui.getContext('2d')!;
     ui.clearRect(0,0,240,160);
     const whiteOut = Boolean(game.whitingOut || ow.whitingOut || (!game.scene && paletteFade.level > 0));
-    const inBattleScene = Boolean(game.scene && (gMain.inBattle || game.scene.constructor.name === 'BattleTransitionScene'));
-    const fullScene = Boolean(game.scene && (this.fullScreen || inBattleScene));
+    const fullScene = this.isFullScreenScene();
     if (this.root.dataset.scene !== String(fullScene)) this.root.dataset.scene = String(fullScene);
     if (this.root.dataset.whiteout !== String(whiteOut)) this.root.dataset.whiteout = String(whiteOut);
     if (fullScene) {
@@ -365,7 +402,7 @@ export class EngineInteraction {
         }
         this.observeObjects();
         this.present();
-        const activeFull=fullScreen||inWhiteOut||whiteOutRelocated||warpRelocated;
+        const activeFull = fullScreen || this.isFullScreenScene() || inWhiteOut || whiteOutRelocated || warpRelocated;
         this.root.dataset.scriptActive=String(ow.script.isActive()||(activeFull&&ow.controlsLocked));
         this.root.dataset.script=ow.script.global.entry;
         this.root.dataset.native=ow.script.global.nativePtr?.name??'';

@@ -603,7 +603,12 @@ function updatePlayerDisplay(): void {
 
   scheduleSectors();
   updateSectorBorder();
-  explorationUi?.setLocation(findMapAt(playerX, playerY)?.[1].title ?? GAME_NAME);
+  const baseTitle = findMapAt(playerX, playerY)?.[1].title ?? GAME_NAME;
+  const safariStats = engineInteraction?.getSafariStats();
+  const locationTitle = safariStats?.active
+    ? `${baseTitle} · Safari: ${safariStats.balls} bolas, ${safariStats.steps} pasos`
+    : baseTitle;
+  explorationUi?.setLocation(locationTitle);
   const here = findMapAt(playerX, playerY)?.[0];
   if (!HOENN && playerActive && here) {
     const type = mapHeaders.get(here)?.mapType;
