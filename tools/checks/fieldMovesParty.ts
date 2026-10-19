@@ -15,8 +15,8 @@ import { tasks } from "../../src/core/gba/tasks";
 await rom.load();
 await loadFieldFx();
 await preloadFieldAssets();
-await preloadPacks(["graphics_fonts", "graphics_help_system", "graphics_quest_log"]);
-await loadCData("event_object_movement", "text_printer", "text", "wild_encounter", "field_specials", "pokemon");
+await preloadPacks(["graphics_fonts", "graphics_help_system", "graphics_quest_log", "graphics_text_window"]);
+await loadCData("event_object_movement", "text_printer", "text", "wild_encounter", "field_specials", "pokemon", "text_window_graphics");
 
 setSave(newSaveData());
 const mon = createMon(C.SPECIES_POLIWAG, 25);

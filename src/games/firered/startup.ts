@@ -10,6 +10,7 @@ import { IntroScene3 } from "./introScene3";
 import { IntroTitle } from "./introTitle";
 import { OakSpeech } from "./oakSpeech";
 import { sound } from "@core/audio/sound";
+import { createM4aBackend } from "@core/audio/m4a";
 import { loadTrig } from "@core/hw/trig";
 import { CB2_InitMainMenu, MainMenu } from "./mainMenu";
 import { ClearSaveScreen } from "./clearSaveScreen";
@@ -70,12 +71,27 @@ class Startup {
       MainMenu.preload(),
       ClearSaveScreen.preload(),
       loadTrig(),
+      rom.load(),
     ]);
-    void rom.load().then(() => { this.romReady = true; });
+    this.romReady = true;
+    sound.init(rom.constants);
+    sound.m4aSoundInit(createM4aBackend());
+    sound.initMapMusic();
+    void sound.loadCryData().catch(() => {});
     void OakSpeech.preload().then(() => { this.oakLoaded = true; });
     InitMainCallbacks();
-    sound.initMapMusic();
     joy.attach();
+
+    const unlockAudio = () => {
+      const backend = sound.backend as unknown as { ensure?: () => AudioContext | null; ctx?: AudioContext } | undefined;
+      if (backend?.ensure) backend.ensure();
+      if (backend?.ctx && backend.ctx.state === "suspended") {
+        void backend.ctx.resume();
+      }
+    };
+    joy.onUserGesture = unlockAudio;
+    window.addEventListener("pointerdown", unlockAudio, { passive: true });
+    window.addEventListener("keydown", unlockAudio, { passive: true });
     (window as unknown as { frStartup: unknown }).frStartup = this; // debug hook
     (window as unknown as { frStartupStep: unknown }).frStartupStep = (frames: number, buttons = 0): void => {
       // Debug: advance whole frames with buttons held (independent of rAF throttling).
