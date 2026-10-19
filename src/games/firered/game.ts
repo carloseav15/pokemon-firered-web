@@ -1093,6 +1093,7 @@ export class Game {
     const ow = this.overworld;
     switch (this.returnToFieldState) {
       case 0:
+        ow.InitOverworldBgs();
         QuestLog_InitPalettesBackup();
         ow.ResumeMap();
         ow.ReloadObjectsAndRunReturnToFieldMapScript();

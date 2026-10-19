@@ -27,8 +27,26 @@ import { FieldControl } from "./fieldControl";
 import { FieldMessageBox } from "./messageBox";
 import { DoorAnimator } from "./doors";
 import { DoOutwardBarnDoorWipe, FieldEffects, HandleBoulderFallThroughHole, MAX_FLASH_LEVEL, Task_BarnDoorWipe, WriteFlashScanlineEffectBuffer } from "./fieldEffects";
-import { ScanlineEffect_SetParams, SCANLINE_EFFECT_DMACNT_16BIT } from "../hw/scanline";
-import { REG_OFFSET_WIN0H } from "../hw/ppu";
+import { ScanlineEffect_SetParams, SCANLINE_EFFECT_DMACNT_16BIT, ScanlineEffect_Stop } from "../hw/scanline";
+import {
+  ppu, VRAM_SIZE, REG_OFFSET_DISPCNT, REG_OFFSET_MOSAIC, REG_OFFSET_WININ, REG_OFFSET_WINOUT,
+  REG_OFFSET_WIN0H, REG_OFFSET_WIN0V, REG_OFFSET_WIN1H, REG_OFFSET_WIN1V, REG_OFFSET_BLDCNT,
+  REG_OFFSET_BLDALPHA, DISPCNT_MODE_0, DISPCNT_OBJ_1D_MAP, DISPCNT_OBJ_ON, DISPCNT_WIN0_ON,
+  DISPCNT_WIN1_ON, WININ_WIN0_BG_ALL, WININ_WIN0_OBJ, WININ_WIN1_BG_ALL, WININ_WIN1_OBJ,
+  WINOUT_WIN01_BG0, WINOUT_WINOBJ_BG0, WIN_RANGE, BLDALPHA_BLEND, BLDCNT_TGT2_OBJ, BLDCNT_EFFECT_BLEND,
+} from "../hw/ppu";
+import { SetGpuReg } from "../hw/gpu";
+import {
+  InitBgsFromTemplates, ResetBgsAndClearDma3BusyFlags, SetBgAttribute, SetBgTilemapBuffer, ShowBg,
+  ChangeBgX, ChangeBgY, BG_ATTR_MOSAIC, type BgTemplate,
+} from "../hw/bg";
+import { gOverworldBackgroundLayerFlags } from "../hw/bgRegs";
+import { InitStandardTextBoxWindows, InitTextBoxGfxAndPrinters } from "../hw/menu";
+import {
+  ClearScheduledBgCopiesToVram, ResetTempTileDataBuffers, ScheduleBgCopyTilemapToVram,
+  FreeAllOverworldWindowBuffers,
+} from "../hw/menuHelpers";
+import { ResetOamRange, LoadOam } from "../hw/sprite";
 import { MapNamePopup } from "./mapNamePopup";
 import { MapPreviewManager, MapHasPreviewScreen, MapHasPreviewScreen_HandleQLState2, MPS_TYPE_CAVE, MPS_TYPE_FOREST, CB2_DoChangeMap } from "@game/mapPreviewScreen";
 import { ScriptContext } from "../script/context";
@@ -75,6 +93,36 @@ export const MAP_SCRIPT_ON_WARP_INTO_MAP_TABLE = 4;
 export const MAP_SCRIPT_ON_RESUME = 5;
 export const MAP_SCRIPT_ON_DIVE_WARP = 6;
 export const MAP_SCRIPT_ON_RETURN_TO_FIELD = 7;
+
+/** sOverworldBgTemplates (overworld.c): BG0 text, BG1 top, BG2 middle, BG3 bottom. */
+export const sOverworldBgTemplates: BgTemplate[] = [
+  { bg: 0, charBaseIndex: 2, mapBaseIndex: 31, screenSize: 0, paletteMode: 0, priority: 0, baseTile: 0 },
+  { bg: 1, charBaseIndex: 0, mapBaseIndex: 29, screenSize: 0, paletteMode: 0, priority: 1, baseTile: 0 },
+  { bg: 2, charBaseIndex: 0, mapBaseIndex: 28, screenSize: 0, paletteMode: 0, priority: 2, baseTile: 0 },
+  { bg: 3, charBaseIndex: 0, mapBaseIndex: 30, screenSize: 0, paletteMode: 0, priority: 3, baseTile: 0 },
+];
+
+export let gBGTilemapBuffers1: Uint16Array | null = null;
+export let gBGTilemapBuffers2: Uint16Array | null = null;
+export let gBGTilemapBuffers3: Uint16Array | null = null;
+
+/** ResetScreenForMapLoad (overworld.c). */
+export function ResetScreenForMapLoad(): void {
+  SetGpuReg(REG_OFFSET_DISPCNT, 0);
+  ScanlineEffect_Stop();
+  ppu.pltt.fill(0, 1);
+  ppu.vram.fill(0, 0, VRAM_SIZE);
+  ResetOamRange(0, 128);
+  LoadOam();
+}
+
+/** CleanupOverworldWindowsAndTilemaps (overworld.c). */
+export function CleanupOverworldWindowsAndTilemaps(): void {
+  FreeAllOverworldWindowBuffers();
+  gBGTilemapBuffers3 = null;
+  gBGTilemapBuffers1 = null;
+  gBGTilemapBuffers2 = null;
+}
 
 /** ResetCyclingRoadChallengeData (field_specials.c) is deliberately empty in the decomp. */
 export function ResetCyclingRoadChallengeData(): void {}
@@ -311,6 +359,7 @@ export class Overworld {
    * position without running automatic map/story scripts. Explicit NPC bytecode is
    * still executed by ScriptContext. This is not a normal story map load. */
   async prepareViewerInteraction(mapId: string, retainedObjects: readonly {mapId:string;localId:number}[] = []): Promise<void> {
+    this.InitOverworldBgs();
     this.LoadCurrentMapData(await this.prepareMap(mapId));
     this.script.ScriptContext_Init();
     tasks.reset();
@@ -777,6 +826,7 @@ export class Overworld {
   private LoadMapInStepsLocal(): void {
     switch (this.mapLoadStep) {
       case 0:
+        this.InitOverworldBgs();
         this.loadMapFromWarp(this.loaded);
         this.mapLoadStep++;
         break;
@@ -1296,6 +1346,57 @@ export class Overworld {
     }
   }
 
+  /** InitOverworldBgs (overworld.c). */
+  InitOverworldBgs(): void {
+    ResetScreenForMapLoad();
+    ResetBgsAndClearDma3BusyFlags(false);
+    InitBgsFromTemplates(0, sOverworldBgTemplates);
+    SetBgAttribute(1, BG_ATTR_MOSAIC, 1);
+    SetBgAttribute(2, BG_ATTR_MOSAIC, 1);
+    SetBgAttribute(3, BG_ATTR_MOSAIC, 1);
+    gBGTilemapBuffers2 = new Uint16Array(C.BG_SCREEN_SIZE / 2);
+    gBGTilemapBuffers1 = new Uint16Array(C.BG_SCREEN_SIZE / 2);
+    gBGTilemapBuffers3 = new Uint16Array(C.BG_SCREEN_SIZE / 2);
+    SetBgTilemapBuffer(1, gBGTilemapBuffers2);
+    SetBgTilemapBuffer(2, gBGTilemapBuffers1);
+    SetBgTilemapBuffer(3, gBGTilemapBuffers3);
+    InitStandardTextBoxWindows();
+    InitTextBoxGfxAndPrinters();
+    this.messageBox.InitFieldMessageBox();
+  }
+
+  /** InitOverworldGraphicsRegisters (overworld.c). */
+  InitOverworldGraphicsRegisters(): void {
+    ClearScheduledBgCopiesToVram();
+    ResetTempTileDataBuffers();
+    SetGpuReg(REG_OFFSET_MOSAIC, 0);
+    SetGpuReg(REG_OFFSET_WININ, WININ_WIN0_BG_ALL | WININ_WIN0_OBJ | WININ_WIN1_BG_ALL | WININ_WIN1_OBJ);
+    SetGpuReg(REG_OFFSET_WINOUT, WINOUT_WIN01_BG0 | WINOUT_WINOBJ_BG0);
+    SetGpuReg(REG_OFFSET_WIN0H, WIN_RANGE(0, 255));
+    SetGpuReg(REG_OFFSET_WIN0V, WIN_RANGE(0, 255));
+    SetGpuReg(REG_OFFSET_WIN1H, WIN_RANGE(255, 255));
+    SetGpuReg(REG_OFFSET_WIN1V, WIN_RANGE(255, 255));
+    SetGpuReg(REG_OFFSET_BLDCNT, gOverworldBackgroundLayerFlags[1] | gOverworldBackgroundLayerFlags[2] | gOverworldBackgroundLayerFlags[3]
+                                 | BLDCNT_TGT2_OBJ | BLDCNT_EFFECT_BLEND);
+    SetGpuReg(REG_OFFSET_BLDALPHA, BLDALPHA_BLEND(13, 7));
+    ScheduleBgCopyTilemapToVram(1);
+    ScheduleBgCopyTilemapToVram(2);
+    ScheduleBgCopyTilemapToVram(3);
+    SetGpuReg(REG_OFFSET_DISPCNT, DISPCNT_MODE_0 | DISPCNT_OBJ_1D_MAP | 0x20 | DISPCNT_OBJ_ON | DISPCNT_WIN0_ON | DISPCNT_WIN1_ON);
+    ShowBg(0);
+    ShowBg(1);
+    ShowBg(2);
+    ShowBg(3);
+    ChangeBgX(0, 0, 0);
+    ChangeBgY(0, 0, 0);
+    ChangeBgX(1, 0, 0);
+    ChangeBgY(1, 0, 0);
+    ChangeBgX(2, 0, 0);
+    ChangeBgY(2, 0, 0);
+    ChangeBgX(3, 0, 0);
+    ChangeBgY(3, 0, 0);
+  }
+
   /** InitMapView (overworld.c): the Canvas renderer rebuilds its tile view from the active layout. */
   InitMapView(): void {
     this.renderer = new TileRenderer(this.loaded.primary, this.loaded.secondary);
@@ -1303,9 +1404,10 @@ export class Overworld {
     this.doors.reset();
   }
 
-  /** InitViewGraphics (overworld.c): install the flash scanline effect and rebuild the Canvas map view. */
+  /** InitViewGraphics (overworld.c): install the flash scanline effect, graphics registers and rebuild the Canvas map view. */
   InitViewGraphics(): void {
     this.InitCurrentFlashLevelScanlineEffect();
+    this.InitOverworldGraphicsRegisters();
     this.InitMapView();
   }
 
