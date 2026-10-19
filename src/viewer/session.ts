@@ -17,32 +17,77 @@ import type { Direction } from './render/sprites';
 
 export const VIEWER_SAVE_KEY = 'firered-viewer-game-v1';
 export type NavigationSave = { mapId: string; x: number; y: number; direction: Direction; dynamic: WarpAddress | null };
-type ViewerSave = SaveData & { viewerNavigation?: NavigationSave; viewerStart?: 'temporary-kanto-v1' };
+export type ViewerSave = SaveData & { viewerNavigation?: NavigationSave; viewerStart?: 'temporary-kanto-v1' | 'definitive-kanto-v1' };
 let initialized = false;
-export async function initializeViewerSession(initialFlags: Record<string, number>): Promise<void> {
+
+export function resetViewerSessionInitialized(): void {
+  initialized = false;
+}
+
+/** new_game.c NewGameInitData for the viewer's live engine session. */
+export function initDefinitiveViewerSession(initialFlags: Record<string, number>, gender: number = C.MALE): void {
+  SeedRngAndSetTrainerId(Math.floor(Math.random() * 65536));
+  const data = newSaveData();
+  data.encryptionKey = 0;
+  data.trainerId = InitPlayerTrainerId();
+  data.playerGender = gender;
+  data.playerName = Array.from(encode(gender === C.FEMALE ? 'LEAF' : 'RED'));
+  data.rivalName = Array.from(encode('GREEN'));
+  data.money = 3000;
+  data.registeredItem = 0;
+  data.party = [];
+  data.bag.pokeBalls = [];
+  data.pokedexCaught.fill(0);
+  data.pokedexSeen.fill(0);
+  setSave(data);
+  for (const name of Object.keys(initialFlags)) flagSet(rom.c(name));
+  seedTemporaryRespawn();
+  (save as ViewerSave).viewerStart = 'definitive-kanto-v1';
+  (save as ViewerSave).viewerNavigation = {
+    mapId: 'MAP_PALLET_TOWN_PLAYERS_HOUSE_2F',
+    x: 6,
+    y: 6,
+    direction: 'south',
+    dynamic: null,
+  };
+  saveViewerSession((save as ViewerSave).viewerNavigation!);
+}
+
+export async function initializeViewerSession(
+  initialFlags: Record<string, number>,
+  options?: { forceTemporary?: boolean; forceDefinitive?: boolean; gender?: number }
+): Promise<void> {
   if (initialized) return;
   // rom data, plus the map-entry bookkeeping tables mapEvents.ts runs before the engine loads.
   await Promise.all([rom.load(), loadCData('renewable_hidden_items')]);
   setSaveStorageKey(VIEWER_SAVE_KEY);
   const stored = saveStore.load() as ViewerSave | undefined;
   // Overworld_ResetStateOnContinue: the roamer's location is not saved; continuing places it again.
-  if (stored?.viewerStart === 'temporary-kanto-v1') { setSave(stored); onWarpForRoamer(); }
-  else {
+  if (stored?.viewerStart === 'temporary-kanto-v1' || stored?.viewerStart === 'definitive-kanto-v1') {
+    setSave(stored);
+    onWarpForRoamer();
+  } else if (options?.forceTemporary) {
     SeedRngAndSetTrainerId(Math.floor(Math.random() * 65536));
     setSave(newSaveData());
     // new_game.c:149 runs EventScript_ResetAllMapFlags. The world index exports
     // that source script's setflag names (values are source lines, not flag IDs).
     for (const name of Object.keys(initialFlags)) flagSet(rom.c(name));
     save.trainerId = InitPlayerTrainerId();
-    save.playerName = Array.from(encode('RED'));
+    save.playerGender = options.gender ?? C.MALE;
+    save.playerName = Array.from(encode(save.playerGender === C.FEMALE ? 'LEAF' : 'RED'));
     save.rivalName = Array.from(encode('GREEN'));
     const candidates = [C.SPECIES_BULBASAUR, C.SPECIES_CHARMANDER, C.SPECIES_SQUIRTLE, C.SPECIES_PIKACHU];
     save.party.push(createMon(candidates[Math.floor(Math.random() * candidates.length)]!, 5));
     if (!addBagItem(C.ITEM_POKE_BALL, 5)) throw Error('No se pudo preparar la mochila inicial');
     (save as ViewerSave).viewerStart = 'temporary-kanto-v1';
+    grantTemporaryPokedex();
+  } else {
+    initDefinitiveViewerSession(initialFlags, options?.gender ?? C.MALE);
   }
   restoreViewerEventMap((save as ViewerSave).viewerNavigation?.mapId ?? null);
-  grantTemporaryPokedex();
+  if ((save as ViewerSave).viewerStart === 'temporary-kanto-v1') {
+    grantTemporaryPokedex();
+  }
   seedTemporaryRespawn();
   // CB2_NewGame / CB2_ContinueSavedGame start the play time counter.
   PlayTimeCounter_Start();

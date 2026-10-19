@@ -1,6 +1,6 @@
 import { ViewerObjectSpawns, cloneElement } from "./data/objectSpawns";
 import { savedViewerObjects, storeViewerObjects, type ViewerObjectState } from "./objectState";
-import { initializeViewerSession, saveViewerSession, viewerCheckpoint, type NavigationSave } from "./session";
+import { initializeViewerSession, initDefinitiveViewerSession, saveViewerSession, viewerCheckpoint, type NavigationSave } from "./session";
 import { onWarpForRoamer } from "@core/pokemon/roamer";
 import { enterViewerEventMap, restoreViewerEventMap, viewerEventMap } from "./mapEvents";
 import { isViewerObjectPresent } from "./data/objectPresence";
@@ -716,7 +716,14 @@ async function startExploration(targetGx?: number, targetGy?: number): Promise<v
     location.hash = h.toString(); location.reload(); return;
   }
   if (!playerActive && !HOENN) camera.setZoom(exploreManualZoom || exploreAutoZoom());
-  if (!HOENN) { await initializeViewerSession(index.initialFlags); gameSave.playerGender = state.playerChar === "leaf" ? C.FEMALE : C.MALE; }
+  if (!HOENN) {
+    const explicitExternalMap = startMapId && startMapId !== "MAP_PALLET_TOWN_PLAYERS_HOUSE_2F";
+    await initializeViewerSession(index.initialFlags, {
+      forceTemporary: !!explicitExternalMap,
+      gender: state.playerChar === "leaf" ? C.FEMALE : C.MALE,
+    });
+    gameSave.playerGender = state.playerChar === "leaf" ? C.FEMALE : C.MALE;
+  }
   if (!HOENN) window.setTimeout(() => void engineInteraction?.warm().catch(() => {}), 1500);
   resetExploreSession();
   state.appMode = "explore";
@@ -1680,8 +1687,13 @@ async function build(): Promise<void> {
   exteriorWorld = worldData;
   index = worldData.index;
   minX = worldData.minX;
-  minY = worldData.minY;
-  if (!HOENN && startExplore) await initializeViewerSession(index.initialFlags);
+  if (!HOENN && startExplore) {
+    const explicitExternalMap = startMapId && startMapId !== "MAP_PALLET_TOWN_PLAYERS_HOUSE_2F";
+    await initializeViewerSession(index.initialFlags, {
+      forceTemporary: !!explicitExternalMap,
+      gender: state.playerChar === "leaf" ? C.FEMALE : C.MALE,
+    });
+  }
 
   streaming = !HOENN && startExplore;
   if (streaming) {
@@ -2176,6 +2188,18 @@ function setupUi(): void {
       return saveViewerSession(nav);
     },
     continue: () => continueViewerSession(),
+    newGame: async () => {
+      initDefinitiveViewerSession(index.initialFlags, state.playerChar === "leaf" ? C.FEMALE : C.MALE);
+      const nav = viewerCheckpoint()!;
+      await changeNavigationWorld(nav.mapId);
+      await rom.loadMap(nav.mapId);
+      { entityManager.resetRemovedObjects(); objectSpawns.reset(); }
+      applyViewerObjects(savedViewerObjects(nav.mapId));
+      const info = index.maps[nav.mapId]!;
+      navigationWarps.restore(nav.dynamic);
+      await startExploration(info.x + nav.x, info.y + nav.y);
+      playerDir = nav.direction; updatePlayerDisplay(); writeHash();
+    },
     pause: paused => {
       keysDown.clear(); playerRunning = false;
       if (paused) viewerClock.pause("explore-menu"); else viewerClock.resume("explore-menu");
@@ -2601,7 +2625,11 @@ build()
       else void interiorViewer.open(startMapId);
     }
     if (startExplore) {
-      if (!HOENN) await initializeViewerSession(index.initialFlags);
+      const explicitExternalMap = startMapId && startMapId !== "MAP_PALLET_TOWN_PLAYERS_HOUSE_2F";
+      if (!HOENN) await initializeViewerSession(index.initialFlags, {
+        forceTemporary: !!explicitExternalMap,
+        gender: state.playerChar === "leaf" ? C.FEMALE : C.MALE,
+      });
       if (!HOENN && startMapId && !index.maps[startMapId]) await changeNavigationWorld(startMapId);
       const checkpoint=!HOENN?viewerCheckpoint():undefined;
       if(checkpoint&&(!startMapId||startMapId===checkpoint.mapId)){

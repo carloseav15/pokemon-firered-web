@@ -3,6 +3,7 @@ import { TouchPad } from "./touchPad";
 type Hooks = {
   save(): boolean;
   continue(): Promise<void>;
+  newGame?(): Promise<void> | void;
   pause(paused: boolean): void;
   resize(): void;
   exit(): void;
@@ -63,8 +64,8 @@ export class ExplorationUi {
       <label><input type="checkbox" id="explore-clean"> Ocultar barra superior (H)</label>
       <label><input type="checkbox" id="explore-touch"> Controles táctiles (cruceta, A, B, START, SELECT, L, R)</label>
       <label><input type="checkbox" id="explore-metrics"> Mostrar rendimiento</label>
-      <button class="btn" id="explore-open-game-menu">Abrir menú del juego</button><button class="btn" id="explore-save">Guardar partida</button><button class="btn" id="explore-continue">Continuar guardado</button><p id="explore-save-result" role="status"></p>
-      <p id="explore-note">Navegación por exteriores e interiores en desarrollo. Equipo, mochila y demás opciones están en Juego · Intro. Historia general pendiente.</p>
+      <button class="btn" id="explore-open-game-menu">Abrir menú del juego</button><button class="btn" id="explore-save">Guardar partida</button><button class="btn" id="explore-continue">Continuar guardado</button><button class="btn" id="explore-new-game">Nueva partida</button><p id="explore-save-result" role="status"></p>
+      <p id="explore-note">Navegación por exteriores e interiores en desarrollo. Equipo, mochila y demás opciones están en Juego · Intro. Historia general con inicio definitivo en Paleta.</p>
       <div class="explore-actions"><button class="btn" id="explore-resume">Continuar</button><button class="btn" id="explore-fullscreen">Pantalla completa</button><button class="btn" id="explore-exit">Volver al atlas</button></div>`;
     document.body.append(this.root, this.menu);
     const prefs = readPrefs();
@@ -96,6 +97,11 @@ export class ExplorationUi {
     this.menu.querySelector("#explore-continue")!.addEventListener("click", () => {
       this.menu.close();
       void this.hooks.continue().catch(error => { this.openMenu(); this.menu.querySelector("#explore-save-result")!.textContent = String(error); });
+    });
+    this.menu.querySelector("#explore-new-game")!.addEventListener("click", () => {
+      if (!confirm("¿Comenzar una nueva partida desde el inicio de la historia en Pueblo Paleta? Se reemplazará el guardado actual.")) return;
+      this.menu.close();
+      void Promise.resolve(this.hooks.newGame?.()).catch(error => { this.openMenu(); this.menu.querySelector("#explore-save-result")!.textContent = String(error); });
     });
     const character = this.menu.querySelector<HTMLSelectElement>("#explore-character")!;
     character.value = (document.getElementById("player-char") as HTMLSelectElement).value;
