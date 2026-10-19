@@ -453,7 +453,7 @@ altas0/1: esa rama queda conectada pero sin validación real en esta entrega.
 
 El recorrido de 62 pasos Pallet/Ruta1 pasa (~60 FPS, p95≤16,8 ms, sin tareas>50 ms en esa muestra).
 No completa el compositor de toda la cámara ni la prioridad/subsprites de todos los NPC/objetos,
-colisiones por elevación/puentes o revisión exhaustiva/ROM. Esas validaciones continúan en 6.5d.
+colisiones por elevación/puentes o revisión exhaustiva/ROM. Esas validaciones continúan en 6.5d (docs/FUTURO.md).
 
 Revisión funcional en curso (objetivo6.5o: puntos1/3/4/6). `f87e8e28` conserva elevaciones de los
 bloques en WorldGrid (un byte adicional por casilla residente), comprueba el lado de salida y el
@@ -481,7 +481,7 @@ según JumpSpecialWithEffect. El recorrido exterior de 62 pasos registra ~60 FPS
 255 mapas desde los 37 exteriores, 941 warps y ocho salidas dinámicas; no implica que ya se naveguen.
 SaffronCity real tiene 66×55 y SaffronCity_Connection 48×40: no se pueden sustituir como si fueran
 el mismo plano. El cambio de contexto debe conservar warps/conexiones explícitos. El objetivo
-completo continúa abierto en TAREAS-FINALES.md §6.5o.
+completo continúa abierto en docs/FUTURO.md §6.5o.
 
 `33a980b4` añade cambio de contexto en la ruta de Explorar: usa el mismo avatar,
 reloj, cámara, render y efectos; libera el loader anterior y espera a que termine cualquier
