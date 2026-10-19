@@ -880,10 +880,22 @@ async function startExploration(targetGx?: number, targetGy?: number): Promise<v
 
 
 
+  const preferred = targetGx !== undefined && targetGy !== undefined ? findMapAt(targetGx, targetGy)?.[0] : startMapId;
+  const requestedX = startX !== null ? minX + Math.floor((startX + viewport.clientWidth / 2) / camera.zoom / TILE) : null;
+  const requestedY = startY !== null ? minY + Math.floor((startY + viewport.clientHeight / 2) / camera.zoom / TILE) : null;
+  const selected = targetGx !== undefined && targetGy !== undefined ? findMapAt(targetGx, targetGy)?.[1] : startMapId && index.maps[startMapId];
+  const nearCamera = requestedX !== null && requestedY !== null ? Object.values(index.maps).find(m => requestedX >= m.x && requestedX < m.x + m.width && requestedY >= m.y && requestedY < m.y + m.height) : undefined;
+  const fallbackMapId = HOENN ? "MAP_LITTLEROOT_TOWN" : "MAP_PALLET_TOWN";
+
   if (sectorLoader) {
-    const preferred = targetGx !== undefined && targetGy !== undefined ? findMapAt(targetGx, targetGy)?.[0] : startMapId;
-    if (preferred && index.maps[preferred]) centerOnMap(preferred);
-    else if (playerX === 0 && playerY === 0 && startX === null) centerOnMap(HOENN ? "MAP_LITTLEROOT_TOWN" : "MAP_PALLET_TOWN");
+    if (preferred && index.maps[preferred]) {
+      centerOnMap(preferred);
+    } else if (nearCamera) {
+      // La cámara ya se encuentra sobre un sector válido de esta región
+    } else {
+      // Coordenadas fuera de los límites de esta región (p. ej. hash copiado de otra región o del atlas global): centrar en el mapa inicial
+      centerOnMap(fallbackMapId);
+    }
     await requestSectors();
   }
   const requestedVehicle = targetGx !== undefined && targetGy !== undefined && worldGrid.isWaterTile(targetGx, targetGy) ? "surf" : "walk";
@@ -892,26 +904,36 @@ async function startExploration(targetGx?: number, targetGy?: number): Promise<v
     playerY = targetGy;
     playerMode = requestedVehicle;
   } else if (playerX === 0 && playerY === 0) {
-    const requestedX = startX !== null ? minX + Math.floor((startX + viewport.clientWidth / 2) / camera.zoom / TILE) : null;
-    const requestedY = startY !== null ? minY + Math.floor((startY + viewport.clientHeight / 2) / camera.zoom / TILE) : null;
-    const selected = targetGx !== undefined && targetGy !== undefined ? findMapAt(targetGx, targetGy)?.[1] : startMapId && index.maps[startMapId];
-    const nearCamera = requestedX !== null && requestedY !== null ? Object.values(index.maps).find(m => requestedX >= m.x && requestedX < m.x + m.width && requestedY >= m.y && requestedY < m.y + m.height) : undefined;
-    const paleta = selected || nearCamera || index.maps[HOENN ? "MAP_LITTLEROOT_TOWN" : "MAP_PALLET_TOWN"];
+    const paleta = selected || nearCamera || index.maps[fallbackMapId];
     if (paleta) {
-      const spawnX = targetGx !== undefined && targetGx >= paleta.x && targetGx < paleta.x + paleta.width ? targetGx : nearCamera && !selected ? requestedX! : selected ? paleta.x + Math.floor(paleta.width / 2) : paleta.x + 8;
-      const spawnY = targetGy !== undefined && targetGy >= paleta.y && targetGy < paleta.y + paleta.height ? targetGy : nearCamera && !selected ? requestedY! : selected ? paleta.y + Math.floor(paleta.height / 2) : paleta.y + 8;
+      const spawnX = targetGx !== undefined && targetGx >= paleta.x && targetGx < paleta.x + paleta.width
+        ? targetGx
+        : nearCamera && !selected && requestedX !== null && requestedX >= paleta.x && requestedX < paleta.x + paleta.width
+          ? requestedX
+          : selected
+            ? paleta.x + Math.floor(paleta.width / 2)
+            : paleta.x + 8;
+      const spawnY = targetGy !== undefined && targetGy >= paleta.y && targetGy < paleta.y + paleta.height
+        ? targetGy
+        : nearCamera && !selected && requestedY !== null && requestedY >= paleta.y && requestedY < paleta.y + paleta.height
+          ? requestedY
+          : selected
+            ? paleta.y + Math.floor(paleta.height / 2)
+            : paleta.y + 8;
       playerX = spawnX;
       playerY = spawnY;
-      // El centro del mapa puede ser un muro (la ciudad de Hoenn es otra): busca la casilla libre más cercana.
-      for (let r = 0; r < Math.max(paleta.width, paleta.height) && !worldGrid.isWalkable(playerX, playerY, requestedVehicle); r++) {
+      // El centro del mapa puede ser un muro o edificio: busca la casilla libre más cercana dentro de los límites del mapa.
+      for (let r = 0; r < Math.max(paleta.width, paleta.height, 30) && !worldGrid.isWalkable(playerX, playerY, requestedVehicle); r++) {
         let found = false;
         for (let oy = -r; oy <= r && !found; oy++) {
           for (let ox = -r; ox <= r && !found; ox++) {
             if (Math.max(Math.abs(ox), Math.abs(oy)) !== r) continue;
-            if (spawnX + ox < paleta.x || spawnX + ox >= paleta.x + paleta.width || spawnY + oy < paleta.y || spawnY + oy >= paleta.y + paleta.height) continue;
-            if (worldGrid.isWalkable(spawnX + ox, spawnY + oy, requestedVehicle)) {
-              playerX = spawnX + ox;
-              playerY = spawnY + oy;
+            const cx = spawnX + ox;
+            const cy = spawnY + oy;
+            if (cx < paleta.x || cx >= paleta.x + paleta.width || cy < paleta.y || cy >= paleta.y + paleta.height) continue;
+            if (worldGrid.isWalkable(cx, cy, requestedVehicle)) {
+              playerX = cx;
+              playerY = cy;
               found = true;
             }
           }
