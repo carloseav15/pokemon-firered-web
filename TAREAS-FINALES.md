@@ -30,6 +30,7 @@ cuevas (Golpe Roca, Fuerza, Islas Espuma) y controles táctiles. Detalle en Git
 4. [x] **Visor exploración (audio, atmósfera y pulido visual)**: Bici/surf y gritos ambientales (`afa7efab`), clima (lluvia, tormenta, niebla), cueva oscura (Flash), banner deslizante MapNamePopup y corte parpadeante de batalla (`bc8a4a59`).
 5. [x] **Vida del mapa y técnicas de campo**: Movimiento autónomo de NPCs (`83779086`, deambular fiel según `movementType` sin atravesar paredes) y scripts canónicos de campo (Corte, Golpe Roca y Snorlax vía `EventScript_*` oficiales).
 6. [x] **Sistemas GBA en el visor**: Proyección a pantalla completa de la escena de evolución (`evolution_scene.c`) y máquinas tragaperras (`slot_machine.c`) con aspect ratio nativo 3:2; contador de bolas y pasos de la Zona Safari en el HUD superior (`safari_zone.c`, commit `002d5454`).
+7. [x] **Progresión lineal de historia en el visor**: Triggers por pasos y eventos de coordenada (`tryStartStepBasedScript`), escenas inmediatas de entrada (`OnFrame` en laboratorios, tiendas y eventos) y soporte multiobjeto en cinemáticas (`067c7d6a` engineInteraction.ts, main.ts, session.ts).
 
 ### Pendientes concretos (de fácil a difícil)
 - [ ] Ganar a Brock con el inicial sin preparar el nivel (hay que entrenar; el inicial
