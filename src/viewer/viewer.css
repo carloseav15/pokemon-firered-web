@@ -740,3 +740,71 @@ body.exploring .loading-overlay.hidden { display: none; }
 .touch-l { left: max(16px, env(safe-area-inset-left)); } .touch-r { right: max(16px, env(safe-area-inset-right)); }
 /* The on-screen pad replaces the keyboard hint under engine scenes. */
 body.explore-touch #engine-interaction > p { display: none; }
+
+/* Map Name Popup banner (map_name_popup.c) */
+#map-name-popup {
+  position: fixed;
+  top: 14px;
+  left: 16px;
+  z-index: 950;
+  pointer-events: none;
+  padding: 8px 18px;
+  border-radius: 8px;
+  font: 700 13px/1.2 "Segoe UI", system-ui, -apple-system, sans-serif;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #1e293b;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25), 0 0 0 2px #3b82f6;
+  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease;
+  user-select: none;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+#map-name-popup.map-popup-hidden {
+  transform: translateY(-48px);
+  opacity: 0;
+}
+#map-name-popup.map-popup-visible {
+  transform: translateY(0);
+  opacity: 1;
+}
+#map-name-popup[data-theme="town"], #map-name-popup[data-theme="city"] {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25), 0 0 0 2px #2563eb;
+  border-left: 5px solid #2563eb;
+}
+#map-name-popup[data-theme="route"] {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25), 0 0 0 2px #16a34a;
+  border-left: 5px solid #16a34a;
+}
+#map-name-popup[data-theme="cave"] {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25), 0 0 0 2px #78716c;
+  border-left: 5px solid #78716c;
+  background: rgba(245, 245, 244, 0.94);
+}
+#map-name-popup[data-theme="indoor"] {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25), 0 0 0 2px #64748b;
+  border-left: 5px solid #64748b;
+}
+
+/* Battle transition cut / flash (fldeff_battle.c) */
+#battle-flash-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1050;
+  pointer-events: none;
+  background: #fff;
+  opacity: 0;
+}
+#battle-flash-overlay.battle-flash-anim {
+  animation: battle-flash-flicker 0.38s ease-out forwards;
+}
+@keyframes battle-flash-flicker {
+  0% { opacity: 0; }
+  20% { opacity: 0.95; }
+  35% { opacity: 0.05; }
+  50% { opacity: 0.95; }
+  65% { opacity: 0.15; }
+  80% { opacity: 1; }
+  100% { opacity: 0; }
+}

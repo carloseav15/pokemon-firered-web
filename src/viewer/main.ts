@@ -62,6 +62,8 @@ import { EntityManager, type LiveEntity } from "./render/entities";
 import { DialogManager, type DialogSegment } from "./ui/dialog";
 import { ViewerCamera } from "./camera";
 import { ViewerAudioController } from "./audio/audioController";
+import { MapNamePopup } from "./ui/mapPopup";
+import { WeatherOverlay } from "./render/weatherOverlay";
 
 // Juego del visor: Kanto (FireRed) por omisión; ?game=emerald abre Hoenn (mapa, capas, fichas y exploración a pie).
 // Hoenn usa los datos de public/emerald, el reparto 512/6 de tiles y paletas de pokeemerald y sus propios comportamientos de
@@ -151,6 +153,23 @@ function updateSectorBorder(): void {
 }
 let explorationUi: ExplorationUi | null = null;
 let engineInteraction: EngineInteraction | null = null;
+let mapPopup: MapNamePopup | null = null;
+let weatherOverlay: WeatherOverlay | null = null;
+let battleFlashEl: HTMLElement | null = null;
+
+async function playBattleTransition(): Promise<void> {
+  if (!battleFlashEl) {
+    battleFlashEl = document.createElement("div");
+    battleFlashEl.id = "battle-flash-overlay";
+    document.body.appendChild(battleFlashEl);
+  }
+  battleFlashEl.classList.remove("battle-flash-anim");
+  void battleFlashEl.offsetWidth;
+  battleFlashEl.classList.add("battle-flash-anim");
+  await new Promise(r => setTimeout(r, 380));
+  battleFlashEl.classList.remove("battle-flash-anim");
+}
+
 function navigationSnapshot(): NavigationSave {
   const found = findMapAt(playerX, playerY);
   if (!found) throw Error("Jugador fuera del mapa");
@@ -596,9 +615,23 @@ function updatePlayerDisplay(): void {
   if (!HOENN && playerActive && here && here !== enteredMapId) {
     if (enterViewerEventMap(here)) entityManager.resetRemovedObjects();
     enteredMapId = here;
-    const type = mapHeaders.get(here)?.mapType;
+    const header = mapHeaders.get(here) ?? rom.cachedMap(here);
+    const type = header?.mapType;
     const outdoors = type === C.MAP_TYPE_ROUTE || type === C.MAP_TYPE_TOWN || type === C.MAP_TYPE_CITY || type === C.MAP_TYPE_UNDERWATER || type === C.MAP_TYPE_OCEAN_ROUTE;
     audioController.chooseAmbientCry(here, Boolean(outdoors));
+    if (header) {
+      weatherOverlay?.setWeather(header.weather ?? 0);
+      weatherOverlay?.setRequiresFlash(Boolean(header.requiresFlash));
+      if (header.showMapName !== false) {
+        let theme: "town" | "city" | "route" | "cave" | "indoor" = "route";
+        if (header.requiresFlash || header.mapType === C.MAP_TYPE_UNDERGROUND) theme = "cave";
+        else if (header.mapType === C.MAP_TYPE_TOWN) theme = "town";
+        else if (header.mapType === C.MAP_TYPE_CITY) theme = "city";
+        else if (header.mapType === C.MAP_TYPE_INDOOR) theme = "indoor";
+        const mapTitle = findMapAt(playerX, playerY)?.[1].title;
+        if (mapTitle) mapPopup?.show(mapTitle, theme);
+      }
+    }
     void engineInteraction?.enterMap(navigationSnapshot()).catch(error => console.error("Entrada de mapa", error));
   }
   updateEntitiesView();
@@ -1751,10 +1784,15 @@ async function build(): Promise<void> {
     }
     if (playerActive && syncEntityPresence()) updateEntitiesView();
     if (playerActive && !interiorViewer.isOpen()) entityManager.updateAutonomousBehaviors(frame.elapsedMs, playerX, playerY);
+    if (weatherOverlay && playerActive && !interiorViewer.isOpen()) {
+      const screenX = (playerVisualX + minX * TILE) * camera.zoom - viewport.scrollLeft + (TILE * camera.zoom) / 2;
+      const screenY = (playerVisualY + minY * TILE) * camera.zoom - viewport.scrollTop + (TILE * camera.zoom) / 2;
+      weatherOverlay.update(screenX, screenY);
+    }
   });
   window.addEventListener("pagehide", event => {
     if (event.persisted) { viewerClock.pause("pagehide"); return; }
-    sectorLoader?.dispose(); sectorBorder?.dispose(); explorationUi?.dispose();
+    sectorLoader?.dispose(); sectorBorder?.dispose(); explorationUi?.dispose(); mapPopup?.dispose(); weatherOverlay?.dispose();
     resetExploreSession(); surfSupport?.dispose(); jumpShadow?.dispose(); playerReflection?.dispose(); avatarDepth?.dispose(); warpVisuals?.dispose(); disposeEffects(); disposeEffectsSound(); unbindVisibility(); unsubscribeSimulation(); animController?.stop();
   });
   window.addEventListener("pageshow", () => viewerClock.resume("pagehide"));
@@ -2212,8 +2250,14 @@ function setupUi(): void {
       const ent=entityManager.entities.find(e=>e.element.map===mapId&&e.element.localId===localId);
       if(ent?.el)ent.el.style.visibility=hidden?"hidden":"";
     },
+    onBattleStart: async () => {
+      await playBattleTransition();
+    },
   });
-  if (!HOENN) explorationUi = new ExplorationUi({
+  if (!HOENN) {
+    mapPopup = new MapNamePopup(document.body);
+    weatherOverlay = new WeatherOverlay(document.body);
+    explorationUi = new ExplorationUi({
     save: () => {
       const nav = navigationSnapshot();
       storeViewerObjects(nav.mapId, readViewerMapObjects(nav.mapId));
@@ -2248,7 +2292,8 @@ function setupUi(): void {
     },
     stats: () => ({ sectors: sectorLoader?.ids.length ?? Object.keys(index.maps).length,
       bytes: (sectorLoader?.bytes ?? 0) + (sectorBorder?.bytes ?? 0) + (avatarDepth?.bytes ?? 0), pending: sectorLoader?.pending ?? 0, error: sectorLoader?.error ?? "" }),
-  });
+    });
+  }
   window.addEventListener("explore-scale", event => {
     exploreManualZoom = (event as CustomEvent<number>).detail;
     setZoom(exploreManualZoom || exploreAutoZoom());

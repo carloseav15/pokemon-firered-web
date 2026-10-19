@@ -43,6 +43,7 @@ type Hooks = {
   setBike(on: boolean): void;
   setVehicle?: (vehicle: 'walk' | 'bike' | 'surf') => void;
   onSetMetatile?: (mapId: string, x: number, y: number, metatile: number) => void;
+  onBattleStart?: () => Promise<void> | void;
 };
 export class EngineInteraction {
   private interactionMapId = '';
@@ -566,6 +567,7 @@ export class EngineInteraction {
         const trainerId = trainer?.localId ?? 0;
         const trainerMapId = (trainer ? rom.mapIdByNum((trainer.mapGroup << 8) | trainer.mapNum) : undefined) ?? nav.mapId;
         started = true;
+        if (this.hooks.onBattleStart) await this.hooks.onBattleStart();
         await this.run(nav, trainerId, true, () => { if (trainerId) this.hooks.hideObjects(true, trainerMapId, trainerId); }, true, trainerMapId);
         return true;
       }
@@ -596,6 +598,7 @@ export class EngineInteraction {
       const wildHit = game.wild.tryStandardWildEncounter(attributes);
       if (!wildHit) return false;
       started = true;
+      if (this.hooks.onBattleStart) await this.hooks.onBattleStart();
       await this.run(nav, 0, true, () => {}, true);
       return true;
     } finally {
