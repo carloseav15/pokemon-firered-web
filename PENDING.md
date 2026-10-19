@@ -5,11 +5,11 @@ Las listas de "pruebas" y "huecos conocidos" salen del script.
 
 ## Avance
 
-- Funciones con homólogo del mismo nombre en `src/games/firered` (en alcance): **9772/10115 (96.6 %)**.
-- Archivos C con funciones aún sin homólogo: **22**; quedan **343 nombres**.
+- Funciones con homólogo del mismo nombre en `src/games/firered` (en alcance): **9776/10115 (96.6 %)**.
+- Archivos C con funciones aún sin homólogo: **22**; quedan **339 nombres**.
 - Fuera de la meta principal, enlace e inalámbrico: 101/1711 en 42 archivos (sección aparte en PORT-INVENTORY.md).
 - Estos archivos contienen 67.664 líneas C en total; la estimación de líneas sin cubrir se muestra por archivo abajo.
-- Estimación ponderada del C sin homólogo: **~7.358 líneas** (aproximación por proporción de funciones).
+- Estimación ponderada del C sin homólogo: **~7.299 líneas** (aproximación por proporción de funciones).
 - Es un indicador de nombres, no de fidelidad: las funciones stub no cuentan (sección 3b) y **no incluye la fase de pruebas en navegador** (sección 5).
 
 ## 1. Archivos con huecos de implementación, de menos a más C sin cubrir
@@ -39,7 +39,7 @@ Orden sugerido por la estimación de líneas C aún no cubiertas; no mide fideli
 | 19 | `trade_scene.c` | parcial | 2916 | 40/53 | ~715 |  |
 | 20 | `battle_main.c` | casi completo | 4477 | 87/106 | ~802 |  |
 | 21 | `m4a.c` | parcial | 1781 | 25/72 | ~1162 |  |
-| 22 | `overworld.c` | parcial | 3563 | 149/242 | ~1369 |  |
+| 22 | `overworld.c` | parcial | 3563 | 153/242 | ~1310 |  |
 
 Total: 22 archivos con huecos: 0 sin empezar, 0 adaptador, 19 casi completos y 3 parciales.
 

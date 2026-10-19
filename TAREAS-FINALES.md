@@ -25,13 +25,8 @@ cuevas (Golpe Roca, Fuerza, Islas Espuma) y controles táctiles. Detalle en Git
    sin el motor. Opciones: grabar desde el visor y reproducir con el motor a pantalla
    completa, o dejar el Quest Log solo en el juego independiente (allí funciona,
    `questlog-continue` PASS).
-2. **Estado de vídeo del mapa.** El mapa en canvas no ejecuta `InitOverworldBgs` /
-   `InitOverworldGraphicsRegisters`; las pantallas que heredan ese estado arrancan sin
-   él: la Pokédex sin `OBJ_ON` (siluetas de tamaño y marcadores de zona invisibles) y
-   la eclosión con la paleta BG 15 vacía (cuadro SÍ/NO negro). Portarlo cambia cómo se
-   dibuja todo lo proyectado sobre el visor.
-3. **Historia (punto 9), revisión general (10) e inicio definitivo (11)**: solo por
-   petición expresa.
+2. [x] **Estado de vídeo del mapa.** Portados `InitOverworldBgs` / `InitOverworldGraphicsRegisters` (`c271686c`).
+3. [x] **Historia (punto 9) e inicio definitivo (11)**: integrados en visor (`7a46461a`, `93927c7b`). Revisión general (10) en curso.
 
 ### Pendientes concretos (de fácil a difícil)
 - [ ] Ganar a Brock con el inicial sin preparar el nivel (hay que entrenar; el inicial
@@ -49,8 +44,8 @@ cuevas (Golpe Roca, Fuerza, Islas Espuma) y controles táctiles. Detalle en Git
   sin identificar; revisar `relocateViewer`/`SectorLoader`.
 - [ ] Objetos que el motor oculta o mueve al final de un script: puente y guardado hechos
   (`f5e80a9c`..`d5986c54`); falta recorrerlo con los scripts de la historia.
-- [ ] Scripts de transición de mapa fuera de los Centros (p. ej. `Route20_OnTransition`)
-  no corren en el visor; parte del punto 9.
+- [x] Scripts de transición de mapa fuera de los Centros (p. ej. `Route20_OnTransition`):
+  integrados en visor en `7a46461a` (punto 9).
 - [ ] Al probar con Playwright, reiniciar el servidor de desarrollo tras editar `src/`
   (la recarga en caliente duplica módulos y da fallos falsos).
 
