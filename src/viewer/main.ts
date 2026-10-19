@@ -504,7 +504,10 @@ function checkCurrentMapMusic(): void {
   const found = findMapAt(curGx, curGy);
   if (found) {
     const [mapId, m] = found;
-    audioController.updateMap(mapId, m.music);
+    const section = m.section;
+    const canOverride = section !== "MAPSEC_KANTO_VICTORY_ROAD" && section !== "MAPSEC_ROUTE_23" && section !== "MAPSEC_INDIGO_PLATEAU";
+    audioController.setPlayerOnWater(playerActive && playerMode === "surf");
+    audioController.updateMap(mapId, m.music, playerActive ? playerMode : undefined, canOverride);
   }
 }
 
@@ -593,6 +596,9 @@ function updatePlayerDisplay(): void {
   if (!HOENN && playerActive && here && here !== enteredMapId) {
     if (enterViewerEventMap(here)) entityManager.resetRemovedObjects();
     enteredMapId = here;
+    const type = mapHeaders.get(here)?.mapType;
+    const outdoors = type === C.MAP_TYPE_ROUTE || type === C.MAP_TYPE_TOWN || type === C.MAP_TYPE_CITY || type === C.MAP_TYPE_UNDERWATER || type === C.MAP_TYPE_OCEAN_ROUTE;
+    audioController.chooseAmbientCry(here, Boolean(outdoors));
     void engineInteraction?.enterMap(navigationSnapshot()).catch(error => console.error("Entrada de mapa", error));
   }
   updateEntitiesView();
@@ -854,6 +860,7 @@ function toggleBike(): void {
     audioController.playBikeBell();
   }
   updatePlayerDisplay();
+  checkCurrentMapMusic();
 }
 
 const keysDown = new Set<string>();
@@ -1730,7 +1737,7 @@ async function build(): Promise<void> {
   let disposeEffectsSound=HOENN?()=>{}:fieldEffects.subscribe(event=>{if(event.type==="sound")audioController.playSE(event.id);});
   const unbindVisibility = bindViewerClockVisibility();
   const unsubscribeSimulation = viewerClock.subscribe(frame => {
-    audioController.frame();
+    audioController.frame(Boolean(engineInteraction?.open));
     // One GBA frame of exploration; the engine counts its own frames while the clock is paused for it.
     if (!HOENN) PlayTimeCounter_Update();
     playerReflection?.tick(frame.tick);
@@ -2194,6 +2201,7 @@ function setupUi(): void {
         playerMode = "walk";
       }
       updatePlayerDisplay();
+      checkCurrentMapMusic();
     },
     onSetMetatile: (mapId, lx, ly, metatileId) => {
       const origin = index.maps[mapId];
