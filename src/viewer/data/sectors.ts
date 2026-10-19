@@ -18,6 +18,7 @@ export class SectorLoader {
     for (const [id, entry] of this.resident) if (!this.wanted.includes(id)) {
       entry.dispose(); this.resident.delete(id);
     }
+    if (this.retryAfter > 0 && this.wanted.some(id => !this.resident.has(id))) this.retryAfter = 0;
     if (!this.running && !this.stopped && this.now() >= this.retryAfter) this.running = this.pump().finally(() => { this.running = null; });
     return this.running ?? Promise.resolve();
   }

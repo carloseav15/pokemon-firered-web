@@ -186,14 +186,25 @@ async function continueViewerSession(): Promise<void> {
 }
 
 /** The engine moved the player (white-out): continue from its new map and tile. */
+let relocateChain: Promise<void> = Promise.resolve();
 async function relocateViewer(nav: NavigationSave): Promise<void> {
-  // The engine hands off its warp before running its own map loader.
-  if (enterViewerEventMap(nav.mapId, true)) { entityManager.resetRemovedObjects(); objectSpawns.reset(); }
-  await changeNavigationWorld(nav.mapId);
-  const info = index.maps[nav.mapId]!;
-  navigationWarps.restore(nav.dynamic);
-  await startExploration(info.x+nav.x, info.y+nav.y);
-  playerDir = nav.direction; updatePlayerDisplay(); writeHash();
+  const run = async () => {
+    const prevWarpBusy = warpBusy;
+    warpBusy = true;
+    try {
+      // The engine hands off its warp before running its own map loader.
+      if (enterViewerEventMap(nav.mapId, true)) { entityManager.resetRemovedObjects(); objectSpawns.reset(); }
+      await changeNavigationWorld(nav.mapId);
+      const info = index.maps[nav.mapId]!;
+      navigationWarps.restore(nav.dynamic);
+      await startExploration(info.x + nav.x, info.y + nav.y);
+      playerDir = nav.direction; updatePlayerDisplay(); writeHash();
+    } finally {
+      warpBusy = prevWarpBusy;
+    }
+  };
+  relocateChain = relocateChain.then(run, run);
+  return relocateChain;
 }
 
 let sectorUpdateQueued = false;
@@ -2021,9 +2032,12 @@ async function build(): Promise<void> {
   applyFillMode();
 
   const exteriorEntities = entityManager;
-  changeNavigationWorld = async mapId => {
+  let changeWorldChain: Promise<void> = Promise.resolve();
+  const executeChangeNavigationWorld = async (mapId: string): Promise<void> => {
     if (!streaming) throw new Error("Los interiores jugables requieren Explorar Kanto");
     const exterior = !!exteriorWorld.index.maps[mapId];
+    if (!exterior && navigationMap === mapId && worldGrid.isLoaded(index.maps[mapId]!.x, index.maps[mapId]!.y)) return;
+    if (exterior && navigationMap === null && worldGrid.isLoaded(index.maps[mapId]!.x, index.maps[mapId]!.y)) return;
     let next = exteriorWorld;
     let data: Rom | null = null;
     if (!exterior) {
@@ -2055,6 +2069,7 @@ async function build(): Promise<void> {
     }
     // Drain any asynchronous sector before replacing the globals its renderer uses.
     playerActive = false;
+    sectorUpdateQueued = false;
     const previousLoader = sectorLoader;
     sectorLoader = null;
     previousLoader?.dispose();
@@ -2075,12 +2090,21 @@ async function build(): Promise<void> {
     disposeEffects = installFieldFxRenderer(fieldEffects,content,minX,minY);
     disposeEffectsSound = fieldEffects.subscribe(event => {if(event.type === "sound")audioController.playSE(event.id);});
     camera.configure(index.world.width*TILE,index.world.height*TILE,camera.zoom);
+    if (!exterior) {
+      const info = next.index.maps[mapId]!;
+      viewport.scrollLeft = ((info.x - minX) * TILE + (info.width * TILE) / 2) * camera.zoom - viewport.clientWidth / 2;
+      viewport.scrollTop = ((info.y - minY) * TILE + (info.height * TILE) / 2) * camera.zoom - viewport.clientHeight / 2;
+    }
     minimapController?.setWorld(index,minX,minY);
     sectorBorder = new SectorBorder(content);
     sectorLoader = new SectorLoader(renderMap, () => { if (!warpBusy) {updateEntitiesView();updateSectorBorder();if(playerActive)updatePlayerDisplay();} });
     await sectorLoader.update([mapId]);
     if (!worldGrid.isLoaded(index.maps[mapId]!.x,index.maps[mapId]!.y)) throw new Error(sectorLoader.error || `Mapa no cargado: ${mapId}`);
     content.dataset.navigationMap = mapId;
+  };
+  changeNavigationWorld = mapId => {
+    changeWorldChain = changeWorldChain.then(() => executeChangeNavigationWorld(mapId), () => executeChangeNavigationWorld(mapId));
+    return changeWorldChain;
   };
 
   const worldW = index.world.width * TILE;

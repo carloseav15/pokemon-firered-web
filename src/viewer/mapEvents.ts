@@ -1,6 +1,7 @@
 import { clearViewerObjects } from "./objectState";
 import { clearTempFieldEventData, flagClear, save } from "@game/save";
 import * as C from "@game/generated/constants";
+import { TrySetMapSaveWarpStatus } from "@core/pokemon/saveLocation";
 import { RestartWildEncounterImmunitySteps } from "@core/field/wildEncounter";
 import { isMapTypeOutdoors } from "@core/field/overworld";
 import { rom } from "@core/rom";
@@ -21,11 +22,10 @@ export function enterViewerEventMap(mapId: string, warp = false): boolean {
   if (currentMap === mapId && !warp) return false;
   // LoadMapFromWarp / LoadMapFromCameraTransition bookkeeping for the map entered,
   // in source order; the save's current map is the new one. Trainer rematches
-  // (VS Seeker), weather, ambient cries, music and TrySetMapSaveWarpStatus (its
-  // flags have no reader in the port; running it here broke a later white-out
-  // relocation, see TAREAS-FINALES.md) are not handled here.
+  // (VS Seeker), weather, ambient cries and music are not handled here.
   const num = rom.mapNum(mapId);
   save.location = { ...save.location, mapGroup: num >>> 8, mapNum: num & 0xff };
+  TrySetMapSaveWarpStatus();
   if (currentMap !== null) clearTempFieldEventData();
   RestartWildEncounterImmunitySteps();
   const mapType = rom.cachedMap(mapId)?.mapType;
