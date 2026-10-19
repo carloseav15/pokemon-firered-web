@@ -49,10 +49,10 @@ export const GFX_MAP: Record<string, GfxInfo> = {
 
 export function getPlayerSpriteSheet(char: "red" | "leaf", vehicle: "walk" | "bike" | "surf", isRunning = false): string {
   if (hoennGfx) {
-    // Emerald: Brendan (Rojo) y May (Hoja). Andar y correr son hojas de 9 fotogramas de 16x32, como las de FireRed;
-    // el surf es una hoja de 6 fotogramas de 32x32 (frente 0, espalda 2, lado 4). No hay bici en Hoenn.
+    // Emerald: Brendan (Rojo) y May (Hoja). Andar y correr son hojas de 9 fotogramas de 16x32;
+    // el surf es una hoja de 6 fotogramas de 32x32; la Mach Bike es de 9 fotogramas de 32x32.
     const who = char === "leaf" ? "may" : "brendan";
-    const kind = vehicle === "surf" ? "surfing" : isRunning ? "running" : "normal";
+    const kind = vehicle === "surf" ? "surfing" : vehicle === "bike" ? "machbike" : isRunning ? "running" : "normal";
     return `/emerald/objects/${who}${kind}__${who}.png`;
   }
   const isLeaf = char === "leaf";

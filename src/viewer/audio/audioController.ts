@@ -18,8 +18,13 @@ export class ViewerAudioController {
   private ambientCryState: number = 0;
   private ambientCryDelay: number = 0;
   private playerIsOnWater: boolean = false;
+  private isHoenn = false;
 
   constructor() {}
+
+  setHoenn(hoenn: boolean): void {
+    this.isHoenn = hoenn;
+  }
 
   init(): boolean {
     if (this.initialized) return true;
@@ -77,14 +82,14 @@ export class ViewerAudioController {
   updateMap(mapId: string, defaultMusicId?: number, vehicle?: "walk" | "bike" | "surf", canOverride: boolean = true): void {
     const mapChanged = this.currentMapId !== mapId;
     this.currentMapId = mapId;
-    this.currentMapMusicId = defaultMusicId ?? this.currentMapMusicId ?? C.MUS_PALLET;
+    this.currentMapMusicId = defaultMusicId ?? this.currentMapMusicId ?? (this.isHoenn ? 405 : C.MUS_PALLET);
 
     let targetMusic = this.currentMapMusicId;
     if (canOverride) {
       if (vehicle === "surf") {
-        targetMusic = C.MUS_SURF;
+        targetMusic = this.isHoenn ? 365 : C.MUS_SURF;
       } else if (vehicle === "bike") {
-        targetMusic = C.MUS_CYCLING;
+        targetMusic = this.isHoenn ? 403 : C.MUS_CYCLING;
       }
     }
 

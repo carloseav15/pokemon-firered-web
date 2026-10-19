@@ -1,6 +1,7 @@
 import { TouchPad } from "./touchPad";
 
 type Hooks = {
+  region?: "kanto" | "hoenn";
   save(): boolean;
   continue(): Promise<void>;
   newGame?(): Promise<void> | void;
@@ -36,6 +37,15 @@ export class ExplorationUi {
   private active = false;
   get paused(): boolean { return this.menu.open; }
   constructor(private readonly hooks: Hooks) {
+    const isHoenn = hooks.region === "hoenn";
+    const regionName = isHoenn ? "Hoenn" : "Kanto";
+    const charOptions = isHoenn
+      ? `<option value="red">Bruno (Brendan)</option><option value="leaf">Aura (May)</option>`
+      : `<option value="red">Rojo</option><option value="leaf">Hoja</option>`;
+    const noteText = isHoenn
+      ? "Exploración de mundo abierto en Hoenn. Bicicleta Mach Bike (B), surf, clima y NPCs con IA autónoma."
+      : "Navegación por exteriores e interiores en desarrollo. Equipo, mochila y demás opciones están en Juego · Intro. Historia general con inicio definitivo en Paleta.";
+
     this.root.id = "explore-hud";
     this.root.hidden = true;
     const menuButton = document.createElement("button");
@@ -51,21 +61,22 @@ export class ExplorationUi {
     gameMenuButton.className = "btn";
     gameMenuButton.id = "explore-game-menu";
     gameMenuButton.textContent = "Juego · Intro";
+    if (isHoenn) gameMenuButton.style.display = "none";
     gameMenuButton.addEventListener("click", () => this.openGameMenu());
     this.root.append(this.location, this.notice, this.performance, gameMenuButton, menuButton);
     this.menu.id = "explore-menu";
     this.menu.setAttribute("aria-labelledby", "explore-menu-title");
-    this.menu.innerHTML = `<h2 id="explore-menu-title">Explorar Kanto</h2>
+    this.menu.innerHTML = `<h2 id="explore-menu-title">Explorar ${regionName}</h2>
       <p>Flechas / WASD: caminar · Mayús: correr · B: bicicleta · Z: interactuar · M: audio · H: HUD. En pantallas táctiles, cruceta y botones en pantalla.</p>
-      <label>Personaje <select id="explore-character"><option value="red">Rojo</option><option value="leaf">Hoja</option></select></label>
+      <label>Personaje <select id="explore-character">${charOptions}</select></label>
       <label>Presentación <select id="explore-format"><option value="viewport">Todo el viewport</option><option value="wide">16:9</option><option value="gba">GBA 3:2 (15×10)</option></select></label>
       <label>Escala <select id="explore-scale"><option value="auto" selected>Auto (GBA)</option><option value="1">1×</option><option value="2">2×</option><option value="3">3×</option><option value="4">4×</option><option value="5">5×</option><option value="6">6×</option></select></label>
       <label><input type="checkbox" id="explore-radar"> Mostrar minimapa</label>
       <label><input type="checkbox" id="explore-clean"> Ocultar barra superior (H)</label>
       <label><input type="checkbox" id="explore-touch"> Controles táctiles (cruceta, A, B, START, SELECT, L, R)</label>
       <label><input type="checkbox" id="explore-metrics"> Mostrar rendimiento</label>
-      <button class="btn" id="explore-open-game-menu">Abrir menú del juego</button><button class="btn" id="explore-save">Guardar partida</button><button class="btn" id="explore-continue">Continuar guardado</button><button class="btn" id="explore-new-game">Nueva partida</button><p id="explore-save-result" role="status"></p>
-      <p id="explore-note">Navegación por exteriores e interiores en desarrollo. Equipo, mochila y demás opciones están en Juego · Intro. Historia general con inicio definitivo en Paleta.</p>
+      ${isHoenn ? "" : `<button class="btn" id="explore-open-game-menu">Abrir menú del juego</button>`}<button class="btn" id="explore-save">Guardar partida</button><button class="btn" id="explore-continue">Continuar guardado</button><button class="btn" id="explore-new-game">Nueva partida</button><p id="explore-save-result" role="status"></p>
+      <p id="explore-note">${noteText}</p>
       <div class="explore-actions"><button class="btn" id="explore-resume">Continuar</button><button class="btn" id="explore-fullscreen">Pantalla completa</button><button class="btn" id="explore-exit">Volver al atlas</button></div>`;
     document.body.append(this.root, this.menu);
     const prefs = readPrefs();
@@ -87,7 +98,7 @@ export class ExplorationUi {
       clean: cleanInput.checked,
       touch: touchInput.checked,
     });
-    this.menu.querySelector("#explore-open-game-menu")!.addEventListener("click", () => {
+    this.menu.querySelector("#explore-open-game-menu")?.addEventListener("click", () => {
       this.menu.close();
       this.openGameMenu();
     });

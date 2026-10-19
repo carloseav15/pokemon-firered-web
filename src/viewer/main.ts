@@ -300,6 +300,7 @@ function resetExploreSession(): void {
   if (!HOENN) fieldEffects.resetSession();
 }
 const audioController = new ViewerAudioController();
+if (HOENN) audioController.setHoenn(true);
 
 const camera = new ViewerCamera(viewport, document.getElementById("world-stage")!, content);
 let initialZoom = 1;
@@ -502,7 +503,6 @@ function setupGameSelect(): void {
     document.title = "Pokémon Odyssey — Hoenn Exterior";
     const title = document.querySelector(".app-title");
     if (title) title.lastChild!.textContent = " Hoenn Continuo · Mundo Abierto";
-    document.getElementById("bike-btn")?.style.setProperty("display", "none");
     document.getElementById("anim-toggle")?.closest("label")?.style.setProperty("display", "none");
     const charSelect = document.getElementById("player-char") as HTMLSelectElement | null;
     if (charSelect) {
@@ -621,20 +621,20 @@ function updatePlayerDisplay(): void {
     : baseTitle;
   explorationUi?.setLocation(locationTitle);
   const here = findMapAt(playerX, playerY)?.[0];
-  if (!HOENN && playerActive && here) {
+  if (playerActive && here) {
     const type = mapHeaders.get(here)?.mapType;
     const outdoors = type === C.MAP_TYPE_ROUTE || type === C.MAP_TYPE_TOWN || type === C.MAP_TYPE_CITY || type === C.MAP_TYPE_UNDERWATER || type === C.MAP_TYPE_OCEAN_ROUTE;
     if (outdoors) lastOutdoorNav = navigationSnapshot();
-    else if (type !== undefined && here !== enteredMapId && lastOutdoorNav && lastOutdoorNav.mapId !== here)
+    else if (!HOENN && type !== undefined && here !== enteredMapId && lastOutdoorNav && lastOutdoorNav.mapId !== here)
       void engineInteraction?.recordEscapeWarp(lastOutdoorNav, here).catch(error => console.error("Escape warp", error));
   }
-  if (!HOENN && playerActive && here && here !== enteredMapId) {
+  if (playerActive && here && here !== enteredMapId) {
     if (enterViewerEventMap(here)) entityManager.resetRemovedObjects();
     enteredMapId = here;
     const header = mapHeaders.get(here) ?? rom.cachedMap(here);
     const type = header?.mapType;
     const outdoors = type === C.MAP_TYPE_ROUTE || type === C.MAP_TYPE_TOWN || type === C.MAP_TYPE_CITY || type === C.MAP_TYPE_UNDERWATER || type === C.MAP_TYPE_OCEAN_ROUTE;
-    audioController.chooseAmbientCry(here, Boolean(outdoors));
+    if (!HOENN) audioController.chooseAmbientCry(here, Boolean(outdoors));
     if (header) {
       weatherOverlay?.setWeather(header.weather ?? 0);
       weatherOverlay?.setRequiresFlash(Boolean(header.requiresFlash));
@@ -648,7 +648,7 @@ function updatePlayerDisplay(): void {
         if (mapTitle) mapPopup?.show(mapTitle, theme);
       }
     }
-    void engineInteraction?.enterMap(navigationSnapshot()).catch(error => console.error("Entrada de mapa", error));
+    if (!HOENN) void engineInteraction?.enterMap(navigationSnapshot()).catch(error => console.error("Entrada de mapa", error));
   }
   updateEntitiesView();
   checkCurrentMapMusic();
@@ -659,11 +659,11 @@ let enteredMapId = "";
 let lastOutdoorNav: NavigationSave | null = null;
 const objectSpawns=new ViewerObjectSpawns();
 function syncEntityPresence(): boolean {
-  if (HOENN || !playerActive || !entityManager) return false;
+  if (!playerActive || !entityManager) return false;
   const here=findMapAt(playerX,playerY)?.[0];
   const header=here?mapHeaders.get(here):undefined,info=here?index.maps[here]:undefined;
-  if(header&&info)objectSpawns.update(header,{x:playerX-info.x,y:playerY-info.y},info.width,info.height,mapHeaders);
-  const changed = entityManager.syncPresence(e=>isViewerObjectPresent(e)&&objectSpawns.present(e));
+  if(header&&info&&!HOENN)objectSpawns.update(header,{x:playerX-info.x,y:playerY-info.y},info.width,info.height,mapHeaders);
+  const changed = entityManager.syncPresence(e=>isViewerObjectPresent(e)&&(HOENN || objectSpawns.present(e)));
   if (changed) {
     // Clear first, then rebuild the union: conditional templates may share a tile.
     for (const tile of entityManager.takeVacatedTiles()) worldGrid.setNpc(tile.gx,tile.gy,false);
@@ -691,7 +691,7 @@ function updateEntitiesView(): void {
 
 function interactWithEntity(ent: LiveEntity): void {
   if (ent.hidden) return;
-  if (!HOENN && playerActive && engineInteraction) {
+  if (playerActive) {
     const header = mapHeaders.get(ent.element.map);
     const npc = header?.objects.find(o => !o.clone && "localId" in o && o.localId === ent.element.localId);
     let scriptName = npc && !npc.clone && (npc.script || (npc.scriptName && npc.scriptName !== "0x0" && npc.scriptName !== "NULL"))
@@ -707,7 +707,7 @@ function interactWithEntity(ent: LiveEntity): void {
     }
 
     if (scriptName) {
-      if (isStepping || warpBusy || explorationUi?.paused || engineInteraction.open) return;
+      if (isStepping || warpBusy || explorationUi?.paused || (engineInteraction && engineInteraction.open)) return;
       const dx = playerDir === "east" ? 1 : playerDir === "west" ? -1 : 0;
       const dy = playerDir === "south" ? 1 : playerDir === "north" ? -1 : 0;
       const reach = MB.MetatileBehavior_IsCounter(worldGrid.behaviorAt(playerX+dx,playerY+dy)) ? 2 : 1;
@@ -716,10 +716,10 @@ function interactWithEntity(ent: LiveEntity): void {
         || (here ? mapHeaders.get(here)?.objects.some(o => o.clone && o.targetMap === ent.element.map && o.targetLocalId === ent.element.localId) : false);
       if (!reachableInMap || ent.gx !== playerX+dx*reach || ent.gy !== playerY+dy*reach) return;
 
-      const isFerrySailor = scriptName === "VermilionCity_EventScript_FerrySailor"
-        || (ent.element.map === "MAP_VERMILION_CITY" && (ent.element.localId === 6 || (npc && !npc.clone && "localId" in npc && npc.localId === 6)));
+      const isFerrySailor = !HOENN && (scriptName === "VermilionCity_EventScript_FerrySailor"
+        || (ent.element.map === "MAP_VERMILION_CITY" && (ent.element.localId === 6 || (npc && !npc.clone && "localId" in npc && npc.localId === 6))));
 
-      if (!HOENN && isFerrySailor) {
+      if (isFerrySailor) {
         dialogManager.showChoice(
           "🚢 Ferry Transoceánico S.S. Anne",
           [
@@ -767,20 +767,22 @@ function interactWithEntity(ent: LiveEntity): void {
         return;
       }
 
-      if (npc && !npc.clone) {
-        void engineInteraction.show(navigationSnapshot(), { mapId: ent.element.map, localId: npc.localId }).catch(error => dialogManager.show("Interacción", [String(error)]));
-      } else {
-        void engineInteraction.triggerScript(navigationSnapshot(), scriptName).then(() => {
-          if (ent.element.layer === "corte" || ent.element.layer === "roca") {
-            ent.removed = true;
-            ent.hidden = true;
-            ent.el?.remove();
-            ent.el = undefined;
-            worldGrid.setNpc(ent.gx, ent.gy, false);
-          }
-        }).catch(error => dialogManager.show("Interacción", [String(error)]));
+      if (engineInteraction) {
+        if (npc && !npc.clone) {
+          void engineInteraction.show(navigationSnapshot(), { mapId: ent.element.map, localId: npc.localId }).catch(error => dialogManager.show("Interacción", [String(error)]));
+        } else {
+          void engineInteraction.triggerScript(navigationSnapshot(), scriptName).then(() => {
+            if (ent.element.layer === "corte" || ent.element.layer === "roca") {
+              ent.removed = true;
+              ent.hidden = true;
+              ent.el?.remove();
+              ent.el = undefined;
+              worldGrid.setNpc(ent.gx, ent.gy, false);
+            }
+          }).catch(error => dialogManager.show("Interacción", [String(error)]));
+        }
+        return;
       }
-      return;
     }
   }
   audioController.playSelect();
@@ -833,7 +835,7 @@ async function preloadExplorationSprites(): Promise<void> {
   const halfW = viewport.clientWidth / camera.zoom / TILE / 2 + 2;
   const halfH = viewport.clientHeight / camera.zoom / TILE / 2 + 2;
   const urls = new Set([getPlayerSpriteSheet(state.playerChar, "walk"), getPlayerSpriteSheet(state.playerChar, "walk", true),
-    getPlayerSpriteSheet(state.playerChar, "surf"), ...(!HOENN ? [getPlayerSpriteSheet(state.playerChar, "bike")] : [])]);
+    getPlayerSpriteSheet(state.playerChar, "surf"), getPlayerSpriteSheet(state.playerChar, "bike")]);
   for (const ent of entityManager.entities) if (Math.abs(ent.gx - playerX) <= halfW && Math.abs(ent.gy - playerY) <= halfH) {
     const gfx = gfxInfoOf(ent.element.graphics ?? "") ?? fallbackGfx();
     urls.add(`${HOENN ? "/emerald" : "/fr"}/${gfx.file}`);
@@ -849,14 +851,14 @@ function exploreAutoZoom(): number {
 }
 
 async function startExploration(targetGx?: number, targetGy?: number): Promise<void> {
-  if (!HOENN && !streaming) {
+  if (!streaming) {
     writeHash();
     const h = new URLSearchParams(location.hash.slice(1));
     h.set("modo", "explore");
     if (targetGx !== undefined && targetGy !== undefined) { h.set("px", String(targetGx)); h.set("py", String(targetGy)); }
     location.hash = h.toString(); location.reload(); return;
   }
-  if (!playerActive && !HOENN) camera.setZoom(exploreManualZoom || exploreAutoZoom());
+  if (!playerActive) camera.setZoom(exploreManualZoom || exploreAutoZoom());
   if (!HOENN) {
     const explicitExternalMap = startMapId && startMapId !== "MAP_PALLET_TOWN_PLAYERS_HOUSE_2F";
     await initializeViewerSession(index.initialFlags, {
@@ -881,7 +883,7 @@ async function startExploration(targetGx?: number, targetGy?: number): Promise<v
   if (sectorLoader) {
     const preferred = targetGx !== undefined && targetGy !== undefined ? findMapAt(targetGx, targetGy)?.[0] : startMapId;
     if (preferred && index.maps[preferred]) centerOnMap(preferred);
-    else if (playerX === 0 && playerY === 0 && startX === null) centerOnMap("MAP_PALLET_TOWN");
+    else if (playerX === 0 && playerY === 0 && startX === null) centerOnMap(HOENN ? "MAP_LITTLEROOT_TOWN" : "MAP_PALLET_TOWN");
     await requestSectors();
   }
   const requestedVehicle = targetGx !== undefined && targetGy !== undefined && worldGrid.isWaterTile(targetGx, targetGy) ? "surf" : "walk";
@@ -1800,7 +1802,7 @@ async function followNavigationWarp(source: MapHeader, warpId: number, phase: "i
 async function build(): Promise<void> {
   state.loadStored();
   parseHash();
-  if (!HOENN && startExplore) { document.body.classList.add("exploring"); document.body.setAttribute("aria-busy", "true"); }
+  if (startExplore) { document.body.classList.add("exploring"); document.body.setAttribute("aria-busy", "true"); }
   const mapsReady = fetch(`${HOENN ? "/emerald" : "/fr"}/maps.json`).then(async response => {
     if (!response.ok) throw new Error(`maps.json: HTTP ${response.status}`);
     return (await response.json()).maps as typeof allMaps;
@@ -1837,7 +1839,7 @@ async function build(): Promise<void> {
     });
   }
 
-  streaming = !HOENN && startExplore;
+  streaming = startExplore;
   if (streaming) {
     if (startX !== null) startX *= 2 / initialZoom;
     if (startY !== null) startY *= 2 / initialZoom;
@@ -1937,7 +1939,7 @@ async function build(): Promise<void> {
     // A private ROM cache belongs to this sector and dies with it (no shared engine cache eviction).
     const data = contextData ?? (streaming ? new Rom() : rom);
     const layout = layoutsByMap.get(id) ?? await data.loadLayout(info.layout);
-    if (!HOENN && !mapHeaders.has(id)) mapHeaders.set(id, await data.loadMap(id));
+    if (!mapHeaders.has(id)) mapHeaders.set(id, await data.loadMap(id));
     if(streaming&&!HOENN){
       const header=mapHeaders.get(id)!;
       for(const entry of header.objects){
@@ -2349,10 +2351,10 @@ function setupUi(): void {
       await playBattleTransition();
     },
   });
-  if (!HOENN) {
-    mapPopup = new MapNamePopup(document.body);
-    weatherOverlay = new WeatherOverlay(document.body);
-    explorationUi = new ExplorationUi({
+  mapPopup = new MapNamePopup(document.body);
+  weatherOverlay = new WeatherOverlay(document.body);
+  explorationUi = new ExplorationUi({
+    region: HOENN ? "hoenn" : "kanto",
     save: () => {
       const nav = navigationSnapshot();
       storeViewerObjects(nav.mapId, readViewerMapObjects(nav.mapId));
@@ -2360,23 +2362,31 @@ function setupUi(): void {
     },
     continue: () => continueViewerSession(),
     newGame: async () => {
-      initDefinitiveViewerSession(index.initialFlags, state.playerChar === "leaf" ? C.FEMALE : C.MALE);
-      const nav = viewerCheckpoint()!;
-      await changeNavigationWorld(nav.mapId);
-      await rom.loadMap(nav.mapId);
-      { entityManager.resetRemovedObjects(); objectSpawns.reset(); }
-      applyViewerObjects(savedViewerObjects(nav.mapId));
-      const info = index.maps[nav.mapId]!;
-      navigationWarps.restore(nav.dynamic);
-      await startExploration(info.x + nav.x, info.y + nav.y);
-      playerDir = nav.direction; updatePlayerDisplay(); writeHash();
+      if (!HOENN) {
+        initDefinitiveViewerSession(index.initialFlags, state.playerChar === "leaf" ? C.FEMALE : C.MALE);
+        const nav = viewerCheckpoint()!;
+        await changeNavigationWorld(nav.mapId);
+        await rom.loadMap(nav.mapId);
+        { entityManager.resetRemovedObjects(); objectSpawns.reset(); }
+        applyViewerObjects(savedViewerObjects(nav.mapId));
+        const info = index.maps[nav.mapId]!;
+        navigationWarps.restore(nav.dynamic);
+        await startExploration(info.x + nav.x, info.y + nav.y);
+        playerDir = nav.direction; updatePlayerDisplay(); writeHash();
+      } else {
+        const lr = index.maps["MAP_LITTLEROOT_TOWN"];
+        if (lr) {
+          await startExploration(lr.x + 8, lr.y + 8);
+          playerDir = "south"; updatePlayerDisplay(); writeHash();
+        }
+      }
     },
     pause: paused => {
       keysDown.clear(); playerRunning = false;
       if (paused) viewerClock.pause("explore-menu"); else viewerClock.resume("explore-menu");
     },
     resize: () => {
-      if (playerActive && !HOENN && !exploreManualZoom) camera.setZoom(exploreAutoZoom());
+      if (playerActive && !exploreManualZoom) camera.setZoom(exploreAutoZoom());
       if (playerActive) updatePlayerDisplay();
       scheduleSectors();
     },
@@ -2387,8 +2397,7 @@ function setupUi(): void {
     },
     stats: () => ({ sectors: sectorLoader?.ids.length ?? Object.keys(index.maps).length,
       bytes: (sectorLoader?.bytes ?? 0) + (sectorBorder?.bytes ?? 0) + (avatarDepth?.bytes ?? 0), pending: sectorLoader?.pending ?? 0, error: sectorLoader?.error ?? "" }),
-    });
-  }
+  });
   window.addEventListener("explore-scale", event => {
     exploreManualZoom = (event as CustomEvent<number>).detail;
     setZoom(exploreManualZoom || exploreAutoZoom());
@@ -2611,7 +2620,7 @@ function setupUi(): void {
       return;
     }
     if (key === "b" && playerActive) {
-      if (!HOENN) toggleBike();
+      toggleBike();
       return;
     }
     if ((key === "backspace" || key === "f") && playerActive && !HOENN && engineInteraction && !isStepping && !warpBusy && !elevatorBusy && !dialogManager.isOpen()) {
@@ -2797,21 +2806,27 @@ build()
       else void interiorViewer.open(startMapId);
     }
     if (startExplore) {
-      const explicitExternalMap = startMapId && startMapId !== "MAP_PALLET_TOWN_PLAYERS_HOUSE_2F";
-      if (!HOENN) await initializeViewerSession(index.initialFlags, {
-        forceTemporary: !!explicitExternalMap,
-        gender: state.playerChar === "leaf" ? C.FEMALE : C.MALE,
-      });
-      if (!HOENN && startMapId && !index.maps[startMapId]) await changeNavigationWorld(startMapId);
-      const checkpoint=!HOENN?viewerCheckpoint():undefined;
-      if(checkpoint&&(!startMapId||startMapId===checkpoint.mapId)){
-        await rom.loadMap(checkpoint.mapId);
-        applyViewerObjects(savedViewerObjects(checkpoint.mapId));
+      if (!HOENN) {
+        const explicitExternalMap = startMapId && startMapId !== "MAP_PALLET_TOWN_PLAYERS_HOUSE_2F";
+        await initializeViewerSession(index.initialFlags, {
+          forceTemporary: !!explicitExternalMap,
+          gender: state.playerChar === "leaf" ? C.FEMALE : C.MALE,
+        });
+        if (startMapId && !index.maps[startMapId]) await changeNavigationWorld(startMapId);
+        const checkpoint = viewerCheckpoint();
+        if (checkpoint && (!startMapId || startMapId === checkpoint.mapId)) {
+          await rom.loadMap(checkpoint.mapId);
+          applyViewerObjects(savedViewerObjects(checkpoint.mapId));
+        }
+        const valid = startPlayer && startPlayer.x >= minX && startPlayer.y >= minY
+          && startPlayer.x < minX + index.world.width && startPlayer.y < minY + index.world.height;
+        if (!startPlayer && viewerCheckpoint()) await continueViewerSession();
+        else await startExploration(valid ? startPlayer!.x : undefined, valid ? startPlayer!.y : undefined);
+      } else {
+        const valid = startPlayer && startPlayer.x >= minX && startPlayer.y >= minY
+          && startPlayer.x < minX + index.world.width && startPlayer.y < minY + index.world.height;
+        await startExploration(valid ? startPlayer!.x : undefined, valid ? startPlayer!.y : undefined);
       }
-      const valid = startPlayer && startPlayer.x >= minX && startPlayer.y >= minY
-        && startPlayer.x < minX + index.world.width && startPlayer.y < minY + index.world.height;
-      if (!HOENN && !startPlayer && viewerCheckpoint()) await continueViewerSession();
-      else await startExploration(valid ? startPlayer!.x : undefined, valid ? startPlayer!.y : undefined);
     }
     document.body.removeAttribute("aria-busy");
     performance.mark("viewer-interactive");
