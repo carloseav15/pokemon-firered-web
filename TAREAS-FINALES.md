@@ -28,6 +28,7 @@ cuevas (Golpe Roca, Fuerza, Islas Espuma) y controles táctiles. Detalle en Git
 2. [x] **Estado de vídeo del mapa.** Portados `InitOverworldBgs` / `InitOverworldGraphicsRegisters` (`c271686c`).
 3. [x] **Historia (punto 9) e inicio definitivo (11)**: integrados en visor (`7a46461a`, `93927c7b`). Revisión general (10) en curso.
 4. [x] **Visor exploración (audio, atmósfera y pulido visual)**: Bici/surf y gritos ambientales (`afa7efab`), clima (lluvia, tormenta, niebla), cueva oscura (Flash), banner deslizante MapNamePopup y corte parpadeante de batalla (`bc8a4a59`).
+5. [x] **Vida del mapa y técnicas de campo**: Movimiento autónomo de NPCs (`83779086`, deambular fiel según `movementType` sin atravesar paredes) y scripts canónicos de campo (Corte, Golpe Roca y Snorlax vía `EventScript_*` oficiales).
 
 ### Pendientes concretos (de fácil a difícil)
 - [ ] Ganar a Brock con el inicial sin preparar el nivel (hay que entrenar; el inicial
