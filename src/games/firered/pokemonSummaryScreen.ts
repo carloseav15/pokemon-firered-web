@@ -396,7 +396,7 @@ export async function preloadSummaryScreen(): Promise<void> {
     loadCData("pokemon_summary_screen", "battle_main", "move_descriptions", "pokeball", "mon_markings", "data"),
     preloadPacks([
       "graphics_summary_screen", "graphics_interface", "pokemon",
-      "graphics_text_window", "graphics_fonts", "graphics_misc", "pokeball",
+      "graphics_text_window", "graphics_fonts", "graphics_misc",
     ]),
   ]);
 }
