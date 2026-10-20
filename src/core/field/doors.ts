@@ -5,8 +5,9 @@
 import { sound } from "../audio/sound";
 import * as C from "@game/generated/constants";
 import * as MB from "@game/generated/metatileBehavior";
+import * as MBEmerald from "../../games/emerald/generated/metatileBehavior";
 import { b64, rom } from "../rom";
-import { cdata, cdataAny, symName } from "../hw/assets";
+import { cdata, cdataAny, hasCData, symName } from "../hw/assets";
 import { tasks, type TaskFunc } from "../gba/tasks";
 import type { Overworld } from "./overworld";
 
@@ -14,9 +15,14 @@ const SIZE_1x2 = 1;
 const CLOSED = -1;
 const DOOR_SOUND_NORMAL = 0;
 
+function isWarpDoor(behavior: number): boolean {
+  return MB.MetatileBehavior_IsWarpDoor_2(behavior) || MBEmerald.MetatileBehavior_IsDoor(behavior);
+}
+
 type DoorGfx = { metatile: number; sound: number; size: number; file: string; palettes: number[] };
 type DoorAnimFrame = { duration: number; tileOffset: number };
-type DoorGraphicsCData = { metatileId: number; sound: number; size: number; tiles: unknown; paletteNums: unknown };
+type DoorAnimFrameCData = { duration?: number; time?: number; tileOffset?: number; offset?: number };
+type DoorGraphicsCData = { metatileId?: number; metatileNum?: number; sound: number; size: number; tiles: unknown; paletteNums?: unknown; palettes?: unknown };
 
 /** BuildDoorTiles (field_door.c), adapted to the four visible bottom-layer descriptors used by Canvas. */
 export function BuildDoorTiles(tileNum: number, paletteNums: ArrayLike<number>, paletteOffset: number): Uint16Array {
@@ -65,14 +71,16 @@ export class DoorAnimator {
 
   private table(): DoorGfx[] {
     if (!this.gfx) {
-      const source = cdata<DoorGraphicsCData[]>("field_door", "sDoorGraphics");
-      this.gfx = source.filter((door) => typeof door.metatileId === "number").map((door) => {
+      const source = hasCData("field_door", "sDoorAnimGraphicsTable")
+        ? cdata<DoorGraphicsCData[]>("field_door", "sDoorAnimGraphicsTable")
+        : cdata<DoorGraphicsCData[]>("field_door", "sDoorGraphics");
+      this.gfx = source.filter((door) => typeof (door.metatileId ?? door.metatileNum) === "number").map((door) => {
         const tileSymbol = symName(door.tiles);
-        const paletteSymbol = symName(door.paletteNums);
+        const paletteSymbol = symName(door.paletteNums ?? door.palettes);
         if (!tileSymbol || !paletteSymbol) throw new Error("invalid sDoorGraphics cdata reference");
         const palettes = cdataAny<number[]>(paletteSymbol);
         if (!palettes) throw new Error(`missing door palette cdata ${paletteSymbol}`);
-        return { metatile: door.metatileId, sound: door.sound, size: door.size, file: doorImageName(tileSymbol), palettes };
+        return { metatile: (door.metatileId ?? door.metatileNum)!, sound: door.sound, size: door.size, file: doorImageName(tileSymbol), palettes };
       });
     }
     return this.gfx;
@@ -90,7 +98,8 @@ export class DoorAnimator {
   }
 
   GetDoorSoundEffect(x: number, y: number): number {
-    return sound.c(this.GetDoorSoundType(x, y) === DOOR_SOUND_NORMAL ? "SE_DOOR" : "SE_SLIDING_DOOR");
+    const soundType = this.GetDoorSoundType(x, y);
+    return sound.c(soundType === DOOR_SOUND_NORMAL ? "SE_DOOR" : soundType === 2 ? "SE_REPEL" : "SE_SLIDING_DOOR");
   }
 
   private GetDoorSoundType(x: number, y: number): number {
@@ -100,15 +109,39 @@ export class DoorAnimator {
   private frames(name: string): DoorAnimFrame[] {
     let frames = this.animFrames.get(name);
     if (!frames) {
-      frames = cdata<DoorAnimFrame[]>("field_door", name)
-        .filter((frame) => typeof frame.duration === "number")
-        .map((frame) => ({
-          duration: frame.duration,
-          tileOffset: frame.tileOffset === 0xffff ? CLOSED : frame.tileOffset / C.TILE_SIZE_4BPP,
-        }));
+      frames = cdata<DoorAnimFrameCData[]>("field_door", name)
+        .filter((frame) => typeof (frame.duration ?? frame.time) === "number" && (frame.duration ?? frame.time)! > 0)
+        .map((frame) => {
+          const duration = (frame.duration ?? frame.time)!;
+          const rawOffset = frame.tileOffset ?? frame.offset ?? 0;
+          return {
+            duration,
+            tileOffset: rawOffset === 0xffff || rawOffset === -1 ? CLOSED : rawOffset / C.TILE_SIZE_4BPP,
+          };
+        });
       this.animFrames.set(name, frames);
     }
     return frames;
+  }
+
+  private getOpenFrames(door: DoorGfx): DoorAnimFrame[] {
+    if (hasCData("field_door", "sDoorOpenAnimFrames")) {
+      return door.size === 2 && hasCData("field_door", "sBigDoorOpenAnimFrames")
+        ? this.frames("sBigDoorOpenAnimFrames")
+        : this.frames("sDoorOpenAnimFrames");
+    }
+    const suffix = door.size === SIZE_1x2 ? "Large" : "Small";
+    return this.frames(`sDoorAnimFrames_Open${suffix}`);
+  }
+
+  private getCloseFrames(door: DoorGfx): DoorAnimFrame[] {
+    if (hasCData("field_door", "sDoorCloseAnimFrames")) {
+      return door.size === 2 && hasCData("field_door", "sBigDoorCloseAnimFrames")
+        ? this.frames("sBigDoorCloseAnimFrames")
+        : this.frames("sDoorCloseAnimFrames");
+    }
+    const suffix = door.size === SIZE_1x2 ? "Large" : "Small";
+    return this.frames(`sDoorAnimFrames_Close${suffix}`);
   }
 
   private StartDoorAnimationTask(door: DoorGfx, frames: DoorAnimFrame[], x: number, y: number): number {
@@ -126,37 +159,35 @@ export class DoorAnimator {
   private AnimateDoorOpenInternal(x: number, y: number): number {
     const door = this.doorAt(x, y);
     if (!door) return -1;
-    const suffix = door.size === SIZE_1x2 ? "Large" : "Small";
-    return this.StartDoorAnimationTask(door, this.frames(`sDoorAnimFrames_Open${suffix}`), x, y);
+    return this.StartDoorAnimationTask(door, this.getOpenFrames(door), x, y);
   }
 
   private StartDoorCloseAnimation(x: number, y: number): number {
     const door = this.doorAt(x, y);
     if (!door) return -1;
-    const suffix = door.size === SIZE_1x2 ? "Large" : "Small";
-    return this.StartDoorAnimationTask(door, this.frames(`sDoorAnimFrames_Close${suffix}`), x, y);
+    return this.StartDoorAnimationTask(door, this.getCloseFrames(door), x, y);
   }
 
   FieldAnimateDoorOpen(x: number, y: number): number {
-    if (!MB.MetatileBehavior_IsWarpDoor_2(this.ow.map.behaviorAt(x, y))) return -1;
+    if (!isWarpDoor(this.ow.map.behaviorAt(x, y))) return -1;
     return this.AnimateDoorOpenInternal(x, y);
   }
 
   FieldAnimateDoorClose(x: number, y: number): number {
-    if (!MB.MetatileBehavior_IsWarpDoor_2(this.ow.map.behaviorAt(x, y))) return -1;
+    if (!isWarpDoor(this.ow.map.behaviorAt(x, y))) return -1;
     return this.StartDoorCloseAnimation(x, y);
   }
 
   FieldSetDoorOpened(x: number, y: number): void {
-    if (!MB.MetatileBehavior_IsWarpDoor_2(this.ow.map.behaviorAt(x, y))) return;
+    if (!isWarpDoor(this.ow.map.behaviorAt(x, y))) return;
     const door = this.doorAt(x, y);
     if (!door) return;
-    const frames = this.frames(`sDoorAnimFrames_Open${door.size === SIZE_1x2 ? "Large" : "Small"}`);
+    const frames = this.getOpenFrames(door);
     this.DrawOpenedDoor(door, frames, x, y);
   }
 
   FieldSetDoorClosed(x: number, y: number): void {
-    if (!MB.MetatileBehavior_IsWarpDoor_2(this.ow.map.behaviorAt(x, y))) return;
+    if (!isWarpDoor(this.ow.map.behaviorAt(x, y))) return;
     const door = this.doorAt(x, y);
     if (door) this.DrawClosedDoor(door, x, y);
   }

@@ -29,7 +29,7 @@ import { SurfSupport } from "./render/surf";
 // interacción y deambulación de NPCs, música ambiental dinámica (12 pistas BGM) y efectos de sonido (SE).
 
 import type { MapHeader, MapObjectTemplate, TilesetData } from "@core/rom";
-import { NavigationWarps, warpAt, stepWarpBehavior, inputWarpBehavior, warpArrivalDirection, type WarpAddress } from "./navigation";
+import { NavigationWarps, warpAt, stepWarpBehavior, inputWarpBehavior, isWarpDoorBehavior, warpArrivalDirection, type WarpAddress } from "./navigation";
 import { Rom, rom, setDataRoot } from "@core/rom";
 import { TileRenderer } from "@core/field/tileRenderer";
 import { TilesetAnimator } from "@core/field/tilesetAnimator";
@@ -568,11 +568,12 @@ function updatePlayerDisplay(): void {
   const flip = playerDir === "east";
   if (!avatarAnimator) {
     const facing = playerDir === "south" ? 0 : playerDir === "north" ? playerMode === "surf" && HOENN ? 2 : 1 : playerMode === "surf" && HOENN ? 4 : 2;
-    frameIdx = playerMode === "surf" || !playerMoving ? facing
+    frameIdx = !playerMoving ? facing
+      : playerMode === "surf" && HOENN ? (playerDir === "south" ? (playerStep % 2 === 0 ? 0 : 1) : playerDir === "north" ? (playerStep % 2 === 0 ? 2 : 3) : (playerStep % 2 === 0 ? 4 : 5))
       : (playerDir === "south" ? 3 : playerDir === "north" ? 5 : 7) + (playerStep % 2 === 0 ? 0 : 1);
   }
 
-  const airborne = !!avatarAnimator && isStepping && (shoreAnchor !== null || avatarAnimator.frame(state.playerChar, playerMode, playerDir, viewerClock.tick).action === "jump");
+  const airborne = isStepping && (shoreAnchor !== null || (avatarAnimator ? avatarAnimator.frame(state.playerChar, playerMode, playerDir, viewerClock.tick).action === "jump" : Math.abs(playerVisualY - groundVisualY) > 0.5));
   const inGrass = !airborne && worldGrid.isGrassTile(playerX, playerY) && playerMode !== "surf" && !isBike;
   playerEl.style.clipPath = inGrass ? "inset(0 0 4px 0)" : "none";
 
@@ -601,11 +602,17 @@ function updatePlayerDisplay(): void {
     playerEl.style.transform = `scale(${frame.hFlip ? -1 : 1}, ${frame.vFlip ? -1 : 1})`;
     playerEl.dataset.animation = JSON.stringify(frame);
   } else {
-    playerEl.style.backgroundImage = `url(${getPlayerSpriteSheet(state.playerChar, playerMode, running)})`;
+    playerEl.style.backgroundImage = `url(${getPlayerSpriteSheet(state.playerChar, playerMode, running, state.bikeType)})`;
     playerEl.style.backgroundPosition = `-${frameIdx * spriteW}px 0px`;
     playerEl.style.transform = flip ? "scaleX(-1)" : "scaleX(1)";
     const groundY = airborne ? groundVisualY : py;
     avatarDepth?.update(px, groundY, minX, minY, playerElevation);
+    if (jumpShadow && isStepping && airborne) {
+      jumpShadow.setPriority(priority);
+      jumpShadow.update(true, px, groundY, spriteH, "SHADOW_SIZE_M");
+    } else {
+      jumpShadow?.hide();
+    }
   }
 
   playerEl.style.left=`${parseFloat(playerEl.style.left)+warpOffsetX}px`;
@@ -842,8 +849,8 @@ function checkTrainerSight(): void {
 async function preloadExplorationSprites(): Promise<void> {
   const halfW = viewport.clientWidth / camera.zoom / TILE / 2 + 2;
   const halfH = viewport.clientHeight / camera.zoom / TILE / 2 + 2;
-  const urls = new Set([getPlayerSpriteSheet(state.playerChar, "walk"), getPlayerSpriteSheet(state.playerChar, "walk", true),
-    getPlayerSpriteSheet(state.playerChar, "surf"), getPlayerSpriteSheet(state.playerChar, "bike")]);
+  const urls = new Set([getPlayerSpriteSheet(state.playerChar, "walk", false, state.bikeType), getPlayerSpriteSheet(state.playerChar, "walk", true, state.bikeType),
+    getPlayerSpriteSheet(state.playerChar, "surf", false, state.bikeType), getPlayerSpriteSheet(state.playerChar, "bike", false, state.bikeType)]);
   for (const ent of entityManager.entities) if (Math.abs(ent.gx - playerX) <= halfW && Math.abs(ent.gy - playerY) <= halfH) {
     const gfx = gfxInfoOf(ent.element.graphics ?? "") ?? fallbackGfx();
     urls.add(`${HOENN ? "/emerald" : "/fr"}/${gfx.file}`);
@@ -1221,7 +1228,7 @@ function processPlayerStep(): void {
   const previousDirection = playerDir;
   playerDir = forcedStep?.facing ?? targetDir;
   if (dx === 0 && dy === 0) {playerMoving=false;avatarAnimator?.stop(state.playerChar,playerMode,playerDir,viewerClock.tick);updatePlayerDisplay();return;}
-  if (!forcedStep && !HOENN && tryNavigationWarp("input", playerDir)) return;
+  if (!forcedStep && tryNavigationWarp("input", playerDir)) return;
   // PlayerNotOnBikeTurningInPlace -> PlayerTurnInPlace -> WalkInPlaceFast (8 ticks).
   if (!forcedStep && avatarAnimator && playerMode !== "bike" && previousDirection !== targetDir && !playerMoving) {
     isStepping = true; playerMoving = true; stepRunning = false;
@@ -1240,7 +1247,7 @@ function processPlayerStep(): void {
     return;
   }
 
-  if (!forcedStep && !HOENN && tryNavigationWarp("front", playerDir)) return;
+  if (!forcedStep && tryNavigationWarp("front", playerDir)) return;
   const allowAutoSurf = HOENN || new URLSearchParams(location.hash.slice(1)).get("autosurf") === "1" || new URLSearchParams(location.hash.slice(1)).get("autoSurf") === "1";
   const plan = forcedStep?.plan ?? planStep(worldGrid, playerX, playerY, playerDir, playerMode, playerCurrentElevation, allowAutoSurf);
   const targetX = plan.x, targetY = plan.y;
@@ -1305,7 +1312,7 @@ function processPlayerStep(): void {
 
       if (isLedgeJump || transition) {
         const elapsedTicks = tick - startTick;
-        playerVisualY += HOENN ? -Math.sin(t * Math.PI) * 12 : t >= 1 ? 0 : jumpArc[Math.min(15, Math.max(0, elapsedTicks - 1) >> 1)]!;
+        playerVisualY += t >= 1 ? 0 : (jumpArc ? jumpArc[Math.min(15, Math.max(0, elapsedTicks - 1) >> 1)]! : -Math.sin(t * Math.PI) * 12);
       }
 
       updatePlayerDisplay();
@@ -1355,7 +1362,7 @@ function processPlayerStep(): void {
         }
 
         if (blockedArrival !== `${playerX},${playerY}`) blockedArrival = null;
-        if (!HOENN && tryNavigationWarp("step", playerDir)) return;
+        if (tryNavigationWarp("step", playerDir)) return;
         if (HOENN || !engineInteraction) checkTrainerSight();
         if (!HOENN && engineInteraction) {
           // field_control_avatar.c CheckStandardWildEncounter on each tile-center step.
@@ -1493,7 +1500,7 @@ function tryNavigationWarp(phase: "input" | "front" | "step", direction: Directi
   const warpId = warpAt(header, point.x - info.x, point.y - info.y, playerElevation);
   if (warpId < 0) return false;
   const behavior = worldGrid.behaviorAt(point.x, point.y);
-  const active = phase === "front" ? MB.MetatileBehavior_IsWarpDoor(behavior)
+  const active = phase === "front" ? isWarpDoorBehavior(behavior)
     : phase === "input" ? inputWarpBehavior(behavior, direction) : stepWarpBehavior(behavior);
   if (!active) return false;
   void followNavigationWarp(header, warpId, phase);
@@ -1506,21 +1513,23 @@ async function walkWarpStep(direction: Direction): Promise<void> {
   const dy = direction === "north" ? -1 : direction === "south" ? 1 : 0;
   const x = playerVisualX, y = playerVisualY, started = viewerClock.tick;
   playerDir = direction; isStepping = true;
-  avatarAnimator!.begin(state.playerChar, playerMode, direction, "walk", started);
-  const offsets = avatarAnimator!.offsets("walk");
+  avatarAnimator?.begin(state.playerChar, playerMode, direction, "walk", started);
+  const offsets = avatarAnimator?.offsets("walk");
+  const duration = offsets ? offsets.length * GBA_FRAME_MS : 160;
   await new Promise<void>(resolve => {
     const unsubscribe = viewerClock.subscribe(frame => {
       const elapsed = frame.tick - started;
-      const progress = elapsed >= offsets.length ? 1 : offsets[Math.max(0, elapsed - 1)]! / TILE;
+      const progress = offsets ? (elapsed >= offsets.length ? 1 : offsets[Math.max(0, elapsed - 1)]! / TILE) : Math.min(1, (elapsed * GBA_FRAME_MS) / duration);
       playerVisualX = x + dx * TILE * progress;
       playerVisualY = groundVisualY = y + dy * TILE * progress;
       updatePlayerDisplay();
-      if (elapsed < offsets.length) return;
+      if (progress < 1) return;
       unsubscribe(); playerX += dx; playerY += dy; isStepping = false;
       const elevation = worldGrid.elevationAt(playerX,playerY);
       if (elevation !== 0 && elevation !== 15) playerElevation = elevation;
       if (elevation !== 15) playerCurrentElevation = elevation & 0xf;
-      avatarAnimator!.stop(state.playerChar, playerMode, direction, frame.tick);
+      avatarAnimator?.stop(state.playerChar, playerMode, direction, frame.tick);
+      updatePlayerDisplay();
       resolve();
     });
   });
@@ -1752,10 +1761,13 @@ async function followNavigationWarp(source: MapHeader, warpId: number, phase: "i
   let stopStairs: (()=>void) | null = null;
   try {
     const destination = address ? await navigationWarps.resolveAddress(address) : await navigationWarps.resolve(source, warpId);
-    await loadCData("map_preview_screen");
-    const cavePreview=source.regionMapSection!==destination.header.regionMapSection
-      && cdata<Array<{mapsec:number;type:number}>>("map_preview_screen","sMapPreviewScreenData")
-        .some(row=>row.mapsec===destination.header.regionMapSection&&row.type===C.MPS_TYPE_CAVE);
+    let cavePreview = false;
+    if (!HOENN) {
+      await loadCData("map_preview_screen");
+      cavePreview = source.regionMapSection !== destination.header.regionMapSection
+        && cdata<Array<{mapsec:number;type:number}>>("map_preview_screen","sMapPreviewScreenData")
+          .some(row=>row.mapsec===destination.header.regionMapSection&&row.type===C.MPS_TYPE_CAVE);
+    }
     if (phase === "front") {
       const sourceInfo = findMapAt(playerX,playerY)![1];
       const entry = source.warps[warpId]!;
@@ -1771,7 +1783,7 @@ async function followNavigationWarp(source: MapHeader, warpId: number, phase: "i
     }
     if(phase==="input"&&MB.MetatileBehavior_IsDirectionalStairWarp(worldGrid.behaviorAt(playerX,playerY))){
       if(playerMode==="bike"){
-        playerMode="walk";avatarAnimator!.stop(state.playerChar,playerMode,playerDir,viewerClock.tick);
+        playerMode="walk";avatarAnimator?.stop(state.playerChar,playerMode,playerDir,viewerClock.tick);
         updatePlayerDisplay();await warpVisuals!.wait(12);
       }
       stopStairs=startStairMovement(worldGrid.behaviorAt(playerX,playerY),false);
@@ -1822,7 +1834,7 @@ async function followNavigationWarp(source: MapHeader, warpId: number, phase: "i
       playerWarpHidden=false;updatePlayerDisplay();
       await Promise.all([warpVisuals!.fadeScreen(fromWhite?FADE_FROM_WHITE:FADE_FROM_BLACK),animateEscalator(false,behavior)]);
       await walkWarpStep("east");
-    } else if (MB.MetatileBehavior_IsWarpDoor_2(behavior)) {
+    } else if (isWarpDoorBehavior(behavior)) {
       playerWarpHidden=true;updatePlayerDisplay();
       const resource=fillSources.get(destination.mapId);
       if(!resource||!avatarDepth)throw Error("Arrival door is not resident");
@@ -1836,7 +1848,7 @@ async function followNavigationWarp(source: MapHeader, warpId: number, phase: "i
       await warpVisuals!.wait(14);await door.animate(false);
       await Promise.all([walking,fade,wipe]);door.dispose();door=null;
     } else {
-      const nonAnimDoor=MB.MetatileBehavior_IsNonAnimDoor(behavior);
+      const nonAnimDoor = MB.MetatileBehavior_IsNonAnimDoor(behavior) || MBEmerald.MetatileBehavior_IsNonAnimDoor(behavior);
       playerWarpHidden=nonAnimDoor;updatePlayerDisplay();
       const fade=warpVisuals!.fadeScreen(fromWhite?FADE_FROM_WHITE:FADE_FROM_BLACK);
       if(MB.MetatileBehavior_IsDirectionalStairWarp(behavior)){
@@ -1848,7 +1860,7 @@ async function followNavigationWarp(source: MapHeader, warpId: number, phase: "i
     }
     blockedArrival = `${playerX},${playerY}`;
     fieldEffects.onGroundStep("spawn", { x:playerX,y:playerY,previousX:playerX,previousY:playerY,direction:playerDir,previousDirection:playerDir,
-      landingJump:false,vehicle:playerMode,elevation:playerElevation,priority:cdata<number[]>("event_object_movement","sElevationToPriority")[playerElevation] });
+      landingJump:false,vehicle:playerMode,elevation:playerElevation,priority:HOENN?(hasCData("event_object_movement","sElevationToPriority")?cdata<number[]>("event_object_movement","sElevationToPriority")[playerElevation]??2:2):cdata<number[]>("event_object_movement","sElevationToPriority")[playerElevation] });
     updatePlayerDisplay(); writeHash();
   } catch (error) {
     console.error("Navigation warp", error);
@@ -1877,15 +1889,19 @@ async function build(): Promise<void> {
     return (await response.json()).maps as typeof allMaps;
   });
   const jumpReady = !startExplore ? Promise.resolve() : loadCData("event_object_movement").then(() => {
-    if (!HOENN) {
-      jumpArc = cdata<number[]>("event_object_movement", "sJumpY_High");
-      if (jumpArc.length !== 16 || jumpArc.some(value => !Number.isInteger(value))) throw new Error("Invalid source jump arc");
-    }
+    jumpArc = cdata<number[]>("event_object_movement", "sJumpY_High");
+    if (jumpArc.length !== 16 || jumpArc.some(value => !Number.isInteger(value))) throw new Error("Invalid source jump arc");
   });
 
   if (loadingText) loadingText.textContent = `Descargando índice cartográfico de ${GAME_NAME}…`;
-  const avatarReady = startExplore ? (HOENN ? jumpReady.then(() => {
+  const avatarReady = startExplore ? (HOENN ? jumpReady.then(async () => {
     avatarDepth = new AvatarDepth(content);
+    warpVisuals = new ViewerWarpVisuals(document.getElementById("main")!, viewerClock);
+    try {
+      jumpShadow = await JumpShadow.create(content);
+    } catch (e) {
+      console.warn("No jump shadow in Hoenn", e);
+    }
   }) : fetch("/fr/objects.json").then(async response => {
     if (!response.ok) throw new Error(`objects.json: HTTP ${response.status}`);
     const data = await response.json() as AvatarData;

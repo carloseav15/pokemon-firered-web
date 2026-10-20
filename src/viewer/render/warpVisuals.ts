@@ -2,19 +2,23 @@ import { DoorAnimator } from "@core/field/doors";
 import { TaskManager } from "@core/gba/tasks";
 import { PaletteFade, RGB_BLACK } from "@core/gba/fade";
 import { loadCData } from "@core/hw/assets";
-import type { Rom } from "@core/rom";
+import { DATA_ROOT, type Rom } from "@core/rom";
 import type { ViewerClock } from "../clock";
 import type { FillSource } from "./fill";
 import type { WorldGrid } from "../data/worldGrid";
 import type { AvatarDepth } from "./depth";
 
-let doorData: Promise<Rom["doors"]> | null = null;
+const doorDataCache = new Map<string, Promise<Rom["doors"]>>();
 function loadDoors(): Promise<Rom["doors"]> {
-  if (!doorData) doorData = Promise.all([loadCData("field_door"), fetch("/fr/gfx/doors.json").then(async r => {
-    if (!r.ok) throw Error(`doors.json: HTTP ${r.status}`);
-    return await r.json() as Rom["doors"];
-  })]).then(([, data]) => data).catch(error => { doorData = null; throw error; });
-  return doorData;
+  let p = doorDataCache.get(DATA_ROOT);
+  if (!p) {
+    p = Promise.all([loadCData("field_door"), fetch(`${DATA_ROOT}/gfx/doors.json`).then(async r => {
+      if (!r.ok) throw Error(`doors.json: HTTP ${r.status}`);
+      return await r.json() as Rom["doors"];
+    })]).then(([, data]) => data).catch(error => { doorDataCache.delete(DATA_ROOT); throw error; });
+    doorDataCache.set(DATA_ROOT, p);
+  }
+  return p;
 }
 
 /** field_door.c, with its existing animator and an isolated task list on the viewer clock.

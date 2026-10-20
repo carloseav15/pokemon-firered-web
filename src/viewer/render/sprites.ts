@@ -49,12 +49,13 @@ export const GFX_MAP: Record<string, GfxInfo> = {
   OBJ_EVENT_GFX_YOUNGSTER: { file: "objects/youngster__npcblue.png", w: 16, h: 32 },
 };
 
-export function getPlayerSpriteSheet(char: "red" | "leaf", vehicle: "walk" | "bike" | "surf", isRunning = false): string {
+export function getPlayerSpriteSheet(char: "red" | "leaf", vehicle: "walk" | "bike" | "surf", isRunning = false, bikeType: "mach" | "acro" = "mach"): string {
   if (hoennGfx) {
     // Emerald: Brendan (Rojo) y May (Hoja). Andar y correr son hojas de 9 fotogramas de 16x32;
-    // el surf es una hoja de 6 fotogramas de 32x32; la Mach Bike es de 9 fotogramas de 32x32.
+    // el surf es una hoja de 6 fotogramas de 32x32; la Mach Bike y Acro Bike son de 9 fotogramas de 32x32.
     const who = char === "leaf" ? "may" : "brendan";
-    const kind = vehicle === "surf" ? "surfing" : vehicle === "bike" ? "machbike" : isRunning ? "running" : "normal";
+    const bikeKind = bikeType === "acro" ? "acrobike" : "machbike";
+    const kind = vehicle === "surf" ? "surfing" : vehicle === "bike" ? bikeKind : isRunning ? "running" : "normal";
     return `/emerald/objects/${who}${kind}__${who}.png`;
   }
   const isLeaf = char === "leaf";

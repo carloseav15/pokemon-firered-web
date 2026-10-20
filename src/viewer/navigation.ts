@@ -1,5 +1,6 @@
 import type { MapHeader, MapWarp } from "@core/rom";
 import * as MB from "../games/firered/generated/metatileBehavior";
+import * as MBEmerald from "../games/emerald/generated/metatileBehavior";
 import type { Direction } from "./render/sprites";
 
 // field_control_avatar.c: local event coordinates and elevation, independently of atlas placement.
@@ -7,21 +8,29 @@ export function warpAt(header: MapHeader, x: number, y: number, elevation: numbe
   return header.warps.findIndex(w => w.x === x && w.y === y && (w.elevation === 0 || w.elevation === elevation));
 }
 
+export function isWarpDoorBehavior(behavior: number): boolean {
+  return MB.MetatileBehavior_IsWarpDoor(behavior) || MBEmerald.MetatileBehavior_IsDoor(behavior);
+}
+
 export function stepWarpBehavior(behavior: number): boolean {
-  return MB.MetatileBehavior_IsWarpDoor(behavior) || MB.MetatileBehavior_IsLadder(behavior)
-    || MB.MetatileBehavior_IsEscalator(behavior) || MB.MetatileBehavior_IsNonAnimDoor(behavior)
-    || MB.MetatileBehavior_IsLavaridgeB1FWarp(behavior) || MB.MetatileBehavior_IsLavaridge1FWarp(behavior)
-    || MB.MetatileBehavior_IsWarpPad(behavior) || MB.MetatileBehavior_IsFallWarp(behavior)
-    || MB.MetatileBehavior_IsUnionRoomWarp(behavior);
+  return MB.MetatileBehavior_IsWarpDoor(behavior) || MBEmerald.MetatileBehavior_IsDoor(behavior)
+    || MB.MetatileBehavior_IsLadder(behavior) || MBEmerald.MetatileBehavior_IsLadder(behavior)
+    || MB.MetatileBehavior_IsEscalator(behavior) || MBEmerald.MetatileBehavior_IsEscalator(behavior)
+    || MB.MetatileBehavior_IsNonAnimDoor(behavior) || MBEmerald.MetatileBehavior_IsNonAnimDoor(behavior)
+    || MB.MetatileBehavior_IsLavaridgeB1FWarp(behavior) || MBEmerald.MetatileBehavior_IsLavaridgeB1FWarp(behavior)
+    || MB.MetatileBehavior_IsLavaridge1FWarp(behavior) || MBEmerald.MetatileBehavior_IsLavaridge1FWarp(behavior)
+    || MB.MetatileBehavior_IsWarpPad(behavior) || MBEmerald.MetatileBehavior_IsAquaHideoutWarp(behavior) || MBEmerald.MetatileBehavior_IsMossdeepGymWarp(behavior)
+    || MB.MetatileBehavior_IsFallWarp(behavior) || MBEmerald.MetatileBehavior_IsMtPyreHole(behavior) || MBEmerald.MetatileBehavior_IsCrackedFloorHole(behavior)
+    || MB.MetatileBehavior_IsUnionRoomWarp(behavior) || MBEmerald.MetatileBehavior_IsUnionRoomWarp(behavior);
 }
 
 export function inputWarpBehavior(behavior: number, direction: Direction): boolean {
   switch (direction) {
-    case "north": return MB.MetatileBehavior_IsNorthArrowWarp(behavior);
-    case "south": return MB.MetatileBehavior_IsSouthArrowWarp(behavior);
-    case "west": return MB.MetatileBehavior_IsWestArrowWarp(behavior)
+    case "north": return MB.MetatileBehavior_IsNorthArrowWarp(behavior) || MBEmerald.MetatileBehavior_IsNorthArrowWarp(behavior);
+    case "south": return MB.MetatileBehavior_IsSouthArrowWarp(behavior) || MBEmerald.MetatileBehavior_IsSouthArrowWarp(behavior);
+    case "west": return MB.MetatileBehavior_IsWestArrowWarp(behavior) || MBEmerald.MetatileBehavior_IsWestArrowWarp(behavior)
       || MB.MetatileBehavior_IsDirectionalUpLeftStairWarp(behavior) || MB.MetatileBehavior_IsDirectionalDownLeftStairWarp(behavior);
-    case "east": return MB.MetatileBehavior_IsEastArrowWarp(behavior)
+    case "east": return MB.MetatileBehavior_IsEastArrowWarp(behavior) || MBEmerald.MetatileBehavior_IsEastArrowWarp(behavior)
       || MB.MetatileBehavior_IsDirectionalUpRightStairWarp(behavior) || MB.MetatileBehavior_IsDirectionalDownRightStairWarp(behavior);
   }
 }
@@ -30,14 +39,16 @@ export type WarpAddress = { mapId: string; warpId: number; x?: number; y?: numbe
 
 /** overworld.c GetAdjustedInitialDirection after StoreInitialPlayerAvatarState (no scripted direction override). */
 export function warpArrivalDirection(behavior: number, previous: Direction): Direction {
-  if (MB.MetatileBehavior_IsDeepSouthWarp(behavior) || MB.MetatileBehavior_IsSouthArrowWarp(behavior)) return "north";
-  if (MB.MetatileBehavior_IsNonAnimDoor(behavior) || MB.MetatileBehavior_IsWarpDoor_2(behavior)
-    || MB.MetatileBehavior_IsNorthArrowWarp(behavior)) return "south";
-  if (MB.MetatileBehavior_IsWestArrowWarp(behavior)
+  if (MB.MetatileBehavior_IsDeepSouthWarp(behavior) || MBEmerald.MetatileBehavior_IsDeepSouthWarp(behavior)
+    || MB.MetatileBehavior_IsSouthArrowWarp(behavior) || MBEmerald.MetatileBehavior_IsSouthArrowWarp(behavior)) return "north";
+  if (MB.MetatileBehavior_IsNonAnimDoor(behavior) || MBEmerald.MetatileBehavior_IsNonAnimDoor(behavior)
+    || MB.MetatileBehavior_IsWarpDoor_2(behavior) || MBEmerald.MetatileBehavior_IsDoor(behavior)
+    || MB.MetatileBehavior_IsNorthArrowWarp(behavior) || MBEmerald.MetatileBehavior_IsNorthArrowWarp(behavior)) return "south";
+  if (MB.MetatileBehavior_IsWestArrowWarp(behavior) || MBEmerald.MetatileBehavior_IsWestArrowWarp(behavior)
     || MB.MetatileBehavior_IsDirectionalUpLeftStairWarp(behavior) || MB.MetatileBehavior_IsDirectionalDownLeftStairWarp(behavior)) return "east";
-  if (MB.MetatileBehavior_IsEastArrowWarp(behavior)
+  if (MB.MetatileBehavior_IsEastArrowWarp(behavior) || MBEmerald.MetatileBehavior_IsEastArrowWarp(behavior)
     || MB.MetatileBehavior_IsDirectionalUpRightStairWarp(behavior) || MB.MetatileBehavior_IsDirectionalDownRightStairWarp(behavior)) return "west";
-  return MB.MetatileBehavior_IsLadder(behavior) ? previous : "south";
+  return (MB.MetatileBehavior_IsLadder(behavior) || MBEmerald.MetatileBehavior_IsLadder(behavior)) ? previous : "south";
 }
 export type ResolvedWarp = WarpAddress & { header: MapHeader; arrival: MapWarp; dynamicReturn: WarpAddress | null };
 

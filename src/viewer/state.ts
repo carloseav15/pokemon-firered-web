@@ -48,6 +48,7 @@ export class ViewerState {
   fillBiomeOverride: FillBiomeOverride = "auto";
   radar = true;
   playerChar: PlayerCharacter = "red";
+  bikeType: "mach" | "acro" = "mach";
   audio = false;
 
   anim: AnimState = {
