@@ -246,8 +246,12 @@ def export_field_effect_objects(constants: dict[str, int]) -> None:
     """gFieldEffectObjectTemplate_* sprite templates (grass, shadows, splashes...) and emoticons."""
     base = DECOMP / "src/data/object_events"
     graphics_text = (base / "object_event_graphics.h").read_text()
-    pics = dict(re.findall(r"(g\w+Pic_\w+)\[\] = INCBIN_U(?:16|32)\(\"([^\"]+)\.4bpp\"\)", graphics_text))
-    palettes = dict(re.findall(r"(g\w+Pal\w*)\[\] = INCBIN_U16\(\"([^\"]+)\.gbapal\"\)", graphics_text))
+    pics = {}
+    for m in re.finditer(r"(g\w+Pic_\w+)\[\]\s*=\s*(?:INCBIN_U(?:16|32)\(\"([^\"]+)\.4bpp\"|INCGFX_U(?:16|32)\(\"([^\"]+)\.png\")", graphics_text):
+        pics[m.group(1)] = m.group(2) or m.group(3)
+    palettes = {}
+    for m in re.finditer(r"(g\w+Pal\w*)\[\]\s*=\s*(?:INCBIN_U16\(\"([^\"]+)\.gbapal\"|INCGFX_U16\(\"([^\"]+)\.pal\",\s*\".gbapal\"\))", graphics_text):
+        palettes[m.group(1)] = m.group(2) or m.group(3)
     movement_c = (DECOMP / "src/event_object_movement.c").read_text()
     block = re.search(r"sObjectEventSpritePalettes\[\] = \{(.*?)\};", movement_c, flags=re.S).group(1)
     obj_palette_tags = {tag: sym for sym, tag in re.findall(r"\{(gObjectEventPal_\w+),\s*(\w+)\}", block)}

@@ -22,6 +22,33 @@ interface FogParticle {
   opacity: number;
 }
 
+interface AshParticle {
+  x: number;
+  y: number;
+  size: number;
+  speedX: number;
+  speedY: number;
+  opacity: number;
+}
+
+interface SandParticle {
+  x: number;
+  y: number;
+  length: number;
+  speedX: number;
+  speedY: number;
+}
+
+interface BubbleParticle {
+  x: number;
+  y: number;
+  radius: number;
+  speedY: number;
+  wobbleSpeed: number;
+  wobbleAmp: number;
+  phase: number;
+}
+
 export class WeatherOverlay {
   private canvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;
@@ -29,6 +56,9 @@ export class WeatherOverlay {
   private requiresFlash = false;
   private rainDrops: RainDrop[] = [];
   private fogParticles: FogParticle[] = [];
+  private ashParticles: AshParticle[] = [];
+  private sandParticles: SandParticle[] = [];
+  private bubbleParticles: BubbleParticle[] = [];
   private thunderTimer = 0;
   private thunderActive = false;
 
@@ -63,6 +93,33 @@ export class WeatherOverlay {
       speedX: 0.4 + Math.random() * 0.4,
       opacity: 0.12 + Math.random() * 0.1,
     }));
+
+    this.ashParticles = Array.from({ length: 40 }, () => ({
+      x: Math.random() * (window.innerWidth + 200),
+      y: Math.random() * window.innerHeight,
+      size: 2 + Math.random() * 2.5,
+      speedX: -1 - Math.random() * 1.5,
+      speedY: 1.5 + Math.random() * 2,
+      opacity: 0.4 + Math.random() * 0.45,
+    }));
+
+    this.sandParticles = Array.from({ length: 50 }, () => ({
+      x: Math.random() * (window.innerWidth + 200),
+      y: Math.random() * window.innerHeight,
+      length: 16 + Math.random() * 18,
+      speedX: -10 - Math.random() * 8,
+      speedY: 4 + Math.random() * 4,
+    }));
+
+    this.bubbleParticles = Array.from({ length: 24 }, () => ({
+      x: Math.random() * window.innerWidth,
+      y: Math.random() * window.innerHeight,
+      radius: 2 + Math.random() * 3,
+      speedY: 1.2 + Math.random() * 1.8,
+      wobbleSpeed: 0.05 + Math.random() * 0.05,
+      wobbleAmp: 1 + Math.random() * 2,
+      phase: Math.random() * Math.PI * 2,
+    }));
   }
 
   setWeather(weather: number): void {
@@ -87,9 +144,11 @@ export class WeatherOverlay {
     const isFog = this.currentWeather === C.WEATHER_FOG_HORIZONTAL || this.currentWeather === C.WEATHER_FOG_DIAGONAL;
     const isAsh = this.currentWeather === C.WEATHER_VOLCANIC_ASH;
     const isSand = this.currentWeather === C.WEATHER_SANDSTORM;
+    const isDrought = this.currentWeather === C.WEATHER_DROUGHT;
+    const isBubbles = this.currentWeather === C.WEATHER_UNDERWATER_BUBBLES || this.currentWeather === C.WEATHER_UNDERWATER;
     const darkCave = this.requiresFlash && !flagGet(C.FLAG_SYS_FLASH_ACTIVE);
 
-    const active = isRain || isFog || isAsh || isSand || darkCave;
+    const active = isRain || isFog || isAsh || isSand || isDrought || isBubbles || darkCave;
     if (!active) {
       if (this.canvas.style.display !== "none") {
         this.ctx.clearRect(0, 0, w, h);
@@ -158,7 +217,7 @@ export class WeatherOverlay {
       this.ctx.restore();
     }
 
-    // 3. Fog (Tower / Routes)
+    // 3. Fog (Tower / Routes / Mt. Pyre)
     if (isFog) {
       this.ctx.save();
       for (const p of this.fogParticles) {
@@ -172,6 +231,81 @@ export class WeatherOverlay {
 
         p.x += p.speedX;
         if (p.x - p.radius > w) p.x = -p.radius;
+      }
+      this.ctx.restore();
+    }
+
+    // 4. Volcanic Ash (Route 113)
+    if (isAsh) {
+      this.ctx.save();
+      for (const p of this.ashParticles) {
+        this.ctx.fillStyle = `rgba(235, 235, 245, ${p.opacity})`;
+        this.ctx.fillRect(p.x, p.y, p.size, p.size);
+
+        p.x += p.speedX;
+        p.y += p.speedY;
+        if (p.y > h || p.x < -10) {
+          p.x = Math.random() * (w + 100);
+          p.y = -10;
+        }
+      }
+      this.ctx.restore();
+    }
+
+    // 5. Sandstorm (Route 111 Desert)
+    if (isSand) {
+      this.ctx.save();
+      // Desert sand tint
+      this.ctx.fillStyle = "rgba(195, 155, 75, 0.12)";
+      this.ctx.fillRect(0, 0, w, h);
+
+      this.ctx.strokeStyle = "rgba(215, 180, 110, 0.5)";
+      this.ctx.lineWidth = 1.2;
+      this.ctx.beginPath();
+      for (const s of this.sandParticles) {
+        this.ctx.moveTo(s.x, s.y);
+        this.ctx.lineTo(s.x + s.speedX * 1.5, s.y + s.speedY * 1.5);
+
+        s.x += s.speedX;
+        s.y += s.speedY;
+        if (s.x < -50 || s.y > h + 20) {
+          s.x = Math.random() * (w + 200);
+          s.y = Math.random() * -30;
+        }
+      }
+      this.ctx.stroke();
+      this.ctx.restore();
+    }
+
+    // 6. Drought / Harsh Sunlight (Groudon / Route 118)
+    if (isDrought) {
+      this.ctx.save();
+      const pulse = 0.18 + 0.06 * Math.sin(Date.now() / 600);
+      this.ctx.fillStyle = `rgba(255, 240, 180, ${pulse})`;
+      this.ctx.fillRect(0, 0, w, h);
+      this.ctx.restore();
+    }
+
+    // 7. Underwater Bubbles (Dive routes)
+    if (isBubbles) {
+      this.ctx.save();
+      this.ctx.fillStyle = "rgba(220, 245, 255, 0.45)";
+      this.ctx.strokeStyle = "rgba(255, 255, 255, 0.75)";
+      this.ctx.lineWidth = 1;
+      for (const b of this.bubbleParticles) {
+        b.phase += b.wobbleSpeed;
+        const wobbleX = Math.sin(b.phase) * b.wobbleAmp;
+
+        this.ctx.beginPath();
+        this.ctx.arc(b.x + wobbleX, b.y, b.radius, 0, Math.PI * 2);
+        this.ctx.fill();
+        this.ctx.stroke();
+
+        b.y -= b.speedY;
+        if (b.y < -10) {
+          b.y = h + 10;
+          b.x = Math.random() * w;
+        }
       }
       this.ctx.restore();
     }

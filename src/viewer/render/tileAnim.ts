@@ -26,7 +26,10 @@ export type AnimatedMap = {
 };
 
 export function animRangesFor(primary: TilesetData, secondary: TilesetData): Array<[number, number]> {
-  return [...(ANIM_RANGES[primary.callback ?? ""] ?? []), ...(ANIM_RANGES[secondary.callback ?? ""] ?? [])];
+  const primaryKey = primary.callback === "InitTilesetAnim_General" && primary.anims?.water
+    ? "InitTilesetAnim_General_Emerald"
+    : primary.callback ?? "";
+  return [...(ANIM_RANGES[primaryKey] ?? []), ...(ANIM_RANGES[secondary.callback ?? ""] ?? [])];
 }
 
 export function rangeMask(primary: TilesetData, secondary: TilesetData, ranges: Array<[number, number]>, mt: number): number {

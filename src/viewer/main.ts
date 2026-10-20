@@ -298,7 +298,7 @@ function resetExploreSession(): void {
   surfSupport?.hide();
   playerMoving = false;
   keysDown.clear();
-  if (!HOENN) fieldEffects.resetSession();
+  fieldEffects?.resetSession();
 }
 const audioController = new ViewerAudioController();
 if (HOENN) audioController.setHoenn(true);
@@ -639,7 +639,12 @@ function updatePlayerDisplay(): void {
     const outdoors = type === C.MAP_TYPE_ROUTE || type === C.MAP_TYPE_TOWN || type === C.MAP_TYPE_CITY || type === C.MAP_TYPE_UNDERWATER || type === C.MAP_TYPE_OCEAN_ROUTE;
     if (!HOENN) audioController.chooseAmbientCry(here, Boolean(outdoors));
     if (header) {
-      weatherOverlay?.setWeather(header.weather ?? 0);
+      const defaultWeather = HOENN && here.startsWith("MAP_UNDERWATER")
+        ? EmConstants.WEATHER_UNDERWATER_BUBBLES
+        : HOENN && (here === "MAP_MT_PYRE_EXTERIOR" || here === "MAP_MT_PYRE_SUMMIT")
+        ? EmConstants.WEATHER_FOG_HORIZONTAL
+        : header.weather ?? 0;
+      weatherOverlay?.setWeather(defaultWeather);
       weatherOverlay?.setRequiresFlash(Boolean(header.requiresFlash));
       if (header.showMapName !== false) {
         let theme: "town" | "city" | "route" | "cave" | "indoor" = "route";
@@ -1321,6 +1326,34 @@ function processPlayerStep(): void {
 
         fieldEffects.onGroundStep("finish", groundActor);
 
+        if (HOENN && index) {
+          const hit = findMapAt(playerX, playerY);
+          if (hit) {
+            const [mid, info] = hit;
+            const lx = playerX - info.x, ly = playerY - info.y;
+            const trg = index.triggers.find(t => t.map === mid && t.x === lx && t.y === ly);
+            if (trg) {
+              const wName = (trg as { weather?: string }).weather;
+              const sName = (trg as { script?: string }).script ?? "";
+              if (wName === "COORD_EVENT_WEATHER_VOLCANIC_ASH") {
+                weatherOverlay?.setWeather(EmConstants.WEATHER_VOLCANIC_ASH);
+              } else if (wName === "COORD_EVENT_WEATHER_SANDSTORM" || sName.includes("SandstormTrigger")) {
+                weatherOverlay?.setWeather(EmConstants.WEATHER_SANDSTORM);
+              } else if (wName === "COORD_EVENT_WEATHER_RAIN") {
+                weatherOverlay?.setWeather(EmConstants.WEATHER_RAIN);
+              } else if (wName === "COORD_EVENT_WEATHER_RAIN_THUNDERSTORM") {
+                weatherOverlay?.setWeather(EmConstants.WEATHER_RAIN_THUNDERSTORM);
+              } else if (wName === "COORD_EVENT_WEATHER_DOWNPOUR") {
+                weatherOverlay?.setWeather(EmConstants.WEATHER_DOWNPOUR);
+              } else if (wName === "COORD_EVENT_WEATHER_FOG_HORIZONTAL") {
+                weatherOverlay?.setWeather(EmConstants.WEATHER_FOG_HORIZONTAL);
+              } else if (wName === "COORD_EVENT_WEATHER_SUNNY" || sName.includes("SunTrigger")) {
+                weatherOverlay?.setWeather(EmConstants.WEATHER_SUNNY);
+              }
+            }
+          }
+        }
+
         if (blockedArrival !== `${playerX},${playerY}`) blockedArrival = null;
         if (!HOENN && tryNavigationWarp("step", playerDir)) return;
         if (HOENN || !engineInteraction) checkTrainerSight();
@@ -1899,11 +1932,10 @@ async function build(): Promise<void> {
   });
   // Sonda de pruebas (tools/playtest/smoke/interiors.job.mjs): abre cualquier interior sin pasar por la UI.
   (window as unknown as { frInterior?: InteriorViewer }).frInterior = interiorViewer;
-  const effectsReady = HOENN ? Promise.resolve(NO_FIELD_EFFECTS) : ViewerFieldEffects.create(worldGrid, viewerClock);
+  const effectsReady = ViewerFieldEffects.create(worldGrid, viewerClock, HOENN);
   [allMaps, fieldEffects] = await Promise.all([mapsReady, effectsReady, jumpReady]).then(([maps, effects]) => [maps, effects] as const);
-  // Los efectos de campo (hierba, polvo, huellas) son de FireRed; en Hoenn se explora sin ellos.
-  let disposeEffects = HOENN ? () => {} : installFieldFxRenderer(fieldEffects, content, minX, minY);
-  let disposeEffectsSound=HOENN?()=>{}:fieldEffects.subscribe(event=>{if(event.type==="sound")audioController.playSE(event.id);});
+  let disposeEffects = installFieldFxRenderer(fieldEffects, content, minX, minY);
+  let disposeEffectsSound = fieldEffects.subscribe(event => { if (event.type === "sound") audioController.playSE(event.id); });
   const unbindVisibility = bindViewerClockVisibility();
   const unsubscribeSimulation = viewerClock.subscribe(frame => {
     audioController.frame(Boolean(engineInteraction?.open));
@@ -2124,8 +2156,7 @@ async function build(): Promise<void> {
       mark(ctxFor("activador"), t.x, t.y, LAYER_COLORS.activador);
     }
 
-    // Las animaciones de tiles (tileset_anims.c) están transcritas de FireRed; Hoenn se muestra sin animar.
-    const ranges = HOENN ? [] : animRangesFor(primary, secondary);
+    const ranges = animRangesFor(primary, secondary);
     if (ranges.length > 0) {
       const cells: AnimatedMap["cells"] = [];
       for (let y = 0; y < info.height; y++) {
