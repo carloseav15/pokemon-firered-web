@@ -135,6 +135,11 @@ export class ViewerAudioController {
     this.playSE(C.SE_SELECT ?? 5);
   }
 
+  playMonCry(species: number, pan = 0, volume = 100): void {
+    if (!this.enabled) return;
+    sound.PlayCry_NormalNoDucking(species, pan, volume, C.CRY_PRIORITY_NORMAL ?? 10);
+  }
+
   /** overworld.c:1131-1153 PlayAmbientCry */
   private playAmbientCry(): void {
     if (!this.enabled || this.ambientCrySpecies === C.SPECIES_NONE) return;

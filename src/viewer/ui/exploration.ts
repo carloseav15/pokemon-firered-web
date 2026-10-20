@@ -10,6 +10,9 @@ type Hooks = {
   exit(): void;
   startMenu(): void;
   stats(): { sectors: number; bytes: number; pending: number; error: string };
+  onRayquazaCinematic?(): void;
+  onClashCinematic?(): void;
+  onCaveCinematic?(): void;
 };
 
 const PREFS_KEY = "pokemon-explore-prefs";
@@ -75,7 +78,11 @@ export class ExplorationUi {
       <label><input type="checkbox" id="explore-clean"> Ocultar barra superior (H)</label>
       <label><input type="checkbox" id="explore-touch"> Controles táctiles (cruceta, A, B, START, SELECT, L, R)</label>
       <label><input type="checkbox" id="explore-metrics"> Mostrar rendimiento</label>
-      ${isHoenn ? "" : `<button class="btn" id="explore-open-game-menu">Abrir menú del juego</button>`}<button class="btn" id="explore-save">Guardar partida</button><button class="btn" id="explore-continue">Continuar guardado</button><button class="btn" id="explore-new-game">Nueva partida</button><p id="explore-save-result" role="status"></p>
+      ${isHoenn ? `
+        <button class="btn" id="explore-rayquaza-scene">🐉 Cinemática: Rayquaza (Pilar Celeste)</button>
+        <button class="btn" id="explore-clash-scene">🌋 Cinemática: Kyogre vs Groudon</button>
+        <button class="btn" id="explore-cave-scene">🌌 Cinemática: Cueva Origen</button>
+      ` : `<button class="btn" id="explore-open-game-menu">Abrir menú del juego</button>`}<button class="btn" id="explore-save">Guardar partida</button><button class="btn" id="explore-continue">Continuar guardado</button><button class="btn" id="explore-new-game">Nueva partida</button><p id="explore-save-result" role="status"></p>
       <p id="explore-note">${noteText}</p>
       <div class="explore-actions"><button class="btn" id="explore-resume">Continuar</button><button class="btn" id="explore-fullscreen">Pantalla completa</button><button class="btn" id="explore-exit">Volver al atlas</button></div>`;
     document.body.append(this.root, this.menu);
@@ -101,6 +108,18 @@ export class ExplorationUi {
     this.menu.querySelector("#explore-open-game-menu")?.addEventListener("click", () => {
       this.menu.close();
       this.openGameMenu();
+    });
+    this.menu.querySelector("#explore-rayquaza-scene")?.addEventListener("click", () => {
+      this.menu.close();
+      this.hooks.onRayquazaCinematic?.();
+    });
+    this.menu.querySelector("#explore-clash-scene")?.addEventListener("click", () => {
+      this.menu.close();
+      this.hooks.onClashCinematic?.();
+    });
+    this.menu.querySelector("#explore-cave-scene")?.addEventListener("click", () => {
+      this.menu.close();
+      this.hooks.onCaveCinematic?.();
     });
     this.menu.querySelector("#explore-save")!.addEventListener("click", () => {
       this.menu.querySelector("#explore-save-result")!.textContent = this.hooks.save() ? "Partida guardada." : "No se pudo guardar la partida.";

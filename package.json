@@ -27,6 +27,7 @@
     "check:evolution": "esbuild tools/checks/evolutionScene.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/evolutionScene.mjs && node .decomp-build/checks/evolutionScene.mjs",
     "check:field-moves": "esbuild tools/checks/fieldMovesParty.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/fieldMovesParty.mjs && node .decomp-build/checks/fieldMovesParty.mjs",
     "check:card": "esbuild tools/checks/trainerCard.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/trainerCard.mjs && node .decomp-build/checks/trainerCard.mjs",
+    "check:hoenn-mechanics": "esbuild tools/checks/hoennMechanics.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/hoennMechanics.mjs && node .decomp-build/checks/hoennMechanics.mjs",
     "inventory": "python3 tools/portInventory.py",
     "pending": "python3 tools/portPending.py",
     "review:where": "python3 tools/review_locations.py",

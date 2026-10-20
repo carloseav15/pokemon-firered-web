@@ -5,7 +5,6 @@
 import { sound } from "../audio/sound";
 import * as C from "@game/generated/constants";
 import * as MB from "@game/generated/metatileBehavior";
-import * as MBEmerald from "../../games/emerald/generated/metatileBehavior";
 import { b64, rom } from "../rom";
 import { cdata, cdataAny, hasCData, symName } from "../hw/assets";
 import { tasks, type TaskFunc } from "../gba/tasks";
@@ -16,7 +15,7 @@ const CLOSED = -1;
 const DOOR_SOUND_NORMAL = 0;
 
 function isWarpDoor(behavior: number): boolean {
-  return MB.MetatileBehavior_IsWarpDoor_2(behavior) || MBEmerald.MetatileBehavior_IsDoor(behavior);
+  return MB.MetatileBehavior_IsWarpDoor_2(behavior) || behavior === 104 || behavior === 105 || behavior === 141;
 }
 
 type DoorGfx = { metatile: number; sound: number; size: number; file: string; palettes: number[] };

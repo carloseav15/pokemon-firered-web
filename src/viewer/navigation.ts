@@ -9,11 +9,11 @@ export function warpAt(header: MapHeader, x: number, y: number, elevation: numbe
 }
 
 export function isWarpDoorBehavior(behavior: number): boolean {
-  return MB.MetatileBehavior_IsWarpDoor(behavior) || MBEmerald.MetatileBehavior_IsDoor(behavior);
+  return MB.MetatileBehavior_IsWarpDoor(behavior) || MBEmerald.MetatileBehavior_IsDoor(behavior) || MBEmerald.MetatileBehavior_IsWarpDoor(behavior);
 }
 
 export function stepWarpBehavior(behavior: number): boolean {
-  return MB.MetatileBehavior_IsWarpDoor(behavior) || MBEmerald.MetatileBehavior_IsDoor(behavior)
+  return MB.MetatileBehavior_IsWarpDoor(behavior) || MBEmerald.MetatileBehavior_IsDoor(behavior) || MBEmerald.MetatileBehavior_IsWarpDoor(behavior)
     || MB.MetatileBehavior_IsLadder(behavior) || MBEmerald.MetatileBehavior_IsLadder(behavior)
     || MB.MetatileBehavior_IsEscalator(behavior) || MBEmerald.MetatileBehavior_IsEscalator(behavior)
     || MB.MetatileBehavior_IsNonAnimDoor(behavior) || MBEmerald.MetatileBehavior_IsNonAnimDoor(behavior)
@@ -27,7 +27,7 @@ export function stepWarpBehavior(behavior: number): boolean {
 export function inputWarpBehavior(behavior: number, direction: Direction): boolean {
   switch (direction) {
     case "north": return MB.MetatileBehavior_IsNorthArrowWarp(behavior) || MBEmerald.MetatileBehavior_IsNorthArrowWarp(behavior);
-    case "south": return MB.MetatileBehavior_IsSouthArrowWarp(behavior) || MBEmerald.MetatileBehavior_IsSouthArrowWarp(behavior);
+    case "south": return MB.MetatileBehavior_IsSouthArrowWarp(behavior) || MBEmerald.MetatileBehavior_IsSouthArrowWarp(behavior) || MBEmerald.MetatileBehavior_IsDeepSouthWarp(behavior);
     case "west": return MB.MetatileBehavior_IsWestArrowWarp(behavior) || MBEmerald.MetatileBehavior_IsWestArrowWarp(behavior)
       || MB.MetatileBehavior_IsDirectionalUpLeftStairWarp(behavior) || MB.MetatileBehavior_IsDirectionalDownLeftStairWarp(behavior);
     case "east": return MB.MetatileBehavior_IsEastArrowWarp(behavior) || MBEmerald.MetatileBehavior_IsEastArrowWarp(behavior)

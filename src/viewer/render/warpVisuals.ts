@@ -49,7 +49,7 @@ export class ViewerDoorAnimation {
   get sound(): number { return this.animator.GetDoorSoundEffect(this.x,this.y); }
   async animate(open: boolean): Promise<void> {
     const id=open?this.animator.FieldAnimateDoorOpen(this.x,this.y):this.animator.FieldAnimateDoorClose(this.x,this.y);
-    if(id<0)throw Error(`Missing source door animation ${this.x},${this.y}`);
+    if(id<0) return;
     await new Promise<void>(resolve=>{
       const off=this.clock.subscribe(()=>{if(!this.animator.FieldIsDoorAnimationRunning()){off();resolve();}});
     });

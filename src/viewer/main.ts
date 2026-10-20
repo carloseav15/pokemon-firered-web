@@ -36,6 +36,18 @@ import { TilesetAnimator } from "@core/field/tilesetAnimator";
 import { MAP_OFFSET, ExtractMetatileAttribute, METATILE_ATTRIBUTE_BEHAVIOR, NUM_METATILES_IN_PRIMARY, SetTilesetProfile } from "@core/field/fieldmap";
 import * as MB from "../games/firered/generated/metatileBehavior";
 import * as MBEmerald from "../games/emerald/generated/metatileBehavior";
+import {
+  HoennBikeSpeedTracker,
+  getCrackedFloorHoleMetatile,
+  getHoleFallDestination,
+  checkMuddySlopeMovement,
+} from "./hoennMechanics";
+import {
+  type CinematicHost,
+  runSkyPillarRayquazaCinematic,
+  runCaveOfOriginRumbleCinematic,
+  runSootopolisClashCinematic,
+} from "./hoennCinematics";
 import { GBA_FRAME_MS, TILE, LAYERS, LAYER_COLORS, LAYER_LABELS, type Layer, BIOME_NAMES } from "./constants";
 import type { Element, KantoIndex, Trigger } from "./types";
 import { state, type PlayerVehicle } from "./state";
@@ -139,6 +151,27 @@ const navigationWarps = new NavigationWarps(async id => {
   return header;
 });
 let changeNavigationWorld: (mapId: string) => Promise<void>;
+const hoennBikeTracker = new HoennBikeSpeedTracker();
+const hoennCinematicHost: CinematicHost = {
+  get content() { return content; },
+  get viewport() { return viewport; },
+  get audio() { return audioController; },
+  get dialog() { return dialogManager; },
+  get entityManager() { return entityManager; },
+  get camera() { return camera; },
+  lockControls(locked: boolean) {
+    playerActive = !locked;
+    if (locked) {
+      keysDown.clear();
+      playerMoving = false;
+      avatarAnimator?.stop(state.playerChar, playerMode, playerDir, viewerClock.tick);
+      updatePlayerDisplay();
+    }
+  },
+  updateEntitiesView() {
+    updateEntitiesView();
+  },
+};
 
 let minX = 0;
 let minY = 0;
@@ -782,6 +815,19 @@ function interactWithEntity(ent: LiveEntity): void {
         return;
       }
 
+      if (HOENN && (ent.element.map === "MAP_SKY_PILLAR_TOP" || ent.element.graphics?.includes("RAYQUAZA"))) {
+        void runSkyPillarRayquazaCinematic(hoennCinematicHost);
+        return;
+      }
+      if (HOENN && (ent.element.map === "MAP_SOOTOPOLIS_CITY" || ent.element.graphics?.includes("GROUDON") || ent.element.graphics?.includes("KYOGRE"))) {
+        void runSootopolisClashCinematic(hoennCinematicHost);
+        return;
+      }
+      if (HOENN && (ent.element.map?.startsWith("MAP_CAVE_OF_ORIGIN") || (ent.element.graphics?.includes("WALLACE") && ent.element.map?.includes("CAVE_OF_ORIGIN")))) {
+        void runCaveOfOriginRumbleCinematic(hoennCinematicHost);
+        return;
+      }
+
       if (engineInteraction) {
         if (npc && !npc.clone) {
           void engineInteraction.show(navigationSnapshot(), { mapId: ent.element.map, localId: npc.localId }).catch(error => dialogManager.show("Interacción", [String(error)]));
@@ -1034,14 +1080,17 @@ function toggleBike(): void {
         bikeBtn.title = "Bici Acrobática";
       }
       audioController.playBikeBell();
+      hoennBikeTracker.reset();
       updatePlayerDisplay();
       return;
     } else {
       state.bikeType = "mach";
       playerMode = "walk";
+      hoennBikeTracker.reset();
     }
   } else {
     playerMode = playerMode === "bike" ? "walk" : "bike";
+    hoennBikeTracker.reset();
   }
   const bikeBtn = document.getElementById("bike-btn");
   if (bikeBtn) {
@@ -1245,10 +1294,41 @@ function processPlayerStep(): void {
   }
   const previousDirection = playerDir;
   playerDir = forcedStep?.facing ?? targetDir;
-  if (dx === 0 && dy === 0) {playerMoving=false;avatarAnimator?.stop(state.playerChar,playerMode,playerDir,viewerClock.tick);updatePlayerDisplay();return;}
-  if (!forcedStep && tryNavigationWarp("input", playerDir)) return;
+  if (dx === 0 && dy === 0) {
+    if (HOENN) hoennBikeTracker.reset();
+    playerMoving=false;avatarAnimator?.stop(state.playerChar,playerMode,playerDir,viewerClock.tick);updatePlayerDisplay();return;
+  }
+  let isMudSlide = false;
+  if (HOENN && !forcedStep) {
+    const currentBehavior = worldGrid.behaviorAt(playerX, playerY);
+    const onMudSlope = MBEmerald.MetatileBehavior_IsMuddySlope(currentBehavior);
+    if (onMudSlope) {
+      const isClimbingNorth = targetDir === "north" && dy < 0;
+      const canClimb = isClimbingNorth && playerMode === "bike" && state.bikeType === "mach" && hoennBikeTracker.isMaxSpeed();
+      if (!canClimb) {
+        isMudSlide = true;
+        targetDir = "south";
+        dx = 0;
+        dy = 1;
+        playerDir = "south";
+        hoennBikeTracker.reset();
+        audioController.playSE(C.SE_M_RAZOR_WIND2);
+      }
+    } else if (targetDir === "north" && dy < 0) {
+      const targetBehavior = worldGrid.behaviorAt(playerX, playerY - 1);
+      if (MBEmerald.MetatileBehavior_IsMuddySlope(targetBehavior)) {
+        const canClimb = playerMode === "bike" && state.bikeType === "mach" && hoennBikeTracker.isMaxSpeed();
+        if (!canClimb) {
+          audioController.playWallBump();
+          hoennBikeTracker.reset();
+          return;
+        }
+      }
+    }
+  }
+  if (!forcedStep && !isMudSlide && tryNavigationWarp("input", playerDir)) return;
   // PlayerNotOnBikeTurningInPlace -> PlayerTurnInPlace -> WalkInPlaceFast (8 ticks).
-  if (!forcedStep && avatarAnimator && playerMode !== "bike" && previousDirection !== targetDir && !playerMoving) {
+  if (!forcedStep && !isMudSlide && avatarAnimator && playerMode !== "bike" && previousDirection !== targetDir && !playerMoving) {
     isStepping = true; playerMoving = true; stepRunning = false;
     const started = viewerClock.tick;
     avatarAnimator.begin(state.playerChar, playerMode, playerDir, "turn", started);
@@ -1265,7 +1345,7 @@ function processPlayerStep(): void {
     return;
   }
 
-  if (!forcedStep && tryNavigationWarp("front", playerDir)) return;
+  if (!forcedStep && !isMudSlide && tryNavigationWarp("front", playerDir)) return;
   const allowAutoSurf = HOENN || new URLSearchParams(location.hash.slice(1)).get("autosurf") === "1" || new URLSearchParams(location.hash.slice(1)).get("autoSurf") === "1";
   const plan = forcedStep?.plan ?? planStep(worldGrid, playerX, playerY, playerDir, playerMode, playerCurrentElevation, allowAutoSurf);
   const targetX = plan.x, targetY = plan.y;
@@ -1278,6 +1358,9 @@ function processPlayerStep(): void {
   }
 
   if (plan.status === "ready") {
+    if (HOENN && !isMudSlide && !forcedStep) {
+      hoennBikeTracker.onStep(targetDir, playerMode, state.bikeType);
+    }
     const previousVehicle = playerMode;
     playerMode = plan.vehicle;
     stepRunning = !forcedStep && playerMode === "walk" && playerRunning && !isLedgeJump
@@ -1305,14 +1388,17 @@ function processPlayerStep(): void {
     fieldEffects.onGroundStep("begin", groundActor);
 
     // Kanto uses the C step tables and 32-tick jumps (far/special); Hoenn retains its adapter timings.
-    const forcedAction: AvatarAction | undefined = forcedStep ? ({PlayerGoSpin:"spin",PlayerRideWaterCurrent:"current",PlayerWalkFast:"ice",PlayerWalkNormal:"walk",PlayerJumpLedge:"jump"} as const)[forcedStep.action] : undefined;
+    const forcedAction: AvatarAction | undefined = isMudSlide ? "ice" : forcedStep ? ({PlayerGoSpin:"spin",PlayerRideWaterCurrent:"current",PlayerWalkFast:"ice",PlayerWalkNormal:"walk",PlayerJumpLedge:"jump"} as const)[forcedStep.action] : undefined;
     // PlayerIsMovingOnRockStairs (field_player_avatar.c): north uses the current cell, south the destination.
     const rockStairs = !forcedStep && !isLedgeJump && !transition && !HOENN && playerMode === "walk"
       && (playerDir === "north" ? MB.MetatileBehavior_IsRockStairs(worldGrid.behaviorAt(playerX, playerY))
         : playerDir === "south" ? MB.MetatileBehavior_IsRockStairs(worldGrid.behaviorAt(targetX, targetY)) : false);
     const action: AvatarAction = transition ? playerMode === "surf" ? "board" : "dismount" : isLedgeJump ? "jump" : forcedAction ?? (playerMode === "bike" ? "bike" : playerMode === "surf" ? "surf" : stepRunning ? (rockStairs ? "runSlow" : "run") : (rockStairs ? "walkSlow" : "walk"));
     const offsets = avatarAnimator?.offsets(action);
-    const duration = avatarAnimator ? (isLedgeJump || transition ? 32 : offsets!.length) * GBA_FRAME_MS : isLedgeJump ? 32 * GBA_FRAME_MS : playerMode === "bike" ? 100 : stepRunning ? 120 : 160;
+    const bikeDuration = HOENN && state.bikeType === "mach"
+      ? (hoennBikeTracker.isMaxSpeed() ? 65 : hoennBikeTracker.speed === 2 ? 100 : 140)
+      : 100;
+    const duration = isMudSlide ? 80 : avatarAnimator ? (isLedgeJump || transition ? 32 : offsets!.length) * GBA_FRAME_MS : isLedgeJump ? 32 * GBA_FRAME_MS : playerMode === "bike" ? bikeDuration : stepRunning ? 120 : 160;
     stepTarget = {x:targetX,y:targetY};
     jumpBehaviors = [worldGrid.behaviorAt(targetX, targetY), worldGrid.behaviorAt(playerX, playerY)];
     shoreAnchor = transition ? previousVehicle === "surf" ? {x:startPxX,y:startPxY} : {x:destPxX,y:destPxY} : null;
@@ -1351,11 +1437,71 @@ function processPlayerStep(): void {
 
         fieldEffects.onGroundStep("finish", groundActor);
 
+        if (HOENN) {
+          const arrivedBehavior = worldGrid.behaviorAt(playerX, playerY);
+          const isCracked = MBEmerald.MetatileBehavior_IsCrackedFloor(arrivedBehavior);
+          const isHole = MBEmerald.MetatileBehavior_IsCrackedFloorHole(arrivedBehavior)
+            || MBEmerald.MetatileBehavior_IsMtPyreHole(arrivedBehavior);
+
+          if (isCracked) {
+            const currentMt = worldGrid.getMetatile(playerX, playerY);
+            const holeMt = getCrackedFloorHoleMetatile(currentMt);
+            const isFullSpeedBike = playerMode === "bike" && state.bikeType === "mach" && hoennBikeTracker.isMaxSpeed();
+
+            if (isFullSpeedBike) {
+              const collapseX = playerX;
+              const collapseY = playerY;
+              setTimeout(() => {
+                paintNavigationMetatile(collapseX, collapseY, holeMt);
+                audioController.playSE(C.SE_BANG);
+              }, 180);
+            } else {
+              paintNavigationMetatile(playerX, playerY, holeMt);
+              const hit = findMapAt(playerX, playerY);
+              const curMap = hit ? hit[0] : (navigationMap ?? "");
+              const locX = hit ? playerX - hit[1].x : playerX;
+              const locY = hit ? playerY - hit[1].y : playerY;
+              const fallDest = getHoleFallDestination(curMap, locX, locY);
+              if (fallDest) {
+                const srcHdr = mapHeaders.get(curMap) ?? { id: curMap, warps: [], regionMapSection: 0, mapType: 0 } as unknown as MapHeader;
+                void followNavigationWarp(srcHdr, -1, "step", {
+                  mapId: fallDest.mapId,
+                  warpId: -1,
+                  x: fallDest.x,
+                  y: fallDest.y,
+                });
+                return;
+              }
+            }
+          } else if (isHole) {
+            const hit = findMapAt(playerX, playerY);
+            const curMap = hit ? hit[0] : (navigationMap ?? "");
+            const locX = hit ? playerX - hit[1].x : playerX;
+            const locY = hit ? playerY - hit[1].y : playerY;
+            const fallDest = getHoleFallDestination(curMap, locX, locY);
+            if (fallDest) {
+              const srcHdr = mapHeaders.get(curMap) ?? { id: curMap, warps: [], regionMapSection: 0, mapType: 0 } as unknown as MapHeader;
+              void followNavigationWarp(srcHdr, -1, "step", {
+                mapId: fallDest.mapId,
+                warpId: -1,
+                x: fallDest.x,
+                y: fallDest.y,
+              });
+              return;
+            }
+          }
+        }
+
         if (HOENN && index) {
           const hit = findMapAt(playerX, playerY);
           if (hit) {
             const [mid, info] = hit;
             const lx = playerX - info.x, ly = playerY - info.y;
+            if (mid === "MAP_SKY_PILLAR_TOP" && ly <= 10 && !state.eventFlags.has("FLAG_AWAKENED_RAYQUAZA")) {
+              state.eventFlags.add("FLAG_AWAKENED_RAYQUAZA");
+              void runSkyPillarRayquazaCinematic(hoennCinematicHost);
+              return;
+            }
             const trg = index.triggers.find(t => t.map === mid && t.x === lx && t.y === ly);
             if (trg) {
               const wName = (trg as { weather?: string }).weather;
@@ -1404,6 +1550,7 @@ function processPlayerStep(): void {
     };
     cancelPlayerMotion = viewerClock.subscribe(frame => animateStep(frame.tick));
   } else {
+    if (HOENN) hoennBikeTracker.reset();
     const frontEnt = entityManager.findAt(targetX, targetY);
     if (frontEnt && !frontEnt.hidden && (frontEnt.element.graphics === "OBJ_EVENT_GFX_PUSHABLE_BOULDER" || frontEnt.graphicsId === C.OBJ_EVENT_GFX_PUSHABLE_BOULDER)) {
       if (tryPushBoulder(frontEnt, playerDir)) return;
@@ -1518,8 +1665,11 @@ function tryNavigationWarp(phase: "input" | "front" | "step", direction: Directi
   const warpId = warpAt(header, point.x - info.x, point.y - info.y, playerElevation);
   if (warpId < 0) return false;
   const behavior = worldGrid.behaviorAt(point.x, point.y);
-  const active = phase === "front" ? isWarpDoorBehavior(behavior)
+  let active = phase === "front" ? isWarpDoorBehavior(behavior)
     : phase === "input" ? inputWarpBehavior(behavior, direction) : stepWarpBehavior(behavior);
+  if (!active && phase === "step" && navigationMap !== null && warpId >= 0) {
+    active = true;
+  }
   if (!active) return false;
   void followNavigationWarp(header, warpId, phase);
   return true;
@@ -1770,8 +1920,12 @@ async function followNavigationWarp(source: MapHeader, warpId: number, phase: "i
   if (warpBusy) return;
   warpBusy = true; content.setAttribute("aria-busy","true"); keysDown.clear(); playerMoving = false;
   const old = { map: navigationMap, x: playerX, y: playerY, direction: playerDir, vehicle: playerMode, dynamic: navigationWarps.returnAddress };
-  const sourceBehavior=address ? C.MB_NORMAL : worldGrid.behaviorAt(playerX,playerY);
-  const falling=phase==="step"&&MB.MetatileBehavior_IsFallWarp(sourceBehavior);
+  const sourceBehavior = worldGrid.behaviorAt(playerX, playerY);
+  const falling = phase === "step" && (
+    MB.MetatileBehavior_IsFallWarp(sourceBehavior)
+    || MBEmerald.MetatileBehavior_IsCrackedFloorHole(sourceBehavior)
+    || MBEmerald.MetatileBehavior_IsMtPyreHole(sourceBehavior)
+  );
   const teleport=phase==="step"&&MB.MetatileBehavior_IsWarpPad(sourceBehavior);
   const escalator=phase==="step"&&MB.MetatileBehavior_IsEscalator(sourceBehavior);
   let switched = false;
@@ -1841,6 +1995,10 @@ async function followNavigationWarp(source: MapHeader, warpId: number, phase: "i
     blockedArrival = `${playerX},${playerY}`;
     viewerClock.resume("warp"); content.style.visibility = "";
     const fromWhite=MapTransitionIsExit(source.mapType,destination.header.mapType);
+    const isEnter = MapTransitionIsEnter(source.mapType, destination.header.mapType);
+    if (isEnter) {
+      playerDir = "north";
+    }
     if (falling) {
       playerWarpHidden=true;updatePlayerDisplay();
       await Promise.all([warpVisuals!.fadeScreen(fromWhite?FADE_FROM_WHITE:FADE_FROM_BLACK),animateFallArrival()]);
@@ -1852,7 +2010,7 @@ async function followNavigationWarp(source: MapHeader, warpId: number, phase: "i
       playerWarpHidden=false;updatePlayerDisplay();
       await Promise.all([warpVisuals!.fadeScreen(fromWhite?FADE_FROM_WHITE:FADE_FROM_BLACK),animateEscalator(false,behavior)]);
       await walkWarpStep("east");
-    } else if (isWarpDoorBehavior(behavior)) {
+    } else if (isWarpDoorBehavior(behavior) && !isEnter) {
       playerWarpHidden=true;updatePlayerDisplay();
       const resource=fillSources.get(destination.mapId);
       if(!resource||!avatarDepth)throw Error("Arrival door is not resident");
@@ -2280,7 +2438,7 @@ async function build(): Promise<void> {
   const exteriorEntities = entityManager;
   let changeWorldChain: Promise<void> = Promise.resolve();
   const executeChangeNavigationWorld = async (mapId: string): Promise<void> => {
-    if (!streaming) throw new Error("Los interiores jugables requieren Explorar Kanto");
+    if (!streaming) throw new Error("Los interiores jugables requieren modo Explorar");
     const exterior = !!exteriorWorld.index.maps[mapId];
     if (!exterior && navigationMap === mapId && worldGrid.isLoaded(index.maps[mapId]!.x, index.maps[mapId]!.y)) return;
     if (exterior && navigationMap === null && worldGrid.isLoaded(index.maps[mapId]!.x, index.maps[mapId]!.y)) return;
@@ -2332,7 +2490,7 @@ async function build(): Promise<void> {
     if (!exterior) for (const e of elementsByMap.get(mapId) ?? []) {
       entityManager.addEntity(e,e.x,e.y,e.direction === "up" ? "north" : e.direction === "left" ? "west" : e.direction === "right" ? "east" : "south");
     }
-    fieldEffects = await ViewerFieldEffects.create(worldGrid,viewerClock);
+    fieldEffects = await ViewerFieldEffects.create(worldGrid, viewerClock, HOENN);
     disposeEffects = installFieldFxRenderer(fieldEffects,content,minX,minY);
     disposeEffectsSound = fieldEffects.subscribe(event => {if(event.type === "sound")audioController.playSE(event.id);});
     camera.configure(index.world.width*TILE,index.world.height*TILE,camera.zoom);
@@ -2505,6 +2663,9 @@ function setupUi(): void {
     },
     stats: () => ({ sectors: sectorLoader?.ids.length ?? Object.keys(index.maps).length,
       bytes: (sectorLoader?.bytes ?? 0) + (sectorBorder?.bytes ?? 0) + (avatarDepth?.bytes ?? 0), pending: sectorLoader?.pending ?? 0, error: sectorLoader?.error ?? "" }),
+    onRayquazaCinematic: () => void runSkyPillarRayquazaCinematic(hoennCinematicHost),
+    onClashCinematic: () => void runSootopolisClashCinematic(hoennCinematicHost),
+    onCaveCinematic: () => void runCaveOfOriginRumbleCinematic(hoennCinematicHost),
   });
   window.addEventListener("explore-scale", event => {
     exploreManualZoom = (event as CustomEvent<number>).detail;
