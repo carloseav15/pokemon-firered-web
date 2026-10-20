@@ -109,6 +109,14 @@ export class ViewerAudioController {
     }
   }
 
+  playBGM(songId: number): void {
+    if (!this.enabled) return;
+    this.init();
+    if (songId > 0 && sound.getCurrentMapMusic() !== songId) {
+      sound.fadeOutAndPlayNewMapMusic(songId, 6);
+    }
+  }
+
   playSE(seId: number): void {
     if (!this.enabled) return;
     this.init();

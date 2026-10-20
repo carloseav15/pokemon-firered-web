@@ -46,7 +46,7 @@ export class ExplorationUi {
       ? `<option value="red">Bruno (Brendan)</option><option value="leaf">Aura (May)</option>`
       : `<option value="red">Rojo</option><option value="leaf">Hoja</option>`;
     const noteText = isHoenn
-      ? "Exploración de mundo abierto en Hoenn. Bicicleta Mach Bike (B), surf, clima y NPCs con IA autónoma."
+      ? "Exploración de mundo abierto en Hoenn. Bici Acrobática en rieles de equilibrio, corrientes rápidas marinas hacia Pacifidlog, buceo submarino (Dive), y puzzles de gimnasios de Arrecípolis (hielo) y Algaria (flechas giratorias)."
       : "Navegación por exteriores e interiores en desarrollo. Equipo, mochila y demás opciones están en Juego · Intro. Historia general con inicio definitivo en Paleta.";
 
     this.root.id = "explore-hud";
@@ -70,7 +70,7 @@ export class ExplorationUi {
     this.menu.id = "explore-menu";
     this.menu.setAttribute("aria-labelledby", "explore-menu-title");
     this.menu.innerHTML = `<h2 id="explore-menu-title">Explorar ${regionName}</h2>
-      <p>Flechas / WASD: caminar · Mayús: correr · B: bicicleta · Z: interactuar · M: audio · H: HUD. En pantallas táctiles, cruceta y botones en pantalla.</p>
+      <p>Flechas / WASD: caminar · Mayús: correr / botes · B: bicicleta (Carrera / Acrobática) · X: caballito/salto Acro · V / Z: Buceo (Dive/Emerger) · M: audio · H: HUD. En táctiles, cruceta y botones.</p>
       <label>Personaje <select id="explore-character">${charOptions}</select></label>
       <label>Presentación <select id="explore-format"><option value="viewport">Todo el viewport</option><option value="wide">16:9</option><option value="gba">GBA 3:2 (15×10)</option></select></label>
       <label>Escala <select id="explore-scale"><option value="auto" selected>Auto (GBA)</option><option value="1">1×</option><option value="2">2×</option><option value="3">3×</option><option value="4">4×</option><option value="5">5×</option><option value="6">6×</option></select></label>

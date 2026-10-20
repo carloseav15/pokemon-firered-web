@@ -36,11 +36,24 @@ import { TilesetAnimator } from "@core/field/tilesetAnimator";
 import { MAP_OFFSET, ExtractMetatileAttribute, METATILE_ATTRIBUTE_BEHAVIOR, NUM_METATILES_IN_PRIMARY, SetTilesetProfile } from "@core/field/fieldmap";
 import * as MB from "../games/firered/generated/metatileBehavior";
 import * as MBEmerald from "../games/emerald/generated/metatileBehavior";
+import * as EmeraldConstants from "../games/emerald/generated/constants";
 import {
   HoennBikeSpeedTracker,
+  HoennAcroBikeTracker,
   getCrackedFloorHoleMetatile,
   getHoleFallDestination,
   checkMuddySlopeMovement,
+  isRailMetatile,
+  checkRailMovement,
+  isDiveableWater,
+  isUnableToEmerge,
+  getHoennDiveDestination,
+  getHoennEmergeDestination,
+  SootopolisGymIceTracker,
+  METATILE_SootopolisGym_Ice_Broken,
+  METATILE_SootopolisGym_Ice_Cracked,
+  METATILE_SootopolisGym_Stairs,
+  MossdeepGymTracker,
 } from "./hoennMechanics";
 import {
   type CinematicHost,
@@ -152,6 +165,9 @@ const navigationWarps = new NavigationWarps(async id => {
 });
 let changeNavigationWorld: (mapId: string) => Promise<void>;
 const hoennBikeTracker = new HoennBikeSpeedTracker();
+const hoennAcroBikeTracker = new HoennAcroBikeTracker();
+const sootopolisGymTracker = new SootopolisGymIceTracker();
+const mossdeepGymTracker = new MossdeepGymTracker();
 const hoennCinematicHost: CinematicHost = {
   get content() { return content; },
   get viewport() { return viewport; },
@@ -1104,6 +1120,81 @@ function toggleBike(): void {
   checkCurrentMapMusic();
 }
 
+function toggleDive(): void {
+  if (elevatorBusy || fallPreventStep || warpBusy || isStepping) return;
+  if (!HOENN) return;
+
+  const hit = findMapAt(playerX, playerY);
+  const curMap = hit ? hit[0] : (navigationMap ?? "");
+  const locX = hit ? playerX - hit[1].x : playerX;
+  const locY = hit ? playerY - hit[1].y : playerY;
+  const currentBehavior = worldGrid.behaviorAt(playerX, playerY);
+  const isUnderwater = curMap.includes("UNDERWATER") || (mapHeaders.get(curMap)?.mapType === 5);
+
+  if (isUnderwater) {
+    if (isUnableToEmerge(currentBehavior)) {
+      audioController.playWallBump();
+      return;
+    }
+    const emergeDest = getHoennEmergeDestination(curMap, locX, locY);
+    if (emergeDest) {
+      audioController.playSE(EmeraldConstants.SE_M_DIVE);
+      const srcHdr = mapHeaders.get(curMap) ?? ({ id: curMap, warps: [], regionMapSection: 0, mapType: 0 } as unknown as MapHeader);
+      void followNavigationWarp(srcHdr, -1, "step", {
+        mapId: emergeDest.mapId,
+        warpId: -1,
+        x: emergeDest.x,
+        y: emergeDest.y,
+      }).then(() => {
+        playerMode = "surf";
+        updatePlayerDisplay();
+      });
+    }
+  } else if (playerMode === "surf" || isDiveableWater(currentBehavior)) {
+    const diveDest = getHoennDiveDestination(curMap, locX, locY);
+    if (diveDest) {
+      audioController.playSE(EmeraldConstants.SE_M_DIVE);
+      const srcHdr = mapHeaders.get(curMap) ?? ({ id: curMap, warps: [], regionMapSection: 0, mapType: 0 } as unknown as MapHeader);
+      void followNavigationWarp(srcHdr, -1, "step", {
+        mapId: diveDest.mapId,
+        warpId: -1,
+        x: diveDest.x,
+        y: diveDest.y,
+      }).then(() => {
+        playerMode = "surf";
+        audioController.playBGM(EmeraldConstants.MUS_UNDERWATER);
+        updatePlayerDisplay();
+      });
+    }
+  }
+}
+
+function triggerAcroHop(): void {
+  if (elevatorBusy || fallPreventStep || warpBusy || isStepping) return;
+  if (playerMode !== "bike" || state.bikeType !== "acro") return;
+  const hop = hoennAcroBikeTracker.triggerHop();
+  audioController.playSE(hop.sound);
+  isStepping = true;
+  playerMoving = true;
+  const startPxY = (playerY - minY) * TILE;
+  const startTick = viewerClock.tick;
+  avatarAnimator?.begin(state.playerChar, "bike", playerDir, "jump", startTick);
+  const cancelHop = viewerClock.subscribe(frame => {
+    const elapsed = frame.tick - startTick;
+    if (elapsed < 16) {
+      playerVisualY = startPxY - Math.sin((elapsed / 16) * Math.PI) * 10;
+      updatePlayerDisplay();
+    } else {
+      cancelHop();
+      playerVisualY = startPxY;
+      isStepping = false;
+      playerMoving = false;
+      avatarAnimator?.stop(state.playerChar, "bike", playerDir, frame.tick);
+      updatePlayerDisplay();
+    }
+  });
+}
+
 const keysDown = new Set<string>();
 
 function tryPushBoulder(boulderEnt: LiveEntity, direction: Direction): boolean {
@@ -1325,6 +1416,19 @@ function processPlayerStep(): void {
         }
       }
     }
+    const targetBehavior = worldGrid.behaviorAt(playerX + dx, playerY + dy);
+    const currentOnRail = isRailMetatile(currentBehavior);
+    const targetIsRail = isRailMetatile(targetBehavior);
+    if (currentOnRail || targetIsRail) {
+      const railCheck = checkRailMovement(targetBehavior, currentOnRail, targetDir, playerMode, state.bikeType, hoennAcroBikeTracker.isBHeld());
+      if (!railCheck.allowed) {
+        audioController.playWallBump();
+        return;
+      }
+      if (railCheck.sound) {
+        audioController.playSE(railCheck.sound);
+      }
+    }
   }
   if (!forcedStep && !isMudSlide && tryNavigationWarp("input", playerDir)) return;
   // PlayerNotOnBikeTurningInPlace -> PlayerTurnInPlace -> WalkInPlaceFast (8 ticks).
@@ -1488,6 +1592,57 @@ function processPlayerStep(): void {
                 y: fallDest.y,
               });
               return;
+            }
+          }
+
+          // Sootopolis Gym Ice Puzzle
+          const hit = findMapAt(playerX, playerY);
+          const curMap = hit ? hit[0] : (navigationMap ?? "");
+          const locX = hit ? playerX - hit[1].x : playerX;
+          const locY = hit ? playerY - hit[1].y : playerY;
+
+          if (curMap === "MAP_SOOTOPOLIS_CITY_GYM_1F") {
+            const iceResult = sootopolisGymTracker.onStep(locX, locY, arrivedBehavior);
+            if (iceResult.action === "crack") {
+              if (iceResult.sound) audioController.playSE(iceResult.sound);
+              paintNavigationMetatile(playerX, playerY, METATILE_SootopolisGym_Ice_Cracked);
+              if (iceResult.unlockedStairs) {
+                for (const st of iceResult.unlockedStairs.tiles) {
+                  const wx = hit ? hit[1].x + st.x : st.x;
+                  const wy = hit ? hit[1].y + st.y : st.y;
+                  paintNavigationMetatile(wx, wy, METATILE_SootopolisGym_Stairs);
+                }
+              }
+            } else if (iceResult.action === "fall") {
+              paintNavigationMetatile(playerX, playerY, METATILE_SootopolisGym_Ice_Broken);
+              if (iceResult.sound) audioController.playSE(iceResult.sound);
+              audioController.playSE(EmeraldConstants.SE_FALL);
+              const srcHdr = mapHeaders.get(curMap) ?? ({ id: curMap, warps: [], regionMapSection: 0, mapType: 0 } as unknown as MapHeader);
+              void followNavigationWarp(srcHdr, -1, "step", {
+                mapId: "MAP_SOOTOPOLIS_CITY_GYM_B1F",
+                warpId: -1,
+                x: locX,
+                y: locY,
+              });
+              return;
+            }
+          }
+
+          // Mossdeep Gym Puzzle
+          if (curMap === "MAP_MOSSDEEP_CITY_GYM") {
+            const mossResult = mossdeepGymTracker.onStep(locX, locY);
+            if (mossResult.isWarp && mossResult.warpDestination) {
+              if (mossResult.sound) audioController.playSE(mossResult.sound);
+              const destX = hit ? hit[1].x + mossResult.warpDestination.x : mossResult.warpDestination.x;
+              const destY = hit ? hit[1].y + mossResult.warpDestination.y : mossResult.warpDestination.y;
+              playerX = destX;
+              playerY = destY;
+              playerVisualX = (destX - minX) * TILE;
+              playerVisualY = (destY - minY) * TILE;
+              updatePlayerDisplay();
+            } else if (mossResult.isSwitch && mossResult.switchTrigger) {
+              if (mossResult.sound) audioController.playSE(mossResult.sound);
+              audioController.playSE(EmeraldConstants.SE_REPEL);
             }
           }
         }
@@ -2898,6 +3053,17 @@ function setupUi(): void {
       toggleBike();
       return;
     }
+    if (key === "v" && playerActive && HOENN) {
+      e.preventDefault();
+      toggleDive();
+      return;
+    }
+    if (key === "x" && playerActive && HOENN && playerMode === "bike" && state.bikeType === "acro") {
+      e.preventDefault();
+      hoennAcroBikeTracker.setBButton(true);
+      triggerAcroHop();
+      return;
+    }
     if ((key === "backspace" || key === "f") && playerActive && !HOENN && engineInteraction && !isStepping && !warpBusy && !elevatorBusy && !dialogManager.isOpen()) {
       e.preventDefault();
       void engineInteraction.useRegisteredKeyItem(navigationSnapshot());
@@ -2938,7 +3104,15 @@ function setupUi(): void {
           return;
         }
         // Signs, PCs, shelves and other metatile/background-event scripts of the engine.
-        if (!HOENN && engineInteraction && !isStepping && !warpBusy && !elevatorBusy) {
+        if (HOENN) {
+          const curBh = worldGrid.behaviorAt(playerX, playerY);
+          const hit = findMapAt(playerX, playerY);
+          const curMap = hit ? hit[0] : "";
+          if (isDiveableWater(curBh) || curMap.includes("UNDERWATER") || mapHeaders.get(curMap)?.mapType === 5) {
+            toggleDive();
+            return;
+          }
+        } else if (engineInteraction && !isStepping && !warpBusy && !elevatorBusy) {
           void engineInteraction.interactFront(navigationSnapshot(), playerMode === "surf").catch(error => console.error("Interacción", error));
           return;
         }
@@ -2965,7 +3139,10 @@ function setupUi(): void {
   window.addEventListener("keyup", (e) => {
     const key = e.key.toLowerCase();
     keysDown.delete(key);
-    if (key === "shift") playerRunning = false;
+    if (key === "shift" || key === "x") {
+      playerRunning = false;
+      if (HOENN) hoennAcroBikeTracker.setBButton(false);
+    }
     if (!isStepping && !["arrowup", "arrowdown", "arrowleft", "arrowright", "w", "a", "s", "d"].some((k) => keysDown.has(k))) {
       playerMoving = false;
       updatePlayerDisplay();
