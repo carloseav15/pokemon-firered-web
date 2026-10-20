@@ -34,7 +34,7 @@ export class AvatarDepth {
   }
   update(x:number,y:number,minX:number,minY:number,elevation:number):void{
     this.lastUpdate=[x,y,minX,minY,elevation];
-    const priority=cdata<number[]>("event_object_movement","sElevationToPriority")[elevation]!;
+    const priority=(cdata<number[]>("event_object_movement","sElevationToPriority")[elevation & 0xf]) ?? 2;
     this.middle.style.display=this.upper.style.display="block";
     // Keep BG planes fixed; the actor moves above BG2 when its source priority is0/1.
     this.upper.style.zIndex="27";

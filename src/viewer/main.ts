@@ -42,7 +42,7 @@ import { fetchWorldIndex, type WorldIndexData } from "./data/worldIndex";
 import { WorldGrid } from "./data/worldGrid";
 import { AvatarAnimator, type AvatarData, type AvatarAction } from "./render/avatar";
 import { planStep } from "./movement";
-import { cdata, loadCData } from "@core/hw/assets";
+import { cdata, hasCData, loadCData } from "@core/hw/assets";
 import { SectorLoader, nearbySectors, type SectorResource } from "./data/sectors";
 import { ExplorationUi } from "./ui/exploration";
 import { SectorBorder } from "./render/sectorBorder";
@@ -576,10 +576,11 @@ function updatePlayerDisplay(): void {
   const legacyGrass = !avatarDepth && !airborne && worldGrid.isGrassTile(playerX, playerY) && playerMode !== "surf" && !isBike;
   playerEl.style.clipPath = legacyGrass ? "inset(0 0 4px 0)" : "none";
 
+  const priority = warpPriority ?? (hasCData("event_object_movement", "sElevationToPriority") ? (cdata<number[]>("event_object_movement", "sElevationToPriority")[playerElevation & 0xf] ?? 2) : 2);
+  playerEl.style.zIndex = priority <= 1 ? "30" : "25";
+
   if (avatarAnimator) {
     const frame = avatarAnimator.frame(state.playerChar, playerMode, playerDir, viewerClock.tick);
-    const priority=warpPriority??cdata<number[]>("event_object_movement","sElevationToPriority")[playerElevation]!;
-    playerEl.style.zIndex=priority<=1?"30":"25";
     surfSupport?.setPriority(priority);jumpShadow?.setPriority(priority);
     playerEl.style.width = `${frame.width}px`; playerEl.style.height = `${frame.height}px`;
     playerEl.style.left = `${px - (frame.width - TILE) / 2}px`;
@@ -603,6 +604,8 @@ function updatePlayerDisplay(): void {
     playerEl.style.backgroundImage = `url(${getPlayerSpriteSheet(state.playerChar, playerMode, running)})`;
     playerEl.style.backgroundPosition = `-${frameIdx * spriteW}px 0px`;
     playerEl.style.transform = flip ? "scaleX(-1)" : "scaleX(1)";
+    const groundY = airborne ? groundVisualY : py;
+    avatarDepth?.update(px, groundY, minX, minY, playerElevation);
   }
 
   playerEl.style.left=`${parseFloat(playerEl.style.left)+warpOffsetX}px`;
@@ -1829,13 +1832,17 @@ async function build(): Promise<void> {
     if (!response.ok) throw new Error(`maps.json: HTTP ${response.status}`);
     return (await response.json()).maps as typeof allMaps;
   });
-  const jumpReady = HOENN || !startExplore ? Promise.resolve() : loadCData("event_object_movement").then(() => {
-    jumpArc = cdata<number[]>("event_object_movement", "sJumpY_High");
-    if (jumpArc.length !== 16 || jumpArc.some(value => !Number.isInteger(value))) throw new Error("Invalid source jump arc");
+  const jumpReady = !startExplore ? Promise.resolve() : loadCData("event_object_movement").then(() => {
+    if (!HOENN) {
+      jumpArc = cdata<number[]>("event_object_movement", "sJumpY_High");
+      if (jumpArc.length !== 16 || jumpArc.some(value => !Number.isInteger(value))) throw new Error("Invalid source jump arc");
+    }
   });
 
   if (loadingText) loadingText.textContent = `Descargando índice cartográfico de ${GAME_NAME}…`;
-  const avatarReady = !HOENN && startExplore ? fetch("/fr/objects.json").then(async response => {
+  const avatarReady = startExplore ? (HOENN ? jumpReady.then(() => {
+    avatarDepth = new AvatarDepth(content);
+  }) : fetch("/fr/objects.json").then(async response => {
     if (!response.ok) throw new Error(`objects.json: HTTP ${response.status}`);
     const data = await response.json() as AvatarData;
     avatarAnimator = new AvatarAnimator(data);
@@ -1846,13 +1853,14 @@ async function build(): Promise<void> {
     playerReflection = await PlayerReflection.create(data,content,viewerClock.tick);
     avatarDepth = new AvatarDepth(content);
     warpVisuals = new ViewerWarpVisuals(document.getElementById("main")!,viewerClock);
-  }) : Promise.resolve();
+  })) : Promise.resolve();
   const elevatorReady = HOENN ? Promise.resolve() : loadElevators().then(data=>{elevators=data;});
   const [,worldData] = await Promise.all([elevatorReady,HOENN ? fetchHoennIndex() : fetchWorldIndex(), mapsReady, jumpReady, avatarReady]);
   if (HOENN) await loadHoennGfx("/emerald");
   exteriorWorld = worldData;
   index = worldData.index;
   minX = worldData.minX;
+  minY = worldData.minY;
   if (!HOENN && startExplore) {
     const explicitExternalMap = startMapId && startMapId !== "MAP_PALLET_TOWN_PLAYERS_HOUSE_2F";
     await initializeViewerSession(index.initialFlags, {
