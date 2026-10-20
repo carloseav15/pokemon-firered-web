@@ -54,6 +54,11 @@ import {
   METATILE_SootopolisGym_Ice_Cracked,
   METATILE_SootopolisGym_Stairs,
   MossdeepGymTracker,
+  HoennAshTracker,
+  getShoalTide,
+  getShoalCaveTideDestination,
+  isCableCarStation,
+  getCableCarDestination,
 } from "./hoennMechanics";
 import {
   type CinematicHost,
@@ -168,6 +173,7 @@ const hoennBikeTracker = new HoennBikeSpeedTracker();
 const hoennAcroBikeTracker = new HoennAcroBikeTracker();
 const sootopolisGymTracker = new SootopolisGymIceTracker();
 const mossdeepGymTracker = new MossdeepGymTracker();
+const hoennAshTracker = new HoennAshTracker();
 const hoennCinematicHost: CinematicHost = {
   get content() { return content; },
   get viewport() { return viewport; },
@@ -1645,6 +1651,35 @@ function processPlayerStep(): void {
               audioController.playSE(EmeraldConstants.SE_REPEL);
             }
           }
+
+          // Ash Grass (Route 113 & Lavaridge)
+          if (MBEmerald.MetatileBehavior_IsAshGrass(arrivedBehavior)) {
+            const currentMt = worldGrid.getMetatile(playerX, playerY);
+            const ashRes = hoennAshTracker.onStep(arrivedBehavior, currentMt);
+            if (ashRes.isAsh) {
+              paintNavigationMetatile(playerX, playerY, ashRes.cleanMetatile);
+              if (ashRes.sound) audioController.playSE(ashRes.sound);
+            }
+          }
+
+          // Mt. Chimney Cable Car Station (Route 112 <-> Mt. Chimney Summit)
+          if (isCableCarStation(curMap)) {
+            if (locX === 6 && (locY === 3 || locY === 4)) {
+              const ride = getCableCarDestination(curMap);
+              if (ride) {
+                audioController.playSE(EmeraldConstants.SE_DING_DONG);
+                audioController.playSE(EmeraldConstants.SE_ELEVATOR);
+                const srcHdr = mapHeaders.get(curMap) ?? ({ id: curMap, warps: [], regionMapSection: 0, mapType: 0 } as unknown as MapHeader);
+                void followNavigationWarp(srcHdr, -1, "step", {
+                  mapId: ride.destMap,
+                  warpId: -1,
+                  x: ride.x,
+                  y: ride.y,
+                });
+                return;
+              }
+            }
+          }
         }
 
         if (HOENN && index) {
@@ -2087,7 +2122,14 @@ async function followNavigationWarp(source: MapHeader, warpId: number, phase: "i
   let door: ViewerDoorAnimation | null = null;
   let stopStairs: (()=>void) | null = null;
   try {
-    const destination = address ? await navigationWarps.resolveAddress(address) : await navigationWarps.resolve(source, warpId);
+    let destination = address ? await navigationWarps.resolveAddress(address) : await navigationWarps.resolve(source, warpId);
+    if (HOENN && destination.header.id.includes("SHOAL_CAVE")) {
+      const tide = getShoalTide();
+      const tideDest = getShoalCaveTideDestination(destination.header.id, tide);
+      if (tideDest && tideDest !== destination.header.id) {
+        destination = await navigationWarps.resolveAddress({ mapId: tideDest, warpId: destination.warpId, x: destination.x, y: destination.y });
+      }
+    }
     let cavePreview = false;
     if (!HOENN) {
       await loadCData("map_preview_screen");

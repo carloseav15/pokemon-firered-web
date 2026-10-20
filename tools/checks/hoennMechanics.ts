@@ -23,6 +23,17 @@ import {
   METATILE_SootopolisGym_Stairs,
   MossdeepGymTracker,
   METATILE_MossdeepGym_YellowArrow_Right,
+  HoennAshTracker,
+  METATILE_Fallarbor_AshGrass,
+  METATILE_Fallarbor_NormalGrass,
+  METATILE_Lavaridge_AshGrass,
+  METATILE_Lavaridge_NormalGrass,
+  getCleanGrassMetatile,
+  getShoalTide,
+  getShoalCaveTideDestination,
+  isCableCarStation,
+  getCableCarDestination,
+  CABLE_CAR_STATIONS,
 } from "../../src/viewer/hoennMechanics";
 import * as MBEmerald from "../../src/games/emerald/generated/metatileBehavior";
 import * as EmeraldConstants from "../../src/games/emerald/generated/constants";
@@ -230,16 +241,95 @@ assert.equal(yellowSw2.newRotation, 2);
 const arrowMt = mossdeepGym.getRotatedArrowMetatile(METATILE_MossdeepGym_YellowArrow_Right, 0);
 assert.equal(arrowMt, 592 + 2, "Arrow metatile rotated to Left");
 
-// 7. Cracked Floors & Hole Destinations
+// 7. Volcanic Ash Grass (Route 113 & Lavaridge)
+const ashTracker = new HoennAshTracker();
+assert.equal(ashTracker.totalSoot, 0);
+
+// Walking on Fallarbor ash grass cleans it to normal grass and gathers soot
+const ashStep1 = ashTracker.onStep(MBEmerald.MB_ASHGRASS, METATILE_Fallarbor_AshGrass);
+assert.equal(ashStep1.isAsh, true);
+assert.equal(ashStep1.cleanMetatile, METATILE_Fallarbor_NormalGrass);
+assert.equal(ashStep1.sootCount, 1);
+assert.equal(ashStep1.sound, EmeraldConstants.SE_FU_ZAKU);
+
+const ashStep2 = ashTracker.onStep(MBEmerald.MB_ASHGRASS, METATILE_Lavaridge_AshGrass);
+assert.equal(ashStep2.isAsh, true);
+assert.equal(ashStep2.cleanMetatile, METATILE_Lavaridge_NormalGrass);
+assert.equal(ashStep2.sootCount, 2);
+
+// Normal grass does not trigger ash clearing
+const normalGrassStep = ashTracker.onStep(0, 500);
+assert.equal(normalGrassStep.isAsh, false);
+assert.equal(normalGrassStep.sootCount, 2);
+
+assert.equal(getCleanGrassMetatile(METATILE_Fallarbor_AshGrass), METATILE_Fallarbor_NormalGrass);
+assert.equal(getCleanGrassMetatile(METATILE_Lavaridge_AshGrass), METATILE_Lavaridge_NormalGrass);
+
+// 8. Shoal Cave Tides
+// High tide: 9 to 14, 21 to 2
+assert.equal(getShoalTide(9), "high");
+assert.equal(getShoalTide(12), "high");
+assert.equal(getShoalTide(14), "high");
+assert.equal(getShoalTide(21), "high");
+assert.equal(getShoalTide(23), "high");
+assert.equal(getShoalTide(0), "high");
+assert.equal(getShoalTide(2), "high");
+
+// Low tide: 3 to 8, 15 to 20
+assert.equal(getShoalTide(3), "low");
+assert.equal(getShoalTide(8), "low");
+assert.equal(getShoalTide(15), "low");
+assert.equal(getShoalTide(20), "low");
+
+// Tide destination map redirection
+assert.equal(
+  getShoalCaveTideDestination("MAP_SHOAL_CAVE_LOW_TIDE_ENTRANCE_ROOM", "high"),
+  "MAP_SHOAL_CAVE_HIGH_TIDE_ENTRANCE_ROOM"
+);
+assert.equal(
+  getShoalCaveTideDestination("MAP_SHOAL_CAVE_HIGH_TIDE_ENTRANCE_ROOM", "low"),
+  "MAP_SHOAL_CAVE_LOW_TIDE_ENTRANCE_ROOM"
+);
+assert.equal(
+  getShoalCaveTideDestination("MAP_SHOAL_CAVE_LOW_TIDE_INNER_ROOM", "high"),
+  "MAP_SHOAL_CAVE_HIGH_TIDE_INNER_ROOM"
+);
+assert.equal(
+  getShoalCaveTideDestination("MAP_SHOAL_CAVE_HIGH_TIDE_INNER_ROOM", "low"),
+  "MAP_SHOAL_CAVE_LOW_TIDE_INNER_ROOM"
+);
+
+// 9. Mt. Chimney Cable Car Station (cable_car.c)
+assert.ok(isCableCarStation(CABLE_CAR_STATIONS.BASE));
+assert.ok(isCableCarStation(CABLE_CAR_STATIONS.TOP));
+assert.equal(isCableCarStation("MAP_LITTLEROOT_TOWN"), false);
+
+// Boarding at Route 112 base station ascends to Mt. Chimney summit
+const rideUp = getCableCarDestination(CABLE_CAR_STATIONS.BASE);
+assert.ok(rideUp);
+assert.equal(rideUp?.destMap, CABLE_CAR_STATIONS.TOP);
+assert.equal(rideUp?.goingUp, true);
+assert.equal(rideUp?.x, 6);
+assert.equal(rideUp?.y, 7);
+
+// Boarding at Mt. Chimney summit descends to Route 112 base
+const rideDown = getCableCarDestination(CABLE_CAR_STATIONS.TOP);
+assert.ok(rideDown);
+assert.equal(rideDown?.destMap, CABLE_CAR_STATIONS.BASE);
+assert.equal(rideDown?.goingUp, false);
+assert.equal(rideDown?.x, 6);
+assert.equal(rideDown?.y, 7);
+
+// 10. Cracked Floors & Hole Destinations
 assert.equal(getCrackedFloorHoleMetatile(559), 520);
 assert.equal(getCrackedFloorHoleMetatile(568), 569);
 assert.deepEqual(getHoleFallDestination("MAP_SKY_PILLAR_2F", 10, 15), { mapId: "MAP_SKY_PILLAR_1F", x: 10, y: 15 });
 assert.deepEqual(getHoleFallDestination("MAP_MIRAGE_TOWER_4F", 12, 14), { mapId: "MAP_MIRAGE_TOWER_3F", x: 12, y: 14 });
 
-// 8. Muddy Slopes
+// 11. Muddy Slopes
 const muddySlopeCheck = checkMuddySlopeMovement(MBEmerald.MB_MUDDY_SLOPE, "north", true);
 assert.equal(muddySlopeCheck.canClimb, true);
 const muddyFailCheck = checkMuddySlopeMovement(MBEmerald.MB_MUDDY_SLOPE, "north", false);
 assert.equal(muddyFailCheck.canClimb, false);
 
-console.log("PASS: hoennMechanics test (Mach & Acro Bike, Balance Rails, Water Rapids, Sealed Chamber, Dive/Emerge, Sootopolis & Mossdeep Gyms).");
+console.log("PASS: hoennMechanics test (Mach & Acro Bike, Balance Rails, Rapids, Sealed Chamber, Dive, Gyms, Ash Grass, Shoal Cave Tides, Cable Car).");

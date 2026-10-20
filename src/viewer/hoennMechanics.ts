@@ -234,7 +234,6 @@ export function getWaterCurrentDirection(behavior: number): Direction | null {
   if (behavior === MBEmerald.MB_SOUTHWARD_CURRENT) return "south";
   return null;
 }
-
 export const SEALED_CHAMBER_DIVE_SPOT = { mapId: "MAP_ROUTE134", x: 60, y: 31 };
 export const SEALED_CHAMBER_DESTINATION = { mapId: "MAP_SEALED_CHAMBER_OUTER_ROOM", x: 10, y: 19 };
 
@@ -532,4 +531,119 @@ export class MossdeepGymTracker {
     const rot = this.puzzleRotations[puzzleNumber] || 0;
     return METATILE_MossdeepGym_YellowArrow_Right + rowOffset + rot;
   }
+}
+
+/**
+ * Ash Grass mechanics in Route 113 & Lavaridge (field_tasks.c: AshGrassPerStepCallback).
+ * Walking over ash-covered grass cleans it, leaving normal green grass, producing
+ * a puff of ash, and accumulating soot for the Soot Sack.
+ */
+export const METATILE_Fallarbor_AshGrass = 522; // 0x20A
+export const METATILE_Fallarbor_NormalGrass = 530; // 0x212
+export const METATILE_Lavaridge_AshGrass = 519; // 0x207
+export const METATILE_Lavaridge_NormalGrass = 518; // 0x206
+
+export function getCleanGrassMetatile(metatileId: number): number {
+  if (metatileId === METATILE_Lavaridge_AshGrass) {
+    return METATILE_Lavaridge_NormalGrass;
+  }
+  return METATILE_Fallarbor_NormalGrass;
+}
+
+export class HoennAshTracker {
+  private sootSteps = 0;
+
+  onStep(behavior: number, metatileId: number): { isAsh: boolean; cleanMetatile: number; sootCount: number; sound?: number } {
+    if (MBEmerald.MetatileBehavior_IsAshGrass(behavior) || metatileId === METATILE_Fallarbor_AshGrass || metatileId === METATILE_Lavaridge_AshGrass) {
+      this.sootSteps++;
+      return {
+        isAsh: true,
+        cleanMetatile: getCleanGrassMetatile(metatileId),
+        sootCount: this.sootSteps,
+        sound: EmeraldConstants.SE_FU_ZAKU,
+      };
+    }
+    return { isAsh: false, cleanMetatile: metatileId, sootCount: this.sootSteps };
+  }
+
+  get totalSoot(): number {
+    return this.sootSteps;
+  }
+
+  reset(): void {
+    this.sootSteps = 0;
+  }
+}
+
+/**
+ * Shoal Cave Tides (time_events.c: UpdateShoalTideFlag).
+ * - High tide: 09:00 - 14:59, 21:00 - 02:59 (water flooded, surf navigation, shoal shells)
+ * - Low tide:  03:00 - 08:59, 15:00 - 20:59 (water receded, shoal salt piles, ice room unlocked)
+ */
+export type ShoalTide = "high" | "low";
+
+export function getShoalTide(hours?: number): ShoalTide {
+  const h = hours !== undefined ? hours : new Date().getHours();
+  if ((h >= 9 && h < 15) || (h >= 21 || h < 3)) {
+    return "high";
+  }
+  return "low";
+}
+
+export const SHOAL_CAVE_TIDE_MAPS: Record<string, { high: string; low: string }> = {
+  MAP_SHOAL_CAVE_LOW_TIDE_ENTRANCE_ROOM: {
+    high: "MAP_SHOAL_CAVE_HIGH_TIDE_ENTRANCE_ROOM",
+    low: "MAP_SHOAL_CAVE_LOW_TIDE_ENTRANCE_ROOM",
+  },
+  MAP_SHOAL_CAVE_HIGH_TIDE_ENTRANCE_ROOM: {
+    high: "MAP_SHOAL_CAVE_HIGH_TIDE_ENTRANCE_ROOM",
+    low: "MAP_SHOAL_CAVE_LOW_TIDE_ENTRANCE_ROOM",
+  },
+  MAP_SHOAL_CAVE_LOW_TIDE_INNER_ROOM: {
+    high: "MAP_SHOAL_CAVE_HIGH_TIDE_INNER_ROOM",
+    low: "MAP_SHOAL_CAVE_LOW_TIDE_INNER_ROOM",
+  },
+  MAP_SHOAL_CAVE_HIGH_TIDE_INNER_ROOM: {
+    high: "MAP_SHOAL_CAVE_HIGH_TIDE_INNER_ROOM",
+    low: "MAP_SHOAL_CAVE_LOW_TIDE_INNER_ROOM",
+  },
+};
+
+export function getShoalCaveTideDestination(currentMap: string, targetTide: ShoalTide): string | null {
+  const entry = SHOAL_CAVE_TIDE_MAPS[currentMap];
+  if (!entry) return null;
+  return targetTide === "high" ? entry.high : entry.low;
+}
+
+/**
+ * Mt. Chimney Cable Car Station (cable_car.c).
+ * Connects Route 112 (base) with Mt. Chimney summit (volcano crater).
+ */
+export const CABLE_CAR_STATIONS = {
+  BASE: "MAP_ROUTE112_CABLE_CAR_STATION",
+  TOP: "MAP_MT_CHIMNEY_CABLE_CAR_STATION",
+};
+
+export function isCableCarStation(mapId: string): boolean {
+  return mapId === CABLE_CAR_STATIONS.BASE || mapId === CABLE_CAR_STATIONS.TOP;
+}
+
+export function getCableCarDestination(currentMap: string): { destMap: string; x: number; y: number; goingUp: boolean } | null {
+  if (currentMap === CABLE_CAR_STATIONS.BASE) {
+    return {
+      destMap: CABLE_CAR_STATIONS.TOP,
+      x: 6,
+      y: 7,
+      goingUp: true,
+    };
+  }
+  if (currentMap === CABLE_CAR_STATIONS.TOP) {
+    return {
+      destMap: CABLE_CAR_STATIONS.BASE,
+      x: 6,
+      y: 7,
+      goingUp: false,
+    };
+  }
+  return null;
 }
