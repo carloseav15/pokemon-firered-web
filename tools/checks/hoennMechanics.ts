@@ -34,6 +34,30 @@ import {
   isCableCarStation,
   getCableCarDestination,
   CABLE_CAR_STATIONS,
+  FortreeGymRotatingGateTracker,
+  FORTREE_GYM_GATES,
+  GATE_SHAPE_T1,
+  GATE_SHAPE_T2,
+  GATE_SHAPE_L4,
+  GATE_ORIENTATION_0,
+  GATE_ORIENTATION_90,
+  GATE_ORIENTATION_180,
+  GATE_ORIENTATION_270,
+  ROTATE_CLOCKWISE,
+  ROTATE_ANTICLOCKWISE,
+  MauvilleGymLaserTracker,
+  MAUVILLE_GYM_SWITCHES,
+  METATILE_MauvilleGym_RaisedSwitch,
+  METATILE_MauvilleGym_PressedSwitch,
+  METATILE_MauvilleGym_RedBeamH3_On,
+  METATILE_MauvilleGym_RedBeamH4_On,
+  METATILE_MauvilleGym_GreenBeamH3_On,
+  METATILE_MauvilleGym_GreenBeamH4_On,
+  METATILE_MauvilleGym_FloorTile,
+  isElectricBarrierMetatile,
+  LavaridgeGymTracker,
+  LAVARIDGE_BURIED_TRAINERS,
+  LAVARIDGE_GYM_GEYSER_WARPS,
 } from "../../src/viewer/hoennMechanics";
 import * as MBEmerald from "../../src/games/emerald/generated/metatileBehavior";
 import * as EmeraldConstants from "../../src/games/emerald/generated/constants";
@@ -332,4 +356,129 @@ assert.equal(muddySlopeCheck.canClimb, true);
 const muddyFailCheck = checkMuddySlopeMovement(MBEmerald.MB_MUDDY_SLOPE, "north", false);
 assert.equal(muddyFailCheck.canClimb, false);
 
-console.log("PASS: hoennMechanics test (Mach & Acro Bike, Balance Rails, Rapids, Sealed Chamber, Dive, Gyms, Ash Grass, Shoal Cave Tides, Cable Car).");
+// 12. Fortree Gym (Winona / Alana) - Rotating Gates (rotating_gate.c)
+const fortreeGates = new FortreeGymRotatingGateTracker();
+assert.equal(FORTREE_GYM_GATES.length, 8, "8 gates configured for Fortree Gym");
+assert.equal(FORTREE_GYM_GATES[0].shape, GATE_SHAPE_T2);
+assert.equal(FORTREE_GYM_GATES[0].initialOrientation, GATE_ORIENTATION_90);
+assert.equal(FORTREE_GYM_GATES[7].shape, GATE_SHAPE_L4);
+assert.equal(FORTREE_GYM_GATES[7].initialOrientation, GATE_ORIENTATION_180);
+
+// Initial orientations
+assert.equal(fortreeGates.getOrientation(0), GATE_ORIENTATION_90);
+assert.equal(fortreeGates.getOrientation(1), GATE_ORIENTATION_180);
+assert.equal(fortreeGates.getOrientation(3), GATE_ORIENTATION_90);
+assert.equal(fortreeGates.getOrientation(4), GATE_ORIENTATION_0);
+
+// Gate 0 at (6, 7): Shape T2, Orient 90 (arms: North=East, East=South, South=West).
+// Pushing against arm from North at (5, 6) or (7, 6):
+// Target coords for Gate 0: x in [4..7], y in [5..8].
+// When moving North into (5, 6): centerX = 5 - 6 + 2 = 1, centerY = 6 - 7 + 2 = 1.
+// RotationInfoNorth at (1, 1) = GATE_ROT_CW(GATE_ARM_WEST, 0).
+// Since Gate 0 is at orientation 90, armOrientation = (GATE_ARM_WEST - 1 + 4) % 4 = 2 (GATE_ARM_SOUTH).
+// Shape T2 has South short arm (1)!
+assert.ok(fortreeGates.hasArm(0, 6), "Gate 0 has active arm at target position");
+
+// Push gate: rotates 90° clockwise
+const push1 = fortreeGates.checkMovement("north", 5, 6);
+assert.equal(push1.blocked, false);
+assert.equal(push1.rotated, true);
+assert.equal(push1.gateId, 0);
+assert.equal(push1.newOrientation, GATE_ORIENTATION_180, "Rotates from 90° to 180°");
+assert.equal(push1.sound, EmeraldConstants.SE_ROTATING_GATE);
+assert.equal(fortreeGates.getOrientation(0), GATE_ORIENTATION_180);
+
+// Blocked gate test: when collision callback detects obstacle
+const blockedPush = fortreeGates.checkMovement("north", 5, 6, () => true);
+assert.equal(blockedPush.blocked, true, "Blocked rotation halts movement");
+assert.equal(blockedPush.rotated, false);
+
+// Reset
+fortreeGates.reset();
+assert.equal(fortreeGates.getOrientation(0), GATE_ORIENTATION_90);
+
+// 13. Mauville Gym (Wattson / Erico) - Electric Laser Barriers
+const mauvilleGym = new MauvilleGymLaserTracker();
+assert.equal(MAUVILLE_GYM_SWITCHES.length, 4, "4 floor switches in Mauville Gym");
+assert.deepEqual(MAUVILLE_GYM_SWITCHES[0], { x: 0, y: 15 });
+assert.deepEqual(MAUVILLE_GYM_SWITCHES[1], { x: 4, y: 12 });
+assert.deepEqual(MAUVILLE_GYM_SWITCHES[2], { x: 3, y: 9 });
+assert.deepEqual(MAUVILLE_GYM_SWITCHES[3], { x: 8, y: 9 });
+
+assert.equal(mauvilleGym.isAlt(), false, "Initial barrier state is default");
+assert.equal(mauvilleGym.isGymDefeated(), false);
+
+// Stepping on non-switch tile
+const nonSw = mauvilleGym.onStep(1, 1);
+assert.equal(nonSw.isSwitch, false);
+
+// Stepping on switch 0 at (0, 15)
+const sw0 = mauvilleGym.onStep(0, 15);
+assert.equal(sw0.isSwitch, true);
+assert.equal(sw0.switchIndex, 0);
+assert.equal(sw0.altBarriers, true, "Toggles to alternate laser barriers");
+assert.equal(sw0.soundSwitch, EmeraldConstants.SE_SWITCH);
+assert.equal(sw0.soundUnlock, EmeraldConstants.SE_UNLOCK);
+assert.ok(sw0.tileUpdates && sw0.tileUpdates.length > 0);
+
+// Check that stepped switch is pressed, others are raised
+const sw0State = sw0.tileUpdates?.find(t => t.x === 0 && t.y === 15);
+assert.equal(sw0State?.metatileId, METATILE_MauvilleGym_PressedSwitch);
+const sw1State = sw0.tileUpdates?.find(t => t.x === 4 && t.y === 12);
+assert.equal(sw1State?.metatileId, METATILE_MauvilleGym_RaisedSwitch);
+
+// Stepping on switch 1 at (4, 12) toggles back to default barriers
+const sw1 = mauvilleGym.onStep(4, 12);
+assert.equal(sw1.isSwitch, true);
+assert.equal(sw1.switchIndex, 1);
+assert.equal(sw1.altBarriers, false);
+
+// Electric barrier collision check
+assert.ok(isElectricBarrierMetatile(METATILE_MauvilleGym_RedBeamH3_On));
+assert.ok(isElectricBarrierMetatile(METATILE_MauvilleGym_GreenBeamH4_On));
+assert.equal(isElectricBarrierMetatile(METATILE_MauvilleGym_FloorTile), false);
+
+// Deactivate puzzle upon Wattson defeat
+const deact = mauvilleGym.deactivatePuzzle();
+assert.equal(mauvilleGym.isGymDefeated(), true);
+assert.equal(deact.soundUnlock, EmeraldConstants.SE_UNLOCK);
+const allSwPressed = deact.tileUpdates.filter(t => t.metatileId === METATILE_MauvilleGym_PressedSwitch);
+assert.equal(allSwPressed.length, 4, "All 4 switches pressed upon gym defeat");
+
+// 14. Lavaridge Gym (Flannery / Candela) - Steam Geysers & Buried Trainers
+const lavaridgeGym = new LavaridgeGymTracker();
+assert.equal(LAVARIDGE_BURIED_TRAINERS.length, 8, "8 buried trainers total (4 in 1F, 4 in B1F)");
+assert.equal(LAVARIDGE_BURIED_TRAINERS.filter(t => t.mapId === "MAP_LAVARIDGE_TOWN_GYM_1F").length, 4);
+assert.equal(LAVARIDGE_BURIED_TRAINERS.filter(t => t.mapId === "MAP_LAVARIDGE_TOWN_GYM_B1F").length, 4);
+
+// Geyser / Sand pit warps
+const fallStep = lavaridgeGym.onStep("MAP_LAVARIDGE_TOWN_GYM_1F", 10, 18, MBEmerald.MB_LAVARIDGE_GYM_1F_WARP);
+assert.equal(fallStep.action, "fall");
+assert.equal(fallStep.destMap, "MAP_LAVARIDGE_TOWN_GYM_B1F");
+assert.equal(fallStep.destX, 10);
+assert.equal(fallStep.destY, 18);
+assert.equal(fallStep.soundLaunch, EmeraldConstants.SE_LAVARIDGE_FALL_WARP);
+
+const launchStep = lavaridgeGym.onStep("MAP_LAVARIDGE_TOWN_GYM_B1F", 4, 18, MBEmerald.MB_LAVARIDGE_GYM_B1F_WARP);
+assert.equal(launchStep.action, "launch");
+assert.equal(launchStep.destMap, "MAP_LAVARIDGE_TOWN_GYM_1F");
+assert.equal(launchStep.destX, 4);
+assert.equal(launchStep.destY, 18);
+assert.equal(launchStep.soundLaunch, EmeraldConstants.SE_LAVARIDGE_FALL_WARP);
+assert.equal(launchStep.soundLand, EmeraldConstants.SE_M_DIG);
+
+// Buried trainer discovery
+assert.equal(lavaridgeGym.isTrainerRevealed("COLE"), false);
+// Cole is buried at (3, 14) on 1F; approaching at (3, 13) reveals him
+const revealCole = lavaridgeGym.checkBuriedTrainers("MAP_LAVARIDGE_TOWN_GYM_1F", 3, 13);
+assert.equal(revealCole.revealed, true);
+assert.equal(revealCole.trainer?.id, "COLE");
+assert.equal(revealCole.trainer?.name, "Cole");
+assert.equal(revealCole.sound, EmeraldConstants.SE_M_DIG);
+assert.equal(lavaridgeGym.isTrainerRevealed("COLE"), true);
+
+// Stepping next to Cole again does not trigger a duplicate reveal
+const duplicateCheck = lavaridgeGym.checkBuriedTrainers("MAP_LAVARIDGE_TOWN_GYM_1F", 3, 13);
+assert.equal(duplicateCheck.revealed, false);
+
+console.log("PASS: hoennMechanics test (Mach & Acro Bike, Balance Rails, Rapids, Sealed Chamber, Dive, Gyms, Fortree Rotating Gates, Mauville Laser Barriers, Lavaridge Geysers, Ash Grass, Shoal Cave Tides, Cable Car).");

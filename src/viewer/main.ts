@@ -59,6 +59,10 @@ import {
   getShoalCaveTideDestination,
   isCableCarStation,
   getCableCarDestination,
+  FortreeGymRotatingGateTracker,
+  MauvilleGymLaserTracker,
+  isElectricBarrierMetatile,
+  LavaridgeGymTracker,
 } from "./hoennMechanics";
 import {
   type CinematicHost,
@@ -174,6 +178,9 @@ const hoennAcroBikeTracker = new HoennAcroBikeTracker();
 const sootopolisGymTracker = new SootopolisGymIceTracker();
 const mossdeepGymTracker = new MossdeepGymTracker();
 const hoennAshTracker = new HoennAshTracker();
+const fortreeGymTracker = new FortreeGymRotatingGateTracker();
+const mauvilleGymTracker = new MauvilleGymLaserTracker();
+const lavaridgeGymTracker = new LavaridgeGymTracker();
 const hoennCinematicHost: CinematicHost = {
   get content() { return content; },
   get viewport() { return viewport; },
@@ -1435,6 +1442,32 @@ function processPlayerStep(): void {
         audioController.playSE(railCheck.sound);
       }
     }
+
+    const hit = findMapAt(playerX, playerY);
+    const curMap = hit ? hit[0] : (navigationMap ?? "");
+    const locX = hit ? playerX - hit[1].x : playerX;
+    const locY = hit ? playerY - hit[1].y : playerY;
+
+    if (curMap === "MAP_FORTREE_CITY_GYM") {
+      const targetLocX = locX + dx;
+      const targetLocY = locY + dy;
+      const gateCheck = fortreeGymTracker.checkMovement(targetDir, targetLocX, targetLocY);
+      if (gateCheck.blocked) {
+        audioController.playWallBump();
+        return;
+      }
+      if (gateCheck.rotated && gateCheck.sound) {
+        audioController.playSE(gateCheck.sound);
+      }
+    }
+
+    if (curMap === "MAP_MAUVILLE_CITY_GYM") {
+      const targetMetatile = worldGrid.getMetatile(playerX + dx, playerY + dy);
+      if (isElectricBarrierMetatile(targetMetatile)) {
+        audioController.playWallBump();
+        return;
+      }
+    }
   }
   if (!forcedStep && !isMudSlide && tryNavigationWarp("input", playerDir)) return;
   // PlayerNotOnBikeTurningInPlace -> PlayerTurnInPlace -> WalkInPlaceFast (8 ticks).
@@ -1649,6 +1682,54 @@ function processPlayerStep(): void {
             } else if (mossResult.isSwitch && mossResult.switchTrigger) {
               if (mossResult.sound) audioController.playSE(mossResult.sound);
               audioController.playSE(EmeraldConstants.SE_REPEL);
+            }
+          }
+
+          // Mauville Gym Electric Laser Barriers
+          if (curMap === "MAP_MAUVILLE_CITY_GYM") {
+            const mauvilleResult = mauvilleGymTracker.onStep(locX, locY);
+            if (mauvilleResult.isSwitch) {
+              if (mauvilleResult.soundSwitch) audioController.playSE(mauvilleResult.soundSwitch);
+              if (mauvilleResult.soundUnlock) audioController.playSE(mauvilleResult.soundUnlock);
+              if (mauvilleResult.tileUpdates) {
+                for (const tu of mauvilleResult.tileUpdates) {
+                  const wx = hit ? hit[1].x + tu.x : tu.x;
+                  const wy = hit ? hit[1].y + tu.y : tu.y;
+                  paintNavigationMetatile(wx, wy, tu.metatileId);
+                }
+              }
+            }
+          }
+
+          // Lavaridge Gym Geysers & Buried Trainers
+          if (curMap === "MAP_LAVARIDGE_TOWN_GYM_1F" || curMap === "MAP_LAVARIDGE_TOWN_GYM_B1F") {
+            const trainerCheck = lavaridgeGymTracker.checkBuriedTrainers(curMap, locX, locY);
+            if (trainerCheck.revealed && trainerCheck.sound) {
+              audioController.playSE(trainerCheck.sound);
+              audioController.playSE(EmeraldConstants.SE_FU_ZAKU);
+            }
+            const lavaWarp = lavaridgeGymTracker.onStep(curMap, locX, locY, arrivedBehavior);
+            if (lavaWarp.action === "fall" && lavaWarp.destMap) {
+              if (lavaWarp.soundLaunch) audioController.playSE(lavaWarp.soundLaunch);
+              const srcHdr = mapHeaders.get(curMap) ?? ({ id: curMap, warps: [], regionMapSection: 0, mapType: 0 } as unknown as MapHeader);
+              void followNavigationWarp(srcHdr, -1, "step", {
+                mapId: lavaWarp.destMap,
+                warpId: -1,
+                x: lavaWarp.destX ?? locX,
+                y: lavaWarp.destY ?? locY,
+              });
+              return;
+            } else if (lavaWarp.action === "launch" && lavaWarp.destMap) {
+              if (lavaWarp.soundLaunch) audioController.playSE(lavaWarp.soundLaunch);
+              if (lavaWarp.soundLand) audioController.playSE(lavaWarp.soundLand);
+              const srcHdr = mapHeaders.get(curMap) ?? ({ id: curMap, warps: [], regionMapSection: 0, mapType: 0 } as unknown as MapHeader);
+              void followNavigationWarp(srcHdr, -1, "step", {
+                mapId: lavaWarp.destMap,
+                warpId: -1,
+                x: lavaWarp.destX ?? locX,
+                y: lavaWarp.destY ?? locY,
+              });
+              return;
             }
           }
 

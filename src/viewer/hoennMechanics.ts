@@ -647,3 +647,645 @@ export function getCableCarDestination(currentMap: string): { destMap: string; x
   }
   return null;
 }
+
+/**
+ * Fortree City Gym (Ciudad Arborada - Winona / Alana):
+ * Rotating Gates Puzzle (rotating_gate.c).
+ * Gates shaped like 'L' and 'T' pivot 90° or 180° when pushed against their arms,
+ * altering the passageways across the treehouse gym.
+ */
+export const GATE_SHAPE_L1 = 0;
+export const GATE_SHAPE_L2 = 1;
+export const GATE_SHAPE_L3 = 2;
+export const GATE_SHAPE_L4 = 3;
+export const GATE_SHAPE_T1 = 4;
+export const GATE_SHAPE_T2 = 5;
+export const GATE_SHAPE_T3 = 6;
+export const GATE_SHAPE_T4 = 7;
+
+export const GATE_ORIENTATION_0 = 0;
+export const GATE_ORIENTATION_90 = 1;
+export const GATE_ORIENTATION_180 = 2;
+export const GATE_ORIENTATION_270 = 3;
+export const GATE_ORIENTATION_MAX = 4;
+
+export const GATE_ARM_NORTH = 0;
+export const GATE_ARM_EAST = 1;
+export const GATE_ARM_SOUTH = 2;
+export const GATE_ARM_WEST = 3;
+
+export const ROTATE_NONE = 0;
+export const ROTATE_ANTICLOCKWISE = 1;
+export const ROTATE_CLOCKWISE = 2;
+
+function GATE_ROT(rotationDirection: number, arm: number, longArm: number): number {
+  return ((rotationDirection & 15) << 4) | ((arm & 7) << 1) | (longArm & 1);
+}
+function GATE_ROT_CW(arm: number, longArm: number): number {
+  return GATE_ROT(ROTATE_CLOCKWISE, arm, longArm);
+}
+function GATE_ROT_ACW(arm: number, longArm: number): number {
+  return GATE_ROT(ROTATE_ANTICLOCKWISE, arm, longArm);
+}
+export const GATE_ROT_NONE = 255;
+
+export const ROTATING_GATE_ROTATION_INFO_NORTH = [
+  GATE_ROT_NONE,                 GATE_ROT_NONE,                 GATE_ROT_NONE,                  GATE_ROT_NONE,
+  GATE_ROT_CW(GATE_ARM_WEST, 1), GATE_ROT_CW(GATE_ARM_WEST, 0), GATE_ROT_ACW(GATE_ARM_EAST, 0), GATE_ROT_ACW(GATE_ARM_EAST, 1),
+  GATE_ROT_NONE,                 GATE_ROT_NONE,                 GATE_ROT_NONE,                  GATE_ROT_NONE,
+  GATE_ROT_NONE,                 GATE_ROT_NONE,                 GATE_ROT_NONE,                  GATE_ROT_NONE,
+];
+
+export const ROTATING_GATE_ROTATION_INFO_SOUTH = [
+  GATE_ROT_NONE,                  GATE_ROT_NONE,                  GATE_ROT_NONE,                 GATE_ROT_NONE,
+  GATE_ROT_NONE,                  GATE_ROT_NONE,                  GATE_ROT_NONE,                 GATE_ROT_NONE,
+  GATE_ROT_ACW(GATE_ARM_WEST, 1), GATE_ROT_ACW(GATE_ARM_WEST, 0), GATE_ROT_CW(GATE_ARM_EAST, 0), GATE_ROT_CW(GATE_ARM_EAST, 1),
+  GATE_ROT_NONE,                  GATE_ROT_NONE,                  GATE_ROT_NONE,                 GATE_ROT_NONE,
+];
+
+export const ROTATING_GATE_ROTATION_INFO_WEST = [
+  GATE_ROT_NONE, GATE_ROT_ACW(GATE_ARM_NORTH, 1), GATE_ROT_NONE, GATE_ROT_NONE,
+  GATE_ROT_NONE, GATE_ROT_ACW(GATE_ARM_NORTH, 0), GATE_ROT_NONE, GATE_ROT_NONE,
+  GATE_ROT_NONE, GATE_ROT_CW(GATE_ARM_SOUTH, 0),  GATE_ROT_NONE, GATE_ROT_NONE,
+  GATE_ROT_NONE, GATE_ROT_CW(GATE_ARM_SOUTH, 1),  GATE_ROT_NONE, GATE_ROT_NONE,
+];
+
+export const ROTATING_GATE_ROTATION_INFO_EAST = [
+  GATE_ROT_NONE, GATE_ROT_NONE, GATE_ROT_CW(GATE_ARM_NORTH, 1),  GATE_ROT_NONE,
+  GATE_ROT_NONE, GATE_ROT_NONE, GATE_ROT_CW(GATE_ARM_NORTH, 0),  GATE_ROT_NONE,
+  GATE_ROT_NONE, GATE_ROT_NONE, GATE_ROT_ACW(GATE_ARM_SOUTH, 0), GATE_ROT_NONE,
+  GATE_ROT_NONE, GATE_ROT_NONE, GATE_ROT_ACW(GATE_ARM_SOUTH, 1), GATE_ROT_NONE,
+];
+
+export const ROTATING_GATE_ARM_POSITIONS_CW = [
+  { x: 0, y: -1 }, { x: 1, y: -2 }, { x: 0, y: 0 }, { x: 1, y: 0 }, { x: -1, y: 0 }, { x: -1, y: 1 }, { x: -1, y: -1 }, { x: -2, y: -1 },
+];
+
+export const ROTATING_GATE_ARM_POSITIONS_ACW = [
+  { x: -1, y: -1 }, { x: -1, y: -2 }, { x: 0, y: -1 }, { x: 1, y: -1 }, { x: 0, y: 0 }, { x: 0, y: 1 }, { x: -1, y: 0 }, { x: -2, y: 0 },
+];
+
+export const ROTATING_GATE_ARM_LAYOUT = [
+  // L-shape gates
+  [ 1, 0,  1, 0,  0, 0,  0, 0 ], // L1
+  [ 1, 1,  1, 0,  0, 0,  0, 0 ], // L2
+  [ 1, 0,  1, 1,  0, 0,  0, 0 ], // L3
+  [ 1, 1,  1, 1,  0, 0,  0, 0 ], // L4
+
+  // T-shape gates
+  [ 1, 0,  1, 0,  1, 0,  0, 0 ], // T1
+  [ 1, 1,  1, 0,  1, 0,  0, 0 ], // T2
+  [ 1, 0,  1, 1,  1, 0,  0, 0 ], // T3
+  [ 1, 0,  1, 0,  1, 1,  0, 0 ], // T4
+];
+
+export interface RotatingGateConfig {
+  x: number;
+  y: number;
+  shape: number;
+  initialOrientation: number;
+}
+
+export const FORTREE_GYM_GATES: RotatingGateConfig[] = [
+  { x: 6, y: 7, shape: GATE_SHAPE_T2, initialOrientation: GATE_ORIENTATION_90 },
+  { x: 9, y: 15, shape: GATE_SHAPE_T2, initialOrientation: GATE_ORIENTATION_180 },
+  { x: 3, y: 19, shape: GATE_SHAPE_T2, initialOrientation: GATE_ORIENTATION_90 },
+  { x: 2, y: 6, shape: GATE_SHAPE_T1, initialOrientation: GATE_ORIENTATION_90 },
+  { x: 9, y: 12, shape: GATE_SHAPE_T1, initialOrientation: GATE_ORIENTATION_0 },
+  { x: 6, y: 23, shape: GATE_SHAPE_T1, initialOrientation: GATE_ORIENTATION_0 },
+  { x: 12, y: 22, shape: GATE_SHAPE_T1, initialOrientation: GATE_ORIENTATION_0 },
+  { x: 6, y: 3, shape: GATE_SHAPE_L4, initialOrientation: GATE_ORIENTATION_180 },
+];
+
+export class FortreeGymRotatingGateTracker {
+  private gateOrientations: number[];
+
+  constructor(gates = FORTREE_GYM_GATES) {
+    this.gateOrientations = gates.map(g => g.initialOrientation);
+  }
+
+  getOrientation(gateId: number): number {
+    return this.gateOrientations[gateId] ?? 0;
+  }
+
+  setOrientation(gateId: number, orientation: number): void {
+    this.gateOrientations[gateId] = orientation % GATE_ORIENTATION_MAX;
+  }
+
+  reset(): void {
+    this.gateOrientations = FORTREE_GYM_GATES.map(g => g.initialOrientation);
+  }
+
+  hasArm(gateId: number, armInfo: number): boolean {
+    const arm = Math.floor(armInfo / 2);
+    const isLongArm = armInfo % 2;
+    const currentOrientation = this.getOrientation(gateId);
+    const armOrientation = (arm - currentOrientation + 4) % 4;
+    const shape = FORTREE_GYM_GATES[gateId].shape;
+    return (ROTATING_GATE_ARM_LAYOUT[shape]?.[armOrientation * 2 + isLongArm] ?? 0) === 1;
+  }
+
+  canRotate(
+    gateId: number,
+    rotationDirection: number,
+    isCollisionAtCoord?: (x: number, y: number) => boolean,
+  ): boolean {
+    const armPos =
+      rotationDirection === ROTATE_ANTICLOCKWISE
+        ? ROTATING_GATE_ARM_POSITIONS_ACW
+        : rotationDirection === ROTATE_CLOCKWISE
+          ? ROTATING_GATE_ARM_POSITIONS_CW
+          : null;
+    if (!armPos) return false;
+
+    const orientation = this.getOrientation(gateId);
+    const gate = FORTREE_GYM_GATES[gateId];
+    const shape = gate.shape;
+
+    for (let i = GATE_ARM_NORTH; i <= GATE_ARM_WEST; i++) {
+      for (let j = 0; j < 2; j++) {
+        const armIndex = 2 * ((orientation + i) % 4) + j;
+        if (ROTATING_GATE_ARM_LAYOUT[shape]?.[2 * i + j]) {
+          const checkX = gate.x + armPos[armIndex].x;
+          const checkY = gate.y + armPos[armIndex].y;
+          if (isCollisionAtCoord && isCollisionAtCoord(checkX, checkY)) {
+            return false;
+          }
+        }
+      }
+    }
+    return true;
+  }
+
+  rotateInDirection(gateId: number, rotationDirection: number): number {
+    let orientation = this.getOrientation(gateId);
+    if (rotationDirection === ROTATE_ANTICLOCKWISE) {
+      orientation = orientation === 0 ? GATE_ORIENTATION_270 : orientation - 1;
+    } else if (rotationDirection === ROTATE_CLOCKWISE) {
+      orientation = (orientation + 1) % GATE_ORIENTATION_MAX;
+    }
+    this.setOrientation(gateId, orientation);
+    return orientation;
+  }
+
+  checkMovement(
+    direction: Direction,
+    targetX: number,
+    targetY: number,
+    isCollisionAtCoord?: (x: number, y: number) => boolean,
+  ): {
+    blocked: boolean;
+    rotated: boolean;
+    gateId?: number;
+    newOrientation?: number;
+    sound?: number;
+  } {
+    let rotationTable: number[];
+    if (direction === "north") {
+      rotationTable = ROTATING_GATE_ROTATION_INFO_NORTH;
+    } else if (direction === "south") {
+      rotationTable = ROTATING_GATE_ROTATION_INFO_SOUTH;
+    } else if (direction === "west") {
+      rotationTable = ROTATING_GATE_ROTATION_INFO_WEST;
+    } else if (direction === "east") {
+      rotationTable = ROTATING_GATE_ROTATION_INFO_EAST;
+    } else {
+      return { blocked: false, rotated: false };
+    }
+
+    for (let i = 0; i < FORTREE_GYM_GATES.length; i++) {
+      const gate = FORTREE_GYM_GATES[i];
+      if (
+        gate.x - 2 <= targetX &&
+        targetX <= gate.x + 1 &&
+        gate.y - 2 <= targetY &&
+        targetY <= gate.y + 1
+      ) {
+        const centerX = targetX - gate.x + 2;
+        const centerY = targetY - gate.y + 2;
+        const rotationInfo = rotationTable[centerY * 4 + centerX];
+
+        if (rotationInfo !== undefined && rotationInfo !== GATE_ROT_NONE) {
+          const rotationDirection = (rotationInfo & 0xf0) >> 4;
+          const armInfo = rotationInfo & 0x0f;
+
+          if (this.hasArm(i, armInfo)) {
+            if (this.canRotate(i, rotationDirection, isCollisionAtCoord)) {
+              const newOrientation = this.rotateInDirection(i, rotationDirection);
+              return {
+                blocked: false,
+                rotated: true,
+                gateId: i,
+                newOrientation,
+                sound: EmeraldConstants.SE_ROTATING_GATE,
+              };
+            }
+            return { blocked: true, rotated: false, gateId: i };
+          }
+        }
+      }
+    }
+
+    return { blocked: false, rotated: false };
+  }
+}
+
+/**
+ * Mauville City Gym (Ciudad Malvalona - Wattson / Erico):
+ * Electric Laser Barriers Puzzle (field_specials.c & MauvilleCity_Gym/scripts.inc).
+ * Stepping on 4 floor switches activates/deactivates alternating red and green laser beams.
+ */
+export const METATILE_MauvilleGym_RaisedSwitch = 517; // 0x205
+export const METATILE_MauvilleGym_PressedSwitch = 518; // 0x206
+export const METATILE_MauvilleGym_FloorTile = 538; // 0x21A
+
+export const METATILE_MauvilleGym_GreenBeamH1_On = 544; // 0x220
+export const METATILE_MauvilleGym_GreenBeamH2_On = 545; // 0x221
+export const METATILE_MauvilleGym_RedBeamH1_On = 546; // 0x222
+export const METATILE_MauvilleGym_RedBeamH2_On = 547; // 0x223
+
+export const METATILE_MauvilleGym_GreenBeamH3_On = 552; // 0x228
+export const METATILE_MauvilleGym_GreenBeamH4_On = 553; // 0x229
+export const METATILE_MauvilleGym_RedBeamH3_On = 554; // 0x22A
+export const METATILE_MauvilleGym_RedBeamH4_On = 555; // 0x22B
+
+export const METATILE_MauvilleGym_GreenBeamH1_Off = 560; // 0x230
+export const METATILE_MauvilleGym_GreenBeamH2_Off = 561; // 0x231
+export const METATILE_MauvilleGym_RedBeamH1_Off = 562; // 0x232
+export const METATILE_MauvilleGym_RedBeamH2_Off = 563; // 0x233
+
+export const METATILE_MauvilleGym_GreenBeamH3_Off = 568; // 0x238
+export const METATILE_MauvilleGym_GreenBeamH4_Off = 569; // 0x239
+export const METATILE_MauvilleGym_RedBeamH3_Off = 570; // 0x23A
+export const METATILE_MauvilleGym_RedBeamH4_Off = 571; // 0x23B
+
+export const METATILE_MauvilleGym_GreenBeamV1_On = 576; // 0x240
+export const METATILE_MauvilleGym_RedBeamV1_On = 577; // 0x241
+export const METATILE_MauvilleGym_PoleBottom_On = 578; // 0x242
+export const METATILE_MauvilleGym_PoleBottom_Off = 579; // 0x243
+
+export const METATILE_MauvilleGym_GreenBeamV2_On = 584; // 0x248
+export const METATILE_MauvilleGym_RedBeamV2_On = 585; // 0x249
+export const METATILE_MauvilleGym_PoleTop_On = 592; // 0x250
+export const METATILE_MauvilleGym_PoleTop_Off = 593; // 0x251
+
+export const MAUVILLE_GYM_SWITCHES = [
+  { x: 0, y: 15 },
+  { x: 4, y: 12 },
+  { x: 3, y: 9 },
+  { x: 8, y: 9 },
+];
+
+export function isElectricBarrierMetatile(metatileId: number): boolean {
+  return (
+    metatileId === METATILE_MauvilleGym_GreenBeamH3_On ||
+    metatileId === METATILE_MauvilleGym_GreenBeamH4_On ||
+    metatileId === METATILE_MauvilleGym_RedBeamH3_On ||
+    metatileId === METATILE_MauvilleGym_RedBeamH4_On ||
+    metatileId === METATILE_MauvilleGym_GreenBeamV1_On ||
+    metatileId === METATILE_MauvilleGym_GreenBeamV2_On ||
+    metatileId === METATILE_MauvilleGym_RedBeamV1_On ||
+    metatileId === METATILE_MauvilleGym_RedBeamV2_On ||
+    metatileId === METATILE_MauvilleGym_PoleBottom_On ||
+    metatileId === METATILE_MauvilleGym_PoleBottom_Off ||
+    metatileId === METATILE_MauvilleGym_PoleTop_On
+  );
+}
+
+export interface MetatileTileUpdate {
+  x: number;
+  y: number;
+  metatileId: number;
+}
+
+export class MauvilleGymLaserTracker {
+  private activeSwitchIndex: number | null = null;
+  private altBarriers = false;
+  private defeated = false;
+
+  onStep(x: number, y: number): {
+    isSwitch: boolean;
+    switchIndex?: number;
+    altBarriers?: boolean;
+    tileUpdates?: MetatileTileUpdate[];
+    soundSwitch?: number;
+    soundUnlock?: number;
+  } {
+    if (this.defeated) return { isSwitch: false };
+
+    const switchIndex = MAUVILLE_GYM_SWITCHES.findIndex(s => s.x === x && s.y === y);
+    if (switchIndex === -1) return { isSwitch: false };
+
+    this.activeSwitchIndex = switchIndex;
+    this.altBarriers = !this.altBarriers;
+
+    const tileUpdates: MetatileTileUpdate[] = [];
+
+    // Switch tiles update
+    for (let i = 0; i < MAUVILLE_GYM_SWITCHES.length; i++) {
+      tileUpdates.push({
+        x: MAUVILLE_GYM_SWITCHES[i].x,
+        y: MAUVILLE_GYM_SWITCHES[i].y,
+        metatileId: i === switchIndex ? METATILE_MauvilleGym_PressedSwitch : METATILE_MauvilleGym_RaisedSwitch,
+      });
+    }
+
+    // Barrier metatiles update based on altBarriers state
+    if (this.altBarriers) {
+      // SetAltBarriers
+      tileUpdates.push(
+        { x: 3, y: 11, metatileId: METATILE_MauvilleGym_RedBeamV1_On },
+        { x: 3, y: 12, metatileId: METATILE_MauvilleGym_RedBeamV2_On },
+        { x: 3, y: 13, metatileId: METATILE_MauvilleGym_PoleTop_On },
+        { x: 4, y: 10, metatileId: METATILE_MauvilleGym_RedBeamH1_On },
+        { x: 5, y: 10, metatileId: METATILE_MauvilleGym_RedBeamH2_On },
+        { x: 4, y: 11, metatileId: METATILE_MauvilleGym_RedBeamH3_On },
+        { x: 5, y: 11, metatileId: METATILE_MauvilleGym_RedBeamH4_On },
+        { x: 7, y: 10, metatileId: METATILE_MauvilleGym_RedBeamH1_On },
+        { x: 8, y: 10, metatileId: METATILE_MauvilleGym_RedBeamH2_On },
+        { x: 7, y: 11, metatileId: METATILE_MauvilleGym_RedBeamH3_On },
+        { x: 8, y: 11, metatileId: METATILE_MauvilleGym_RedBeamH4_On },
+        { x: 4, y: 13, metatileId: METATILE_MauvilleGym_GreenBeamH1_Off },
+        { x: 5, y: 13, metatileId: METATILE_MauvilleGym_GreenBeamH2_Off },
+        { x: 4, y: 14, metatileId: METATILE_MauvilleGym_GreenBeamH3_Off },
+        { x: 5, y: 14, metatileId: METATILE_MauvilleGym_GreenBeamH4_Off },
+        { x: 1, y: 10, metatileId: METATILE_MauvilleGym_GreenBeamH1_Off },
+        { x: 2, y: 10, metatileId: METATILE_MauvilleGym_GreenBeamH2_Off },
+        { x: 1, y: 11, metatileId: METATILE_MauvilleGym_GreenBeamH3_Off },
+        { x: 2, y: 11, metatileId: METATILE_MauvilleGym_GreenBeamH4_Off },
+        { x: 6, y: 8, metatileId: METATILE_MauvilleGym_PoleBottom_On },
+        { x: 6, y: 9, metatileId: METATILE_MauvilleGym_FloorTile },
+        { x: 6, y: 10, metatileId: METATILE_MauvilleGym_PoleTop_Off },
+        { x: 4, y: 6, metatileId: METATILE_MauvilleGym_GreenBeamH1_Off },
+        { x: 5, y: 6, metatileId: METATILE_MauvilleGym_GreenBeamH2_Off },
+        { x: 4, y: 7, metatileId: METATILE_MauvilleGym_GreenBeamH3_Off },
+        { x: 5, y: 7, metatileId: METATILE_MauvilleGym_GreenBeamH4_Off },
+      );
+    } else {
+      // Default barriers
+      tileUpdates.push(
+        { x: 3, y: 11, metatileId: METATILE_MauvilleGym_PoleBottom_Off },
+        { x: 3, y: 12, metatileId: METATILE_MauvilleGym_FloorTile },
+        { x: 3, y: 13, metatileId: METATILE_MauvilleGym_PoleTop_Off },
+        { x: 4, y: 10, metatileId: METATILE_MauvilleGym_RedBeamH1_Off },
+        { x: 5, y: 10, metatileId: METATILE_MauvilleGym_RedBeamH2_Off },
+        { x: 4, y: 11, metatileId: METATILE_MauvilleGym_RedBeamH3_Off },
+        { x: 5, y: 11, metatileId: METATILE_MauvilleGym_RedBeamH4_Off },
+        { x: 7, y: 10, metatileId: METATILE_MauvilleGym_RedBeamH1_Off },
+        { x: 8, y: 10, metatileId: METATILE_MauvilleGym_RedBeamH2_Off },
+        { x: 7, y: 11, metatileId: METATILE_MauvilleGym_RedBeamH3_Off },
+        { x: 8, y: 11, metatileId: METATILE_MauvilleGym_RedBeamH4_Off },
+        { x: 4, y: 13, metatileId: METATILE_MauvilleGym_GreenBeamH1_On },
+        { x: 5, y: 13, metatileId: METATILE_MauvilleGym_GreenBeamH2_On },
+        { x: 4, y: 14, metatileId: METATILE_MauvilleGym_GreenBeamH3_On },
+        { x: 5, y: 14, metatileId: METATILE_MauvilleGym_GreenBeamH4_On },
+        { x: 1, y: 10, metatileId: METATILE_MauvilleGym_GreenBeamH1_On },
+        { x: 2, y: 10, metatileId: METATILE_MauvilleGym_GreenBeamH2_On },
+        { x: 1, y: 11, metatileId: METATILE_MauvilleGym_GreenBeamH3_On },
+        { x: 2, y: 11, metatileId: METATILE_MauvilleGym_GreenBeamH4_On },
+        { x: 6, y: 8, metatileId: METATILE_MauvilleGym_GreenBeamV1_On },
+        { x: 6, y: 9, metatileId: METATILE_MauvilleGym_GreenBeamV2_On },
+        { x: 6, y: 10, metatileId: METATILE_MauvilleGym_PoleTop_On },
+        { x: 4, y: 6, metatileId: METATILE_MauvilleGym_GreenBeamH1_On },
+        { x: 5, y: 6, metatileId: METATILE_MauvilleGym_GreenBeamH2_On },
+        { x: 4, y: 7, metatileId: METATILE_MauvilleGym_GreenBeamH3_On },
+        { x: 5, y: 7, metatileId: METATILE_MauvilleGym_GreenBeamH4_On },
+      );
+    }
+
+    return {
+      isSwitch: true,
+      switchIndex,
+      altBarriers: this.altBarriers,
+      tileUpdates,
+      soundSwitch: EmeraldConstants.SE_SWITCH,
+      soundUnlock: EmeraldConstants.SE_UNLOCK,
+    };
+  }
+
+  deactivatePuzzle(): { tileUpdates: MetatileTileUpdate[]; soundUnlock: number } {
+    this.defeated = true;
+    const tileUpdates: MetatileTileUpdate[] = [];
+
+    // Press all switches
+    for (const sw of MAUVILLE_GYM_SWITCHES) {
+      tileUpdates.push({ x: sw.x, y: sw.y, metatileId: METATILE_MauvilleGym_PressedSwitch });
+    }
+
+    // Turn off all beams
+    tileUpdates.push(
+      { x: 3, y: 11, metatileId: METATILE_MauvilleGym_PoleBottom_Off },
+      { x: 3, y: 12, metatileId: METATILE_MauvilleGym_FloorTile },
+      { x: 3, y: 13, metatileId: METATILE_MauvilleGym_PoleTop_Off },
+      { x: 4, y: 10, metatileId: METATILE_MauvilleGym_RedBeamH1_Off },
+      { x: 5, y: 10, metatileId: METATILE_MauvilleGym_RedBeamH2_Off },
+      { x: 4, y: 11, metatileId: METATILE_MauvilleGym_RedBeamH3_Off },
+      { x: 5, y: 11, metatileId: METATILE_MauvilleGym_RedBeamH4_Off },
+      { x: 7, y: 10, metatileId: METATILE_MauvilleGym_RedBeamH1_Off },
+      { x: 8, y: 10, metatileId: METATILE_MauvilleGym_RedBeamH2_Off },
+      { x: 7, y: 11, metatileId: METATILE_MauvilleGym_RedBeamH3_Off },
+      { x: 8, y: 11, metatileId: METATILE_MauvilleGym_RedBeamH4_Off },
+      { x: 4, y: 13, metatileId: METATILE_MauvilleGym_GreenBeamH1_Off },
+      { x: 5, y: 13, metatileId: METATILE_MauvilleGym_GreenBeamH2_Off },
+      { x: 4, y: 14, metatileId: METATILE_MauvilleGym_GreenBeamH3_Off },
+      { x: 5, y: 14, metatileId: METATILE_MauvilleGym_GreenBeamH4_Off },
+      { x: 1, y: 10, metatileId: METATILE_MauvilleGym_GreenBeamH1_Off },
+      { x: 2, y: 10, metatileId: METATILE_MauvilleGym_GreenBeamH2_Off },
+      { x: 1, y: 11, metatileId: METATILE_MauvilleGym_GreenBeamH3_Off },
+      { x: 2, y: 11, metatileId: METATILE_MauvilleGym_GreenBeamH4_Off },
+      { x: 6, y: 8, metatileId: METATILE_MauvilleGym_PoleBottom_Off },
+      { x: 6, y: 9, metatileId: METATILE_MauvilleGym_FloorTile },
+      { x: 6, y: 10, metatileId: METATILE_MauvilleGym_PoleTop_Off },
+      { x: 4, y: 6, metatileId: METATILE_MauvilleGym_GreenBeamH1_Off },
+      { x: 5, y: 6, metatileId: METATILE_MauvilleGym_GreenBeamH2_Off },
+      { x: 4, y: 7, metatileId: METATILE_MauvilleGym_GreenBeamH3_Off },
+      { x: 5, y: 7, metatileId: METATILE_MauvilleGym_GreenBeamH4_Off },
+    );
+
+    return {
+      tileUpdates,
+      soundUnlock: EmeraldConstants.SE_UNLOCK,
+    };
+  }
+
+  isAlt(): boolean {
+    return this.altBarriers;
+  }
+
+  isGymDefeated(): boolean {
+    return this.defeated;
+  }
+
+  reset(): void {
+    this.activeSwitchIndex = null;
+    this.altBarriers = false;
+    this.defeated = false;
+  }
+}
+
+/**
+ * Lavaridge Town Gym (Pueblo Lavácalda - Flannery / Candela):
+ * Steam Geysers & Hot Sand Pits Puzzle (field_effect.c & LavaridgeTown_Gym/scripts.inc).
+ * Geysers launch the player between 1F and B1F; trainers hide buried under sand.
+ */
+export interface BuriedTrainerInfo {
+  id: string;
+  name: string;
+  trainerId: number;
+  mapId: string;
+  x: number;
+  y: number;
+}
+
+export const LAVARIDGE_BURIED_TRAINERS: BuriedTrainerInfo[] = [
+  // 1F
+  { id: "COLE", name: "Cole", trainerId: 442, mapId: "MAP_LAVARIDGE_TOWN_GYM_1F", x: 3, y: 14 },
+  { id: "GERALD", name: "Gerald", trainerId: 444, mapId: "MAP_LAVARIDGE_TOWN_GYM_1F", x: 2, y: 15 },
+  { id: "AXLE", name: "Axle", trainerId: 443, mapId: "MAP_LAVARIDGE_TOWN_GYM_1F", x: 3, y: 10 },
+  { id: "DANIELLE", name: "Danielle", trainerId: 445, mapId: "MAP_LAVARIDGE_TOWN_GYM_1F", x: 5, y: 2 },
+  // B1F
+  { id: "JACE", name: "Jace", trainerId: 446, mapId: "MAP_LAVARIDGE_TOWN_GYM_B1F", x: 4, y: 18 },
+  { id: "KEEGAN", name: "Keegan", trainerId: 447, mapId: "MAP_LAVARIDGE_TOWN_GYM_B1F", x: 3, y: 6 },
+  { id: "JEFF", name: "Jeff", trainerId: 449, mapId: "MAP_LAVARIDGE_TOWN_GYM_B1F", x: 13, y: 17 },
+  { id: "ELI", name: "Eli", trainerId: 448, mapId: "MAP_LAVARIDGE_TOWN_GYM_B1F", x: 4, y: 16 },
+];
+
+export const LAVARIDGE_GYM_GEYSER_WARPS: Record<string, { x: number; y: number }> = {
+  // 1F to B1F
+  "MAP_LAVARIDGE_TOWN_GYM_1F:10,18": { x: 10, y: 18 },
+  "MAP_LAVARIDGE_TOWN_GYM_1F:8,9": { x: 8, y: 9 },
+  "MAP_LAVARIDGE_TOWN_GYM_1F:4,18": { x: 4, y: 18 },
+  "MAP_LAVARIDGE_TOWN_GYM_1F:5,14": { x: 5, y: 14 },
+  "MAP_LAVARIDGE_TOWN_GYM_1F:0,17": { x: 0, y: 17 },
+  "MAP_LAVARIDGE_TOWN_GYM_1F:5,9": { x: 5, y: 9 },
+  "MAP_LAVARIDGE_TOWN_GYM_1F:2,15": { x: 2, y: 15 },
+  "MAP_LAVARIDGE_TOWN_GYM_1F:3,14": { x: 3, y: 14 },
+  "MAP_LAVARIDGE_TOWN_GYM_1F:1,14": { x: 1, y: 14 },
+  "MAP_LAVARIDGE_TOWN_GYM_1F:0,10": { x: 0, y: 10 },
+  "MAP_LAVARIDGE_TOWN_GYM_1F:3,10": { x: 3, y: 10 },
+  "MAP_LAVARIDGE_TOWN_GYM_1F:0,6": { x: 0, y: 6 },
+  "MAP_LAVARIDGE_TOWN_GYM_1F:3,6": { x: 3, y: 6 },
+  "MAP_LAVARIDGE_TOWN_GYM_1F:5,6": { x: 5, y: 6 },
+  "MAP_LAVARIDGE_TOWN_GYM_1F:2,3": { x: 2, y: 3 },
+  "MAP_LAVARIDGE_TOWN_GYM_1F:5,2": { x: 5, y: 2 },
+  "MAP_LAVARIDGE_TOWN_GYM_1F:7,2": { x: 7, y: 2 },
+  "MAP_LAVARIDGE_TOWN_GYM_1F:8,6": { x: 8, y: 6 },
+  "MAP_LAVARIDGE_TOWN_GYM_1F:10,6": { x: 10, y: 6 },
+  "MAP_LAVARIDGE_TOWN_GYM_1F:4,16": { x: 4, y: 16 },
+  "MAP_LAVARIDGE_TOWN_GYM_1F:12,3": { x: 12, y: 3 },
+  "MAP_LAVARIDGE_TOWN_GYM_1F:14,6": { x: 14, y: 6 },
+  "MAP_LAVARIDGE_TOWN_GYM_1F:13,17": { x: 13, y: 17 },
+  "MAP_LAVARIDGE_TOWN_GYM_1F:12,12": { x: 12, y: 12 },
+
+  // B1F to 1F
+  "MAP_LAVARIDGE_TOWN_GYM_B1F:10,18": { x: 10, y: 18 },
+  "MAP_LAVARIDGE_TOWN_GYM_B1F:8,9": { x: 8, y: 9 },
+  "MAP_LAVARIDGE_TOWN_GYM_B1F:4,18": { x: 4, y: 18 },
+  "MAP_LAVARIDGE_TOWN_GYM_B1F:5,14": { x: 5, y: 14 },
+  "MAP_LAVARIDGE_TOWN_GYM_B1F:0,17": { x: 0, y: 17 },
+  "MAP_LAVARIDGE_TOWN_GYM_B1F:5,9": { x: 5, y: 9 },
+  "MAP_LAVARIDGE_TOWN_GYM_B1F:2,15": { x: 2, y: 15 },
+  "MAP_LAVARIDGE_TOWN_GYM_B1F:3,14": { x: 3, y: 14 },
+  "MAP_LAVARIDGE_TOWN_GYM_B1F:1,14": { x: 1, y: 14 },
+  "MAP_LAVARIDGE_TOWN_GYM_B1F:0,10": { x: 0, y: 10 },
+  "MAP_LAVARIDGE_TOWN_GYM_B1F:3,10": { x: 3, y: 10 },
+  "MAP_LAVARIDGE_TOWN_GYM_B1F:0,6": { x: 0, y: 6 },
+  "MAP_LAVARIDGE_TOWN_GYM_B1F:3,6": { x: 3, y: 6 },
+  "MAP_LAVARIDGE_TOWN_GYM_B1F:5,6": { x: 5, y: 6 },
+  "MAP_LAVARIDGE_TOWN_GYM_B1F:2,3": { x: 2, y: 3 },
+  "MAP_LAVARIDGE_TOWN_GYM_B1F:5,2": { x: 5, y: 2 },
+  "MAP_LAVARIDGE_TOWN_GYM_B1F:7,2": { x: 7, y: 2 },
+  "MAP_LAVARIDGE_TOWN_GYM_B1F:8,6": { x: 8, y: 6 },
+  "MAP_LAVARIDGE_TOWN_GYM_B1F:10,6": { x: 10, y: 6 },
+  "MAP_LAVARIDGE_TOWN_GYM_B1F:4,16": { x: 4, y: 16 },
+  "MAP_LAVARIDGE_TOWN_GYM_B1F:12,3": { x: 12, y: 3 },
+  "MAP_LAVARIDGE_TOWN_GYM_B1F:14,6": { x: 14, y: 6 },
+  "MAP_LAVARIDGE_TOWN_GYM_B1F:13,17": { x: 13, y: 17 },
+  "MAP_LAVARIDGE_TOWN_GYM_B1F:12,12": { x: 12, y: 12 },
+};
+
+export class LavaridgeGymTracker {
+  private revealedTrainers = new Set<string>();
+
+  onStep(
+    mapId: string,
+    x: number,
+    y: number,
+    behavior: number,
+  ): {
+    action: "none" | "fall" | "launch";
+    destMap?: string;
+    destX?: number;
+    destY?: number;
+    soundLaunch?: number;
+    soundLand?: number;
+  } {
+    const is1F = mapId === "MAP_LAVARIDGE_TOWN_GYM_1F";
+    const isB1F = mapId === "MAP_LAVARIDGE_TOWN_GYM_B1F";
+
+    const is1FWarp = behavior === MBEmerald.MB_LAVARIDGE_GYM_1F_WARP;
+    const isB1FWarp = behavior === MBEmerald.MB_LAVARIDGE_GYM_B1F_WARP;
+
+    if (is1F && is1FWarp) {
+      const key = `${mapId}:${x},${y}`;
+      const dest = LAVARIDGE_GYM_GEYSER_WARPS[key];
+      return {
+        action: "fall",
+        destMap: "MAP_LAVARIDGE_TOWN_GYM_B1F",
+        destX: dest ? dest.x : x,
+        destY: dest ? dest.y : y,
+        soundLaunch: EmeraldConstants.SE_LAVARIDGE_FALL_WARP,
+      };
+    }
+
+    if (isB1F && isB1FWarp) {
+      const key = `${mapId}:${x},${y}`;
+      const dest = LAVARIDGE_GYM_GEYSER_WARPS[key];
+      return {
+        action: "launch",
+        destMap: "MAP_LAVARIDGE_TOWN_GYM_1F",
+        destX: dest ? dest.x : x,
+        destY: dest ? dest.y : y,
+        soundLaunch: EmeraldConstants.SE_LAVARIDGE_FALL_WARP,
+        soundLand: EmeraldConstants.SE_M_DIG,
+      };
+    }
+
+    return { action: "none" };
+  }
+
+  checkBuriedTrainers(
+    mapId: string,
+    playerX: number,
+    playerY: number,
+  ): {
+    revealed: boolean;
+    trainer?: BuriedTrainerInfo;
+    sound?: number;
+  } {
+    for (const trainer of LAVARIDGE_BURIED_TRAINERS) {
+      if (trainer.mapId !== mapId) continue;
+      if (this.revealedTrainers.has(trainer.id)) continue;
+
+      const dist = Math.max(Math.abs(trainer.x - playerX), Math.abs(trainer.y - playerY));
+      if (dist <= 1) {
+        this.revealedTrainers.add(trainer.id);
+        return {
+          revealed: true,
+          trainer,
+          sound: EmeraldConstants.SE_M_DIG,
+        };
+      }
+    }
+
+    return { revealed: false };
+  }
+
+  isTrainerRevealed(trainerId: string): boolean {
+    return this.revealedTrainers.has(trainerId);
+  }
+
+  reset(): void {
+    this.revealedTrainers.clear();
+  }
+}
