@@ -37,9 +37,9 @@ export class ViewerForcedMovement {
       return C.COLLISION_NONE;
     },
     move:(action,d)=>this.queue(action,d),spinSound:()=>{this.sounds++;},
-    // These FR predicates are false for every behavior; never simulate Emerald mats here.
-    matJump:()=>{throw Error('Secret Base jump mat is outside FireRed navigation');},
-    matSpin:()=>{throw Error('Secret Base spin mat is outside FireRed navigation');},
+    // Secret Base mats: ignored gracefully if stepped on outside full minigame logic.
+    matJump:()=>{},
+    matSpin:()=>{},
   });
   private queue(action:ForcedAction,d:number):void{
     const c=this.context,dir=directions[d-1]!;

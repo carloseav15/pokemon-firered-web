@@ -1025,10 +1025,28 @@ function toggleBike(): void {
   if (elevatorBusy || fallPreventStep || warpBusy || isStepping || playerMode === "surf") return;
   const mapId = findMapAt(playerX,playerY)?.[0];
   if (mapId && mapHeaders.get(mapId)?.allowCycling === false) return;
-  playerMode = playerMode === "bike" ? "walk" : "bike";
+  if (HOENN && playerMode === "bike") {
+    if (state.bikeType === "mach") {
+      state.bikeType = "acro";
+      const bikeBtn = document.getElementById("bike-btn");
+      if (bikeBtn) {
+        bikeBtn.style.background = "#3b82f6";
+        bikeBtn.title = "Bici Acrobática";
+      }
+      audioController.playBikeBell();
+      updatePlayerDisplay();
+      return;
+    } else {
+      state.bikeType = "mach";
+      playerMode = "walk";
+    }
+  } else {
+    playerMode = playerMode === "bike" ? "walk" : "bike";
+  }
   const bikeBtn = document.getElementById("bike-btn");
   if (bikeBtn) {
     bikeBtn.style.background = playerMode === "bike" ? "#f59e0b" : "";
+    bikeBtn.title = HOENN ? (playerMode === "bike" ? "Bici Carrera" : "Bicicleta") : "Bicicleta";
   }
   if (playerMode === "bike") {
     audioController.playBikeBell();
@@ -1207,7 +1225,7 @@ function processPlayerStep(): void {
     targetDir = "east";
   }
 
-  const forced = !HOENN ? forcedNavigation.next(worldGrid,playerX,playerY,playerDir,playerMode,playerCurrentElevation) : null;
+  const forced = forcedNavigation.next(worldGrid,playerX,playerY,playerDir,playerMode,playerCurrentElevation);
   if(forced?.loading){void requestSectors().then(()=>processPlayerStep());return;}
   for(let i=0;i<(forced?.sounds??0);i++)audioController.playSE(C.SE_M_RAZOR_WIND2);
   const forcedStep=forced?.step;
@@ -1329,7 +1347,7 @@ function processPlayerStep(): void {
         jumpShadow?.hide();
         shoreAnchor = null;
         avatarAnimator?.stop(state.playerChar, playerMode, playerDir, tick, !!forcedStep);
-        if(!HOENN)forcedNavigation.moved(targetDir,!forcedStep);
+        forcedNavigation.moved(targetDir,!forcedStep);
 
         fieldEffects.onGroundStep("finish", groundActor);
 
@@ -2507,6 +2525,12 @@ function setupUi(): void {
 
   const charSelect = document.getElementById("player-char") as HTMLSelectElement | null;
   if (charSelect) {
+    if (HOENN) {
+      const redOpt = charSelect.querySelector('option[value="red"]');
+      const leafOpt = charSelect.querySelector('option[value="leaf"]');
+      if (redOpt) redOpt.textContent = "Brendan";
+      if (leafOpt) leafOpt.textContent = "May";
+    }
     charSelect.value = state.playerChar;
     charSelect.addEventListener("change", () => {
       state.playerChar = (charSelect.value as "red" | "leaf") || "red";
