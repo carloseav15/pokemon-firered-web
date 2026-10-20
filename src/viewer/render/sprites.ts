@@ -1,3 +1,5 @@
+import { state } from "../state";
+
 export type Direction = "south" | "north" | "west" | "east";
 
 export type GfxInfo = {
@@ -78,14 +80,24 @@ export async function loadHoennGfx(dataRoot: string): Promise<void> {
   const data = (await res.json()) as { gfx: Record<string, { name: string; width: number; height: number; frames: [string, number][] }> };
   const map: Record<string, GfxInfo> = {};
   for (const g of Object.values(data.gfx)) {
-    if (g.frames.length < 3) continue; // sin hoja de imagen (p. ej. la planta de bayas, que se dibuja por etapas)
-    map[g.name] = { file: g.frames[0]![0], w: g.width, h: g.height, faceFrames: [g.frames[0]![1], g.frames[1]![1], g.frames[2]![1]] };
+    if (!g.frames || g.frames.length === 0) continue;
+    const f0 = g.frames[0]![1];
+    const f1 = g.frames.length > 1 ? g.frames[1]![1] : f0;
+    const f2 = g.frames.length > 2 ? g.frames[2]![1] : f0;
+    map[g.name] = { file: g.frames[0]![0], w: g.width, h: g.height, faceFrames: [f0, f1, f2] };
   }
+  // Enlaces para variables dinámicas de GBA (VAR_0 suele ser el rival en Hoenn)
+  if (map["OBJ_EVENT_GFX_MAY_NORMAL"]) map["OBJ_EVENT_GFX_VAR_0"] = map["OBJ_EVENT_GFX_MAY_NORMAL"];
+  if (map["OBJ_EVENT_GFX_BRENDAN_NORMAL"]) map["OBJ_EVENT_GFX_VAR_1"] = map["OBJ_EVENT_GFX_BRENDAN_NORMAL"];
   hoennGfx = map;
 }
 
 /** Sprite info of a graphics id: Hoenn's table once loadHoennGfx ran, FireRed's otherwise. */
 export function gfxInfoOf(key: string): GfxInfo | undefined {
+  if (key === "OBJ_EVENT_GFX_VAR_0") {
+    const rivalKey = state.playerChar === "leaf" ? "OBJ_EVENT_GFX_BRENDAN_NORMAL" : "OBJ_EVENT_GFX_MAY_NORMAL";
+    return hoennGfx?.[rivalKey] ?? hoennGfx?.["OBJ_EVENT_GFX_VAR_0"];
+  }
   return (hoennGfx ?? GFX_MAP)[key];
 }
 
@@ -97,6 +109,8 @@ export function fallbackGfx(): GfxInfo {
 /** Background-position frame and mirroring of a standing sprite facing `dir`. */
 export function facingFrame(info: GfxInfo, dir: Direction): { frame: number; flip: boolean } {
   const [south, north, west] = info.faceFrames ?? [0, 1, 2];
+  const isStatic = south === north && north === west;
+  if (isStatic) return { frame: south, flip: false };
   if (dir === "north") return { frame: north, flip: false };
   if (dir === "west") return { frame: west, flip: false };
   if (dir === "east") return { frame: west, flip: true };

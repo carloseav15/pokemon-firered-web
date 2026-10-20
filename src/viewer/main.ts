@@ -16,6 +16,7 @@ import { EscalatorTiles, EscalatorWarpAnimation } from "@core/field/escalatorAni
 import { TaskManager } from "@core/gba/tasks";
 import { ViewerDoorAnimation, ViewerWarpVisuals } from "./render/warpVisuals";
 import * as C from "../games/firered/generated/constants";
+import * as EmConstants from "../games/emerald/generated/constants";
 import { FADE_FROM_BLACK, FADE_FROM_WHITE, FADE_TO_BLACK, FADE_TO_WHITE } from "@core/gba/fade";
 import { MapTransitionIsEnter, MapTransitionIsExit, GetStairsMovementDirection } from "@core/field/mapTransitions";
 import { AvatarDepth } from "./render/depth";
@@ -572,9 +573,8 @@ function updatePlayerDisplay(): void {
   }
 
   const airborne = !!avatarAnimator && isStepping && (shoreAnchor !== null || avatarAnimator.frame(state.playerChar, playerMode, playerDir, viewerClock.tick).action === "jump");
-  // Tall grass is covered by source BG/field-effect pixels, not a fixed foot crop.
-  const legacyGrass = !avatarDepth && !airborne && worldGrid.isGrassTile(playerX, playerY) && playerMode !== "surf" && !isBike;
-  playerEl.style.clipPath = legacyGrass ? "inset(0 0 4px 0)" : "none";
+  const inGrass = !airborne && worldGrid.isGrassTile(playerX, playerY) && playerMode !== "surf" && !isBike;
+  playerEl.style.clipPath = inGrass ? "inset(0 0 4px 0)" : "none";
 
   const priority = warpPriority ?? (hasCData("event_object_movement", "sElevationToPriority") ? (cdata<number[]>("event_object_movement", "sElevationToPriority")[playerElevation & 0xf] ?? 2) : 2);
   playerEl.style.zIndex = priority <= 1 ? "30" : "25";
@@ -853,6 +853,15 @@ function exploreAutoZoom(): number {
   return Math.max(2, Math.min(6, Math.floor(Math.min(w / C.DISPLAY_WIDTH, h / C.DISPLAY_HEIGHT)) || 2));
 }
 
+function initializeHoennSessionFlags(initialFlags?: Record<string, number>): void {
+  if (!initialFlags) return;
+  const flags = EmConstants as Record<string, number | undefined>;
+  for (const [name, val] of Object.entries(initialFlags)) {
+    const id = flags[name] ?? (typeof val === "number" ? val : 0);
+    if (id) flagSet(id);
+  }
+}
+
 async function startExploration(targetGx?: number, targetGy?: number): Promise<void> {
   if (!streaming) {
     writeHash();
@@ -869,6 +878,8 @@ async function startExploration(targetGx?: number, targetGy?: number): Promise<v
       gender: state.playerChar === "leaf" ? C.FEMALE : C.MALE,
     });
     gameSave.playerGender = state.playerChar === "leaf" ? C.FEMALE : C.MALE;
+  } else {
+    initializeHoennSessionFlags(index.initialFlags);
   }
   if (!HOENN) window.setTimeout(() => void engineInteraction?.warm().catch(() => {}), 1500);
   resetExploreSession();
@@ -1867,6 +1878,8 @@ async function build(): Promise<void> {
       forceTemporary: !!explicitExternalMap,
       gender: state.playerChar === "leaf" ? C.FEMALE : C.MALE,
     });
+  } else if (HOENN && startExplore) {
+    initializeHoennSessionFlags(index.initialFlags);
   }
 
   streaming = startExplore;

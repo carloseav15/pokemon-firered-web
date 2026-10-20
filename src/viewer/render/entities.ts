@@ -215,8 +215,17 @@ export class EntityManager {
       if (ent.hidden || ent.removed || !ent.el || ent.isStepping) continue;
       if (ent.element.trainer || ent.element.layer === "puerta" || ent.element.layer === "corte" || ent.element.layer === "snorlax") continue;
 
-      const mType = ent.movementType ?? ent.element.movementType;
-      if (mType === undefined || mType === C.MOVEMENT_TYPE_NONE) continue;
+      let mType = ent.movementType ?? ent.element.movementType;
+      if (mType === undefined) {
+        const gfxKey = ent.element.graphics ?? "";
+        const isStaticObj = gfxKey.includes("TRUCK") || gfxKey.includes("BALL") || gfxKey.includes("BERRY") || gfxKey.includes("ROCK") || gfxKey.includes("TREE") || gfxKey.includes("STATUE");
+        if (!isStaticObj && (ent.element.layer === "npc" || ent.element.layer === "npc_condicional")) {
+          mType = C.MOVEMENT_TYPE_WANDER_AROUND;
+        } else {
+          continue;
+        }
+      }
+      if (mType === C.MOVEMENT_TYPE_NONE) continue;
       if ([C.MOVEMENT_TYPE_FACE_UP, C.MOVEMENT_TYPE_FACE_DOWN, C.MOVEMENT_TYPE_FACE_LEFT, C.MOVEMENT_TYPE_FACE_RIGHT].includes(mType)) continue;
 
       ent.cooldownMs = (ent.cooldownMs ?? (Math.random() * 2000 + 1000)) - elapsedMs;
