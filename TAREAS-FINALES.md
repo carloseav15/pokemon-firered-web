@@ -1,5 +1,11 @@
 # Tareas finales del juego de un jugador
 
+> Orden vigente: [hoja de ruta del mundo unificado](docs/HOJA-DE-RUTA.md).
+> Esta lista conserva pendientes técnicos y validaciones; su orden histórico
+> queda subordinado a esa hoja. Recorrido completo FireRed diferido por el usuario
+> (2026-10-21). Las adaptaciones Johto/Hoenn no acreditan fidelidad original.
+
+
 Lista única de lo que queda del port de un jugador. Cifras vivas en
 [PENDING.md](PENDING.md); estado breve en [PORTING-STATUS.md](PORTING-STATUS.md).
 Por nombres el juego está completo (lo que falta es enlace, hardware sustituido o

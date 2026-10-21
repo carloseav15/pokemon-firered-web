@@ -1,7 +1,12 @@
 # Visión a largo plazo (ideas futuras)
 
-No son tareas activas. Nada de esto empieza hasta cerrar [TAREAS-FINALES.md](../TAREAS-FINALES.md)
-(FireRed fiel y validado). Análisis del 2026-10-01 a partir de los repos de pret.
+> Prioridad actual (2026-10-21): [HOJA-DE-RUTA.md](HOJA-DE-RUTA.md).
+> Este documento conserva propuestas y referencias históricas; su orden y sus
+> reglas modernas no son requisitos activos. El mundo unificado es la meta;
+> contenido original verificable e interfaz en inglés primero.
+
+Visión histórica del 2026-10-01 a partir de los repos de pret. La condición de
+cerrar primero todo FireRed queda sustituida por la hoja de ruta vigente.
 
 Investigación complementaria: [repositorios comunitarios](REPOS-COMUNITARIOS.md)
 (2026-10-02), con fuentes/versiones, evidencia, límites y procedimiento de comparación.

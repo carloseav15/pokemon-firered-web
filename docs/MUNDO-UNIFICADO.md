@@ -1,9 +1,14 @@
 # Mundo unificado: decisiones de diseño
 
-Estado: **propuesta de trabajo (2026-10-15), pendiente de confirmación del usuario.**
-No cambia la prioridad de [TAREAS-FINALES.md](../TAREAS-FINALES.md) ni sustituye
-[VISION.md](VISION.md); lo concreta con las decisiones surgidas en la conversación de
-esta fecha. Las cifras de niveles son objetivos de diseño, **no datos medidos**.
+> Prioridad actual (2026-10-21): [HOJA-DE-RUTA.md](HOJA-DE-RUTA.md).
+> Este documento conserva propuestas y referencias históricas; su orden y sus
+> reglas modernas no son requisitos activos. El mundo unificado es la meta;
+> contenido original verificable e interfaz en inglés primero.
+
+Estado: **propuesta histórica de diseño (2026-10-15)**. La meta de mundo unificado
+está confirmada; estas reglas concretas no lo están por esa confirmación. La
+primera versión prioriza contenido original según HOJA-DE-RUTA.md. Las cifras
+de niveles son objetivos propuestos, **no datos medidos**.
 
 ## 1. Objetivo
 

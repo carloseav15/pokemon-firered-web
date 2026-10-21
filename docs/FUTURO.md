@@ -1,5 +1,10 @@
 # Futuro (fuera de la meta principal)
 
+> Prioridad actual (2026-10-21): [HOJA-DE-RUTA.md](HOJA-DE-RUTA.md).
+> Este documento conserva propuestas y referencias históricas; su orden y sus
+> reglas modernas no son requisitos activos. El mundo unificado es la meta;
+> contenido original verificable e interfaz en inglés primero.
+
 Movido desde TAREAS-FINALES.md el 2026-10-18. Numeración original conservada.
 
 ## 5. Fuera de la meta principal (después)
@@ -11,20 +16,20 @@ e-Reader, minijuegos multijugador, Battle Records por Cable Club y el enlace de 
 ## 6. Preparación para Emerald (cuando §3.0 esté en verde)
 
 Empiezan cuando `npm run play:smoke` dé OK en todo lo automatizable, que es la red
-que avisa si algo se rompe. Ver [docs/VISION.md](docs/VISION.md) fases 2 y 3.
+que avisa si algo se rompe. Ver [docs/VISION.md](VISION.md) fases 2 y 3.
 
-- [x] **6.1 Informe: separación del motor** [avanzado] — [docs/SEPARACION-MOTOR.md](docs/SEPARACION-MOTOR.md)
+- [x] **6.1 Informe: separación del motor** [avanzado] — [docs/SEPARACION-MOTOR.md](SEPARACION-MOTOR.md)
   (`ec6f0747`, cifras en `tools/engineSplit.py`). Antes de mover código: permiso para tocar la ruta en `portInventory.py`. Proponer qué va a `core/` y qué a
   `games/firered/`, apoyándose en `refs/emerald/functions.json` (3.677 funciones
   idénticas entre Emerald y FireRed) y en los imports reales de `src/games/firered/`. Entregar
   la lista de módulos, el orden de traslado en pasos pequeños (cada paso con
   `check:all` y `play:smoke` en verde) y los riesgos. Sin mover código todavía.
-- [x] **6.2 Informe: exportador para Emerald** [avanzado] — [docs/EXPORTADOR-EMERALD.md](docs/EXPORTADOR-EMERALD.md)
+- [x] **6.2 Informe: exportador para Emerald** [avanzado] — [docs/EXPORTADOR-EMERALD.md](EXPORTADOR-EMERALD.md)
   (Codex, `58cfe2a9`; cifra de constantes corregida en `54b6157f`). Partiendo del informe R8 de
   `refs/README.md`, proponer cómo parametrizar `tools/decomp/` por juego (rutas,
   `CPP_DEFINES`, `.decomp-build/<juego>`, `public/<juego>/`) sin cambiar lo que genera
   para FireRed: la regeneración de FireRed debe dar archivos idénticos. Sin código todavía.
-- [x] **6.3 Informe: nombres simbólicos** [avanzado] — [docs/NOMBRES-SIMBOLICOS.md](docs/NOMBRES-SIMBOLICOS.md)
+- [x] **6.3 Informe: nombres simbólicos** [avanzado] — [docs/NOMBRES-SIMBOLICOS.md](NOMBRES-SIMBOLICOS.md)
   (Codex, `3a1b4425`). Qué salidas conservan nombres y propuesta de `symbols.json` y
   tabla de operandos tipados para la fase 6; comandos reproducidos por el revisor.
 
@@ -34,7 +39,7 @@ que avisa si algo se rompe. Ver [docs/VISION.md](docs/VISION.md) fases 2 y 3.
   nombre/marcas/ficha). Contrato en `tools/checks/layers-contract.json` (38 entradas,
   solo puede encoger). Inventario y `public/fr` sin cambios. El paso 6 (interfaz `Game`)
   y el 7 (dividir `save`) no se hicieron: razones y lista de miembros en
-  [docs/SEPARACION-MOTOR.md](docs/SEPARACION-MOTOR.md) §8. `play:smoke` completo no se ejecutó
+  [docs/SEPARACION-MOTOR.md](SEPARACION-MOTOR.md) §8. `play:smoke` completo no se ejecutó
   (el usuario lo declinó); solo C1–C3, C5–C10 y dos drivers.
 - [x] **6.5a Emerald caminable en el visor** (Claude, 2026-10-13): `viewer.html?game=emerald`, botón
   «Explorar Mapa»: Brendan/May, colisiones del mapa, surf, NPC de Hoenn, música de Emerald. Sin
@@ -46,12 +51,12 @@ que avisa si algo se rompe. Ver [docs/VISION.md](docs/VISION.md) fases 2 y 3.
   (`compare.html`), quests con etiquetas (`quests.html`, `quest_tags.json`), línea argumental (`story.html`) e índice
   (`atlas.html`, `docs/ATLAS.md`). Datos contra datos del mismo decomp: no validan comportamiento ni se compararon con
   la ROM. Pendiente: revisión visual con capturas, verificar las 12 etiquetas de confianza baja y el orden `SPINE`.
-- [x] **6.5c Johto GBA de Heart & Soul** — `dfe3926b`: fuente fijada, visor 2D `/hns.html` con mundo por bloques, fichas y warps; 584 mapas renderizados / 955 IDs, rechazo explícito de 303 layouts. Verificación fuente→PNG y determinismo; límites y regeneración en [docs/ATLAS.md](docs/ATLAS.md).
+- [x] **6.5c Johto GBA de Heart & Soul** — `dfe3926b`: fuente fijada, visor 2D `/hns.html` con mundo por bloques, fichas y warps; 584 mapas renderizados / 955 IDs, rechazo explícito de 303 layouts. Verificación fuente→PNG y determinismo; límites y regeneración en [docs/ATLAS.md](ATLAS.md).
 - [ ] **6.5c revisión del visor HnS**: zoom/arrastre/búsqueda/warps/historial y captura 390 px cubiertos por 79ec8960; quedan gestos táctiles/dispositivos reales, paridad visual con la fuente/ROM, Route 7 (metatile 902 fuera de tileset), 14 discrepancias de conexiones y variantes superpuestas. NPC son marcadores; animación, paletas horarias y audio no implementados. No acredita portado jugable ni historia HnS.
-- [x] **6.5d Visor común eficiente** — `79ec8960`: consulta de FireRed/Emerald/HnS/Crystal, carga por bloques/mips, caché con límite de RGBA estimado, fichas/warps/historial y puente a Explorar; retirada de UI duplicada HnS/Crystal. Datos, determinismo, contraste de renderizadores, recorridos Chromium, caché y capturas escritorio/390 px comprobados; medición y límites en [docs/ATLAS.md](docs/ATLAS.md).
-- [x] **6.5e Atlas principal de tres regiones** — `7ef990af`: Kanto FireRed (256), Johto HnS (253) y Hoenn Emerald (487), 996 mapas/140 exteriores, IDs por región, selección de fuentes y variantes separadas, puertas/fronteras y viajes identificados como navegación. Datos, determinismo de 389 archivos, recorrido real Chromium/caché/reposo y capturas escritorio/móvil comprobados; política y límites en [docs/ATLAS.md](docs/ATLAS.md).
+- [x] **6.5d Visor común eficiente** — `79ec8960`: consulta de FireRed/Emerald/HnS/Crystal, carga por bloques/mips, caché con límite de RGBA estimado, fichas/warps/historial y puente a Explorar; retirada de UI duplicada HnS/Crystal. Datos, determinismo, contraste de renderizadores, recorridos Chromium, caché y capturas escritorio/390 px comprobados; medición y límites en [docs/ATLAS.md](ATLAS.md).
+- [x] **6.5e Atlas principal de tres regiones** — `7ef990af`: Kanto FireRed (256), Johto HnS (253) y Hoenn Emerald (487), 996 mapas/140 exteriores, IDs por región, selección de fuentes y variantes separadas, puertas/fronteras y viajes identificados como navegación. Datos, determinismo de 389 archivos, recorrido real Chromium/caché/reposo y capturas escritorio/móvil comprobados; política y límites en [docs/ATLAS.md](ATLAS.md).
 - [x] **6.5f Islas Sevii en atlas principal** — `bd310671`: siete islas y 135 mapas asociados a Kanto, interiores/rutas y ferris como navegación de consulta; 1131 mapas/167 exteriores en total. Datos/fuente Seagallop, determinismo de 526 archivos, puertas Tanoby y recorrido/caché/capturas Chromium escritorio/móvil comprobados; sin simulación de ferris ni exploración de Sevii.
-- [x] **6.5f Áreas aisladas y especiales** — `652d9e3e`/`7f252e84`: 18 superficies aisladas Hoenn, Faraway Emerald, Navel Rock/Birth FireRed y 14 mapas submarinos en nivel separado con IDs conservados y referencias dive/emerge. Fuente/datos/conexiones/determinismo de 707 archivos y Chromium/puertas/caché/capturas comprobados; 1155 mapas y 203 colocados, sin transporte/Dive simulados. Ver [docs/ATLAS.md](docs/ATLAS.md).
+- [x] **6.5f Áreas aisladas y especiales** — `652d9e3e`/`7f252e84`: 18 superficies aisladas Hoenn, Faraway Emerald, Navel Rock/Birth FireRed y 14 mapas submarinos en nivel separado con IDs conservados y referencias dive/emerge. Fuente/datos/conexiones/determinismo de 707 archivos y Chromium/puertas/caché/capturas comprobados; 1155 mapas y 203 colocados, sin transporte/Dive simulados. Ver [docs/ATLAS.md](ATLAS.md).
 - [x] **6.5g Superficie y accesos a otros niveles** — `fe68ee77`: 155 superficies en plano principal; 1155 mapas consultables, interiores desde puertas, submarinos desde Dive/Emerge con retorno y ferris desde Vermilion/puertos identificados. Se retiran franjas terrestres no ubicadas y submarino del plano; 39 superficies con posición pendiente señalada. Datos/determinismo de 507 archivos y Chromium/puertas/retorno/URL antigua/caché/capturas comprobados; sin simulación de transporte/Dive.
 - [ ] **6.5g Geografía pendiente**: verificar y colocar las 39 superficies de `_meta.pendingSurfacePlacement` en `public/map-viewer/principal/catalog.json`, incluidas zonas terrestres, patios/tejados y componentes secundarios Johto/Sevii; entradas y búsqueda siguen disponibles. No convertirlos en islas ni afirmar posiciones por coincidencia de nombres. Conservar revisión exhaustiva/ROM/dispositivos y simulación pendientes.
 - [ ] **6.5f Revisión y simulación de áreas adicionales**: revisar exhaustivamente selección, interiores, paletas, eventos y geometría de Sevii, superficies aisladas, islas especiales y nivel submarino; comparación ROM/dispositivos/producción pendiente. Integrar movimiento/transiciones/ferris/Dive mediante simulación por sectores; distribución entre componentes editorial, sin afirmar uniones físicas.
@@ -86,7 +91,7 @@ que avisa si algo se rompe. Ver [docs/VISION.md](docs/VISION.md) fases 2 y 3.
   `docs/EMERALD-FALTANTE.md` y portarlo sobre `src/core` con `GAME=emerald`; cada entrada del
   contrato que Emerald necesite decide si se abstrae o se bifurca. Los datos de Emerald ya
   se exportan y validan (`docs/EMERALD-EXPORTADOR-DIAGNOSTICO.md` §7–9). Medido el 2026-10-13
-  (`tools/emeraldCoreGap.py` → [docs/EMERALD-BRECHA-NUCLEO.md](docs/EMERALD-BRECHA-NUCLEO.md)):
+  (`tools/emeraldCoreGap.py` → [docs/EMERALD-BRECHA-NUCLEO.md](EMERALD-BRECHA-NUCLEO.md)):
   `src/core` contra Emerald da 898 errores de tipos; Emerald solo aporta 4 de los 38
   módulos del contrato (`data`, `generated/constants`, `generated/structs`,
   `generated/metatileBehavior`); faltan 227 constantes de FireRed y `save`, `game`,
@@ -98,7 +103,7 @@ No tocan `public/fr/`; salvo cambios mínimos de sandbox de 7.3, no tocan `src/g
 Las tareas de módulos del visor pueden hacerse en paralelo con las secciones 1–4.
 
 - [x] **6.4 Exportador por juego (Emerald)** — datos `37fe6675`, `5d482143`, `75a54ac2`, `c1a981f6`, `674615b9`; validación `bf6fffdc`…`7466b3ad`;
-  [docs/EMERALD-EXPORTADOR-DIAGNOSTICO.md](docs/EMERALD-EXPORTADOR-DIAGNOSTICO.md) §7–9. `EXPORT_GAME=emerald` termina los 15 pasos y
+  [docs/EMERALD-EXPORTADOR-DIAGNOSTICO.md](EMERALD-EXPORTADOR-DIAGNOSTICO.md) §7–9. `EXPORT_GAME=emerald` termina los 15 pasos y
   `tools/emeraldExportValidate.py` + `tools/emeraldScriptValidate.py` los comparan con las fuentes (66.470 + 17.228 comparaciones, 0
   diferencias; 98,8 % de `scripts.bin` reensamblado); FireRed regenera idéntica. Tilesets de Emerald con `attributes` (16 bits) y
   `attributes32` (formato FireRed). Abierto (validación): los datos no están contrastados con la ROM ni con el motor.
@@ -115,7 +120,7 @@ Las tareas de módulos del visor pueden hacerse en paralelo con las secciones 1�
 - [x] **7.2 Visor: correcciones y fichas para el modo libre** [básico] — opencode,
   `ee5d81ec`. Zoom, hash, flags y leyenda corregidos; `TRAINER_` y dirección de visión en
   los 164 entrenadores; writers con `addvar`/`copyvar`.
-- [ ] **7.3 Visor: "Jugar aquí"** [medio] — [docs/VISOR-MUNDO.md](docs/VISOR-MUNDO.md) §8.
+- [ ] **7.3 Visor: "Jugar aquí"** [medio] — [docs/VISOR-MUNDO.md](VISOR-MUNDO.md) §8.
   DIFERIDA: sandbox y clave aparte existen en motor (`4bf12ca1`); falta integrar y
   validar juego completo. Usuario prioriza sandbox creativo 7.6 (sin batallas/historia);
   la exploración libre del viewer no necesita cerrar esta tarea.
@@ -125,7 +130,7 @@ Las tareas de módulos del visor pueden hacerse en paralelo con las secciones 1�
 - [x] **7.5 Visor: animaciones de tiles** [básico] — `58fd3472` (rama
   `muse/visor-anim`). `TilesetAnimator` sin tocar `src/games/firered/`; flores (5 estados) y fuente
   verificadas contra el juego real; interruptor apagado por defecto.
-- [ ] **7.6 Viewer: sandbox creativo persistente** — [docs/VISOR-MEJORAS.md](docs/VISOR-MEJORAS.md).
+- [ ] **7.6 Viewer: sandbox creativo persistente** — [docs/VISOR-MEJORAS.md](VISOR-MEJORAS.md).
   Inspeccionar, editar tiles/rellenar huecos, guardar/reabrir y explorar mundo editado;
   Codex C1–C7. Sin batallas/historia; audio/editor y animaciones siguen pendientes.
   C3 base `0c890154`: zoom/scroll, selección/modo/posición/panel en URL y cancelación;

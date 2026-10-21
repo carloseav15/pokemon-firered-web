@@ -1,4 +1,10 @@
-# Pokémon FireRed en TypeScript (port fiel del decomp)
+# Pokémon Odyssey — mundo unificado en TypeScript
+
+Meta: un juego web con Kanto, Johto y Hoenn, construido sobre el motor FireRed.
+Orden activo y diagnóstico regional: [hoja de ruta](docs/HOJA-DE-RUTA.md).
+UI en inglés y contenido original trazable son los requisitos iniciales.
+
+## Base técnica
 
 Port fiel de [pokefirered](https://github.com/pret/pokefirered) (C) a TypeScript
 que corre en el navegador sobre un Canvas de 240×160. No es un remake: emula el
@@ -12,7 +18,7 @@ código del decomp casi línea por línea, usando sus datos originales exportado
 
 ```sh
 npm ci
-npm run dev          # servidor Vite; / = arranque completo, ?fr=new / ?fr=continue saltan la intro
+npm run dev          # / = hub; /play.html = FireRed; /world.html = mundo regional
 npm run check:port   # tsc sobre todo src al cerrar una tanda de código
 npm run build
 ```
@@ -34,6 +40,7 @@ reexportar si cambias `tools/decomp/`.
 
 | Archivo | Contenido |
 |---|---|
+| [Hoja de ruta](docs/HOJA-DE-RUTA.md) | Prioridad vigente, orden sencillo, accesos y diagnóstico por región |
 | [AGENTS.md](AGENTS.md) | Reglas únicas: portado por tandas, comprobaciones mínimas y revisión posterior |
 | [Guía técnica](docs/PORTING-GUIDE.md) | Consulta bajo demanda: mapa, exportador, semántica C y driver |
 | [PENDING.md](PENDING.md) | **Faltantes** (generado): sin empezar, adaptadores, parciales, huecos conocidos, pantallas sin probar |
@@ -43,7 +50,7 @@ reexportar si cambias `tools/decomp/`.
 | [docs/REVIEW-LOCATIONS.md](docs/REVIEW-LOCATIONS.md) | Dónde está cada función de la revisión (C y TS), generado con `npm run review:where` |
 | [PLAN-RECORRIDO.md](PLAN-RECORRIDO.md) | Recorrido para la fase de revisión funcional |
 | [refs/README.md](refs/README.md) | Datos y catálogos extraídos de otros decomps (Emerald, Platinum, HeartGold, PokéAPI); el juego no los usa |
-| [docs/VISION.md](docs/VISION.md) | Ideas futuras: Emerald, Johto, reglas modernas y mundo unificado (no activas) |
+| [docs/VISION.md](docs/VISION.md) | Ideas futuras: Emerald, Johto, reglas modernas y mundo unificado (propuestas; consultar la hoja de ruta vigente) |
 | [docs/REPOS-COMUNITARIOS.md](docs/REPOS-COMUNITARIOS.md) | Repositorios comunitarios revisados, versiones, aportes posibles, límites y guía de comparación por archivos |
 
 ## Estado

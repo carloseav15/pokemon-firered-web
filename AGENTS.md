@@ -5,6 +5,16 @@ exhaustiva posterior**, autorizado por el usuario para reducir pruebas y
 documentación repetitivas. Estas reglas sustituyen el procedimiento anterior.
 Responde en español.
 
+## Prioridad de producto (usuario, 2026-10-21)
+
+La meta es el mundo unificado Kanto/Johto/Hoenn; el port FireRed y el visor son
+medios. Sigue [docs/HOJA-DE-RUTA.md](docs/HOJA-DE-RUTA.md) como único orden activo.
+Primera versión con datos y comportamiento originales trazables; toda adaptación
+se identifica y revisa. UI/UX visible exclusivamente en inglés. El recorrido
+completo FireRed/Liga/postgame queda diferido; no bloquea las tandas del mundo.
+TAREAS-FINALES conserva pendientes técnicos y validaciones, sin imponer su orden
+histórico. No borrar esos pendientes ni código útil al compactar documentación.
+
 ## Lectura inicial
 
 - Lee este archivo y [PORTING-STATUS.md](PORTING-STATUS.md), y comprueba `git status`.
