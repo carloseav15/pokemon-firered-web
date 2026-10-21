@@ -164,7 +164,7 @@
       "section": "MAPSEC_LAKE_OF_RAGE",
       "music": 333,
       "musicName": "MUS_HG_ROUTE42",
-      "weather": 2
+      "weather": 3
     },
     "MAP_LAKE_OF_RAGE_LOW_TIDE": {
       "x": 283,
@@ -176,7 +176,7 @@
       "section": "MAPSEC_LAKE_OF_RAGE",
       "music": 333,
       "musicName": "MUS_HG_ROUTE42",
-      "weather": 2
+      "weather": 3
     },
     "MAP_LAVENDER_TOWN": {
       "x": 1063,
@@ -740,7 +740,7 @@
       "section": "MAPSEC_ROUTE_43",
       "music": 333,
       "musicName": "MUS_HG_ROUTE42",
-      "weather": 2
+      "weather": 3
     },
     "MAP_ROUTE44": {
       "x": 341,

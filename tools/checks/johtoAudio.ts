@@ -4,6 +4,8 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import * as C from "../../src/games/firered/generated/constants.ts";
 import { JOHTO_MUSIC_MAP, resolveJohtoMusic } from "../../src/viewer/audio/johtoMusic.ts";
+import { JOHTO_WILD_MONS, getJohtoWildMon } from "../../src/viewer/audio/johtoWildMons.ts";
+import { getJohtoSign } from "../../src/viewer/interaction/johtoSigns.ts";
 import { ViewerAudioController } from "../../src/viewer/audio/audioController.ts";
 
 // 1. Verificar resolución canónica de Johto
@@ -68,4 +70,67 @@ assert.equal((audio as any).currentMusicId, C.MUS_SURF);
 audio.updateMap("MAP_ROUTE42", "MUS_HG_ROUTE42", "walk");
 assert.equal((audio as any).currentMusicId, C.MUS_SEVII_ROUTE);
 
-console.log("PASS: Johto ambient music resolution and audio controller transitions.");
+// 4. Clima dinámico en Johto (Lluvia en Lago de la Furia y Ruta 43)
+assert.equal(maps["MAP_LAKE_OF_RAGE"].weather, C.WEATHER_RAIN, "Lago de la Furia debe tener clima de lluvia (3)");
+assert.equal(maps["MAP_LAKE_OF_RAGE_LOW_TIDE"].weather, C.WEATHER_RAIN, "Lago de la Furia marea baja debe tener clima de lluvia (3)");
+assert.equal(maps["MAP_ROUTE43"].weather, C.WEATHER_RAIN, "Ruta 43 debe tener clima de lluvia (3)");
+assert.equal(maps["MAP_NEW_BARK_TOWN"].weather, C.WEATHER_SUNNY, "Pueblo Primavera debe tener clima despejado (2)");
+
+// 5. Gritos ambientales de Pokémon salvajes en Johto
+// Ruta 29: especies terrestres (Sentret, Pidgey, Hoothoot, Rattata)
+audio.chooseAmbientCry("MAP_ROUTE29", true);
+const chosenCryR29 = (audio as any).ambientCrySpecies;
+assert.ok(
+  [C.SPECIES_SENTRET, C.SPECIES_PIDGEY, C.SPECIES_HOOTHOOT, C.SPECIES_RATTATA].includes(chosenCryR29),
+  `Grito de Ruta 29 (${chosenCryR29}) debe pertenecer a la fauna de la ruta`
+);
+assert.equal((audio as any).ambientCryIsWaterMon, false, "Ruta 29 solo tiene fauna terrestre");
+
+// Ruta 40: ruta marina (Tentacool, Tentacruel, Krabby, Corsola)
+audio.chooseAmbientCry("MAP_ROUTE40", true);
+const chosenCryR40 = (audio as any).ambientCrySpecies;
+assert.ok(
+  [C.SPECIES_TENTACOOL, C.SPECIES_TENTACRUEL, C.SPECIES_KRABBY, C.SPECIES_CORSOLA].includes(chosenCryR40),
+  `Grito de Ruta 40 (${chosenCryR40}) debe pertenecer a la fauna marina`
+);
+assert.equal((audio as any).ambientCryIsWaterMon, true, "Ruta 40 debe marcar que es un Pokémon de agua");
+
+// Lago de la Furia
+audio.chooseAmbientCry("MAP_LAKE_OF_RAGE", true);
+const chosenCryLake = (audio as any).ambientCrySpecies;
+assert.ok(
+  [C.SPECIES_GYARADOS, C.SPECIES_MAGIKARP, C.SPECIES_VENONAT, C.SPECIES_FLAAFFY].includes(chosenCryLake),
+  `Grito de Lago de la Furia (${chosenCryLake}) debe pertenecer a Gyarados/Magikarp/Venonat/Flaaffy`
+);
+
+// Interior / no outdoors: cancela gritos
+audio.chooseAmbientCry("MAP_ROUTE29", false);
+assert.equal((audio as any).ambientCrySpecies, C.SPECIES_NONE);
+assert.equal((audio as any).ambientCryState, 4);
+
+// 6. Lectura de letreros y carteles de ruta
+const signR29 = getJohtoSign("MAP_ROUTE29", 64, 15, "Route29_EventScript_Sign");
+assert.ok(signR29, "Debe existir cartel en Ruta 29 (64, 15)");
+assert.equal(signR29.title, "Ruta 29");
+assert.ok(
+  signR29.text.includes("CHERRYGROVE") || signR29.text.includes("CIUDAD CEREZO"),
+  `El cartel de Ruta 29 debe mencionar Ciudad Cerezo: ${signR29.text}`
+);
+
+const signLake = getJohtoSign("MAP_LAKE_OF_RAGE", 30, 36, "LakeOfRage_EventScript_Sign1");
+assert.ok(signLake, "Debe existir cartel en Lago de la Furia (30, 36)");
+assert.equal(signLake.title, "Lago de la Furia");
+assert.ok(
+  signLake.text.includes("GYARADOS"),
+  `El cartel del Lago de la Furia debe mencionar a Gyarados: ${signLake.text}`
+);
+
+const signR43 = getJohtoSign("MAP_ROUTE43", 17, 3, "Route43_EventScript_Sign1");
+assert.ok(signR43, "Debe existir cartel en Ruta 43 (17, 3)");
+assert.equal(signR43.title, "Ruta 43");
+assert.ok(
+  signR43.text.includes("LAKE OF RAGE") || signR43.text.includes("LAGO DE LA FURIA"),
+  `El cartel de Ruta 43 debe mencionar el Lago de la Furia: ${signR43.text}`
+);
+
+console.log("PASS: Johto ambient music, weather, wild cries and sign reading verified.");

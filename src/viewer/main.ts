@@ -103,6 +103,7 @@ import { ViewerCamera } from "./camera";
 import { ViewerAudioController } from "./audio/audioController";
 import { MapNamePopup } from "./ui/mapPopup";
 import { WeatherOverlay } from "./render/weatherOverlay";
+import { getJohtoSign, formatSignTitle } from "./interaction/johtoSigns";
 
 // Juego del visor: Kanto (FireRed) por omisión; ?game=emerald abre Hoenn; ?game=hns o ?region=johto abre Johto (Heart & Soul).
 type ViewerGame = "firered" | "emerald" | "hns";
@@ -735,17 +736,18 @@ function updatePlayerDisplay(): void {
     if (enterViewerEventMap(here)) entityManager.resetRemovedObjects();
     enteredMapId = here;
     const header = mapHeaders.get(here) ?? rom.cachedMap(here);
+    const mapInfo = index?.maps[here];
     const type = header?.mapType;
-    const outdoors = type === C.MAP_TYPE_ROUTE || type === C.MAP_TYPE_TOWN || type === C.MAP_TYPE_CITY || type === C.MAP_TYPE_UNDERWATER || type === C.MAP_TYPE_OCEAN_ROUTE;
-    if (!HOENN && !JOHTO) audioController.chooseAmbientCry(here, Boolean(outdoors));
-    if (header) {
+    const outdoors = JOHTO ? true : (type === C.MAP_TYPE_ROUTE || type === C.MAP_TYPE_TOWN || type === C.MAP_TYPE_CITY || type === C.MAP_TYPE_UNDERWATER || type === C.MAP_TYPE_OCEAN_ROUTE);
+    if (!HOENN) audioController.chooseAmbientCry(here, Boolean(outdoors));
+    if (header || mapInfo) {
       const defaultWeather = HOENN && here.startsWith("MAP_UNDERWATER")
         ? EmConstants.WEATHER_UNDERWATER_BUBBLES
         : HOENN && (here === "MAP_MT_PYRE_EXTERIOR" || here === "MAP_MT_PYRE_SUMMIT")
         ? EmConstants.WEATHER_FOG_HORIZONTAL
-        : header.weather ?? 0;
+        : (mapInfo?.weather ?? header?.weather ?? 0);
       weatherOverlay?.setWeather(defaultWeather);
-      weatherOverlay?.setRequiresFlash(Boolean(header.requiresFlash));
+      weatherOverlay?.setRequiresFlash(Boolean(header?.requiresFlash));
       if (here === "MAP_DEWFORD_TOWN_GYM") {
         weatherOverlay?.setCustomDarknessRadius(dewfordGymTracker.getFlashRadius());
       } else {
@@ -759,12 +761,12 @@ function updatePlayerDisplay(): void {
           paintNavigationMetatile(wx, wy, tu.metatileId);
         }
       }
-      if (header.showMapName !== false) {
+      if (header?.showMapName !== false) {
         let theme: "town" | "city" | "route" | "cave" | "indoor" = "route";
-        if (header.requiresFlash || header.mapType === C.MAP_TYPE_UNDERGROUND) theme = "cave";
-        else if (header.mapType === C.MAP_TYPE_TOWN) theme = "town";
-        else if (header.mapType === C.MAP_TYPE_CITY) theme = "city";
-        else if (header.mapType === C.MAP_TYPE_INDOOR) theme = "indoor";
+        if (header?.requiresFlash || header?.mapType === C.MAP_TYPE_UNDERGROUND) theme = "cave";
+        else if (header?.mapType === C.MAP_TYPE_TOWN) theme = "town";
+        else if (header?.mapType === C.MAP_TYPE_CITY) theme = "city";
+        else if (header?.mapType === C.MAP_TYPE_INDOOR) theme = "indoor";
         const mapTitle = findMapAt(playerX, playerY)?.[1].title;
         if (mapTitle) mapPopup?.show(mapTitle, theme);
       }
@@ -944,6 +946,30 @@ function interactWithEntity(ent: LiveEntity): void {
         : "Hola viajero. Bienvenido a las rutas de Kanto. ¿Estás listo para convertirte en el campeón de la Liga Pokémon?"];
   }
   dialogManager.show(title, msg);
+}
+
+function tryReadSign(fx: number, fy: number): boolean {
+  const hit = findMapAt(fx, fy);
+  if (!hit) return false;
+  const [mapId] = hit;
+  const lx = fx - hit[1].x;
+  const ly = fy - hit[1].y;
+  const header = mapHeaders.get(mapId) ?? rom.cachedMap(mapId);
+  const bg = header?.bgs?.find(b => b.x === lx && b.y === ly);
+  const scriptName = bg && bg.type === "sign" ? bg.scriptName : undefined;
+  const signInfo = getJohtoSign(mapId, lx, ly, scriptName);
+  if (signInfo) {
+    audioController.playSelect();
+    dialogManager.show(signInfo.title, [signInfo.text]);
+    return true;
+  }
+  if (bg && bg.type === "sign") {
+    audioController.playSelect();
+    const title = formatSignTitle(mapId, scriptName);
+    dialogManager.show(title, [title]);
+    return true;
+  }
+  return false;
 }
 
 function checkTrainerSight(): void {
@@ -3378,6 +3404,9 @@ function setupUi(): void {
         if (frontEnt) {
           interactWithEntity(frontEnt);
           return;
+        }
+        if (JOHTO) {
+          if (tryReadSign(fx, fy)) return;
         }
         // Signs, PCs, shelves and other metatile/background-event scripts of the engine.
         if (HOENN) {

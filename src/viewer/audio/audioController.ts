@@ -4,6 +4,7 @@ import { GetLocalWildMon } from "@core/field/wildEncounter";
 import { random } from "@core/random";
 import * as C from "../../games/firered/generated/constants";
 import { resolveJohtoMusic } from "./johtoMusic";
+import { getJohtoWildMon } from "./johtoWildMons";
 
 export class ViewerAudioController {
   private initialized = false;
@@ -70,7 +71,7 @@ export class ViewerAudioController {
       return;
     }
     const isWater = { value: false };
-    const species = GetLocalWildMon(isWater);
+    const species = this.isJohto ? getJohtoWildMon(mapId, isWater) : GetLocalWildMon(isWater);
     this.ambientCrySpecies = species;
     this.ambientCryIsWaterMon = isWater.value;
     this.ambientCryState = species === C.SPECIES_NONE ? 4 : 1;
