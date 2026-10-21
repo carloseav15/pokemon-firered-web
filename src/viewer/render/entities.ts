@@ -3,7 +3,7 @@ import type { ViewerObjectState } from "../objectState";
 import type { Element } from "../types";
 import { TILE } from "../constants";
 import { DATA_ROOT, rom } from "@core/rom";
-import { facingFrame, fallbackGfx, gfxInfoOf, type Direction } from "./sprites";
+import { facingFrame, fallbackGfx, gfxInfoOf, spriteFolderOf, type Direction } from "./sprites";
 import type { WorldGrid } from "../data/worldGrid";
 
 let gfxTable: Map<number, string> | undefined;
@@ -154,7 +154,8 @@ export class EntityManager {
         el.style.height = `${gfxInfo.h}px`;
         el.style.left = `${px - (gfxInfo.w > 16 ? (gfxInfo.w - 16) / 2 : 0)}px`;
         el.style.top = `${py - (gfxInfo.h - 16)}px`;
-        el.style.backgroundImage = `url(${DATA_ROOT}/${gfxInfo.file})`;
+        const folder = DATA_ROOT === "/hns" ? spriteFolderOf(gfxKey) : DATA_ROOT;
+        el.style.backgroundImage = `url(${folder}/${gfxInfo.file})`;
 
         const { frame: frameIdx, flip } = facingFrame(gfxInfo, ent.dir);
         el.style.backgroundPosition = `-${frameIdx * gfxInfo.w}px 0px`;

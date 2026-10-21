@@ -82,8 +82,19 @@ export async function loadCData(...files: string[]): Promise<void> {
     if (cdataFiles.has(file)) return Promise.resolve();
     let p = cdataLoads.get(file);
     if (!p) {
-      p = fetch(`${DATA_ROOT}/cdata/${file}.json`).then(async (r) => {
-        if (!r.ok) throw new Error(`missing cdata ${file}`);
+      const root = DATA_ROOT === "/hns" ? "/emerald" : DATA_ROOT;
+      p = fetch(`${root}/cdata/${file}.json`).then(async (r) => {
+        if (!r.ok) {
+          if (root !== "/fr") {
+            const fallback = await fetch(`/fr/cdata/${file}.json`);
+            if (fallback.ok) {
+              const json = await fallback.json();
+              cdataFiles.set(file, json.defs);
+              return;
+            }
+          }
+          throw new Error(`missing cdata ${file}`);
+        }
         const json = await r.json();
         cdataFiles.set(file, json.defs);
       });

@@ -90,6 +90,12 @@ export async function loadHoennGfx(dataRoot: string): Promise<void> {
   // Enlaces para variables dinámicas de GBA (VAR_0 suele ser el rival en Hoenn)
   if (map["OBJ_EVENT_GFX_MAY_NORMAL"]) map["OBJ_EVENT_GFX_VAR_0"] = map["OBJ_EVENT_GFX_MAY_NORMAL"];
   if (map["OBJ_EVENT_GFX_BRENDAN_NORMAL"]) map["OBJ_EVENT_GFX_VAR_1"] = map["OBJ_EVENT_GFX_BRENDAN_NORMAL"];
+  if (map["OBJ_EVENT_GFX_ITEM_BALL"]) map["OBJ_EVENT_GFX_POKE_BALL"] = map["OBJ_EVENT_GFX_ITEM_BALL"];
+  if (map["OBJ_EVENT_GFX_SCIENTIST_1"]) map["OBJ_EVENT_GFX_SCIENTIST_M"] = map["OBJ_EVENT_GFX_SCIENTIST_1"];
+  if (map["OBJ_EVENT_GFX_SCIENTIST_2"]) map["OBJ_EVENT_GFX_SCIENTIST_F"] = map["OBJ_EVENT_GFX_SCIENTIST_2"];
+  if (map["OBJ_EVENT_GFX_PROF_BIRCH"]) map["OBJ_EVENT_GFX_PROF_ELM"] = map["OBJ_EVENT_GFX_PROF_BIRCH"];
+  if (map["OBJ_EVENT_GFX_MART_EMPLOYEE"]) map["OBJ_EVENT_GFX_CLERK"] = map["OBJ_EVENT_GFX_MART_EMPLOYEE"];
+  if (map["OBJ_EVENT_GFX_NURSE"]) map["OBJ_EVENT_GFX_NURSE_CHANSEY"] = map["OBJ_EVENT_GFX_NURSE"];
   hoennGfx = map;
 }
 
@@ -99,7 +105,14 @@ export function gfxInfoOf(key: string): GfxInfo | undefined {
     const rivalKey = state.playerChar === "leaf" ? "OBJ_EVENT_GFX_BRENDAN_NORMAL" : "OBJ_EVENT_GFX_MAY_NORMAL";
     return hoennGfx?.[rivalKey] ?? hoennGfx?.["OBJ_EVENT_GFX_VAR_0"];
   }
-  return (hoennGfx ?? GFX_MAP)[key];
+  return hoennGfx?.[key] ?? GFX_MAP[key];
+}
+
+/** Subcarpeta donde reside el archivo del sprite (/emerald o /fr). */
+export function spriteFolderOf(key: string): string {
+  if (hoennGfx && key in hoennGfx) return "/emerald";
+  if (key in GFX_MAP) return "/fr";
+  return "/emerald";
 }
 
 /** Sprite shown for a graphics id the data does not name (Emerald's OBJ_EVENT_GFX_VAR_* depend on the save). */

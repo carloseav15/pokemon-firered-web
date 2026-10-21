@@ -93,7 +93,7 @@ import { setupSearch } from "./ui/search";
 import { InteriorViewer } from "./ui/interior";
 import { setupMinimap, type MinimapController } from "./ui/minimap";
 import { setupPopovers } from "./ui/popover";
-import { getPlayerSpriteSheet, gfxInfoOf, fallbackGfx, type Direction, loadHoennGfx } from "./render/sprites";
+import { getPlayerSpriteSheet, gfxInfoOf, fallbackGfx, type Direction, loadHoennGfx, spriteFolderOf } from "./render/sprites";
 import { viewerClock, bindViewerClockVisibility } from "./clock";
 import { ViewerFieldEffects } from "./fieldEffects";
 import { installFieldFxRenderer } from "./render/fieldFx";
@@ -104,6 +104,7 @@ import { ViewerAudioController } from "./audio/audioController";
 import { MapNamePopup } from "./ui/mapPopup";
 import { WeatherOverlay } from "./render/weatherOverlay";
 import { getJohtoSign, formatSignTitle } from "./interaction/johtoSigns";
+import { getJohtoDialogue, formatJohtoInteriorName } from "./interaction/johtoDialogues";
 
 // Juego del visor: Kanto (FireRed) por omisión; ?game=emerald abre Hoenn; ?game=hns o ?region=johto abre Johto (Heart & Soul).
 type ViewerGame = "firered" | "emerald" | "hns";
@@ -815,7 +816,7 @@ function updateEntitiesView(): void {
 function interactWithEntity(ent: LiveEntity): void {
   if (ent.hidden) return;
   if (playerActive) {
-    const header = mapHeaders.get(ent.element.map);
+    const header = mapHeaders.get(ent.element.map) ?? rom.cachedMap(ent.element.map);
     const npc = header?.objects.find(o => !o.clone && "localId" in o && o.localId === ent.element.localId);
     let scriptName = npc && !npc.clone && (npc.script || (npc.scriptName && npc.scriptName !== "0x0" && npc.scriptName !== "NULL"))
       ? (npc.scriptName || npc.script)
@@ -838,6 +839,16 @@ function interactWithEntity(ent: LiveEntity): void {
       const reachableInMap = ent.element.map === here
         || (here ? mapHeaders.get(here)?.objects.some(o => o.clone && o.targetMap === ent.element.map && o.targetLocalId === ent.element.localId) : false);
       if (!reachableInMap || ent.gx !== playerX+dx*reach || ent.gy !== playerY+dy*reach) return;
+
+      if (JOHTO) {
+        const dialogue = getJohtoDialogue(ent.element.map, ent.element.localId ?? 0, scriptName, ent.element.graphics);
+        if (dialogue) {
+          audioController.playSelect();
+          entityManager.faceTowards(ent, playerX, playerY);
+          dialogManager.show(dialogue.title, [dialogue.text]);
+          return;
+        }
+      }
 
       const isFerrySailor = !HOENN && (scriptName === "VermilionCity_EventScript_FerrySailor"
         || (ent.element.map === "MAP_VERMILION_CITY" && (ent.element.localId === 6 || (npc && !npc.clone && "localId" in npc && npc.localId === 6))));
@@ -938,12 +949,22 @@ function interactWithEntity(ent: LiveEntity): void {
       { text: ent.element.trainer, strong: true },
       ` te reta a un combate Pokémon! Rango de visión: ${ent.element.trainerRange ?? 1} casillas.`,
     ];
+  } else if (JOHTO) {
+    const header = mapHeaders.get(ent.element.map) ?? rom.cachedMap(ent.element.map);
+    const npc = header?.objects.find(o => !o.clone && "localId" in o && o.localId === ent.element.localId);
+    const scriptName = npc && !npc.clone && (npc.script || (npc.scriptName && npc.scriptName !== "0x0" && npc.scriptName !== "NULL"))
+      ? (npc.scriptName || npc.script)
+      : undefined;
+    const dialogue = getJohtoDialogue(ent.element.map, ent.element.localId ?? 0, scriptName, ent.element.graphics);
+    if (dialogue) {
+      dialogManager.show(dialogue.title, [dialogue.text]);
+      return;
+    }
+    msg = ["Hola viajero. Bienvenido a Johto. ¿Estás listo para convertirte en el campeón de la Liga Pokémon?"];
   } else {
     msg = [HOENN
       ? "Hola viajero. Bienvenido a Hoenn. ¿Estás listo para convertirte en el campeón de la Liga Pokémon?"
-      : JOHTO
-        ? "Hola viajero. Bienvenido a Johto. ¿Estás listo para convertirte en el campeón de la Liga Pokémon?"
-        : "Hola viajero. Bienvenido a las rutas de Kanto. ¿Estás listo para convertirte en el campeón de la Liga Pokémon?"];
+      : "Hola viajero. Bienvenido a las rutas de Kanto. ¿Estás listo para convertirte en el campeón de la Liga Pokémon?"];
   }
   dialogManager.show(title, msg);
 }
@@ -999,10 +1020,20 @@ async function preloadExplorationSprites(): Promise<void> {
   const urls = new Set([getPlayerSpriteSheet(state.playerChar, "walk", false, state.bikeType), getPlayerSpriteSheet(state.playerChar, "walk", true, state.bikeType),
     getPlayerSpriteSheet(state.playerChar, "surf", false, state.bikeType), getPlayerSpriteSheet(state.playerChar, "bike", false, state.bikeType)]);
   for (const ent of entityManager.entities) if (Math.abs(ent.gx - playerX) <= halfW && Math.abs(ent.gy - playerY) <= halfH) {
-    const gfx = gfxInfoOf(ent.element.graphics ?? "") ?? fallbackGfx();
-    urls.add(`${(HOENN || JOHTO) ? "/emerald" : "/fr"}/${gfx.file}`);
+    const gfxKey = ent.element.graphics ?? "";
+    const gfx = gfxInfoOf(gfxKey) ?? fallbackGfx();
+    const folder = JOHTO ? spriteFolderOf(gfxKey) : ((HOENN || JOHTO) ? "/emerald" : "/fr");
+    urls.add(`${folder}/${gfx.file}`);
   }
-  await Promise.all([...urls].map(async url => { const image = new Image(); image.src = url; await image.decode(); }));
+  await Promise.all([...urls].map(async url => {
+    try {
+      const image = new Image();
+      image.src = url;
+      await image.decode();
+    } catch {
+      // Ignora fallos de predecodificación de sprites
+    }
+  }));
 }
 
 let exploreManualZoom = 0;
@@ -2083,7 +2114,8 @@ function showAt(worldX: number, worldY: number): void {
       const btn = document.createElement("button");
       btn.className = "btn";
       const exterior = d.destMap! in index.maps;
-      btn.textContent = `${exterior ? "Ir a" : "Entrar en"} ${d.destName ?? d.destMap}`;
+      const destTitle = (JOHTO ? formatJohtoInteriorName(d.destMap!) : undefined) ?? d.destName ?? d.destMap;
+      btn.textContent = `${exterior ? "Ir a" : "Entrar en"} ${destTitle}`;
       btn.addEventListener("click", () => {
         if (exterior) centerOnMap(d.destMap!);
         else void interiorViewer.open(d.destMap!);
@@ -2917,7 +2949,7 @@ async function build(): Promise<void> {
         ...exteriorWorld.index,
         world: { width: layout.width + padding*2, height: layout.height + padding*2, origin: mapId },
         maps: { [mapId]: { x:0,y:0,width:layout.width,height:layout.height,layout:header.layout,
-          title:header.name,section:header.regionMapSectionName,music:header.music,musicName:header.musicName,weather:header.weather } },
+          title:(JOHTO ? formatJohtoInteriorName(mapId) : undefined) ?? header.name,section:header.regionMapSectionName,music:header.music,musicName:header.musicName,weather:header.weather } },
         elements: [], triggers: indoorTriggers, conflicts: [],
       } };
     }
@@ -3311,7 +3343,7 @@ function setupUi(): void {
   const searchable: KantoIndex = { ...index, maps: { ...index.maps } };
   for (const [id, m] of Object.entries(allMaps)) {
     if (id in searchable.maps) continue;
-    searchable.maps[id] = { x: 0, y: 0, width: 0, height: 0, layout: m.layout, title: m.name, section: m.section };
+    searchable.maps[id] = { x: 0, y: 0, width: 0, height: 0, layout: m.layout, title: (JOHTO ? formatJohtoInteriorName(id) : undefined) ?? m.name, section: m.section };
   }
   setupSearch(searchable, searchInput, searchResults, (mapId) => {
     if (mapId in index.maps) centerOnMap(mapId);
@@ -3407,6 +3439,7 @@ function setupUi(): void {
         }
         if (JOHTO) {
           if (tryReadSign(fx, fy)) return;
+          if (tryNavigationWarp("front", playerDir)) return;
         }
         // Signs, PCs, shelves and other metatile/background-event scripts of the engine.
         if (HOENN) {

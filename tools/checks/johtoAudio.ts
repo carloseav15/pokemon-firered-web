@@ -6,6 +6,7 @@ import * as C from "../../src/games/firered/generated/constants.ts";
 import { JOHTO_MUSIC_MAP, resolveJohtoMusic } from "../../src/viewer/audio/johtoMusic.ts";
 import { JOHTO_WILD_MONS, getJohtoWildMon } from "../../src/viewer/audio/johtoWildMons.ts";
 import { getJohtoSign } from "../../src/viewer/interaction/johtoSigns.ts";
+import { getJohtoDialogue, formatJohtoInteriorName } from "../../src/viewer/interaction/johtoDialogues.ts";
 import { ViewerAudioController } from "../../src/viewer/audio/audioController.ts";
 
 // 1. Verificar resolución canónica de Johto
@@ -133,4 +134,73 @@ assert.ok(
   `El cartel de Ruta 43 debe mencionar el Lago de la Furia: ${signR43.text}`
 );
 
-console.log("PASS: Johto ambient music, weather, wild cries and sign reading verified.");
+// 7. Diálogos auténticos de personajes (NPCs) en Johto
+const oldManDialogue = getJohtoDialogue("MAP_ROUTE29", 1, "Route29_EventScript_OldMan", "OBJ_EVENT_GFX_OLD_MAN_1");
+assert.ok(oldManDialogue, "Debe existir diálogo del anciano de la Ruta 29");
+assert.equal(oldManDialogue.title, "Anciano");
+assert.ok(
+  (oldManDialogue.text.includes("POKéMON") || oldManDialogue.text.toLowerCase().includes("pokemon")) && oldManDialogue.text.includes("catch"),
+  `El diálogo del anciano debe enseñar a atrapar Pokémon: ${oldManDialogue.text}`
+);
+
+const lanceDialogue = getJohtoDialogue("MAP_LAKE_OF_RAGE", 1, "LakeOfRage_EventScript_Lance", "OBJ_EVENT_GFX_LANCE");
+assert.ok(lanceDialogue, "Debe existir diálogo de Lance en Lago de la Furia");
+assert.equal(lanceDialogue.title, "Campeón Lance");
+assert.ok(
+  lanceDialogue.text.toLowerCase().includes("gyarados") || lanceDialogue.text.toLowerCase().includes("magikarp"),
+  `El diálogo de Lance debe hablar del Gyarados rojo / Magikarp: ${lanceDialogue.text}`
+);
+
+const momDialogue = getJohtoDialogue("MAP_NEW_BARK_TOWN_PLAYERS_HOUSE_1F", 1, "NewBarkTown_PlayersHouse_1F_EventScript_Mom", "OBJ_EVENT_GFX_MOM");
+assert.ok(momDialogue, "Debe existir diálogo de la Madre en Pueblo Primavera");
+assert.equal(momDialogue.title, "Madre");
+assert.ok(
+  momDialogue.text.length > 10,
+  `El diálogo de la madre debe contener texto: ${momDialogue.text}`
+);
+
+const elmDialogue = getJohtoDialogue("MAP_NEW_BARK_TOWN_LAB", 2, "NewBarkTown_Lab_EventScript_Elm", "OBJ_EVENT_GFX_PROF_ELM");
+assert.ok(elmDialogue, "Debe existir diálogo del Prof. Elm en el laboratorio");
+assert.equal(elmDialogue.title, "Prof. Elm");
+
+const silverDialogue = getJohtoDialogue("MAP_NEW_BARK_TOWN", 3, "NewBarkTown_EventScript_Silver", "OBJ_EVENT_GFX_SILVER");
+assert.ok(silverDialogue, "Debe existir diálogo de Silver en Pueblo Primavera");
+assert.equal(silverDialogue.title, "Silver");
+
+const nurseDialogue = getJohtoDialogue("MAP_CHERRYGROVE_CITY_POKEMON_CENTER", 1, "Common_EventScript_PkmnCenterNurse", "OBJ_EVENT_GFX_NURSE");
+assert.ok(nurseDialogue, "Debe existir diálogo para la Enfermera Joy");
+assert.equal(nurseDialogue.title, "Enfermera Joy");
+
+const clerkDialogue = getJohtoDialogue("MAP_CHERRYGROVE_CITY_MART", 1, "Common_OpenMart", "OBJ_EVENT_GFX_CLERK");
+assert.ok(clerkDialogue, "Debe existir diálogo para el dependiente de la tienda");
+assert.equal(clerkDialogue.title, "Dependiente");
+
+// 8. Interiores de Johto (nombres formateados, planos y conexiones de puertas/warps)
+assert.equal(formatJohtoInteriorName("MAP_NEW_BARK_TOWN_LAB"), "Laboratorio del Prof. Elm");
+assert.equal(formatJohtoInteriorName("MAP_NEW_BARK_TOWN_PLAYERS_HOUSE_1F"), "Casa del Jugador (Planta 1)");
+assert.equal(formatJohtoInteriorName("MAP_NEW_BARK_TOWN_PLAYERS_HOUSE_2F"), "Habitación del Jugador (Planta 2)");
+assert.equal(formatJohtoInteriorName("MAP_CHERRYGROVE_CITY_MART"), "Tienda Pokémon de Ciudad Cerezo");
+assert.equal(formatJohtoInteriorName("MAP_CHERRYGROVE_CITY_POKEMON_CENTER"), "Centro Pokémon de Ciudad Cerezo");
+
+// Verificar correspondencia de puertas entre New Bark Town y el Laboratorio
+const newBarkMap = JSON.parse(readFileSync(process.cwd() + "/public/hns/maps/MAP_NEW_BARK_TOWN.json", "utf8"));
+const elmLabMap = JSON.parse(readFileSync(process.cwd() + "/public/hns/maps/MAP_NEW_BARK_TOWN_LAB.json", "utf8"));
+const elmLabLayout = JSON.parse(readFileSync(process.cwd() + "/public/hns/layouts/LAYOUT_NEW_BARK_TOWN_LAB.json", "utf8"));
+
+// Warp 0 de New Bark Town lleva al Laboratorio
+assert.equal(newBarkMap.warps[0].destMap, "MAP_NEW_BARK_TOWN_LAB");
+assert.equal(newBarkMap.warps[0].destWarpId, 0);
+
+// Salida del Laboratorio lleva de vuelta a New Bark Town
+assert.equal(elmLabMap.warps[0].destMap, "MAP_NEW_BARK_TOWN");
+assert.equal(elmLabMap.warps[0].destWarpId, 0);
+assert.ok(elmLabLayout.width > 0 && elmLabLayout.height > 0, "El layout del laboratorio debe tener dimensiones válidas");
+
+// Verificar correspondencia de puertas de Ciudad Cerezo y el Centro Pokémon
+const cherrygroveMap = JSON.parse(readFileSync(process.cwd() + "/public/hns/maps/MAP_CHERRYGROVE_CITY.json", "utf8"));
+const cherryCenterMap = JSON.parse(readFileSync(process.cwd() + "/public/hns/maps/MAP_CHERRYGROVE_CITY_POKEMON_CENTER.json", "utf8"));
+assert.equal(cherrygroveMap.warps[1].destMap, "MAP_CHERRYGROVE_CITY_POKEMON_CENTER");
+assert.equal(cherryCenterMap.warps[0].destMap, "MAP_CHERRYGROVE_CITY");
+assert.equal(cherryCenterMap.warps[0].destWarpId, 1);
+
+console.log("PASS: Johto ambient music, weather, wild cries, signs, authentic NPC dialogues, and interior layouts verified.");

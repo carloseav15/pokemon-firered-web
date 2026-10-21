@@ -7,7 +7,8 @@
 import { DATA_ROOT, rom } from "@core/rom";
 import type { MapHeader, MapObjectTemplate } from "@core/rom";
 import { TileRenderer } from "@core/field/tileRenderer";
-import { facingFrame, fallbackGfx, gfxInfoOf } from "../render/sprites";
+import { facingFrame, fallbackGfx, gfxInfoOf, spriteFolderOf } from "../render/sprites";
+import { getJohtoDialogue, formatJohtoInteriorName } from "../interaction/johtoDialogues";
 
 const TILE = 16;
 const ZOOM = 3;
@@ -110,7 +111,7 @@ export class InteriorViewer {
     this.current = entry;
     this.backBtn.disabled = this.history.length === 0;
 
-    this.title.textContent = this.hooks.mapName(entry.mapId) ?? map.name;
+    this.title.textContent = formatJohtoInteriorName(entry.mapId) ?? this.hooks.mapName(entry.mapId) ?? map.name;
     this.meta.textContent = `${entry.mapId} · ${layout.width}×${layout.height} · música ${map.musicName} · ${layout.primary.replace("gTileset_", "")} + ${layout.secondary.replace("gTileset_", "")}`;
 
     const renderer = new TileRenderer(primary, secondary);
@@ -165,7 +166,11 @@ export class InteriorViewer {
         continue;
       }
       const obj = o as MapObjectTemplate;
-      const m = place("obj", obj.x, obj.y, `${obj.graphicsName} · ${obj.scriptName ?? "sin script"}${obj.trainerType ? ` · entrenador (rango ${obj.trainerRange})` : ""}`);
+      const dialogue = getJohtoDialogue(entry.mapId, obj.localId, obj.scriptName ?? undefined, obj.graphicsName);
+      const label = dialogue
+        ? `${dialogue.title}: ${dialogue.text}`
+        : `${obj.graphicsName} · ${obj.scriptName ?? "sin script"}${obj.trainerType ? ` · entrenador (rango ${obj.trainerRange})` : ""}`;
+      const m = place("obj", obj.x, obj.y, label, dialogue ? () => this.showDialogue(dialogue) : undefined);
       const g = gfxInfoOf(obj.graphicsName) ?? fallbackGfx();
       const frame = facingFrame(g, "south");
       const sprite = el("div", "interior-sprite");
@@ -173,7 +178,8 @@ export class InteriorViewer {
       sprite.style.height = `${g.h * ZOOM}px`;
       sprite.style.left = `${-((g.w - TILE) / 2) * ZOOM}px`;
       sprite.style.top = `${-(g.h - TILE) * ZOOM}px`;
-      sprite.style.backgroundImage = `url(${DATA_ROOT}/${g.file})`;
+      const folder = spriteFolderOf(obj.graphicsName);
+      sprite.style.backgroundImage = `url(${folder}/${g.file})`;
       sprite.style.backgroundSize = "auto 100%";
       sprite.style.backgroundPosition = `-${frame.frame * g.w * ZOOM}px 0`;
       m.appendChild(sprite);
@@ -203,6 +209,20 @@ export class InteriorViewer {
         this.stage.scrollTop = (wp.y + 0.5) * TILE * ZOOM - this.stage.clientHeight / 2;
       }
     }
+  }
+
+  showDialogue(dialogue: { title: string; text: string }): void {
+    const existing = this.side.querySelector(".interior-dialogue");
+    existing?.remove();
+    const box = el("div", "interior-section interior-dialogue");
+    box.style.cssText = "background:#1e293b;border:1px solid #38bdf8;border-radius:6px;padding:8px 10px;margin-bottom:12px;";
+    const h = el("strong", undefined, `💬 ${dialogue.title}`);
+    h.style.cssText = "display:block;color:#38bdf8;margin-bottom:4px;font-size:13px;";
+    const p = el("div", undefined, dialogue.text);
+    p.style.cssText = "white-space:pre-wrap;line-height:1.4;font-size:12px;color:#f1f5f9;";
+    box.append(h, p);
+    this.side.prepend(box);
+    box.scrollIntoView({ behavior: "smooth" });
   }
 
   private followWarp(destMap: string, destWarpId: number): void {
