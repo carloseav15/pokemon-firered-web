@@ -103,6 +103,7 @@
     "viewer:occlusion-census": "python3 tools/checks/viewerOcclusionCensus.py",
     "viewer:elevators": "python3 tools/viewer/elevator_scripts.py",
     "check:viewer-elevator-source": "python3 tools/checks/viewerElevatorSource.py",
+    "check:region-save": "esbuild tools/checks/regionSave.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/regionSave.mjs && node .decomp-build/checks/regionSave.mjs",
     "check:viewer-warps": "esbuild tools/checks/viewerWarps.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/viewerWarps.mjs && node .decomp-build/checks/viewerWarps.mjs",
     "viewer:index": "python3 tools/viewer/world_index.py",
     "play:cerulean": "node tools/playtest/cerulean.mjs",

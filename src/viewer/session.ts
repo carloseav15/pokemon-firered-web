@@ -8,26 +8,33 @@ import { createMon } from '@core/pokemon/pokemon';
 import { addBagItem } from '@core/pokemon/items';
 import { encode } from '@core/gba/charmap';
 import { InitPlayerTrainerId, SeedRngAndSetTrainerId } from '@core/random';
-import { newSaveData, save, saveStore, setSave, setSaveStorageKey, flagGet, flagSet, PlayTimeCounter_Start, type SaveData } from '@game/save';
+import { newSaveData, save, setSave, flagGet, flagSet, PlayTimeCounter_Start } from '@game/save';
 import { HandleSetPokedexFlag } from '@core/pokemon/mon_extra';
 import { GetHealLocationIndexFromMapGroupAndNum, GetHealLocation } from '@core/field/overworld';
 import * as C from '@game/generated/constants';
 import type { WarpAddress } from './navigation';
 import type { Direction } from './render/sprites';
+import { enterBankedRegion, enterKanto, liveWorldRegion, loadWorldSave, reloadWorldSave, resetWorldRegion, setRegionalNavigation,
+  worldOf, writeWorldSave, type BankedRegionId, type RegionId, type RegionalNavigation, type WorldSave, type WorldSaveData } from './regionSave';
 
-export const VIEWER_SAVE_KEY = 'firered-viewer-game-v1';
-export type NavigationSave = { mapId: string; x: number; y: number; direction: Direction; dynamic: WarpAddress | null };
-export type ViewerSave = SaveData & { viewerNavigation?: NavigationSave; viewerStart?: 'temporary-kanto-v1' | 'definitive-kanto-v1' };
+export { VIEWER_SAVE_KEY } from './regionSave';
+/** `region` tags the game whose map IDs `mapId` uses (absent only in v1 saves, which were Kanto). */
+export type NavigationSave = { mapId: string; x: number; y: number; direction: Direction; dynamic: WarpAddress | null; region?: RegionId };
+export type ViewerSave = WorldSaveData;
 let initialized = false;
 
 export function resetViewerSessionInitialized(): void {
   initialized = false;
+  resetWorldRegion();
 }
 
 /** new_game.c NewGameInitData for the viewer's live engine session. */
-export function initDefinitiveViewerSession(initialFlags: Record<string, number>, gender: number = C.MALE): void {
+export function initDefinitiveViewerSession(initialFlags: Record<string, number>, gender: number = C.MALE, carryWorld?: WorldSave): void {
   SeedRngAndSetTrainerId(Math.floor(Math.random() * 65536));
-  const data = newSaveData();
+  const data: ViewerSave = newSaveData();
+  // Only an automatic start over a world with no Kanto game keeps the other regions' banks;
+  // the explicit New Game button starts a new world.
+  if (carryWorld) data.world = structuredClone(carryWorld);
   data.encryptionKey = 0;
   data.trainerId = InitPlayerTrainerId();
   data.playerGender = gender;
@@ -61,19 +68,18 @@ export async function initializeViewerSession(
   // rom data, plus the map-entry bookkeeping tables mapEvents.ts runs before the engine loads.
   await Promise.all([rom.load(), loadCData('renewable_hidden_items', 'wild_encounter')]);
   // Prefer the main game save if available, so console mode and explore mode share the exact same playthrough.
-  setSaveStorageKey("firered-save-v1");
-  let stored = saveStore.load() as ViewerSave | undefined;
-  if (!stored) {
-    setSaveStorageKey(VIEWER_SAVE_KEY);
-    stored = saveStore.load() as ViewerSave | undefined;
-  }
+  // The world save is migrated to the regional contract (regionSave.ts) before use.
+  resetWorldRegion();
+  const stored = loadWorldSave();
   // Overworld_ResetStateOnContinue: the roamer's location is not saved; continuing places it again.
-  if (stored && (stored.playerName?.length > 0 || stored.viewerStart === 'temporary-kanto-v1' || stored.viewerStart === 'definitive-kanto-v1')) {
+  if (stored && stored.world!.started.kanto) {
     setSave(stored);
     onWarpForRoamer();
   } else if (options?.forceTemporary) {
     SeedRngAndSetTrainerId(Math.floor(Math.random() * 65536));
-    setSave(newSaveData());
+    const data: ViewerSave = newSaveData();
+    if (stored?.world) data.world = stored.world;
+    setSave(data);
     // new_game.c:149 runs EventScript_ResetAllMapFlags. The world index exports
     // that source script's setflag names (values are source lines, not flag IDs).
     for (const name of Object.keys(initialFlags)) flagSet(rom.c(name));
@@ -87,8 +93,9 @@ export async function initializeViewerSession(
     (save as ViewerSave).viewerStart = 'temporary-kanto-v1';
     grantTemporaryPokedex();
   } else {
-    initDefinitiveViewerSession(initialFlags, options?.gender ?? C.MALE);
+    initDefinitiveViewerSession(initialFlags, options?.gender ?? C.MALE, stored?.world);
   }
+  enterKanto();
   restoreViewerEventMap((save as ViewerSave).viewerNavigation?.mapId ?? null);
   if ((save as ViewerSave).viewerStart === 'temporary-kanto-v1') {
     grantTemporaryPokedex();
@@ -120,6 +127,7 @@ function grantTemporaryPokedex(): void {
 }
 export function viewerCheckpoint(): NavigationSave | undefined { return (save as ViewerSave).viewerNavigation; }
 export function syncViewerLocation(nav: NavigationSave): void {
+  if (liveWorldRegion() !== 'kanto') throw Error('FireRed location sync while another region is live');
   const num = rom.mapNum(nav.mapId);
   save.location = { mapGroup: num >>> 8, mapNum: num & 255, warpId: -1, x: nav.x, y: nav.y };
   save.pos = { x: nav.x, y: nav.y };
@@ -128,13 +136,39 @@ export function syncViewerLocation(nav: NavigationSave): void {
     const target=rom.mapNum(nav.dynamic.mapId);
     save.dynamicWarp={mapGroup:target>>>8,mapNum:target&255,warpId:nav.dynamic.warpId,x:nav.dynamic.x??-1,y:nav.dynamic.y??-1};
   }
-  (save as ViewerSave).viewerNavigation = structuredClone(nav);
+  (save as ViewerSave).viewerNavigation = { ...structuredClone(nav), region: 'kanto' };
 }
 export function saveViewerSession(nav: NavigationSave): boolean {
-  syncViewerLocation(nav);
-  setSaveStorageKey("firered-save-v1");
-  const ok = saveStore.write();
-  setSaveStorageKey(VIEWER_SAVE_KEY);
-  saveStore.write();
-  return ok;
+  if (liveWorldRegion() === 'kanto') {
+    syncViewerLocation(nav);
+    return writeWorldSave();
+  }
+  // Banked regions: no FireRed map numbering; the trainer must come from a stored Kanto game.
+  if (!worldOf().started.kanto) return false;
+  setRegionalNavigation(nav);
+  return writeWorldSave();
+}
+
+/**
+ * Enter a banked region (Hoenn) on the shared trainer: load the stored world (party, money,
+ * bag stay global) or, without one, a transient unsaved trainer; install the region's own
+ * progress bank. `initializeNewBank` runs that game's new-game flag setup when the bank is new.
+ */
+export function initializeRegionalSession(region: BankedRegionId, initializeNewBank: () => void): void {
+  if (initialized) return;
+  resetWorldRegion();
+  setSave(loadWorldSave() ?? newSaveData());
+  if (enterBankedRegion(region)) initializeNewBank();
+  initialized = true;
+}
+
+/** Continue the stored game in a banked region; returns that region's saved navigation. */
+export function continueRegionalSession(region: BankedRegionId, initializeNewBank: () => void): RegionalNavigation {
+  const stored = reloadWorldSave();
+  if (!stored || !stored.world!.started.kanto) throw Error('No saved game yet');
+  if (enterBankedRegion(region)) initializeNewBank();
+  initialized = true;
+  const nav = (save as ViewerSave).viewerNavigation;
+  if (!nav) throw Error(`No saved position in ${region === 'hoenn' ? 'Hoenn' : region}`);
+  return { ...nav, region };
 }

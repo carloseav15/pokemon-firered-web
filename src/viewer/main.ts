@@ -1,6 +1,7 @@
 import { ViewerObjectSpawns, cloneElement } from "./data/objectSpawns";
 import { savedViewerObjects, storeViewerObjects, type ViewerObjectState } from "./objectState";
-import { initializeViewerSession, initDefinitiveViewerSession, saveViewerSession, viewerCheckpoint, type NavigationSave } from "./session";
+import { initializeViewerSession, initDefinitiveViewerSession, saveViewerSession, viewerCheckpoint, initializeRegionalSession, continueRegionalSession, type NavigationSave } from "./session";
+import { enterKanto, regionSessionFlags, reloadWorldSave, setRegionSessionFlags } from "./regionSave";
 import { onWarpForRoamer } from "@core/pokemon/roamer";
 import { enterViewerEventMap, restoreViewerEventMap, viewerEventMap } from "./mapEvents";
 import { isViewerObjectPresent } from "./data/objectPresence";
@@ -265,10 +266,9 @@ async function continueViewerSession(): Promise<void> {
   const checkpoint = viewerCheckpoint();
   if (!checkpoint) throw Error("No saved game yet");
   // Reload the saved SaveBlock too, discarding unsaved purchases/healing.
-  const { saveStore, setSave } = await import("@game/save");
-  const stored = saveStore.load();
-  if (!stored) throw Error("Unable to read the saved game");
-  setSave(stored);
+  if (!reloadWorldSave()) throw Error("Unable to read the saved game");
+  enterKanto();
+  loadRegionSessionFlags();
   PlayTimeCounter_Start();
   onWarpForRoamer(); // Overworld_ResetStateOnContinue
   const nav = viewerCheckpoint()!;
@@ -1350,6 +1350,26 @@ function exploreAutoZoom(): number {
   return Math.max(2, Math.min(6, Math.floor(Math.min(w / C.DISPLAY_WIDTH, h / C.DISPLAY_HEIGHT)) || 2));
 }
 
+/** Hoenn runs on the shared trainer with its own Emerald-ID progress bank (regionSave.ts). */
+function initializeHoennRegion(): void {
+  initializeRegionalSession("hoenn", () => initializeHoennSessionFlags(index.initialFlags));
+  loadRegionSessionFlags();
+}
+function loadRegionSessionFlags(): void {
+  state.eventFlags.clear();
+  for (const name of regionSessionFlags(HOENN ? "hoenn" : "kanto")) state.eventFlags.add(name);
+}
+async function continueHoennSession(): Promise<void> {
+  const nav = continueRegionalSession("hoenn", () => initializeHoennSessionFlags(index.initialFlags));
+  loadRegionSessionFlags();
+  await changeNavigationWorld(nav.mapId);
+  const info = index.maps[nav.mapId];
+  if (!info) throw Error(`Saved map ${nav.mapId} is not in the Hoenn index`);
+  navigationWarps.restore(nav.dynamic);
+  await startExploration(info.x + nav.x, info.y + nav.y);
+  playerDir = nav.direction; updatePlayerDisplay(); writeHash();
+}
+
 function initializeHoennSessionFlags(initialFlags?: Record<string, number>): void {
   if (!initialFlags) return;
   const flags = EmConstants as Record<string, number | undefined>;
@@ -1375,6 +1395,8 @@ async function startExploration(targetGx?: number, targetGy?: number): Promise<v
       gender: state.playerChar === "leaf" ? C.FEMALE : C.MALE,
     });
     gameSave.playerGender = state.playerChar === "leaf" ? C.FEMALE : C.MALE;
+  } else if (HOENN) {
+    initializeHoennRegion();
   } else {
     initializeHoennSessionFlags(index.initialFlags);
   }
@@ -2942,7 +2964,9 @@ async function build(): Promise<void> {
       forceTemporary: !!explicitExternalMap,
       gender: state.playerChar === "leaf" ? C.FEMALE : C.MALE,
     });
-  } else if ((HOENN || JOHTO) && startExplore) {
+  } else if (HOENN && startExplore) {
+    initializeHoennRegion();
+  } else if (JOHTO && startExplore) {
     initializeHoennSessionFlags(index.initialFlags);
   }
 
@@ -3461,11 +3485,14 @@ function setupUi(): void {
   explorationUi = new ExplorationUi({
     region: JOHTO ? "johto" : HOENN ? "hoenn" : "kanto",
     save: () => {
+      // Johto has no progress bank yet: saving there would write its navigation into the Kanto save.
+      if (JOHTO) return false;
       const nav = navigationSnapshot();
       storeViewerObjects(nav.mapId, readViewerMapObjects(nav.mapId));
+      setRegionSessionFlags(HOENN ? "hoenn" : "kanto", state.eventFlags);
       return saveViewerSession(nav);
     },
-    continue: () => continueViewerSession(),
+    continue: () => JOHTO ? Promise.reject(Error("Saving is not available in Johto yet")) : HOENN ? continueHoennSession() : continueViewerSession(),
     newGame: async () => {
       if (!HOENN && !JOHTO) {
         initDefinitiveViewerSession(index.initialFlags, state.playerChar === "leaf" ? C.FEMALE : C.MALE);
