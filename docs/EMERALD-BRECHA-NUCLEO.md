@@ -3,17 +3,17 @@
 Generado por `python3 tools/emeraldCoreGap.py` (compila `src/core` con `@game/*` → `src/games/emerald`). No editar a mano.
 Mide huecos de compilación, no de comportamiento: un núcleo que compila contra Emerald no es un Emerald que funciona.
 
-- Errores de tipos: **898** en 75 archivos del núcleo.
+- Errores de tipos: **903** en 79 archivos del núcleo.
 - Módulos del contrato (`tools/checks/layers-contract.json`): 38; Emerald proporciona 4: data, generated/constants, generated/metatileBehavior, generated/structs.
-- Constantes de FireRed que Emerald no define: 227 nombres, 511 usos.
+- Constantes de FireRed que Emerald no define: 228 nombres, 516 usos.
 - Campos de estructuras que Emerald no tiene: 8 campos en 3 estructuras.
-- Otros errores: 141.
+- Otros errores: 140.
 
 ## Módulos que el núcleo importa de `@game/` y Emerald no tiene
 
 | Módulo | Archivos del núcleo que lo importan |
 |---|---:|
-| `save` | 46 |
+| `save` | 47 |
 | `questLogEvents` | 14 |
 | `battle/main_init` | 11 |
 | `game` | 8 |
@@ -65,6 +65,7 @@ Mide huecos de compilación, no de comportamiento: un núcleo que compila contra
 | `BATTLE_TERRAIN_WATER` | 5 |
 | `BATTLE_TERRAIN_POND` | 5 |
 | `HITMARKER_SYNCHRONISE_EFFECT` | 5 |
+| `PLAYER_AVATAR_FLAG_FORCED` | 5 |
 | `BATTLE_TERRAIN_UNDERWATER` | 4 |
 | `BATTLE_TERRAIN_PLAIN` | 4 |
 | `CONTROLLER_UNKNOWNYESNOBOX` | 4 |
@@ -91,7 +92,6 @@ Mide huecos de compilación, no de comportamiento: un núcleo que compila contra
 | `QL_INPUT_DOWN` | 3 |
 | `QL_INPUT_LEFT` | 3 |
 | `QL_INPUT_RIGHT` | 3 |
-| `QL_STATE_PLAYBACK_LAST` | 3 |
 
 ## Campos de estructuras ausentes en Emerald
 

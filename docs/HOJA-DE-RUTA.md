@@ -43,7 +43,8 @@ No borrar código útil ni desactivar funciones existentes sin estudiar consumid
    Hoenn, controles táctiles/390 px y ocho inspectores; no acredita paridad fuente.
    **Pendiente de ejecución Johto:** falta `/hns/fieldfx.json`; conservar este
    bloqueo hasta resolver su exportación y repetir el smoke, sin fallback inventado.
-4. [ ] Fijar fuentes por región y reemplazar datos manuales de Johto por extracción:
+4. [ ] Revisar primero la integración Hoenn y el contrato regional (ver auditoría abajo);
+   después fijar la versión de Johto y reemplazar sus datos manuales por extracción:
    diálogos, encuentros con niveles/probabilidades/horarios, entrenadores, tiendas,
    objetos y recompensas. Cada lote debe comparar su salida con la fuente.
 5. [ ] Compactar estructura interna por responsabilidad: core (motor), games
@@ -184,3 +185,55 @@ Orden del siguiente trabajo después de elegir versión:
    bloqueo `/hns/fieldfx.json`; no copiar el manifiesto de Emerald para ocultarlo.
 5. Repetir el smoke inglés y un circuito pequeño hablar/combatir/comprar/curar/
    guardar/continuar, con aislamiento regional. Mantener el recorrido extenso diferido.
+
+## Hoenn: auditoría de integración antes de elegir Johto
+
+Revisión de código y comprobaciones locales, 2026-10-21. Esta revisión precede la
+selección de Johto: la recomendación anterior de Crystal sigue siendo provisional.
+No se realizó recorrido de navegador ni prueba de continuidad regional en esta tanda.
+
+| Área | Evidencia en la ruta activa | Estado y límite |
+| --- | --- | --- |
+| Fuente y recursos | `tools/decomp/export.py` con `EXPORT_GAME=emerald`; `/emerald/maps.json`, scripts, objetos, efectos, gráficos, datos y audio; `fetchHoennIndex()` carga `/viewer/hoenn.json` | Base original exportada. Recursos disponibles no demuestran que sus consumidores se ejecuten |
+| Gráficos | Perfil Emerald, mapas/tilesets, sprites y efectos; `loadHoennGfx`, clima y profundidad en visor | Exploración implementada; avatar Hoenn usa una ruta distinta de la animación C de Kanto. Paridad visual completa pendiente |
+| Audio | `audioController.setHoenn(true)`, música, efectos y gritos exportados | Conectado al visor; no comparación audiovisual completa |
+| Movimiento | `hoennMechanics.ts` y callers en `main.ts`: Mach/Acro, raíles, corrientes, Dive, hielo, puertas, mareas y puzzles | Helpers y conexión presentes; checks focalizados no equivalen a completar gimnasios o recorrer todos los mapas |
+| Historia/scripts | `setupUi()` crea `EngineInteraction` solo si `!HOENN`; entrada automática de mapa excluye Hoenn/Johto | No hay puente general activo para ejecutar la historia Emerald; exportar `scripts.bin` no elimina este hueco |
+| Encuentros/combates | Tras un paso, la ruta de encuentros del motor exige `!HOENN && !JOHTO`; la otra ruta de batalla salvaje es exclusiva de Johto | Hoenn no tiene encuentros Emerald integrados por ese camino. La detección de mirada de entrenador puede mostrar interacción sin iniciar combate fuente |
+| NPC/objetos/servicios | Sin puente, aparecen respuestas genéricas; con `scriptName`, enfermeras y dependientes usan curación manual y `openJohtoMart` antes de la rama específica Johto | Hay servicios adaptados compartidos, no ejecución de sus scripts Emerald. Objetos visibles no prueban entrega, retirada persistente o scripts de historia |
+| Cinemáticas | `hoennCinematics.ts` usa DOM, CSS y `setTimeout`; disparadores por mapa/posición en `main.ts` | Adaptaciones propias, no ejecución de eventos originales. Títulos residuales «Pilar Celeste», «Cueva Origen», «Arrecife of Sootopolis» contradicen el requisito de inglés; pendiente corregir |
+| Progreso | `initializeHoennSessionFlags()` escribe IDs Emerald mediante `flagSet` del save compilado; `state.eventFlags` es un Set de sesión | No hay aislamiento regional demostrado ni serialización de ese Set en `StoredSettings` |
+| Guardado/continuar | Menú llama `saveViewerSession`; `session.ts` escribe `firered-save-v1` y `firered-viewer-game-v1`; navegación no contiene región. Arranque Hoenn omite `initializeViewerSession` | Guardar posición no acredita partida Emerald recuperable. Riesgo concreto de escribir navegación Hoenn en el save compartido; falta prueba de no contaminación |
+| Viaje regional | Ferry cambia `location.href` entre Kanto/Hoenn | Enlace existente; no contrato de viaje con transferencia y restauración comprobadas |
+
+Comprobaciones de esta revisión:
+
+- `python3 tools/emeraldExportValidate.py`: 66.470 comparaciones, cero discrepancias.
+  Compara dos pipelines sobre la misma fuente, no el comportamiento del motor.
+- `npm run check:hoenn-mechanics`: PASS de helpers existentes de movimiento/puzzles;
+  no prueba entrada, combate, recompensa o guardado de una aventura Emerald.
+- La compilación alternativa del núcleo se revisa en
+  [EMERALD-BRECHA-NUCLEO.md](EMERALD-BRECHA-NUCLEO.md), regenerada con
+  `python3 tools/emeraldCoreGap.py`. Sus errores son brechas del contrato Emerald,
+  no un fallo del build actual de FireRed.
+
+**Conclusión operativa:** Hoenn es una base de exploración con recursos originales
+sustanciales y mecánicas parciales; aún no es una campaña Emerald integrada. Conviene
+resolver el contrato compartido con Emerald antes de elegir Johto. Kanto y Hoenn
+ofrecen dos juegos GBA originales para descubrir ese contrato sin introducir todavía
+la diferencia GBC/DS de Johto.
+
+Siguiente orden concreto (descompone puntos 4, 6 y 7 sin borrar sus pendientes):
+
+1. Diseñar IDs regionales y persistencia: equipo/dinero globales, progreso y navegación
+   con juego/región, compatibilidad del save existente. Antes de habilitar viajes,
+   comprobar ida/vuelta, guardar/continuar y ausencia de colisiones de flags/variables.
+2. Cerrar los módulos mínimos del contrato Emerald detectados por el núcleo, empezando
+   por save y entrada de mapa; no activar `EngineInteraction` quitando solo `!HOENN`.
+3. Integrar un circuito Emerald fuente: un mapa/NPC, encuentro y combate, curación/
+   tienda, guardado y continuar. Cada subsistema debe usar sus datos y condiciones
+   originales; retirar la adaptación sustituida cuando el camino fuente esté activo.
+4. Con el coste y contrato comunes ya comprobados, decidir Crystal o HeartGold y
+   continuar sus extracciones. Mantener HnS y cinemáticas adaptadas identificados.
+
+No se asigna porcentaje de juego completo a estos resultados.
