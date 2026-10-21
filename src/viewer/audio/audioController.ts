@@ -3,6 +3,7 @@ import { createM4aBackend } from "@core/audio/m4a";
 import { GetLocalWildMon } from "@core/field/wildEncounter";
 import { random } from "@core/random";
 import * as C from "../../games/firered/generated/constants";
+import { resolveJohtoMusic } from "./johtoMusic";
 
 export class ViewerAudioController {
   private initialized = false;
@@ -19,11 +20,16 @@ export class ViewerAudioController {
   private ambientCryDelay: number = 0;
   private playerIsOnWater: boolean = false;
   private isHoenn = false;
+  private isJohto = false;
 
   constructor() {}
 
   setHoenn(hoenn: boolean): void {
     this.isHoenn = hoenn;
+  }
+
+  setJohto(johto: boolean): void {
+    this.isJohto = johto;
   }
 
   init(): boolean {
@@ -79,10 +85,19 @@ export class ViewerAudioController {
    * Updates map BGM and checks whether vehicle (bike / surf) overrides map music.
    * overworld.c:1037-1046, overworld.c:1193-1201
    */
-  updateMap(mapId: string, defaultMusicId?: number, vehicle?: "walk" | "bike" | "surf", canOverride: boolean = true): void {
+  updateMap(mapId: string, defaultMusicId?: number | string, vehicle?: "walk" | "bike" | "surf", canOverride: boolean = true): void {
     const mapChanged = this.currentMapId !== mapId;
     this.currentMapId = mapId;
-    this.currentMapMusicId = defaultMusicId ?? this.currentMapMusicId ?? (this.isHoenn ? 405 : C.MUS_PALLET);
+
+    let targetMusicId: number;
+    if (typeof defaultMusicId === "string") {
+      targetMusicId = resolveJohtoMusic(defaultMusicId);
+    } else if (typeof defaultMusicId === "number" && defaultMusicId > 0) {
+      targetMusicId = defaultMusicId;
+    } else {
+      targetMusicId = this.currentMapMusicId ?? (this.isHoenn ? 405 : C.MUS_PALLET);
+    }
+    this.currentMapMusicId = targetMusicId;
 
     let targetMusic = this.currentMapMusicId;
     if (canOverride) {

@@ -23,7 +23,7 @@ import * as C from "@game/generated/constants";
 import type { PokemonCrySettings, SoundBackend } from "./sound";
 
 /** DATA_ROOT can change at startup (the world viewer's Hoenn mode), so the audio folder is resolved on every use. */
-const audioRoot = (): string => `${DATA_ROOT}/audio`;
+const audioRoot = (): string => (DATA_ROOT === "/hns" ? "/fr/audio" : `${DATA_ROOT}/audio`);
 
 type SongEntry = {
   id: number; name: string; midi: string | null; player: number;

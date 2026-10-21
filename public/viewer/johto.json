@@ -18,7 +18,7 @@
       "layout": "LAYOUT_AZALEA_TOWN",
       "title": "AzaleaTown",
       "section": "MAPSEC_AZALEA_TOWN",
-      "music": 0,
+      "music": 335,
       "musicName": "MUS_HG_AZALEA",
       "weather": 2
     },
@@ -30,7 +30,7 @@
       "layout": "LAYOUT_BELLCHIME_TRAIL",
       "title": "BellchimeTrail",
       "section": "MAPSEC_ECRUTEAK_CITY",
-      "music": 0,
+      "music": 306,
       "musicName": "MUS_HG_BELL_TOWER",
       "weather": 2
     },
@@ -42,7 +42,7 @@
       "layout": "LAYOUT_BLACKTHORN_CITY",
       "title": "BlackthornCity",
       "section": "MAPSEC_BLACKTHORN_CITY",
-      "music": 0,
+      "music": 335,
       "musicName": "MUS_HG_AZALEA",
       "weather": 2
     },
@@ -54,7 +54,7 @@
       "layout": "LAYOUT_CELADON_CITY",
       "title": "CeladonCity",
       "section": "MAPSEC_CELADON_CITY",
-      "music": 0,
+      "music": 309,
       "musicName": "MUS_HG_CELADON",
       "weather": 2
     },
@@ -66,7 +66,7 @@
       "layout": "LAYOUT_CERULEAN_CITY",
       "title": "CeruleanCity",
       "section": "MAPSEC_CERULEAN_CITY",
-      "music": 0,
+      "music": 309,
       "musicName": "MUS_HG_CERULEAN",
       "weather": 2
     },
@@ -78,7 +78,7 @@
       "layout": "LAYOUT_CHERRYGROVE_CITY",
       "title": "CherrygroveCity",
       "section": "MAPSEC_CHERRYGROVE_CITY",
-      "music": 0,
+      "music": 336,
       "musicName": "MUS_HG_CHERRYGROVE",
       "weather": 2
     },
@@ -90,7 +90,7 @@
       "layout": "LAYOUT_CIANWOOD_CITY",
       "title": "CianwoodCity",
       "section": "MAPSEC_CIANWOOD_CITY",
-      "music": 0,
+      "music": 313,
       "musicName": "MUS_HG_CIANWOOD",
       "weather": 2
     },
@@ -102,7 +102,7 @@
       "layout": "LAYOUT_CINNABAR_ISLAND",
       "title": "CinnabarIsland",
       "section": "MAPSEC_CINNABAR_ISLAND",
-      "music": 0,
+      "music": 279,
       "musicName": "MUS_HG_CINNABAR",
       "weather": 2
     },
@@ -114,7 +114,7 @@
       "layout": "LAYOUT_ECRUTEAK_CITY",
       "title": "EcruteakCity",
       "section": "MAPSEC_ECRUTEAK_CITY",
-      "music": 0,
+      "music": 306,
       "musicName": "MUS_HG_ECRUTEAK",
       "weather": 2
     },
@@ -126,7 +126,7 @@
       "layout": "LAYOUT_FUCHSIA_CITY",
       "title": "FuchsiaCity",
       "section": "MAPSEC_FUCHSIA_CITY",
-      "music": 0,
+      "music": 309,
       "musicName": "MUS_HG_CERULEAN",
       "weather": 2
     },
@@ -138,7 +138,7 @@
       "layout": "LAYOUT_GOLDENROD_CITY",
       "title": "GoldenrodCity",
       "section": "MAPSEC_GOLDENROD_CITY",
-      "music": 0,
+      "music": 309,
       "musicName": "MUS_HG_GOLDENROD",
       "weather": 2
     },
@@ -150,7 +150,7 @@
       "layout": "LAYOUT_ILEX_FOREST",
       "title": "IlexForest",
       "section": "MAPSEC_ILEX_FOREST",
-      "music": 0,
+      "music": 334,
       "musicName": "MUS_HG_UNION_CAVE",
       "weather": 2
     },
@@ -162,7 +162,7 @@
       "layout": "LAYOUT_LAKE_OF_RAGE",
       "title": "LakeOfRage",
       "section": "MAPSEC_LAKE_OF_RAGE",
-      "music": 0,
+      "music": 333,
       "musicName": "MUS_HG_ROUTE42",
       "weather": 2
     },
@@ -174,7 +174,7 @@
       "layout": "LAYOUT_LAKE_OF_RAGE_LOW_TIDE",
       "title": "LakeOfRageLowTide",
       "section": "MAPSEC_LAKE_OF_RAGE",
-      "music": 0,
+      "music": 333,
       "musicName": "MUS_HG_ROUTE42",
       "weather": 2
     },
@@ -186,7 +186,7 @@
       "layout": "LAYOUT_LAVENDER_TOWN",
       "title": "LavenderTown",
       "section": "MAPSEC_LAVENDER_TOWN",
-      "music": 0,
+      "music": 280,
       "musicName": "MUS_HG_LAVENDER",
       "weather": 2
     },
@@ -198,7 +198,7 @@
       "layout": "LAYOUT_MAHOGANYTOWN",
       "title": "Mahoganytown",
       "section": "MAPSEC_MAHOGANY_TOWN",
-      "music": 0,
+      "music": 336,
       "musicName": "MUS_HG_CHERRYGROVE",
       "weather": 2
     },
@@ -210,7 +210,7 @@
       "layout": "LAYOUT_MT_MOON_OUTSIDE",
       "title": "MtMoon_Outside",
       "section": "MAPSEC_MT_MOON",
-      "music": 0,
+      "music": 288,
       "musicName": "MUS_HG_MT_MOON_SQUARE",
       "weather": 2
     },
@@ -222,7 +222,7 @@
       "layout": "LAYOUT_MT_SILVER_OUTSIDE",
       "title": "MtSilver_Outside",
       "section": "MAPSEC_MT_SILVER",
-      "music": 0,
+      "music": 287,
       "musicName": "MUS_HG_LIGHTHOUSE",
       "weather": 2
     },
@@ -234,7 +234,7 @@
       "layout": "LAYOUT_NEW_BARK_TOWN",
       "title": "NewBarkTown",
       "section": "MAPSEC_NEW_BARK_TOWN",
-      "music": 0,
+      "music": 300,
       "musicName": "MUS_HG_NEW_BARK",
       "weather": 2
     },
@@ -246,7 +246,7 @@
       "layout": "LAYOUT_OLIVINE_CITY",
       "title": "OlivineCity",
       "section": "MAPSEC_OLIVINE_CITY",
-      "music": 0,
+      "music": 337,
       "musicName": "MUS_HG_VIOLET",
       "weather": 2
     },
@@ -258,7 +258,7 @@
       "layout": "LAYOUT_OLIVINE_CITY_PORT_OUTSIDE",
       "title": "OlivineCity_PortOutside",
       "section": "MAPSEC_OLIVINE_CITY",
-      "music": 0,
+      "music": 336,
       "musicName": "MUS_HG_CHERRYGROVE",
       "weather": 2
     },
@@ -270,7 +270,7 @@
       "layout": "LAYOUT_PALLET_TOWN",
       "title": "PalletTown",
       "section": "MAPSEC_PALLET_TOWN",
-      "music": 0,
+      "music": 300,
       "musicName": "MUS_HG_PALLET",
       "weather": 2
     },
@@ -282,7 +282,7 @@
       "layout": "LAYOUT_PEWTER_CITY",
       "title": "PewterCity",
       "section": "MAPSEC_PEWTER_CITY",
-      "music": 0,
+      "music": 314,
       "musicName": "MUS_HG_PEWTER",
       "weather": 2
     },
@@ -294,7 +294,7 @@
       "layout": "LAYOUT_ROUTE1",
       "title": "Route1",
       "section": "MAPSEC_ROUTE_1",
-      "music": 0,
+      "music": 291,
       "musicName": "MUS_HG_ROUTE1",
       "weather": 2
     },
@@ -306,7 +306,7 @@
       "layout": "LAYOUT_ROUTE10",
       "title": "Route10",
       "section": "MAPSEC_ROUTE_10",
-      "music": 0,
+      "music": 293,
       "musicName": "MUS_HG_ROUTE3",
       "weather": 2
     },
@@ -318,7 +318,7 @@
       "layout": "LAYOUT_ROUTE11",
       "title": "Route11",
       "section": "MAPSEC_ROUTE_11",
-      "music": 0,
+      "music": 294,
       "musicName": "MUS_HG_ROUTE11",
       "weather": 2
     },
@@ -330,7 +330,7 @@
       "layout": "LAYOUT_ROUTE12",
       "title": "Route12",
       "section": "MAPSEC_ROUTE_12",
-      "music": 0,
+      "music": 294,
       "musicName": "MUS_HG_ROUTE11",
       "weather": 2
     },
@@ -342,7 +342,7 @@
       "layout": "LAYOUT_ROUTE13",
       "title": "Route13",
       "section": "MAPSEC_ROUTE_13",
-      "music": 0,
+      "music": 294,
       "musicName": "MUS_HG_ROUTE11",
       "weather": 2
     },
@@ -354,7 +354,7 @@
       "layout": "LAYOUT_ROUTE14",
       "title": "Route14",
       "section": "MAPSEC_ROUTE_14",
-      "music": 0,
+      "music": 294,
       "musicName": "MUS_HG_ROUTE11",
       "weather": 2
     },
@@ -366,7 +366,7 @@
       "layout": "LAYOUT_ROUTE15",
       "title": "Route15",
       "section": "MAPSEC_ROUTE_15",
-      "music": 0,
+      "music": 294,
       "musicName": "MUS_HG_ROUTE11",
       "weather": 2
     },
@@ -378,7 +378,7 @@
       "layout": "LAYOUT_ROUTE16",
       "title": "Route16",
       "section": "MAPSEC_ROUTE_16",
-      "music": 0,
+      "music": 294,
       "musicName": "MUS_HG_ROUTE11",
       "weather": 2
     },
@@ -390,7 +390,7 @@
       "layout": "LAYOUT_ROUTE17",
       "title": "Route17",
       "section": "MAPSEC_ROUTE_17",
-      "music": 0,
+      "music": 294,
       "musicName": "MUS_HG_ROUTE11",
       "weather": 2
     },
@@ -402,7 +402,7 @@
       "layout": "LAYOUT_ROUTE18",
       "title": "Route18",
       "section": "MAPSEC_ROUTE_18",
-      "music": 0,
+      "music": 294,
       "musicName": "MUS_HG_ROUTE11",
       "weather": 2
     },
@@ -414,7 +414,7 @@
       "layout": "LAYOUT_ROUTE19",
       "title": "Route19",
       "section": "MAPSEC_ROUTE_19",
-      "music": 0,
+      "music": 294,
       "musicName": "MUS_HG_ROUTE11",
       "weather": 2
     },
@@ -426,7 +426,7 @@
       "layout": "LAYOUT_ROUTE2",
       "title": "Route2",
       "section": "MAPSEC_ROUTE_2",
-      "music": 0,
+      "music": 291,
       "musicName": "MUS_HG_ROUTE1",
       "weather": 2
     },
@@ -438,7 +438,7 @@
       "layout": "LAYOUT_ROUTE20",
       "title": "Route20",
       "section": "MAPSEC_ROUTE_20",
-      "music": 0,
+      "music": 294,
       "musicName": "MUS_HG_ROUTE11",
       "weather": 2
     },
@@ -450,7 +450,7 @@
       "layout": "LAYOUT_ROUTE21",
       "title": "Route21",
       "section": "MAPSEC_ROUTE_21",
-      "music": 0,
+      "music": 294,
       "musicName": "MUS_HG_ROUTE11",
       "weather": 2
     },
@@ -462,7 +462,7 @@
       "layout": "LAYOUT_ROUTE22",
       "title": "Route22",
       "section": "MAPSEC_ROUTE_22",
-      "music": 0,
+      "music": 293,
       "musicName": "MUS_HG_ROUTE3",
       "weather": 2
     },
@@ -474,7 +474,7 @@
       "layout": "LAYOUT_ROUTE24",
       "title": "Route24",
       "section": "MAPSEC_ROUTE_24",
-      "music": 0,
+      "music": 292,
       "musicName": "MUS_HG_ROUTE24",
       "weather": 2
     },
@@ -486,7 +486,7 @@
       "layout": "LAYOUT_ROUTE25",
       "title": "Route25",
       "section": "MAPSEC_ROUTE_25",
-      "music": 0,
+      "music": 292,
       "musicName": "MUS_HG_ROUTE24",
       "weather": 2
     },
@@ -498,7 +498,7 @@
       "layout": "LAYOUT_ROUTE26",
       "title": "Route26",
       "section": "MAPSEC_ROUTE_26",
-      "music": 0,
+      "music": 292,
       "musicName": "MUS_HG_ROUTE26",
       "weather": 2
     },
@@ -510,7 +510,7 @@
       "layout": "LAYOUT_ROUTE26NORTH",
       "title": "Route26North",
       "section": "MAPSEC_ROUTE_26",
-      "music": 0,
+      "music": 292,
       "musicName": "MUS_HG_ROUTE26",
       "weather": 2
     },
@@ -522,7 +522,7 @@
       "layout": "LAYOUT_ROUTE27",
       "title": "Route27",
       "section": "MAPSEC_ROUTE_27",
-      "music": 0,
+      "music": 292,
       "musicName": "MUS_HG_ROUTE26",
       "weather": 2
     },
@@ -534,7 +534,7 @@
       "layout": "LAYOUT_ROUTE28",
       "title": "Route28",
       "section": "MAPSEC_ROUTE_28",
-      "music": 0,
+      "music": 292,
       "musicName": "MUS_HG_ROUTE26",
       "weather": 2
     },
@@ -546,7 +546,7 @@
       "layout": "LAYOUT_ROUTE29",
       "title": "Route29",
       "section": "MAPSEC_ROUTE_29",
-      "music": 0,
+      "music": 291,
       "musicName": "MUS_HG_ROUTE29",
       "weather": 2
     },
@@ -558,7 +558,7 @@
       "layout": "LAYOUT_ROUTE3",
       "title": "Route3",
       "section": "MAPSEC_ROUTE_3",
-      "music": 0,
+      "music": 293,
       "musicName": "MUS_HG_ROUTE3",
       "weather": 2
     },
@@ -570,7 +570,7 @@
       "layout": "LAYOUT_ROUTE30",
       "title": "Route30",
       "section": "MAPSEC_ROUTE_30",
-      "music": 0,
+      "music": 293,
       "musicName": "MUS_HG_ROUTE30",
       "weather": 2
     },
@@ -582,7 +582,7 @@
       "layout": "LAYOUT_ROUTE31",
       "title": "Route31",
       "section": "MAPSEC_ROUTE_31",
-      "music": 0,
+      "music": 293,
       "musicName": "MUS_HG_ROUTE30",
       "weather": 2
     },
@@ -594,7 +594,7 @@
       "layout": "LAYOUT_ROUTE32",
       "title": "Route32",
       "section": "MAPSEC_ROUTE_32",
-      "music": 0,
+      "music": 293,
       "musicName": "MUS_HG_ROUTE30",
       "weather": 2
     },
@@ -606,7 +606,7 @@
       "layout": "LAYOUT_ROUTE33",
       "title": "Route33",
       "section": "MAPSEC_ROUTE_33",
-      "music": 0,
+      "music": 293,
       "musicName": "MUS_HG_ROUTE30",
       "weather": 2
     },
@@ -618,7 +618,7 @@
       "layout": "LAYOUT_ROUTE34",
       "title": "Route34",
       "section": "MAPSEC_ROUTE_34",
-      "music": 0,
+      "music": 294,
       "musicName": "MUS_HG_ROUTE34",
       "weather": 2
     },
@@ -630,7 +630,7 @@
       "layout": "LAYOUT_ROUTE35",
       "title": "Route35",
       "section": "MAPSEC_ROUTE_35",
-      "music": 0,
+      "music": 294,
       "musicName": "MUS_HG_ROUTE34",
       "weather": 2
     },
@@ -642,7 +642,7 @@
       "layout": "LAYOUT_ROUTE36",
       "title": "Route36",
       "section": "MAPSEC_ROUTE_36",
-      "music": 0,
+      "music": 294,
       "musicName": "MUS_HG_ROUTE34",
       "weather": 2
     },
@@ -654,7 +654,7 @@
       "layout": "LAYOUT_ROUTE37",
       "title": "Route37",
       "section": "MAPSEC_ROUTE_37",
-      "music": 0,
+      "music": 294,
       "musicName": "MUS_HG_ROUTE34",
       "weather": 2
     },
@@ -666,7 +666,7 @@
       "layout": "LAYOUT_ROUTE38",
       "title": "Route38",
       "section": "MAPSEC_ROUTE_38",
-      "music": 0,
+      "music": 292,
       "musicName": "MUS_HG_ROUTE38",
       "weather": 2
     },
@@ -678,7 +678,7 @@
       "layout": "LAYOUT_ROUTE39",
       "title": "Route39",
       "section": "MAPSEC_ROUTE_39",
-      "music": 0,
+      "music": 292,
       "musicName": "MUS_HG_ROUTE38",
       "weather": 2
     },
@@ -690,7 +690,7 @@
       "layout": "LAYOUT_ROUTE4",
       "title": "Route4",
       "section": "MAPSEC_ROUTE_4",
-      "music": 0,
+      "music": 293,
       "musicName": "MUS_HG_ROUTE3",
       "weather": 2
     },
@@ -702,7 +702,7 @@
       "layout": "LAYOUT_ROUTE40",
       "title": "Route40",
       "section": "MAPSEC_ROUTE_40",
-      "music": 0,
+      "music": 292,
       "musicName": "MUS_HG_ROUTE38",
       "weather": 2
     },
@@ -714,7 +714,7 @@
       "layout": "LAYOUT_ROUTE41",
       "title": "Route41",
       "section": "MAPSEC_ROUTE_41",
-      "music": 0,
+      "music": 292,
       "musicName": "MUS_HG_ROUTE38",
       "weather": 2
     },
@@ -726,7 +726,7 @@
       "layout": "LAYOUT_ROUTE42",
       "title": "Route42",
       "section": "MAPSEC_ROUTE_42",
-      "music": 0,
+      "music": 333,
       "musicName": "MUS_HG_ROUTE42",
       "weather": 2
     },
@@ -738,7 +738,7 @@
       "layout": "LAYOUT_ROUTE43",
       "title": "Route43",
       "section": "MAPSEC_ROUTE_43",
-      "music": 0,
+      "music": 333,
       "musicName": "MUS_HG_ROUTE42",
       "weather": 2
     },
@@ -750,7 +750,7 @@
       "layout": "LAYOUT_ROUTE44",
       "title": "Route44",
       "section": "MAPSEC_ROUTE_44",
-      "music": 0,
+      "music": 333,
       "musicName": "MUS_HG_ROUTE42",
       "weather": 2
     },
@@ -762,7 +762,7 @@
       "layout": "LAYOUT_ROUTE45",
       "title": "Route45",
       "section": "MAPSEC_ROUTE_45",
-      "music": 0,
+      "music": 333,
       "musicName": "MUS_HG_ROUTE42",
       "weather": 2
     },
@@ -774,7 +774,7 @@
       "layout": "LAYOUT_ROUTE46",
       "title": "Route46",
       "section": "MAPSEC_ROUTE_46",
-      "music": 0,
+      "music": 333,
       "musicName": "MUS_HG_ROUTE42",
       "weather": 2
     },
@@ -786,7 +786,7 @@
       "layout": "LAYOUT_ROUTE5",
       "title": "Route5",
       "section": "MAPSEC_ROUTE_5",
-      "music": 0,
+      "music": 293,
       "musicName": "MUS_HG_ROUTE3",
       "weather": 2
     },
@@ -798,7 +798,7 @@
       "layout": "LAYOUT_ROUTE6",
       "title": "Route6",
       "section": "MAPSEC_ROUTE_6",
-      "music": 0,
+      "music": 293,
       "musicName": "MUS_HG_ROUTE3",
       "weather": 2
     },
@@ -810,7 +810,7 @@
       "layout": "LAYOUT_ROUTE7",
       "title": "Route7",
       "section": "MAPSEC_ROUTE_7",
-      "music": 0,
+      "music": 293,
       "musicName": "MUS_HG_ROUTE3",
       "weather": 2
     },
@@ -822,7 +822,7 @@
       "layout": "LAYOUT_ROUTE8",
       "title": "Route8",
       "section": "MAPSEC_ROUTE_8",
-      "music": 0,
+      "music": 293,
       "musicName": "MUS_HG_ROUTE3",
       "weather": 2
     },
@@ -834,7 +834,7 @@
       "layout": "LAYOUT_ROUTE9",
       "title": "Route9",
       "section": "MAPSEC_ROUTE_9",
-      "music": 0,
+      "music": 293,
       "musicName": "MUS_HG_ROUTE3",
       "weather": 2
     },
@@ -846,7 +846,7 @@
       "layout": "LAYOUT_RUINS_OF_ALPH_OUTSIDE",
       "title": "RuinsOfAlph_Outside",
       "section": "MAPSEC_RUINS_OF_ALPH",
-      "music": 0,
+      "music": 334,
       "musicName": "MUS_HG_UNION_CAVE",
       "weather": 2
     },
@@ -858,7 +858,7 @@
       "layout": "LAYOUT_SAFFRON_CITY",
       "title": "SaffronCity",
       "section": "MAPSEC_SAFFRON_CITY",
-      "music": 0,
+      "music": 314,
       "musicName": "MUS_HG_PEWTER",
       "weather": 2
     },
@@ -870,7 +870,7 @@
       "layout": "LAYOUT_TRAINER_HILL_COURTYARD",
       "title": "TrainerHill_Courtyard",
       "section": "MAPSEC_TRAINER_HILL",
-      "music": 0,
+      "music": 344,
       "musicName": "MUS_PL_FIGHT_AREA_DAY",
       "weather": 2
     },
@@ -894,7 +894,7 @@
       "layout": "LAYOUT_VERMILION_CITY",
       "title": "VermilionCity",
       "section": "MAPSEC_VERMILION_CITY",
-      "music": 0,
+      "music": 313,
       "musicName": "MUS_HG_VERMILION",
       "weather": 2
     },
@@ -906,7 +906,7 @@
       "layout": "LAYOUT_VERMILION_CITY_PORT_OUTSIDE",
       "title": "VermilionCity_PortOutside",
       "section": "MAPSEC_VERMILION_CITY",
-      "music": 0,
+      "music": 313,
       "musicName": "MUS_HG_VERMILION",
       "weather": 2
     },
@@ -918,7 +918,7 @@
       "layout": "LAYOUT_VIOLET_CITY",
       "title": "VioletCity",
       "section": "MAPSEC_VIOLET_CITY",
-      "music": 0,
+      "music": 337,
       "musicName": "MUS_HG_VIOLET",
       "weather": 2
     },
@@ -930,7 +930,7 @@
       "layout": "LAYOUT_VIRIDIAN_CITY",
       "title": "ViridianCity",
       "section": "MAPSEC_VIRIDIAN_CITY",
-      "music": 0,
+      "music": 314,
       "musicName": "MUS_HG_PEWTER",
       "weather": 2
     }

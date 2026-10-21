@@ -372,6 +372,7 @@ function resetExploreSession(): void {
 }
 const audioController = new ViewerAudioController();
 if (HOENN) audioController.setHoenn(true);
+if (JOHTO) audioController.setJohto(true);
 
 const camera = new ViewerCamera(viewport, document.getElementById("world-stage")!, content);
 let initialZoom = 1;
@@ -628,8 +629,9 @@ function checkCurrentMapMusic(): void {
     const [mapId, m] = found;
     const section = m.section;
     const canOverride = section !== "MAPSEC_KANTO_VICTORY_ROAD" && section !== "MAPSEC_ROUTE_23" && section !== "MAPSEC_INDIGO_PLATEAU";
+    const musicChoice = (m.music && m.music > 0) ? m.music : (m.musicName || m.music);
     audioController.setPlayerOnWater(playerActive && playerMode === "surf");
-    audioController.updateMap(mapId, m.music, playerActive ? playerMode : undefined, canOverride);
+    audioController.updateMap(mapId, musicChoice, playerActive ? playerMode : undefined, canOverride);
   }
 }
 
