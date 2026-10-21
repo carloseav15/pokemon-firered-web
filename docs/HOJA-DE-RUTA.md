@@ -131,3 +131,56 @@ Por región: fuente trazable, funciones integradas, prueba focalizada y límites
 pendientes. Para el mundo: viajes y guardado entre regiones sin colisiones. Para
 la web: accesos comprensibles, inglés completo y herramientas apartadas del juego.
 No asignar porcentajes de completitud sin un catálogo verificable de requisitos.
+
+## Johto: comparación de fuentes y siguiente lote
+
+Revisión local, 2026-10-21. Se inspeccionaron los checkouts fijados y los datos
+extraídos; no se ejecutó una partida ni se cambió el contenido activo de Johto.
+Los repositorios pret reconstruyen los juegos originales; son proyectos comunitarios,
+no publicaciones oficiales de Nintendo. Su procedencia se conserva por commit.
+
+| Criterio | Crystal en inglés | HeartGold en inglés |
+| --- | --- | --- |
+| Fuente fijada | `pokecrystal`, `5beda23ffa505f62e1dad7e3d7c214d1737b3358` | `pokeheartgold`, `9d8b7591f09b65804da2fb2dfd56f320633e0d36` |
+| Material disponible | Mapas, bloques, scripts, eventos y textos en `maps/*.asm`; tablas de encuentros, tiendas y equipos existen en Git, fuera de parte del sparse actual | JSON de entrenadores, encuentros y eventos de zona ya extraídos en `refs/heartgold/`; textos generales y scripts requieren ampliar el sparse y extracción |
+| Representación original | Mapas y tilesets GBC ya extraídos en `refs/crystal/`; precisan integración en la exploración | La representación DS requiere una conversión propia; los mapas GBA de HnS no equivalen a ella |
+| Integración pendiente | Interpretar comandos/eventos ASM y traducir IDs, condiciones, horarios y reglas de Gen 2 | Traducir IDs y eventos DS, seleccionar ramas HeartGold frente a SoulSilver y resolver mecánicas de Gen 4 |
+| Ventaja práctica | Referencia 2D directa con texto y condiciones del mapa juntos | Extracción de equipos/encuentros adelantada y lógica C disponible |
+| Límite compartido | Reutilizar el combate FireRed no acredita las reglas originales de Crystal | Reutilizar el combate FireRed no acredita las reglas originales de HeartGold |
+
+**Recomendación técnica pendiente de elección del usuario:** Crystal en inglés como
+base inicial de Johto si prima reproducir un mundo original 2D con menos conversión
+visual. HeartGold es preferible si se busca específicamente su versión de Johto y
+se acepta el trabajo adicional de representación y mecánicas DS. Tener más tablas
+extraídas no basta para decidir. No mezclar ambas versiones por comodidad ni declarar
+una fuente elegida a partir de esta recomendación. La decisión incluye versión visual
+y reglas de combate; no solo especies o diálogos.
+
+Diferencia comprobada que debe guiar el primer lote: en
+`pokecrystal/maps/CherrygroveMart.asm`, el dependiente consulta
+`EVENT_GAVE_MYSTERY_EGG_TO_ELM` y elige `MART_CHERRYGROVE` o
+`MART_CHERRYGROVE_DEX`. En `src/viewer/interaction/johtoMart.ts`,
+`getMartCatalogue(mapId)` agrupa ciudades por nombre y ofrece Poké Balls sin esa
+condición. Por tanto, traducir el catálogo al inglés no resolvió su fidelidad.
+`johtoWildMons.ts` también conserva listas manuales sin niveles, slots ni horarios;
+esos campos deben provenir de la versión elegida, no de heurísticas del mapa.
+
+Orden del siguiente trabajo después de elegir versión:
+
+1. Ampliar solo el sparse necesario, conservar el commit y extraer tablas con
+   procedencia (mapa, símbolo fuente y condiciones). `src/` no importará `refs/`;
+   el exportador del juego generará los recursos de runtime separados.
+2. Sustituir la familia de tiendas de Johto: catálogos, precios, condiciones y
+   recompensas de compra de la fuente elegida. Revisar los consumidores compartidos
+   Kanto/Hoenn antes de sustituir el catálogo genérico. Aceptación: comparación
+   determinista de cada catálogo y prueba de Cherrygrove antes/después del evento.
+3. Sustituir encuentros completos con slots, niveles, métodos y horarios; después
+   equipos, diálogos, objetos y condiciones de eventos. No usar nombres de entrenadores
+   FireRed como identidad persistente Johto.
+4. Resolver representación y efectos antes del circuito jugable. Exportar efectos
+   de HnS repararía una adaptación; no convertiría sus gráficos en originales.
+   Si se elige Crystal, adaptar sus recursos originales al contrato de presentación;
+   si se elige HeartGold, documentar y comprobar su conversión. Sigue abierto el
+   bloqueo `/hns/fieldfx.json`; no copiar el manifiesto de Emerald para ocultarlo.
+5. Repetir el smoke inglés y un circuito pequeño hablar/combatir/comprar/curar/
+   guardar/continuar, con aislamiento regional. Mantener el recorrido extenso diferido.
