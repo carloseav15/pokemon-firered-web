@@ -3,7 +3,7 @@
 // sB_ANIM_TURN, ...) map into the emulated RAM, const tables (gStatUpStringIds,
 // ...) map to data exported from the decomp.
 
-import { DATA_ROOT } from "../rom";
+import { DATA_ROOT, isEmeraldData } from "../rom";
 import { cdataAny } from "../hw/assets";
 import { ram, ramSymbols, ramView } from "./ram";
 import { G, gBattleResources } from "./globals";
@@ -25,17 +25,21 @@ export const bs = {
   animsMeta: { labels: {}, externals: [], externShift: 12 } as ScriptMeta,
 };
 
+/** ADAPTATION (Hoenn): with pokeemerald content the battle engine stays FireRed's, bytecode included
+ * (battle_scripts_1.s, battle_ai_scripts.s, battle_anim_scripts.s of pokefirered). */
+const battleRoot = (): string => isEmeraldData() ? "/fr" : DATA_ROOT;
+
 async function fetchBin(path: string): Promise<Uint8Array> {
-  const r = await fetch(`${DATA_ROOT}/${path}`);
+  const r = await fetch(`${battleRoot()}/${path}`);
   return new Uint8Array(await r.arrayBuffer());
 }
 
 export async function loadBattleScripts(): Promise<void> {
   if (bs.blob.length) return;
   const [blob, meta, ai, aiMeta, anims, animsMeta] = await Promise.all([
-    fetchBin("battle/scripts.bin"), fetch(`${DATA_ROOT}/battle/scripts.json`).then((r) => r.json()),
-    fetchBin("battle/ai.bin"), fetch(`${DATA_ROOT}/battle/ai.json`).then((r) => r.json()),
-    fetchBin("battle/anims.bin"), fetch(`${DATA_ROOT}/battle/anims.json`).then((r) => r.json()),
+    fetchBin("battle/scripts.bin"), fetch(`${battleRoot()}/battle/scripts.json`).then((r) => r.json()),
+    fetchBin("battle/ai.bin"), fetch(`${battleRoot()}/battle/ai.json`).then((r) => r.json()),
+    fetchBin("battle/anims.bin"), fetch(`${battleRoot()}/battle/anims.json`).then((r) => r.json()),
   ]);
   bs.blob = blob;
   bs.view = new DataView(blob.buffer);

@@ -6,7 +6,7 @@ import { onWarpForRoamer } from "@core/pokemon/roamer";
 import { enterViewerEventMap, restoreViewerEventMap, viewerEventMap } from "./mapEvents";
 import { isViewerObjectPresent } from "./data/objectPresence";
 import { EngineInteraction } from "./engineInteraction";
-import { HoennMapEntry } from "./hoennMapEntry";
+import type { HoennMapEntryReport } from "./hoennMapEntry";
 import { flagClear, flagGet, flagSet, PlayTimeCounter_Start, PlayTimeCounter_Update, save as gameSave } from "@game/save";
 import { ElevatorAnimation } from "@core/field/elevatorAnimation";
 import { ElevatorMenu } from "./ui/elevator";
@@ -235,9 +235,8 @@ function updateSectorBorder(): void {
   }, minX, minY);
 }
 let explorationUi: ExplorationUi | null = null;
+/** The field engine: FireRed content in Kanto (and Johto), pokeemerald content in Hoenn (DATA_ROOT "/emerald"). */
 let engineInteraction: EngineInteraction | null = null;
-/** Hoenn: runs pokeemerald map scripts on map entry (hoennMapEntry.ts); EngineInteraction stays Kanto-only. */
-let hoennMapEntry: HoennMapEntry | null = null;
 let mapPopup: MapNamePopup | null = null;
 let weatherOverlay: WeatherOverlay | null = null;
 let battleFlashEl: HTMLElement | null = null;
@@ -303,7 +302,8 @@ async function relocateViewer(nav: NavigationSave): Promise<void> {
       await startExploration(info.x + nav.x, info.y + nav.y);
       playerDir = nav.direction; updatePlayerDisplay(); writeHash();
       enteredMapId = nav.mapId;
-      void engineInteraction?.enterMap(nav).catch(error => console.error("Map entry after relocation", error));
+      if (HOENN) void enterHoennMap(nav).catch(error => console.error("Hoenn map entry after relocation", error));
+      else void engineInteraction?.enterMap(nav).catch(error => console.error("Map entry after relocation", error));
     } finally {
       warpBusy = prevWarpBusy;
     }
@@ -729,7 +729,8 @@ function updatePlayerDisplay(): void {
   scheduleSectors();
   updateSectorBorder();
   const baseTitle = findMapAt(playerX, playerY)?.[1].title ?? GAME_NAME;
-  const safariStats = engineInteraction?.getSafariStats();
+  // GetSafariZoneFlag reads FireRed's FLAG_SYS_SAFARI_MODE ID, not valid against the Hoenn bank.
+  const safariStats = HOENN ? undefined : engineInteraction?.getSafariStats();
   const locationTitle = safariStats?.active
     ? `${baseTitle} · Safari: ${safariStats.balls} bolas, ${safariStats.steps} steps`
     : baseTitle;
@@ -789,15 +790,13 @@ function updatePlayerDisplay(): void {
   scheduleHashWrite();
 }
 
-/** Apply the source map scripts' effects (bank flags/vars, object templates) to the viewer. */
+/** Hoenn arrival through the engine (pokeemerald map scripts): apply the object templates they moved. */
 async function enterHoennMap(nav: NavigationSave): Promise<void> {
-  const report = await hoennMapEntry?.enterMap(nav);
+  const report: HoennMapEntryReport | undefined = await engineInteraction?.enterMap(nav);
   if (!report) return;
   // Graphics IDs are Emerald's: keep the viewer's own graphics name for each object.
   applyViewerObjects(report.changedTemplates.map(t => { const state = readViewerTemplateState(t, report.mapId); delete state.graphicsId; return state; }));
   updateEntitiesView();
-  if (report.pendingWarpInto || report.pendingFrame)
-    console.warn(`Hoenn map scripts not run yet in ${report.mapId}: ${[report.pendingWarpInto, report.pendingFrame].filter(Boolean).join(", ")}`);
 }
 
 let enteredMapId = "";
@@ -869,7 +868,7 @@ function interactWithEntity(ent: LiveEntity): void {
         || (typeof scriptName === "string" && scriptName.includes("Chansey"))
         || (typeof ent.element.graphics === "string" && ent.element.graphics.includes("CHANSEY"));
 
-      if (isNurse) {
+      if (isNurse && !HOENN) {
         audioController.playSelect();
         entityManager.faceTowards(ent, playerX, playerY);
 
@@ -916,7 +915,7 @@ function interactWithEntity(ent: LiveEntity): void {
         return;
       }
 
-      if (isChansey) {
+      if (isChansey && !HOENN) {
         audioController.playSelect();
         entityManager.faceTowards(ent, playerX, playerY);
         audioController.playMonCry(C.SPECIES_CHANSEY);
@@ -927,7 +926,7 @@ function interactWithEntity(ent: LiveEntity): void {
       }
 
       const isClerk = isMartClerk(ent.element.graphics, typeof scriptName === "string" ? scriptName : undefined);
-      if (isClerk) {
+      if (isClerk && !HOENN) {
         audioController.playSelect();
         entityManager.faceTowards(ent, playerX, playerY);
         openJohtoMart(ent.element.map, dialogManager, audioController);
@@ -1191,6 +1190,8 @@ function interactWithEntity(ent: LiveEntity): void {
       }
     }
   }
+  // Hoenn: an object event without a script has no interaction (GetInteractedObjectEventScript returns NULL).
+  if (HOENN && playerActive) return;
   audioController.playSelect();
   entityManager.faceTowards(ent, playerX, playerY);
 
@@ -1254,9 +1255,7 @@ function interactWithEntity(ent: LiveEntity): void {
     }
     msg = ["Hello, traveler. Welcome to Johto. Are you ready to become the Pokémon League Champion?"];
   } else {
-    msg = [HOENN
-      ? "Hello, traveler. Welcome to Hoenn. Are you ready to become the Pokémon League Champion?"
-      : "Hello, traveler. Welcome to Kanto. Are you ready to become the Pokémon League Champion?"];
+    msg = ["Hello, traveler. Welcome to " + GAME_NAME + ". Are you ready to become the Pokémon League Champion?"];
   }
   dialogManager.show(title, msg);
 }
@@ -1421,7 +1420,7 @@ async function startExploration(targetGx?: number, targetGy?: number): Promise<v
   } else {
     initializeHoennSessionFlags(index.initialFlags);
   }
-  if (!HOENN && !JOHTO) window.setTimeout(() => void engineInteraction?.warm().catch(() => {}), 1500);
+  if (!JOHTO) window.setTimeout(() => void engineInteraction?.warm().catch(() => {}), 1500);
   resetExploreSession();
   state.appMode = "explore";
 
@@ -2351,6 +2350,18 @@ function processPlayerStep(): void {
         if (blockedArrival !== `${playerX},${playerY}`) blockedArrival = null;
         if (tryNavigationWarp("step", playerDir)) return;
         if (HOENN || JOHTO || !engineInteraction) checkTrainerSight();
+        if (HOENN && engineInteraction && !dialogManager.isOpen()) {
+          // pokeemerald ProcessPlayerFieldInput step checks (ON_FRAME, coord events, Repel, wild encounters).
+          isStepping = true;
+          const here = navigationSnapshot();
+          const vehicle = playerMode === "surf" ? "surf" : playerMode === "bike" ? (state.bikeType === "acro" ? "acro" : "mach") : "walk";
+          void engineInteraction.tryEmeraldStep(here, vehicle).catch(error => { console.error("Hoenn step", error); return false; }).then(hit => {
+            isStepping = false;
+            if (hit || dialogManager.isOpen()) { playerMoving = false; avatarAnimator?.stop(state.playerChar, playerMode, playerDir, viewerClock.tick); updatePlayerDisplay(); }
+            else processPlayerStep();
+          });
+          return;
+        }
         if (!HOENN && !JOHTO && engineInteraction) {
           // field_control_avatar.c CheckStandardWildEncounter on each tile-center step.
           isStepping = true;
@@ -3451,13 +3462,7 @@ function readViewerMapObjects(mapId: string): ViewerObjectState[] {
 }
 
 function setupUi(): void {
-  if (HOENN) hoennMapEntry = new HoennMapEntry({
-    onSetMetatile: (mapId, lx, ly, metatileId) => {
-      const origin = index.maps[mapId];
-      if (origin) paintNavigationMetatile(origin.x + lx, origin.y + ly, metatileId);
-    },
-  });
-  if (!HOENN) engineInteraction = new EngineInteraction({
+  engineInteraction = new EngineInteraction({
     pause: pauseInteraction,
     project: (canvas, game) => {
       const info=index.maps[game.overworld.header.id];
@@ -3553,7 +3558,8 @@ function setupUi(): void {
     },
     exit: () => document.getElementById("mode-viewer-btn")?.click(),
     startMenu: () => {
-      if (!engineInteraction || engineInteraction.open || !playerActive || isStepping || warpBusy || elevatorBusy || dialogManager.isOpen()) return;
+      // Hoenn: the FireRed start menu screens are not connected to Emerald content.
+      if (HOENN || !engineInteraction || engineInteraction.open || !playerActive || isStepping || warpBusy || elevatorBusy || dialogManager.isOpen()) return;
       void engineInteraction.showStartMenu(navigationSnapshot(), playerMode === "bike" ? "bike" : playerMode === "surf" ? "surf" : "walk").catch(error => dialogManager.show("Menu", [String(error)]));
     },
     stats: () => ({ sectors: sectorLoader?.ids.length ?? Object.keys(index.maps).length,
@@ -3861,7 +3867,8 @@ function setupUi(): void {
             toggleDive();
             return;
           }
-        } else if (engineInteraction && !isStepping && !warpBusy && !elevatorBusy) {
+        }
+        if (engineInteraction && !isStepping && !warpBusy && !elevatorBusy) {
           void engineInteraction.interactFront(navigationSnapshot(), playerMode === "surf").catch(error => console.error("Interaction", error));
           return;
         }

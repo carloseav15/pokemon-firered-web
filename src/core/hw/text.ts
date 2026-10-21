@@ -1,7 +1,7 @@
 // text_printer.c / menu.c printer helpers for GBA windows: one printer per
 // window, run once per frame by RunTextPrinters.
 
-import { FONT_INFOS } from "../gba/font";
+import { fontInfos } from "../gba/font";
 import { TEXT_SKIP_DRAW, TextPrinter } from "../gba/textPrinter";
 import { COPYWIN_GFX, CopyWindowToVram, WindowSurface } from "./window";
 
@@ -40,19 +40,19 @@ export function AddTextPrinter(t: TextPrinterTemplate, str: ArrayLike<number>, s
 }
 
 export function AddTextPrinterParameterized(windowId: number, fontId: number, str: ArrayLike<number>, x: number, y: number, speed: number, callback?: PrinterCallback | null): boolean {
-  const f = FONT_INFOS[fontId];
+  const f = fontInfos()[fontId];
   return AddTextPrinter({ windowId, fontId, x, y, letterSpacing: f.letterSpacing, lineSpacing: f.lineSpacing, fgColor: f.fgColor, bgColor: f.bgColor, shadowColor: f.shadowColor }, str, speed, callback);
 }
 
 /** new_menu_helpers.c */
 export function AddTextPrinterParameterized2(windowId: number, fontId: number, str: ArrayLike<number>, speed: number, callback: PrinterCallback | null, fgColor: number, bgColor: number, shadowColor: number): boolean {
-  const f = FONT_INFOS[fontId];
+  const f = fontInfos()[fontId];
   return AddTextPrinter({ windowId, fontId, x: 0, y: 1, letterSpacing: 1, lineSpacing: 1, fgColor, bgColor, shadowColor }, str, speed, callback ?? null) && f !== undefined;
 }
 
 /** menu.c: color = [bg, fg, shadow] */
 export function AddTextPrinterParameterized3(windowId: number, fontId: number, x: number, y: number, color: ArrayLike<number>, speed: number, str: ArrayLike<number>): boolean {
-  const f = FONT_INFOS[fontId];
+  const f = fontInfos()[fontId];
   return AddTextPrinter({ windowId, fontId, x, y, letterSpacing: f.letterSpacing, lineSpacing: f.lineSpacing, bgColor: color[0], fgColor: color[1], shadowColor: color[2] }, str, speed);
 }
 
@@ -61,7 +61,7 @@ export function AddTextPrinterParameterized4(windowId: number, fontId: number, x
 }
 
 export function AddTextPrinterParameterized5(windowId: number, fontId: number, str: ArrayLike<number>, x: number, y: number, speed: number, callback: PrinterCallback | null, letterSpacing: number, lineSpacing: number): boolean {
-  const f = FONT_INFOS[fontId];
+  const f = fontInfos()[fontId];
   return AddTextPrinter({ windowId, fontId, x, y, letterSpacing, lineSpacing, fgColor: f.fgColor, bgColor: f.bgColor, shadowColor: f.shadowColor }, str, speed, callback);
 }
 

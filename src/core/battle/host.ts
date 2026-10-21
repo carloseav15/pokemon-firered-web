@@ -25,8 +25,12 @@ export const battleHost = {
     return current?.request ?? null;
   },
 
+  /** Another game's environment selector (pokeemerald BattleSetup_GetEnvironmentId while Emerald content runs). */
+  environmentId: null as (() => number) | null,
+
   /** BattleSetup_GetTerrainId */
   BattleSetup_GetTerrainId(): number {
+    if (battleHost.environmentId) return battleHost.environmentId();
     if (!game) return C.BATTLE_TERRAIN_PLAIN;
     const ow = game.overworld;
     const { x, y } = ow.player.object.currentCoords;

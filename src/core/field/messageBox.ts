@@ -5,7 +5,7 @@ import { menuHelperHooks } from "../hw/menuHelpers";
 import { FONT_BRAILLE, FONT_FEMALE, FONT_MALE, FONT_NORMAL } from "../gba/font";
 import { getTextSpeedSetting, TextPrinter, textFlags, TEXT_COLOR_BLUE, TEXT_COLOR_DARK_GRAY, TEXT_COLOR_LIGHT_GRAY, TEXT_COLOR_RED, TEXT_COLOR_WHITE } from "../gba/textPrinter";
 import { Window } from "../gba/window";
-import { rom } from "../rom";
+import { isEmeraldData, rom } from "../rom";
 import { SV, varGet } from "@game/save";
 import * as C from "@game/generated/constants";
 import { GetColorFromTextColorTable } from "../dynamicPlaceholderTextUtil";
@@ -44,7 +44,8 @@ export class FieldMessageBox {
 
   private ensureWindow(): Window {
     if (!this.window || !this.ow.windows.windows.includes(this.window)) {
-      this.window = new Window(2, 15, 26, 4);
+      // Window 0 of the field: 26x4 at (2,15) in FireRed, 27x4 in pokeemerald (sStandardTextBox_WindowTemplates).
+      this.window = new Window(2, 15, isEmeraldData() ? 27 : 26, 4);
       this.ow.windows.add(this.window);
     }
     return this.window;
@@ -98,7 +99,8 @@ export class FieldMessageBox {
   ExpandStringAndStartDrawFieldMessageBox(str: ArrayLike<number>): void {
     const text = expandPlaceholders(str);
     stringVars.var4 = text;
-    this.StartPrinter(text);
+    // pokeemerald ExpandStringAndStartDrawFieldMessage: auto-scroll messages cannot be sped up.
+    this.StartPrinter(text, !isEmeraldData() || this.type !== FIELD_MESSAGE_BOX_AUTO_SCROLL);
     this.CreateTask_DrawFieldMessageBox();
   }
 
@@ -111,12 +113,14 @@ export class FieldMessageBox {
 
   DestroyTask_DrawFieldMessageBox(): void { this.drawState = -1; }
 
-  private StartPrinter(text: Uint8Array): void {
+  private StartPrinter(text: Uint8Array, allowSkippingDelayWithButtonPress = true): void {
     const window = this.ensureWindow();
-    textFlags.canABSpeedUpPrint = true;
-    const color = this.ContextNpcGetTextColor();
+    textFlags.canABSpeedUpPrint = allowSkippingDelayWithButtonPress;
     let font = FONT_NORMAL;
     let fg = TEXT_COLOR_DARK_GRAY;
+    // pokeemerald AddTextPrinterForMessage (menu.c) always prints FONT_NORMAL in dark gray;
+    // the NPC-gendered fonts and colors are FireRed's.
+    const color = isEmeraldData() ? NPC_TEXT_COLOR_NEUTRAL : this.ContextNpcGetTextColor();
     if (color === NPC_TEXT_COLOR_MALE) { font = FONT_MALE; fg = TEXT_COLOR_BLUE; }
     else if (color === NPC_TEXT_COLOR_FEMALE) { font = FONT_FEMALE; fg = TEXT_COLOR_RED; }
     // Task_DrawFieldMessageBox: frame drawn on the next frames; the printer

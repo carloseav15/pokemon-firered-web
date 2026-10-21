@@ -2,7 +2,7 @@
 // The link-battle VS screen (DrawLinkBattle*, InitLinkBattleVsScreen) is not ported: there is no link play.
 
 import * as C from "../generated/constants";
-import { rom } from "@core/rom";
+import { isEmeraldData, rom } from "@core/rom";
 import { save } from "../save";
 import { cdata, incbin, symName } from "@core/hw/assets";
 import { EnableInterrupts, SetGpuReg } from "@core/hw/gpu";
@@ -47,7 +47,7 @@ export function CB2_unused(): void {
   BuildOamBuffer();
 }
 
-export const gBattleBgTemplates = (): BgTemplate[] => cdata<BgTemplate[]>("battle_bg", "gBattleBgTemplates");
+export const gBattleBgTemplates = (): BgTemplate[] => cdata<BgTemplate[]>(uiData(), "gBattleBgTemplates");
 /** GetBattleBgTemplateData (battle_main.c): expose the selected u32 field of the GBA BG template. */
 export function GetBattleBgTemplateData(arrayId: number, caseId: number): number {
   const template = gBattleBgTemplates()[arrayId]!;
@@ -62,8 +62,13 @@ export function GetBattleBgTemplateData(arrayId: number, caseId: number): number
     default: return 0;
   }
 }
-const sStandardBattleWindowTemplates = (): WindowTemplate[] => cdata<WindowTemplate[]>("battle_bg", "sStandardBattleWindowTemplates");
-const sBattleTerrainTable = (): BattleBackground[] => cdata<BattleBackground[]>("battle_bg", "sBattleTerrainTable");
+// With pokeemerald content (Hoenn) the battle interface stays FireRed's (its window and BG templates are
+// read from "fr:battle_bg"), while the environment backgrounds are pokeemerald's sBattleEnvironmentTable,
+// whose first ten entries share the BATTLE_TERRAIN_GRASS..PLAIN order.
+const uiData = (): string => isEmeraldData() ? "fr:battle_bg" : "battle_bg";
+const sStandardBattleWindowTemplates = (): WindowTemplate[] => cdata<WindowTemplate[]>(uiData(), "sStandardBattleWindowTemplates");
+const sBattleTerrainTable = (): BattleBackground[] => isEmeraldData()
+  ? cdata<BattleBackground[]>("battle_bg", "sBattleEnvironmentTable") : cdata<BattleBackground[]>("battle_bg", "sBattleTerrainTable");
 
 /** LZDecompressVram (INCBIN data is stored already decompressed). */
 function decompressToVram(sym: unknown, offset: number): void {
@@ -76,7 +81,7 @@ function loadPalFromSym(sym: unknown, offset: number, size: number): void {
 }
 
 function GetBattleTerrainByMapScene(mapBattleScene: number): number {
-  for (const [scene, terrain] of cdata<Array<[number, number]>>("battle_bg", "sMapBattleSceneMapping")) {
+  for (const [scene, terrain] of cdata<Array<[number, number]>>(uiData(), "sMapBattleSceneMapping")) {
     if (mapBattleScene === scene) return terrain;
   }
   return C.BATTLE_TERRAIN_PLAIN;
@@ -84,6 +89,7 @@ function GetBattleTerrainByMapScene(mapBattleScene: number): number {
 
 function terrainEntry(terrain: number): BattleBackground {
   const table = sBattleTerrainTable();
+  if (isEmeraldData() && terrain >= table.length) throw Error(`pokeemerald battle environment ${terrain} (gym, leader, frontier backgrounds) is not ported`);
   return table[terrain >= table.length ? C.BATTLE_TERRAIN_PLAIN : terrain];
 }
 

@@ -16,6 +16,9 @@ import {
 import { continueRegionalSession, initializeRegionalSession, resetViewerSessionInitialized, saveViewerSession, viewerCheckpoint } from "../../src/viewer/session.ts";
 
 rom.charmap = JSON.parse(readFileSync("public/fr/charmap.json", "utf8"));
+// PREPARED harness data: a Hoenn save writes its banked location in Emerald map numbering (maps.json of the
+// Emerald export); Kanto map IDs are absent there and resolve through the FireRed constants.
+(rom as unknown as { mapIndex: unknown }).mapIndex = JSON.parse(readFileSync("public/emerald/maps.json", "utf8"));
 const storage = new Map<string, string>();
 (globalThis as unknown as { localStorage: Pick<Storage, "getItem" | "setItem" | "removeItem"> }).localStorage = {
   getItem: k => storage.get(k) ?? null,
@@ -73,6 +76,10 @@ assert.deepEqual(afterHoenn.flags, kantoFlagsBefore, "Hoenn save leaves Kanto fl
 assert.deepEqual(afterHoenn.vars, kantoVarsBefore, "Hoenn save leaves Kanto vars unchanged");
 assert.deepEqual(afterHoenn.viewerNavigation, { ...kantoNav, region: "kanto" }, "Hoenn save leaves Kanto navigation unchanged");
 assert.equal(afterHoenn.world!.activeRegion, "hoenn");
+// Location fields are regional (REGIONAL_FIELD_KEYS): the Hoenn save banks its own and leaves Kanto's.
+const littleroot = rom.mapNum("MAP_LITTLEROOT_TOWN");
+assert.deepEqual(afterHoenn.world!.regions.hoenn!.field!.location, { mapGroup: littleroot >> 8, mapNum: littleroot & 0xff, warpId: -1, x: 8, y: 8 }, "Hoenn location banked");
+assert.deepEqual(afterHoenn.location, newSaveData().location, "the stored top-level location stays Kanto's (unset in this PREPARED Kanto save)");
 assert.deepEqual(afterHoenn.world!.regions.hoenn!.viewerNavigation, { ...hoennNav, region: "hoenn" });
 assert.deepEqual(stored(VIEWER_SAVE_KEY), afterHoenn, "both browser keys hold the same world save");
 

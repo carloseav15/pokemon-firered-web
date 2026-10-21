@@ -2036,9 +2036,10 @@ export class ObjectEvents {
     const y = ((sprite.y + sprite.y2 + sprite.centerToCornerVecY + (sprite.coordOffsetEnabled ? offsetY : 0)) & 0xffff) << 16 >> 16;
     const right = ((graphics.width + x) << 16) >> 16;
     const bottom = ((graphics.height + y) << 16) >> 16;
-    this.ssAnneExteriorMapNumber ??= rom.mapNum("MAP_SSANNE_EXTERIOR");
+    // pokeemerald's version has no S.S. Anne branch; its maps have no MAP_SSANNE_EXTERIOR (-1 never matches).
+    this.ssAnneExteriorMapNumber ??= rom.mapIndex.maps.MAP_SSANNE_EXTERIOR?.num ?? -1;
     const ssAnneMap = this.ssAnneExteriorMapNumber;
-    const onSsAnneExterior = object.localId === C.LOCALID_SS_ANNE
+    const onSsAnneExterior = ssAnneMap >= 0 && object.localId === C.LOCALID_SS_ANNE
       && this.mapGroup === (ssAnneMap >>> 8)
       && this.mapNum === (ssAnneMap & 0xff);
     const minX = onSsAnneExterior ? -32 : -16;

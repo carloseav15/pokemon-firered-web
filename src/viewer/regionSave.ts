@@ -20,12 +20,25 @@ export const VIEWER_SAVE_KEY = 'firered-viewer-game-v1';
 
 export type RegionalNavigation = NavigationSave & { region: RegionId };
 type ViewerObjectsSnapshot = { version: 1 | 2; mapId: string; states: unknown[] };
+/**
+ * SaveBlock1/2 fields whose values are map numbers, map-local positions or map-bound state: they are
+ * the region's own while it is live (its game's map numbering) and are banked with its progress.
+ */
+export const REGIONAL_FIELD_KEYS = [
+  'location', 'pos', 'mapLayoutId', 'continueGameWarp', 'dynamicWarp', 'lastHealLocation', 'escapeWarp',
+  'objectEventTemplates', 'objectEvents', 'objectEventsVersion', 'weather', 'weatherCycleStage', 'savedMusic',
+  'facing', 'playerAvatarFlags', 'mapView', 'trainerRematchStepCounter', 'trainerRematches',
+] as const satisfies readonly (keyof SaveData)[];
+export type RegionalField = Partial<Pick<SaveData, (typeof REGIONAL_FIELD_KEYS)[number]>>;
+
 export type RegionProgress = {
   game: (typeof REGION_GAME)[BankedRegionId];
   flags: number[];
   vars: number[];
   viewerNavigation: RegionalNavigation | null;
   viewerObjects: ViewerObjectsSnapshot | null;
+  /** The region's REGIONAL_FIELD_KEYS values; null until the region is first saved (absent in older v2 saves). */
+  field?: RegionalField | null;
 };
 export type WorldSave = {
   version: typeof WORLD_SAVE_VERSION;
@@ -52,8 +65,23 @@ const REGION_SIZES: Record<BankedRegionId, { flagBytes: number; vars: number }> 
 
 export function newRegionProgress(region: BankedRegionId): RegionProgress {
   const size = REGION_SIZES[region];
-  return { game: REGION_GAME[region], flags: new Array(size.flagBytes).fill(0), vars: new Array(size.vars).fill(0), viewerNavigation: null, viewerObjects: null };
+  return { game: REGION_GAME[region], flags: new Array(size.flagBytes).fill(0), vars: new Array(size.vars).fill(0), viewerNavigation: null, viewerObjects: null, field: null };
 }
+
+const takeField = (data: SaveData): RegionalField => {
+  const out: Record<string, unknown> = {};
+  for (const key of REGIONAL_FIELD_KEYS) if (data[key] !== undefined) out[key] = structuredClone(data[key]);
+  return out as RegionalField;
+};
+/** Install field values. A bank's missing keys take the zeroed SaveBlock values (ClearSav1); `exact`
+ * restores a parked snapshot as it was, absent keys included. */
+const putField = (data: SaveData, field: RegionalField | null | undefined, exact = false): void => {
+  const fresh = newSaveData() as Record<string, unknown>, target = data as Record<string, unknown>;
+  for (const key of REGIONAL_FIELD_KEYS) {
+    const value = exact ? field?.[key] : field?.[key] ?? fresh[key];
+    if (value === undefined) delete target[key]; else target[key] = structuredClone(value);
+  }
+};
 
 function newWorld(): WorldSave {
   return { version: WORLD_SAVE_VERSION, activeRegion: 'kanto', started: { kanto: false, hoenn: false }, regions: {}, sessionFlags: {} };
@@ -67,7 +95,8 @@ function validProgress(region: BankedRegionId, bank: unknown): bank is RegionPro
   const b = bank as RegionProgress, size = REGION_SIZES[region];
   return b.game === REGION_GAME[region] && byteArray(b.flags, size.flagBytes) && byteArray(b.vars, size.vars)
     && (b.viewerNavigation === null || (typeof b.viewerNavigation === 'object' && b.viewerNavigation.region === region && typeof b.viewerNavigation.mapId === 'string'))
-    && (b.viewerObjects === null || typeof b.viewerObjects === 'object');
+    && (b.viewerObjects === null || typeof b.viewerObjects === 'object')
+    && (b.field === undefined || b.field === null || typeof b.field === 'object');
 }
 
 /** FireRed map IDs come from the generated FireRed constants; Emerald-only maps are absent. */
@@ -138,7 +167,7 @@ export function loadWorldSave(isKantoMap: (mapId: string) => boolean = isFireRed
 
 // Live-region bookkeeping: which progress is installed in `save`, and the parked Kanto fields.
 let liveRegion: RegionId = 'kanto';
-let parkedKanto: Pick<WorldSaveData, 'flags' | 'vars' | 'viewerNavigation' | 'viewerObjects'> | null = null;
+let parkedKanto: Pick<WorldSaveData, 'flags' | 'vars' | 'viewerNavigation' | 'viewerObjects'> & { field: RegionalField } | null = null;
 
 export function liveWorldRegion(): RegionId { return liveRegion; }
 
@@ -163,7 +192,8 @@ export function enterBankedRegion(region: BankedRegionId): boolean {
   if (!created && !validProgress(region, world.regions[region])) throw Error(`Saved ${region} progress is corrupted`);
   const bank = world.regions[region] ?? newRegionProgress(region);
   delete world.regions[region];
-  parkedKanto = { flags: data.flags, vars: data.vars, viewerNavigation: data.viewerNavigation, viewerObjects: data.viewerObjects };
+  parkedKanto = { flags: data.flags, vars: data.vars, viewerNavigation: data.viewerNavigation, viewerObjects: data.viewerObjects, field: takeField(data) };
+  putField(data, bank.field);
   data.flags = bank.flags.slice();
   data.vars = bank.vars.slice();
   if (bank.viewerNavigation) data.viewerNavigation = structuredClone(bank.viewerNavigation); else delete data.viewerNavigation;
@@ -186,8 +216,10 @@ export function serializeWorldSave(data: WorldSaveData = save as WorldSaveData):
   bank.vars = data.vars.slice();
   bank.viewerNavigation = data.viewerNavigation ? { ...data.viewerNavigation, region: liveRegion } : null;
   bank.viewerObjects = data.viewerObjects ? structuredClone(data.viewerObjects) : null;
+  bank.field = takeField(data);
   world.regions[liveRegion] = bank;
   const out: WorldSaveData = { ...data, flags: parkedKanto!.flags, vars: parkedKanto!.vars, world };
+  putField(out, parkedKanto!.field, true);
   if (parkedKanto!.viewerNavigation) out.viewerNavigation = parkedKanto!.viewerNavigation; else delete out.viewerNavigation;
   if (parkedKanto!.viewerObjects) out.viewerObjects = parkedKanto!.viewerObjects; else delete out.viewerObjects;
   return out;
@@ -201,11 +233,6 @@ export function writeWorldSave(): boolean {
   setSaveStorageKey(VIEWER_SAVE_KEY);
   saveStore.write(stored);
   return ok;
-}
-
-/** Store the live region's navigation (region-tagged) without FireRed map numbering. */
-export function setRegionalNavigation(nav: NavigationSave): void {
-  (save as WorldSaveData).viewerNavigation = { ...structuredClone(nav), region: liveRegion } as NavigationSave;
 }
 
 export function regionSessionFlags(region: RegionId): string[] {

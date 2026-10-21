@@ -472,9 +472,14 @@ export function isNationalDexEnabled(): boolean {
 }
 
 /** Runs a special by name; returns its u16 result when it has one. */
+/** gSpecials entries of another game's content running on this engine (pokeemerald in Hoenn,
+ * src/games/emerald/specials.ts); consulted before SPECIALS, so they also replace homonyms. */
+let gameSpecials: Record<string, Special> = {};
+export function setGameSpecials(table: Record<string, Special>): void { gameSpecials = table; }
+
 export function runSpecial(ctx: ScriptRunner, name: string | undefined): number | undefined {
   if (!name) return undefined;
-  const fn = SPECIALS[name];
+  const fn = gameSpecials[name] ?? SPECIALS[name];
   if (!fn) {
     if (!warned.has(name)) {
       warned.add(name);

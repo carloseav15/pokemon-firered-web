@@ -1,7 +1,7 @@
 // A small model of window.c/menu.c: text windows are 4bpp pixel buffers
 // placed on a BG tilemap, optionally surrounded by frame tiles.
 
-import { b64, rom } from "../rom";
+import { b64, isEmeraldData, rom } from "../rom";
 
 export type Rgb = number[];
 export type FrameKind = "none" | "dialogue" | "signpost" | "std" | "stdwin";
@@ -63,7 +63,11 @@ function frameSheet(kind: FrameKind, frameType: number): TileSheet {
   const key = kind === "std" ? `std${frameType}` : kind;
   let sheet = sheets.get(key);
   if (!sheet) {
-    if (kind === "dialogue") sheet = new TileSheet("menu_message", stdPalette(0));
+    // pokeemerald: gMessageBox_Gfx with its own palette for the dialogue box, gWindowFrames[frameType]
+    // (exported as "1".."20") for the user window frame.
+    if (isEmeraldData() && kind === "dialogue") sheet = new TileSheet("message_box", rom.windows.message_box.palette);
+    else if (isEmeraldData() && kind === "std") sheet = new TileSheet(`${frameType + 1}`, rom.windows[`${frameType + 1}`].palette);
+    else if (kind === "dialogue") sheet = new TileSheet("menu_message", stdPalette(0));
     else if (kind === "signpost") sheet = new TileSheet("signpost", stdPalette(1));
     else if (kind === "stdwin") sheet = new TileSheet("std", stdPalette(3));
     else {
@@ -178,6 +182,24 @@ export class Window {
       at(6, L - 1, T + H);
       for (let x = 0; x < W; x++) at(7, L + x, T + H);
       at(8, L + W, T + H);
+      return;
+    }
+    if (isEmeraldData() && this.frame === "dialogue") {
+      // pokeemerald menu.c WindowFunc_DrawDialogueFrame: DLG_WINDOW_BASE_TILE_NUM + n, the bottom row V-flipped.
+      const edge = (ty: number, vflip: boolean) => {
+        at(1, L - 2, ty, vflip);
+        at(3, L - 1, ty, vflip);
+        for (let x = 0; x < W - 1; x++) at(4, L + x, ty, vflip);
+        at(5, L + W - 1, ty, vflip);
+        at(6, L + W, ty, vflip);
+      };
+      edge(T - 1, false);
+      for (let y = 0; y < 5; y++) {
+        at(7, L - 2, T + y);
+        for (let x = -1; x < W; x++) at(9, L + x, T + y);
+        at(10, L + W, T + y);
+      }
+      edge(T + H, true);
       return;
     }
     // WindowFunc_DrawDialogueFrame (non-signpost and signpost share the tile layout

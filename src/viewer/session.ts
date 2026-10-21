@@ -14,7 +14,7 @@ import { GetHealLocationIndexFromMapGroupAndNum, GetHealLocation } from '@core/f
 import * as C from '@game/generated/constants';
 import type { WarpAddress } from './navigation';
 import type { Direction } from './render/sprites';
-import { enterBankedRegion, enterKanto, liveWorldRegion, loadWorldSave, reloadWorldSave, resetWorldRegion, setRegionalNavigation,
+import { enterBankedRegion, enterKanto, liveWorldRegion, loadWorldSave, reloadWorldSave, resetWorldRegion,
   worldOf, writeWorldSave, type BankedRegionId, type RegionId, type RegionalNavigation, type WorldSave, type WorldSaveData } from './regionSave';
 
 export { VIEWER_SAVE_KEY } from './regionSave';
@@ -126,8 +126,10 @@ function grantTemporaryPokedex(): void {
   }
 }
 export function viewerCheckpoint(): NavigationSave | undefined { return (save as ViewerSave).viewerNavigation; }
+/** Write the viewer position into the live SaveBlock location fields, in the live region's map
+ * numbering (a banked region's fields are its own while it is live, see regionSave.ts). */
 export function syncViewerLocation(nav: NavigationSave): void {
-  if (liveWorldRegion() !== 'kanto') throw Error('FireRed location sync while another region is live');
+  const region = liveWorldRegion();
   const num = rom.mapNum(nav.mapId);
   save.location = { mapGroup: num >>> 8, mapNum: num & 255, warpId: -1, x: nav.x, y: nav.y };
   save.pos = { x: nav.x, y: nav.y };
@@ -136,16 +138,16 @@ export function syncViewerLocation(nav: NavigationSave): void {
     const target=rom.mapNum(nav.dynamic.mapId);
     save.dynamicWarp={mapGroup:target>>>8,mapNum:target&255,warpId:nav.dynamic.warpId,x:nav.dynamic.x??-1,y:nav.dynamic.y??-1};
   }
-  (save as ViewerSave).viewerNavigation = { ...structuredClone(nav), region: 'kanto' };
+  (save as ViewerSave).viewerNavigation = { ...structuredClone(nav), region };
 }
 export function saveViewerSession(nav: NavigationSave): boolean {
   if (liveWorldRegion() === 'kanto') {
     syncViewerLocation(nav);
     return writeWorldSave();
   }
-  // Banked regions: no FireRed map numbering; the trainer must come from a stored Kanto game.
+  // Banked regions: the trainer must come from a stored Kanto game; the location fields are banked.
   if (!worldOf().started.kanto) return false;
-  setRegionalNavigation(nav);
+  syncViewerLocation(nav);
   return writeWorldSave();
 }
 

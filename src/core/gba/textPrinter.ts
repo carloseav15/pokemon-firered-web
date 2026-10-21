@@ -4,9 +4,9 @@
 import { sound } from "../audio/sound";
 import * as C from "@game/generated/constants";
 import { CHAR_EXTRA_SYMBOL, CHAR_KEYPAD_ICON, CHAR_NEWLINE, CHAR_PROMPT_CLEAR, CHAR_PROMPT_SCROLL, EOS, EXT_CTRL_CODE_BEGIN, PLACEHOLDER_BEGIN } from "./charmap";
-import { FONT_BRAILLE, FONT_FEMALE, FONT_INFOS, FONT_MALE, FONT_NORMAL, FONT_NORMAL_COPY_1, FONT_NORMAL_COPY_2, FONT_SMALL, DecompressGlyphTile, GetGlyphWidth_Female, GetGlyphWidth_Male, GetGlyphWidth_Normal, GetGlyphWidth_NormalCopy1, GetGlyphWidth_NormalCopy2, GetGlyphWidth_Small, GetKeypadIconSheet, KEYPAD_ICONS, glyph, type FontInfo } from "./font";
+import { FONT_BRAILLE, FONT_FEMALE, fontInfos, FONT_MALE, FONT_NORMAL, FONT_NORMAL_COPY_1, FONT_NORMAL_COPY_2, FONT_SMALL, DecompressGlyphTile, GetGlyphWidth_Female, GetGlyphWidth_Male, GetGlyphWidth_Normal, GetGlyphWidth_NormalCopy1, GetGlyphWidth_NormalCopy2, GetGlyphWidth_Small, GetKeypadIconSheet, KEYPAD_ICONS, glyph, type FontInfo } from "./font";
 import { A_BUTTON, B_BUTTON, JOY_HELD, JOY_NEW } from "./input";
-import { b64, rom } from "../rom";
+import { b64, isEmeraldData, rom } from "../rom";
 import { gQuestLogState } from "@game/questLogState";
 import { incbin16 } from "../hw/assets";
 import type { Window } from "./window";
@@ -51,7 +51,7 @@ export const sFontHalfRowLookupTable = new Uint16Array(0x51);
 export const gGlyphInfo: { pixels: Uint8Array; width: number; height: number } = { pixels: new Uint8Array(16 * 16), width: 0, height: 0 };
 
 /** text_printer.c SetFontsPointer. */
-export function SetFontsPointer(fonts: FontInfo[] | null = FONT_INFOS): void { gFonts = fonts; }
+export function SetFontsPointer(fonts: FontInfo[] | null = fontInfos()): void { gFonts = fonts; }
 
 /** text_printer.c GenerateFontHalfRowLookupTable. */
 export function GenerateFontHalfRowLookupTable(fgColor: number, bgColor: number, shadowColor: number): void {
@@ -143,7 +143,7 @@ export class TextPrinter {
   lineSpacing: number;
 
   constructor(readonly window: TextSurface, fontId: number, readonly str: ArrayLike<number>, options: PrinterOptions = {}) {
-    const fonts = gFonts ?? FONT_INFOS;
+    const fonts = gFonts ?? fontInfos();
     const info = fonts[fontId] ?? fonts[FONT_NORMAL];
     this.fontId = fontId;
     this.x = this.currentX = options.x ?? 0;
@@ -268,11 +268,35 @@ export function TextPrinterInitDownArrowCounters(printer: TextPrinter): void {
   }
 }
 
+// pokeemerald text.c: sDownArrowTiles / sDarkDownArrowTiles are 8x16 frames of one 8x48 sheet,
+// drawn at sDownArrowYCoords and redrawn every 8 frames.
+const EMERALD_DOWN_ARROW_Y = [0, 1, 2, 1];
+const EMERALD_DOWN_ARROW_DELAY = 8;
+function emeraldDownArrow(): { pixels: Uint8Array; width: number } {
+  const key = textFlags.useAlternateDownArrow ? "down_arrow_alt" : "down_arrow";
+  let sheet = emeraldDownArrows.get(key);
+  if (!sheet) {
+    const raw = rom.fonts[key];
+    sheet = { pixels: b64(raw.pixels), width: raw.width };
+    emeraldDownArrows.set(key, sheet);
+  }
+  return sheet;
+}
+const emeraldDownArrows = new Map<string, { pixels: Uint8Array; width: number }>();
+
 /** text.c TextPrinterDrawDownArrow (the delay branch only decrements the counter). */
 export function TextPrinterDrawDownArrow(printer: TextPrinter): void {
   if (textFlags.autoScroll) return;
   if (printer.downArrowDelay !== 0) {
     printer.downArrowDelay--;
+    return;
+  }
+  if (isEmeraldData()) {
+    printer.window.fillRect(printer.bg, printer.currentX, printer.currentY, 8, 16);
+    const arrow = emeraldDownArrow();
+    printer.window.blit(arrow.pixels, arrow.width, 0, EMERALD_DOWN_ARROW_Y[printer.downArrowIndex & 3], printer.currentX, printer.currentY, 8, 16, true);
+    printer.downArrowDelay = EMERALD_DOWN_ARROW_DELAY;
+    printer.downArrowIndex = (printer.downArrowIndex + 1) & 3;
     return;
   }
   printer.window.fillRect(printer.bg, printer.currentX, printer.currentY, 10, 12);
@@ -285,6 +309,7 @@ export function TextPrinterDrawDownArrow(printer: TextPrinter): void {
 
 /** text.c TextPrinterClearDownArrow. */
 export function TextPrinterClearDownArrow(printer: TextPrinter): void {
+  if (isEmeraldData()) { printer.window.fillRect(printer.bg, printer.currentX, printer.currentY, 8, 16); return; }
   printer.window.fillRect(printer.bg, printer.currentX, printer.currentY, 10, 12);
 }
 
@@ -323,6 +348,16 @@ export function DrawDownArrow(window: TextSurface, x: number, y: number, bgColor
     counter.value--;
     return;
   }
+  if (isEmeraldData()) {
+    window.fillRect(bgColor, x, y, 8, 16);
+    if (!drawArrow) {
+      const arrow = emeraldDownArrow();
+      window.blit(arrow.pixels, arrow.width, 0, EMERALD_DOWN_ARROW_Y[yCoordIndex.value & 3], x, y - 2, 8, 16, true);
+      counter.value = EMERALD_DOWN_ARROW_DELAY;
+      yCoordIndex.value++;
+    }
+    return;
+  }
   window.fillRect(bgColor, x, y, 10, 12);
   if (!drawArrow) {
     const arrow = downArrow();
@@ -353,7 +388,7 @@ export function RenderText(printer: TextPrinter): number {
       switch (currChar) {
         case CHAR_NEWLINE:
           printer.currentX = printer.x;
-          printer.currentY += (gFonts ?? FONT_INFOS)[printer.fontId].maxLetterHeight + printer.lineSpacing;
+          printer.currentY += (gFonts ?? fontInfos())[printer.fontId].maxLetterHeight + printer.lineSpacing;
           return RENDER_REPEAT;
         case PLACEHOLDER_BEGIN:
           printer.pos++;
@@ -532,7 +567,7 @@ export function RenderText(printer: TextPrinter): number {
     case State.ScrollStart:
       if (TextPrinterWaitWithDownArrow(printer)) {
         TextPrinterClearDownArrow(printer);
-        printer.scrollDistance = (gFonts ?? FONT_INFOS)[printer.fontId].maxLetterHeight + printer.lineSpacing;
+        printer.scrollDistance = (gFonts ?? fontInfos())[printer.fontId].maxLetterHeight + printer.lineSpacing;
         printer.currentX = printer.x;
         printer.state = State.Scroll;
       }
@@ -580,7 +615,7 @@ export function FontFunc_Braille(printer: TextPrinter): number {
     case State.ScrollStart:
       if (TextPrinterWaitWithDownArrow(printer)) {
         TextPrinterClearDownArrow(printer);
-        printer.scrollDistance = (gFonts ?? FONT_INFOS)[printer.fontId].maxLetterHeight + printer.lineSpacing;
+        printer.scrollDistance = (gFonts ?? fontInfos())[printer.fontId].maxLetterHeight + printer.lineSpacing;
         printer.currentX = printer.x;
         printer.state = State.Scroll;
       }
@@ -628,7 +663,7 @@ function FontFunc_Braille_HandleChar(printer: TextPrinter): number {
       return RENDER_FINISH;
     case CHAR_NEWLINE:
       printer.currentX = printer.x;
-      printer.currentY += (gFonts ?? FONT_INFOS)[printer.fontId].maxLetterHeight + printer.lineSpacing;
+      printer.currentY += (gFonts ?? fontInfos())[printer.fontId].maxLetterHeight + printer.lineSpacing;
       return RENDER_REPEAT;
     case PLACEHOLDER_BEGIN:
       printer.pos++;
@@ -705,8 +740,22 @@ function fillGlyphInfo(width: number, height: number): void {
   gGlyphInfo.height = height;
 }
 
+/**
+ * pokeemerald text.c DecompressGlyph_Small / DecompressGlyph_Normal (Latin): gFontSmallLatinGlyphs /
+ * gFontNormalLatinGlyphs, read from the exported Emerald font sheets (16x16 cells), with the
+ * gFont*LatinGlyphWidths width and heights 13 / 15. The FONT_NORMAL family maps to pokeemerald's
+ * FONT_NORMAL (see fontInfos).
+ */
+function DecompressGlyph_EmeraldLatin(fontId: number, glyphId: number): void {
+  const g = glyph(fontId, glyphId);
+  gGlyphInfo.pixels.set(g.pixels);
+  gGlyphInfo.width = fontId === FONT_SMALL ? GetGlyphWidth_Small(glyphId, false) : GetGlyphWidth_Normal(glyphId, false);
+  gGlyphInfo.height = fontId === FONT_SMALL ? 13 : 15;
+}
+
 /** text.c DecompressGlyph_Small. */
 export function DecompressGlyph_Small(glyphId: number, isJapanese: boolean): void {
+  if (isEmeraldData() && !isJapanese) { DecompressGlyph_EmeraldLatin(FONT_SMALL, glyphId); return; }
   if (isJapanese === true) {
     const glyphs = glyphTable("sFontSmallJapaneseGlyphs");
     const base = 0x100 * (glyphId >> 4) + 0x8 * (glyphId & 0xF);
@@ -726,6 +775,7 @@ export function DecompressGlyph_Small(glyphId: number, isJapanese: boolean): voi
 
 /** text.c DecompressGlyph_NormalCopy1. */
 export function DecompressGlyph_NormalCopy1(glyphId: number, isJapanese: boolean): void {
+  if (isEmeraldData() && !isJapanese) { DecompressGlyph_EmeraldLatin(FONT_NORMAL_COPY_1, glyphId); return; }
   if (isJapanese === true) {
     const glyphs = glyphTable("sFontTallJapaneseGlyphs");
     const base = 0x100 * (glyphId >> 4) + 0x8 * (glyphId & 0xF);
@@ -747,6 +797,7 @@ export function DecompressGlyph_NormalCopy1(glyphId: number, isJapanese: boolean
 
 /** text.c DecompressGlyph_Normal. */
 export function DecompressGlyph_Normal(glyphId: number, isJapanese: boolean): void {
+  if (isEmeraldData() && !isJapanese) { DecompressGlyph_EmeraldLatin(FONT_NORMAL, glyphId); return; }
   if (isJapanese === true) {
     if (glyphId === 0) {
       fillGlyphInfo(10, 12);
@@ -798,6 +849,7 @@ export function DecompressGlyph_NormalCopy2(glyphId: number, isJapanese: boolean
 
 /** text.c DecompressGlyph_Male. */
 export function DecompressGlyph_Male(glyphId: number, isJapanese: boolean): void {
+  if (isEmeraldData() && !isJapanese) { DecompressGlyph_EmeraldLatin(FONT_MALE, glyphId); return; }
   if (isJapanese === true) {
     if (glyphId === 0) {
       fillGlyphInfo(10, 12);
@@ -829,6 +881,7 @@ export function DecompressGlyph_Male(glyphId: number, isJapanese: boolean): void
 
 /** text.c DecompressGlyph_Female. */
 export function DecompressGlyph_Female(glyphId: number, isJapanese: boolean): void {
+  if (isEmeraldData() && !isJapanese) { DecompressGlyph_EmeraldLatin(FONT_FEMALE, glyphId); return; }
   if (isJapanese === true) {
     if (glyphId === 0) {
       fillGlyphInfo(10, 12);

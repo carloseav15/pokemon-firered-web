@@ -2,6 +2,7 @@
 // assembled battle / AI / animation scripts.
 
 import { loadCData, preloadPacks } from "@core/hw/assets";
+import { isEmeraldData } from "@core/rom";
 import { preloadNamingScreen } from "@core/namingScreen";
 import { preloadPokedexScreen } from "../pokedexScreen";
 import { preloadEvolutionScene } from "../evolutionScene";
@@ -31,8 +32,9 @@ let loading: Promise<void> | null = null;
 
 export function preloadBattleAssets(): Promise<void> {
   return (loading ??= Promise.all([
-    loadCData(...CDATA_FILES),
-    preloadPacks(PACKS),
+    // pokeemerald content: its environment backgrounds next to the FireRed interface data (bg.ts).
+    loadCData(...CDATA_FILES, ...(isEmeraldData() ? ["fr:battle_bg"] : [])),
+    preloadPacks([...PACKS, ...(isEmeraldData() ? ["graphics_battle_environment", "graphics_balls"] : [])]),
     loadBattleScripts(),
     preloadNamingScreen(),
     preloadPokedexScreen(),

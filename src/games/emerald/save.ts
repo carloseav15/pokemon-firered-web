@@ -95,6 +95,12 @@ export type SaveData = {
   boxWallpapers: number[];
   /** Viewer/browser field kept as in the FireRed representation: the saved facing direction. */
   facing: number;
+  /** SaveBlock1.outbreak* (tv.c mass outbreaks), read by wild_encounter.c. */
+  outbreak: { species: number; locationMapNum: number; locationMapGroup: number; level: number; moves: number[]; probability: number; daysLeft: number };
+  /** SaveBlock1.contestWinners (struct ContestWinner; species is what CountPlayerMuseumPaintings reads). */
+  contestWinners: Array<{ personality: number; trainerId: number; species: number; contestCategory: number; monName: number[]; trainerName: number[]; contestRank: number }>;
+  /** SaveBlock1.roamer (struct Roamer), read by wild_encounter.c through roamer.c. */
+  roamer: { ivs: number; personality: number; species: number; hp: number; level: number; status: number; cool: number; beauty: number; cute: number; smart: number; tough: number; active: boolean };
 };
 
 const zeroWarp = (): WarpData => ({ mapGroup: 0, mapNum: 0, warpId: 0, x: 0, y: 0 });
@@ -159,6 +165,10 @@ export function newSaveData(): SaveData {
     boxNames: Array.from({ length: C.TOTAL_BOXES_COUNT }, () => new Array(9).fill(0)),
     boxWallpapers: new Array(C.TOTAL_BOXES_COUNT).fill(0),
     facing: 0,
+    outbreak: { species: 0, locationMapNum: 0, locationMapGroup: 0, level: 0, moves: new Array(C.MAX_MON_MOVES).fill(0), probability: 0, daysLeft: 0 },
+    contestWinners: Array.from({ length: C.NUM_CONTEST_WINNERS }, () => ({ personality: 0, trainerId: 0, species: 0, contestCategory: 0,
+      monName: new Array(C.POKEMON_NAME_LENGTH + 1).fill(0), trainerName: new Array(C.PLAYER_NAME_LENGTH + 1).fill(0), contestRank: 0 })),
+    roamer: { ivs: 0, personality: 0, species: 0, hp: 0, level: 0, status: 0, cool: 0, beauty: 0, cute: 0, smart: 0, tough: 0, active: false },
   };
 }
 

@@ -6,7 +6,7 @@ import { joy } from '@core/gba/input';
 import { loadFieldFx } from '@core/field/fieldEffects';
 import { preloadFieldAssets } from '@core/field/preloadField';
 import { loadCData, preloadPacks } from '@core/hw/assets';
-import { DATA_ROOT, rom } from '@core/rom';
+import { DATA_ROOT, isEmeraldData, rom } from '@core/rom';
 import { loadTrig } from '@core/hw/trig';
 import { gWindows } from '@core/hw/window';
 import { GetBgTilemapBuffer } from '@core/hw/bg';
@@ -27,6 +27,13 @@ import { MAP_OFFSET } from '@core/field/fieldmap';
 import { PLAYER_AVATAR_FLAG_ACRO_BIKE, PLAYER_AVATAR_FLAG_MACH_BIKE, PLAYER_AVATAR_FLAG_ON_FOOT, PLAYER_AVATAR_FLAG_SURFING } from '@core/field/playerAvatar';
 import { objectStateKey, readViewerObjectState, readViewerTemplateState, objectDirection, storeViewerObjects, translateViewerObjectCoords, type ViewerMapOrigin, type ViewerObjectState } from './objectState';
 import { syncViewerLocation, type NavigationSave } from './session';
+import { runEmeraldMapEntry, type HoennMapEntryReport } from './hoennMapEntry';
+import { CheckStandardWildEncounter, GetCoordEventScriptAtPosition, GetInteractedBackgroundEventScript, RestartWildEncounterImmunitySteps } from '../games/emerald/fieldControlAvatar';
+import { setEmeraldWildEncounterGame, UpdateRepelCounter } from '../games/emerald/wildEncounter';
+import { EMERALD_SPECIALS } from '../games/emerald/specials';
+import { setGameSpecials } from '@game/script/specials';
+import { BattleSetup_GetEnvironmentId } from '../games/emerald/battleSetup';
+import { battleHost } from '@core/battle/host';
 import { IncrementRenewableHiddenItemStepCounter } from '@game/renewableHiddenItems';
 import { WonderNews_IncrementStepCounter } from '@game/wonderNews';
 import { IncrementBirthIslandRockStepCount, IncrementResortGorgeousStepCounter, RunMassageCooldownStepCounter } from '@core/field/fieldStepCounters';
@@ -86,9 +93,13 @@ export class EngineInteraction {
     this.root.append(this.ui, help); document.body.append(this.root);
   }
   private async initialize(): Promise<void> {
+    // Kanto's session start loads the ROM data; Hoenn's (initializeRegionalSession) does not.
+    await rom.load();
     await loadFieldFx();
-    await Promise.all([preloadFieldAssets(), loadTrig(), loadCData('text_printer', 'text', 'wild_encounter', 'berry'),
-      preloadPacks(['graphics_fonts', 'graphics_help_system', 'graphics_quest_log'])]);
+    // Emerald content (Hoenn): its fonts.c width tables and text-window graphics (FireRed fallbacks
+    // for the engine's own window frames are recorded by hw/assets).
+    await Promise.all([preloadFieldAssets(), loadTrig(), loadCData('text_printer', 'text', 'wild_encounter', 'berry', ...(isEmeraldData() ? ['fonts', 'text_window_graphics', 'strings', 'item_icon'] : [])),
+      preloadPacks(['graphics_fonts', 'graphics_help_system', 'graphics_quest_log', ...(isEmeraldData() ? ['graphics_text_window'] : [])])]);
     // Wild encounters and trainer battles run the source battle scene.
     await Promise.all([preloadBattleAssets(), sound.loadCryData(), preloadEggHatch()]);
     this.game = new Game(this.engineCanvas);
@@ -106,6 +117,12 @@ export class EngineInteraction {
       if (this.interactionMapId) storeViewerObjects(this.interactionMapId, [...this.observedObjects.values()]);
     };
     installBattleHost(this.game);
+    if (isEmeraldData()) {
+      const game = this.game;
+      setEmeraldWildEncounterGame(game);
+      setGameSpecials(EMERALD_SPECIALS);
+      battleHost.environmentId = () => BattleSetup_GetEnvironmentId(game);
+    }
     joy.attach(); joy.setExternalInputEnabled(false);
   }
   private objectState(object: Parameters<typeof readViewerObjectState>[0], removed=false): ViewerObjectState | undefined {
@@ -144,11 +161,13 @@ export class EngineInteraction {
     }
     storeViewerObjects(this.interactionMapId, [...this.observedObjects.values()]);
   }
-  private async prepareObjects(nav: NavigationSave): Promise<void> {
+  private async prepareObjects(nav: NavigationSave, layoutPrepared = false): Promise<void> {
     if (DATA_ROOT === "/hns") return;
     const ow=this.game!.overworld;
     const states=this.hooks.readObjects(nav.mapId);
-    await ow.prepareViewerInteraction(nav.mapId,states.filter(s=>!s.removed).map(s=>({mapId:s.mapId,localId:s.localId})));
+    // pokeemerald maps keep the layout their entry scripts (ON_LOAD setmetatile) left while the map stays loaded.
+    const keepLayout=layoutPrepared||(isEmeraldData()&&ow.loaded?.header.id===nav.mapId);
+    await ow.prepareViewerInteraction(nav.mapId,states.filter(s=>!s.removed).map(s=>({mapId:s.mapId,localId:s.localId})),keepLayout);
     const loaded=this.hooks.mapOrigin(nav.mapId);
     const left=save.pos.x+MAP_OFFSET-2,right=save.pos.x+MAP_OFFSET+17,top=save.pos.y+MAP_OFFSET,bottom=save.pos.y+MAP_OFFSET+16;
     let spawned=false;
@@ -450,8 +469,9 @@ export class EngineInteraction {
    * Arrival in a map: runs its OnTransition map script (e.g. setrespawn in Centers,
    * boulder resets in caves/Route 20, etc.) as in overworld.c RunOnTransitionMapScript.
    */
-  async enterMap(nav: NavigationSave): Promise<void> {
+  async enterMap(nav: NavigationSave): Promise<HoennMapEntryReport | undefined> {
     if (this.busy) return;
+    if (isEmeraldData()) return this.enterEmeraldMap(nav);
     this.testingWild = true;
     let started = false;
     try {
@@ -466,6 +486,31 @@ export class EngineInteraction {
         started = true;
         await this.run(nav, 0, true, () => {}, true);
       }
+    } finally {
+      this.testingWild = false;
+      if (!started) this.root.dataset.loading = 'false';
+    }
+  }
+  /**
+   * Hoenn arrival (pokeemerald overworld.c LoadMapFromWarp / InitMap, then the warp-into and frame
+   * map scripts once the object events exist): see hoennMapEntry.ts for the steps that run.
+   */
+  private async enterEmeraldMap(nav: NavigationSave): Promise<HoennMapEntryReport | undefined> {
+    this.testingWild = true;
+    let started = false;
+    try {
+      await (this.loading ??= this.initialize());
+      const ow = this.game!.overworld;
+      const report = await runEmeraldMapEntry(this.game!, nav, { onSetMetatile: this.hooks.onSetMetatile });
+      RestartWildEncounterImmunitySteps();
+      await this.prepareObjects(nav, true);
+      this.wildMap = nav.mapId;
+      ow.tryRunOnWarpIntoMapScript();
+      if (ow.tryRunOnFrameMapScript()) {
+        started = true;
+        await this.run(nav, 0, true, () => {}, true);
+      }
+      return report;
     } finally {
       this.testingWild = false;
       if (!started) this.root.dataset.loading = 'false';
@@ -514,7 +559,10 @@ export class EngineInteraction {
       const behavior = ow.map.behaviorAt(front.x, front.y);
       // Object events at the tile are the viewer's own entities; only the other lookups run.
       const direction = player.facingDirection;
-      const script = ow.control.getInteractedBackgroundEventScript({ ...front }, behavior, direction)
+      // pokeemerald: background events only; its metatile and water interaction scripts test
+      // pokeemerald metatile behaviors and are not bridged (the engine's lists are FireRed's).
+      const script = isEmeraldData() ? GetInteractedBackgroundEventScript(ow.header, { ...front }, behavior, direction)
+        : ow.control.getInteractedBackgroundEventScript({ ...front }, behavior, direction)
         || ow.control.getInteractedMetatileScript({ ...front }, behavior, direction)
         || ow.control.getInteractedWaterScript({ ...front }, behavior, direction);
       if (!script) return false;
@@ -668,6 +716,58 @@ export class EngineInteraction {
       const attributes = ow.map.attributesOf(ow.map.metatileIdAt(nav.x + MAP_OFFSET, nav.y + MAP_OFFSET));
       const wildHit = game.wild.tryStandardWildEncounter(attributes);
       if (!wildHit) return false;
+      started = true;
+      if (this.hooks.onBattleStart) await this.hooks.onBattleStart();
+      await this.run(nav, 0, true, () => {}, true);
+      return true;
+    } finally {
+      this.testingWild = false;
+      if (!started) this.root.dataset.loading = 'false';
+    }
+  }
+
+  /**
+   * pokeemerald ProcessPlayerFieldInput after the viewer player reached a tile center: the ON_FRAME
+   * map script, then for the step (tookStep) IncrementGameStat(GAME_STAT_STEPS), coord events and
+   * UpdateRepelCounter, then CheckStandardWildEncounter. Not run here: CheckForTrainersWantingBattle
+   * (the Hoenn viewer keeps its own trainer sight), TrySetupDiveEmergeScript, TryStartWarpEventScript
+   * (the viewer warps), TryStartMiscWalkingScripts (cracked floors are the viewer's hoennMechanics) and
+   * TryStartStepCountScript (rematch, friendship, poison, egg and weather step counters).
+   */
+  async tryEmeraldStep(nav: NavigationSave, vehicle: 'walk' | 'mach' | 'acro' | 'surf'): Promise<boolean> {
+    if (this.busy) return false;
+    this.testingWild = true;
+    let started = false;
+    try {
+      await (this.loading ??= this.initialize());
+      const game = this.game!, ow = game.overworld;
+      syncViewerLocation(nav);
+      if (this.wildMap !== nav.mapId) { await this.prepareObjects(nav); this.wildMap = nav.mapId; }
+      const player = ow.player.object;
+      const elevation = ow.map.elevationAt(nav.x + MAP_OFFSET, nav.y + MAP_OFFSET) || 3;
+      player.currentElevation = elevation;
+      player.previousElevation = elevation;
+      ow.objects.MoveObjectEventToMapCoords(player, nav.x + MAP_OFFSET, nav.y + MAP_OFFSET);
+      ow.objects.turn(player, save.facing);
+      ow.SetCameraToTrackPlayer();
+      const base = ow.player.flags & ~(PLAYER_AVATAR_FLAG_ON_FOOT | PLAYER_AVATAR_FLAG_MACH_BIKE | PLAYER_AVATAR_FLAG_ACRO_BIKE | PLAYER_AVATAR_FLAG_SURFING);
+      ow.player.flags = base | ({ walk: PLAYER_AVATAR_FLAG_ON_FOOT, mach: PLAYER_AVATAR_FLAG_MACH_BIKE, acro: PLAYER_AVATAR_FLAG_ACRO_BIKE, surf: PLAYER_AVATAR_FLAG_SURFING } as const)[vehicle];
+      if (ow.tryRunOnFrameMapScript()) {
+        started = true;
+        await this.run(nav, 0, true, () => {}, true);
+        return true;
+      }
+      const behavior = ow.map.behaviorAt(nav.x + MAP_OFFSET, nav.y + MAP_OFFSET);
+      incrementGameStat(C.GAME_STAT_STEPS);
+      const coordScript = GetCoordEventScriptAtPosition(ow.header, nav.x, nav.y, elevation, script => ow.script.RunScriptImmediately(script));
+      const stepScript = coordScript || UpdateRepelCounter();
+      if (stepScript) {
+        ow.script.ScriptContext_SetupScript(stepScript);
+        started = true;
+        await this.run(nav, 0, true, () => {}, true);
+        return true;
+      }
+      if (!CheckStandardWildEncounter(behavior)) return false;
       started = true;
       if (this.hooks.onBattleStart) await this.hooks.onBattleStart();
       await this.run(nav, 0, true, () => {}, true);

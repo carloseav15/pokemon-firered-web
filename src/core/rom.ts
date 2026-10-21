@@ -13,6 +13,20 @@ export let DATA_ROOT = DEFAULT_DATA_ROOT;
 export function setDataRoot(root: string): void {
   DATA_ROOT = root;
 }
+export const textFallbacks = new Set<string>();
+/** pokeemerald POCKET_* (include/constants/item.h) -> pocket of the shared FireRed-layout bag. */
+const EMERALD_TO_BAG_POCKET: Record<number, number> = {
+  1: 1, // POCKET_ITEMS -> POCKET_ITEMS
+  2: 3, // POCKET_POKE_BALLS -> POCKET_POKE_BALLS
+  3: 4, // POCKET_TM_HM -> POCKET_TM_CASE
+  4: 5, // POCKET_BERRIES -> POCKET_BERRY_POUCH
+  5: 2, // POCKET_KEY_ITEMS -> POCKET_KEY_ITEMS
+};
+/** The FireRed engine is running pokeemerald content (Hoenn in the viewer). Code paths whose C
+ * differs between the two games choose the pokeemerald version with this. */
+export function isEmeraldData(): boolean {
+  return DATA_ROOT === "/emerald";
+}
 
 export type MapObjectTemplate = {
   localId: number;
@@ -283,7 +297,8 @@ export class Rom {
       json<Rom["healLocations"]>("data/heal_locations.json"),
       json<Rom["regionMap"]>("data/region_map.json"),
       json<Record<string, string>>("data/strings.json"),
-      json<Rom["battleStrings"]>("data/battle_strings.json"),
+      // ADAPTATION (Hoenn): gBattleStringsTable belongs to the FireRed battle engine (STRINGID_* order), see bscript.ts.
+      isEmeraldData() ? fetch("/fr/data/battle_strings.json").then(r => r.json() as Promise<Rom["battleStrings"]>) : json<Rom["battleStrings"]>("data/battle_strings.json"),
     ]);
     this.species = species.species;
     this.pokedex = species.pokedex;
@@ -301,12 +316,15 @@ export class Rom {
     this.typeEffectiveness = moves.typeEffectiveness;
     this.trainerMoney = moves.trainerMoney;
     this.trainers = trainers;
-    this.items = items.items;
+    // Regional contract: the bag is the shared FireRed SaveBlock bag, so an Emerald item's pocket is
+    // expressed in that bag's pocket IDs (same item IDs in both games; only the pocket order differs).
+    this.items = isEmeraldData() ? items.items.map(item => ({ ...item, pocket: EMERALD_TO_BAG_POCKET[item.pocket] ?? item.pocket })) : items.items;
     this.itemEffects = items.effects;
     this.wild = wild;
     this.healLocations = heal;
     this.regionMap = region;
     this.strings = strings;
+    if (isEmeraldData()) this.fireRedUiStrings = await (await fetch("/fr/data/strings.json")).json();
     this.battleStrings = battleStrings;
     this.charmap = await json("charmap.json");
     this.scriptMenu = await json("data/script_menu.json");
@@ -397,8 +415,13 @@ export class Rom {
     const value = this.strings[name];
     if (value) return b64(value);
     if (this.hasLabel(name)) return this.stringAt(this.label(name));
+    const fallback = this.fireRedUiStrings?.[name];
+    if (fallback) { textFallbacks.add(name); return b64(fallback); }
     throw new Error(`unknown text ${name}`);
   }
+  /** ADAPTATION (Hoenn): strings of the FireRed engine's own screens (shop list, menus) that pokeemerald
+   * does not define; rom.text falls back to them and records each name in textFallbacks. */
+  fireRedUiStrings?: Record<string, string>;
 
   mapIdByNum(num: number): string | undefined {
     return this.mapById.get(num);

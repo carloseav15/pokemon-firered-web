@@ -17,7 +17,7 @@ import { FONT_NORMAL } from "../gba/font";
 import { expandPlaceholders } from "../gba/charmap";
 import { TextPrinter, textFlags } from "../gba/textPrinter";
 import { sound } from "../audio/sound";
-import { rom, type MapConnection, type MapHeader, type MapObjectTemplate } from "../rom";
+import { isEmeraldData, rom, type MapConnection, type MapHeader, type MapObjectTemplate } from "../rom";
 import { clearTempFieldEventData, flagClear, flagGet, save, SV, varGet, varSet, type WarpData } from "@game/save";
 import { FieldMap, GetIncomingConnection, GetMapBorderIdAt, LoadSavedMapView, loadMap, MapGridGetMetatileBehaviorAt, MAP_OFFSET, METATILE_ATTRIBUTE_LAYER_TYPE, MoveMapViewToBackup, SaveMapView, CONNECTION_DIVE, CONNECTION_EAST, CONNECTION_EMERGE, CONNECTION_INVALID, CONNECTION_NONE, CONNECTION_NORTH, CONNECTION_SOUTH, CONNECTION_WEST, type LoadedConnection, type LoadedMap } from "./fieldmap";
 import { actionJump, actionWalkInPlaceFaster, DIR_EAST, DIR_NORTH, DIR_SOUTH, DIR_WEST, DIRECTION_VECTORS, gObjectEvents, ObjectEvents, setVarGetter, type ObjectEvent } from "./objectEvents";
@@ -358,9 +358,12 @@ export class Overworld {
   /** Viewer interaction adapter: restore the existing field runtime at the navigation
    * position without running automatic map/story scripts. Explicit NPC bytecode is
    * still executed by ScriptContext. This is not a normal story map load. */
-  async prepareViewerInteraction(mapId: string, retainedObjects: readonly {mapId:string;localId:number}[] = []): Promise<void> {
+  /** `layoutPrepared`: the map data and layout of `mapId` are already loaded (a map entry ran its
+   * ON_TRANSITION/ON_LOAD scripts on them), so its metatile changes and object templates are kept. */
+  async prepareViewerInteraction(mapId: string, retainedObjects: readonly {mapId:string;localId:number}[] = [], layoutPrepared = false): Promise<void> {
+    if (layoutPrepared && this.loaded?.header.id !== mapId) throw Error(`prepareViewerInteraction: ${mapId} is not the loaded map`);
     this.InitOverworldBgs();
-    this.LoadCurrentMapData(await this.prepareMap(mapId));
+    if (!layoutPrepared) this.LoadCurrentMapData(await this.prepareMap(mapId));
     this.script.ScriptContext_Init();
     tasks.reset();
     this.sprites.clear();
@@ -372,7 +375,7 @@ export class Overworld {
     paletteFade.clear();
     this.effects.reset();
     this.messageBox.reset();
-    this.map.InitMapLayoutData(this.loaded);
+    if (!layoutPrepared) this.map.InitMapLayoutData(this.loaded);
     this.map.onChange = () => this.renderer?.invalidate();
     const savedTemplates = save.objectEventTemplates?.length ? save.objectEventTemplates : undefined;
     this.loadObjEventTemplatesFromHeader(savedTemplates);
@@ -1308,8 +1311,10 @@ export class Overworld {
     this.updateCameraPixels();
   }
 
-  /** SetHelpContextForMap (help_system.c), reselected whenever the local map is restored. */
+  /** SetHelpContextForMap (help_system.c), reselected whenever the local map is restored.
+   * pokeemerald has no help system: its return to the field does not call it. */
   SetHelpContextForMap(): void {
+    if (isEmeraldData()) return;
     SetHelpContextForMap(this);
   }
 

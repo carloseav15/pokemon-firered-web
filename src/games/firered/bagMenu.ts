@@ -57,7 +57,7 @@ import {
   InitWindows, PIXEL_FILL, PutWindowTilemap, RemoveWindow, type WindowTemplate,
 } from "@core/hw/window";
 import { addBagItem, addMoney, addPCItem, BagPocketCompaction, ItemId_GetFieldFunc, ItemId_GetPocket, itemInfo, pocketList, removeBagItem } from "@core/pokemon/items";
-import { b64, rom } from "@core/rom";
+import { b64, isEmeraldData, rom } from "@core/rom";
 import { Pokedude_InitTMCase, InitTMCase } from "./tmCase";
 import { InitBerryPouch } from "./berryPouch";
 import { ItemUseCB_MedicineStep, SetItemUseCB } from "./partyMenu";
@@ -340,6 +340,13 @@ export function UpdateSwapLinePos(x: number, y: number): void {
 
 /** GetItemIconGfxPtr */
 export function itemIconSymbols(itemId: number): [string, string] {
+  if (isEmeraldData()) {
+    // pokeemerald item_icon.c GetItemIconPicOrPalette: gItemIconTable has ITEMS_COUNT + 1 entries, the
+    // last one the "return to field" arrow used for ITEM_LIST_END.
+    const table = rd<SymRef[][]>("item_icon", "gItemIconTable"), itemsCount = table.length - 1;
+    const id = itemId & 0xffff, index = id === 0xffff ? itemsCount : id >= itemsCount ? 0 : id;
+    return [symName(table[index]![0])!, symName(table[index]![1])!];
+  }
   const table = rd<SymRef[][]>("item_menu_icons", "sItemIconTable");
   const item = itemId & 0xffff;
   const entry = table[item > C.ITEMS_COUNT ? C.ITEM_NONE : item] ?? table[0];

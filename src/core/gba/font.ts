@@ -1,7 +1,7 @@
 // Latin fonts from graphics/fonts with the glyph width tables, keypad icons
 // and GetStringWidth from text.c.
 
-import { b64, rom } from "../rom";
+import { b64, isEmeraldData, rom } from "../rom";
 import { cdata, incbin16 } from "../hw/assets";
 import { DynamicPlaceholderTextUtil_GetPlaceholderPtr } from "../dynamicPlaceholderTextUtil";
 import * as C from "@game/generated/constants";
@@ -32,6 +32,18 @@ export const FONT_INFOS: FontInfo[] = [
   { maxLetterWidth: 8, maxLetterHeight: 8, letterSpacing: 0, lineSpacing: 0, fgColor: 1, bgColor: 2, shadowColor: 15 },
 ];
 
+// pokeemerald text.c sFontInfos for the fonts the engine requests, indexed by these FireRed IDs:
+// FONT_SMALL -> pokeemerald FONT_SMALL, the FONT_NORMAL family -> pokeemerald FONT_NORMAL (16 px tall,
+// no letter spacing). pokeemerald has no NORMAL copies or gendered fonts; FONT_BRAILLE is identical.
+const EMERALD_SMALL: FontInfo = { maxLetterWidth: 5, maxLetterHeight: 12, letterSpacing: 0, lineSpacing: 0, fgColor: 2, bgColor: 1, shadowColor: 3 };
+const EMERALD_NORMAL: FontInfo = { maxLetterWidth: 6, maxLetterHeight: 16, letterSpacing: 0, lineSpacing: 0, fgColor: 2, bgColor: 1, shadowColor: 3 };
+const EMERALD_FONT_INFOS: FontInfo[] = [EMERALD_SMALL, EMERALD_NORMAL, EMERALD_NORMAL, EMERALD_NORMAL, EMERALD_NORMAL, EMERALD_NORMAL, FONT_INFOS[FONT_BRAILLE], FONT_INFOS[FONT_BOLD]];
+
+/** The font table of the running game's content (FONT_INFOS, or pokeemerald's for Emerald data). */
+export function fontInfos(): FontInfo[] {
+  return isEmeraldData() ? EMERALD_FONT_INFOS : FONT_INFOS;
+}
+
 type FontSheet = { width: number; pixels: Uint8Array; widths: number[]; cell: number; height: number };
 
 const sheets = new Map<string, FontSheet>();
@@ -47,6 +59,8 @@ function sheet(name: string): FontSheet {
 }
 
 function sheetFor(fontId: number): { s: FontSheet; height: number; cellW?: number } {
+  // pokeemerald DecompressGlyph_Small/_Normal: 16x16 cells in its exported sheets, heights 13 and 15.
+  if (isEmeraldData()) return fontId === FONT_SMALL ? { s: sheet("small"), height: 13 } : { s: sheet("normal"), height: 15 };
   switch (fontId) {
     // DecompressGlyph_Small: 8x16 glyphs, laid out as 8-pixel-wide cells in the exported sheet.
     case FONT_SMALL: return { s: sheet("small"), height: 13, cellW: 8 };
@@ -161,11 +175,23 @@ export function GetKeypadIconHeight(keypadIconId: number): number {
 
 const widthTables = new Map<string, number[]>();
 
-/** The sFont*GlyphWidths byte tables of text.c (cdata "text"), cached. */
+// pokeemerald keeps the Latin width tables in fonts.c as gFont*; the requested FireRed tables map
+// to its small and normal fonts (see EMERALD_FONT_INFOS).
+const EMERALD_WIDTH_TABLES: Record<string, string> = {
+  sFontSmallLatinGlyphWidths: "gFontSmallLatinGlyphWidths",
+  sFontNormalCopy1LatinGlyphWidths: "gFontNormalLatinGlyphWidths",
+  sFontNormalLatinGlyphWidths: "gFontNormalLatinGlyphWidths",
+  sFontMaleLatinGlyphWidths: "gFontNormalLatinGlyphWidths",
+  sFontFemaleLatinGlyphWidths: "gFontNormalLatinGlyphWidths",
+};
+
+/** The sFont*GlyphWidths byte tables of text.c (cdata "text"; pokeemerald: cdata "fonts"), cached. */
 function widthTable(name: string): number[] {
   let table = widthTables.get(name);
   if (!table) {
-    table = cdata<number[]>("text", name);
+    const emerald = isEmeraldData() ? EMERALD_WIDTH_TABLES[name] : undefined;
+    if (isEmeraldData() && !emerald) throw new Error(`pokeemerald has no width table for ${name}`);
+    table = emerald ? cdata<number[]>("fonts", emerald) : cdata<number[]>("text", name);
     widthTables.set(name, table);
   }
   return table;

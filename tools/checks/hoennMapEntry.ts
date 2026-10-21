@@ -1,7 +1,7 @@
-// Hoenn map entry (src/viewer/hoennMapEntry.ts): entering Littleroot Town runs pokeemerald's
-// LittlerootTown_OnTransition through the core script VM on the exported Emerald scripts.bin.
-// Its effects land in the Hoenn bank, Kanto progress and location stay intact, and the bank
-// survives a world save/continue. Expected values come from data/maps/LittlerootTown/scripts.inc
+// Hoenn map entry (src/viewer/hoennMapEntry.ts runEmeraldMapEntry): entering Littleroot Town runs
+// pokeemerald's LittlerootTown_OnTransition through the core script VM on the exported Emerald
+// scripts.bin. Its effects land in the Hoenn bank, the live location is Hoenn's own (banked field),
+// Kanto progress and location stay intact in the stored save, and the bank survives save/continue. Expected values come from data/maps/LittlerootTown/scripts.inc
 // and data/scripts/rival_graphics.inc. Scope: storage + VM; no browser or rendering.
 import "./setupNodeGbaMock.ts";
 import assert from "node:assert/strict";
@@ -13,7 +13,8 @@ import { encode } from "../../src/core/gba/charmap.ts";
 import { rom, setDataRoot } from "../../src/core/rom.ts";
 import { enterKanto, writeWorldSave, WORLD_SAVE_KEY, type WorldSaveData } from "../../src/viewer/regionSave.ts";
 import { continueRegionalSession, initializeRegionalSession, resetViewerSessionInitialized, saveViewerSession } from "../../src/viewer/session.ts";
-import { HoennMapEntry } from "../../src/viewer/hoennMapEntry.ts";
+import { runEmeraldMapEntry } from "../../src/viewer/hoennMapEntry.ts";
+import { Game } from "../../src/games/firered/game.ts";
 
 const storage = new Map<string, string>();
 (globalThis as unknown as { localStorage: Pick<Storage, "getItem" | "setItem" | "removeItem"> }).localStorage = {
@@ -57,8 +58,9 @@ assert.equal(flagGet(EM.FLAG_RESCUED_BIRCH), false);
 console.log("PREPARED: VAR_TEMP_1=7, FLAG_SYS_USE_STRENGTH and FLAG_SYS_ENC_UP_ITEM set before entry");
 
 const nav = { mapId: "MAP_LITTLEROOT_TOWN", x: 10, y: 10, direction: "south" as const, dynamic: null };
-const report = await new HoennMapEntry().enterMap(nav);
-assert.ok(report, "map entry ran");
+await rom.load();
+const canvas = { width: 240, height: 160, getContext: () => ({}) } as unknown as HTMLCanvasElement;
+const report = await runEmeraldMapEntry(new Game(canvas), nav);
 console.log(JSON.stringify({ ...report, changedTemplates: report.changedTemplates.map(t => [t.localId, t.x, t.y, t.movementType]) }));
 
 // LoadMapFromWarp: ClearTempFieldEventData (Emerald IDs).
@@ -73,10 +75,9 @@ const twin = report.changedTemplates.find(t => t.localId === EM.LOCALID_LITTLERO
 assert.ok(twin, "LittlerootTown_EventScript_SetTwinGuardingRoutePos moved the twin");
 assert.deepEqual([twin.x, twin.y, twin.movementType], [7, 2, EM.MOVEMENT_TYPE_FACE_DOWN]);
 assert.equal(report.load, null, "Littleroot has no ON_LOAD script");
-assert.equal(report.pendingFrame, null, "no ON_FRAME entry matches a fresh bank");
-// The FireRed fields used for the run are restored.
-assert.deepEqual(save.location, kantoBefore.location);
-assert.deepEqual(save.pos, kantoBefore.pos);
+// The live location fields are the Hoenn bank's own while Hoenn is live (regionSave REGIONAL_FIELD_KEYS).
+const littleroot = rom.mapNum("MAP_LITTLEROOT_TOWN");
+assert.deepEqual(save.location, { mapGroup: littleroot >> 8, mapNum: littleroot & 0xff, warpId: -1, x: 10, y: 10 });
 
 // Save in Hoenn, then continue: the effect lives in the Hoenn bank only.
 assert.equal(saveViewerSession(nav), true);
