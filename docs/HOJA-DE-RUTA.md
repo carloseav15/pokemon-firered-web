@@ -205,7 +205,7 @@ No se realizó recorrido de navegador ni prueba de continuidad regional en esta 
 | Gráficos | Perfil Emerald, mapas/tilesets, sprites y efectos; `loadHoennGfx`, clima y profundidad en visor | Exploración implementada; avatar Hoenn usa una ruta distinta de la animación C de Kanto. Paridad visual completa pendiente |
 | Audio | `audioController.setHoenn(true)`, música, efectos y gritos exportados | Conectado al visor; no comparación audiovisual completa |
 | Movimiento | `hoennMechanics.ts` y callers en `main.ts`: Mach/Acro, raíles, corrientes, Dive, hielo, puertas, mareas y puzzles | Helpers y conexión presentes; checks focalizados no equivalen a completar gimnasios o recorrer todos los mapas |
-| Historia/scripts | `setupUi()` crea `EngineInteraction` solo si `!HOENN`; entrada automática de mapa excluye Hoenn/Johto | No hay puente general activo para ejecutar la historia Emerald; exportar `scripts.bin` no elimina este hueco |
+| Historia/scripts | `setupUi()` crea `EngineInteraction` solo si `!HOENN`. Desde `67d14da8`, la entrada de mapa Hoenn usa `HoennMapEntry`: ClearTempFieldEventData Emerald, ON_TRANSITION y ON_LOAD por la VM del núcleo sobre `/emerald/scripts.bin` | Scripts de entrada ejecutados en el banco Hoenn (`check:hoenn-map-entry`, Littleroot). ON_WARP_INTO/ON_FRAME, NPC y eventos con texto/movimiento siguen sin puente; sin navegador |
 | Encuentros/combates | Tras un paso, la ruta de encuentros del motor exige `!HOENN && !JOHTO`; la otra ruta de batalla salvaje es exclusiva de Johto | Hoenn no tiene encuentros Emerald integrados por ese camino. La detección de mirada de entrenador puede mostrar interacción sin iniciar combate fuente |
 | NPC/objetos/servicios | Sin puente, aparecen respuestas genéricas; con `scriptName`, enfermeras y dependientes usan curación manual y `openJohtoMart` antes de la rama específica Johto | Hay servicios adaptados compartidos, no ejecución de sus scripts Emerald. Objetos visibles no prueban entrega, retirada persistente o scripts de historia |
 | Cinemáticas | `hoennCinematics.ts` usa DOM, CSS y `setTimeout`; disparadores por mapa/posición en `main.ts` | Adaptaciones propias, no ejecución de eventos originales. Títulos residuales «Pilar Celeste», «Cueva Origen», «Arrecife of Sootopolis» contradicen el requisito de inglés; pendiente corregir |
@@ -236,8 +236,13 @@ Siguiente orden concreto (descompone puntos 4, 6 y 7 sin borrar sus pendientes):
    con juego/región, compatibilidad del save existente. Hecho en `6e2d62a9` para
    flags/vars/navegación Kanto–Hoenn (prueba de almacenamiento PREPARED). Antes de
    habilitar viajes falta comprobar ida/vuelta y guardar/continuar en navegador.
-2. Cerrar los módulos mínimos del contrato Emerald detectados por el núcleo, empezando
+2. [~] Cerrar los módulos mínimos del contrato Emerald detectados por el núcleo, empezando
    por save y entrada de mapa; no activar `EngineInteraction` quitando solo `!HOENN`.
+   Hecho en `67d14da8`: `@game/save` Emerald (event_data.c; brecha 903→834) y entrada de
+   mapa Hoenn con los map scripts originales (ON_TRANSITION/ON_LOAD) en el banco Hoenn,
+   probada con Littleroot (PREPARED, sin navegador). Falta para el paso 3: ventanas de
+   texto desde la exportación Emerald, objetos generados (ON_WARP_INTO/ON_FRAME, NPC), los
+   17 comandos y specials Emerald ausentes; detalle en TAREAS-FINALES.
 3. Integrar un circuito Emerald fuente: un mapa/NPC, encuentro y combate, curación/
    tienda, guardado y continuar. Cada subsistema debe usar sus datos y condiciones
    originales; retirar la adaptación sustituida cuando el camino fuente esté activo.
