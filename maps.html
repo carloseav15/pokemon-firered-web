@@ -3,7 +3,7 @@
 <head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width,initial-scale=1" /><title>Atlas · Visor de mapas</title><link rel="stylesheet" href="/src/map-viewer/maps.css" /></head>
 <body>
 <header>
-  <a href="/atlas.html">☰ Atlas</a><h1>Visor de mapas</h1>
+  <nav data-site-navigation="tools"></nav><h1>Visor de mapas</h1>
   <label>Vista <select id="game" aria-label="Mundo principal o fuente alternativa"></select></label>
   <label id="region-wrap" hidden>Región <select id="region"><option value="all">Todas</option></select></label>
   <button id="world-btn">Superficie</button><button id="back" disabled>← Volver</button>
@@ -27,4 +27,5 @@
 </main>
 <footer><span id="source"></span><span id="budget"></span><span id="limits"></span></footer>
 <script type="module" src="/src/map-viewer/main.ts"></script>
+<script type="module" src="/src/web/siteNavigation.ts"></script>
 </body></html>

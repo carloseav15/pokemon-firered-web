@@ -66,18 +66,19 @@
   <body>
     <header>
       <h1>Pokédex <span style="color:var(--a)">FireRed</span> / <span style="color:var(--b)">Emerald</span></h1>
-      <a href="/atlas.html">☰ Atlas</a>
-      <input id="q" type="search" placeholder="Nombre o número…" />
+      <nav data-site-navigation="dex"></nav>
+      <input id="q" type="search" placeholder="Name or number…" />
       <span id="count" style="color:var(--mut)"></span>
-      <a href="/expansion.html" style="margin-left:auto">Catálogo Gen 1-9 →</a>
-      <a href="/library.html">Biblioteca visual →</a>
-      <a href="/compare.html">Comparador de diferencias →</a>
-      <a href="/viewer.html">Visor del mundo →</a>
+      <a href="/expansion.html" style="margin-left:auto">Expansion catalog →</a>
+      <a href="/library.html">Visual library →</a>
+      <a href="/compare.html">Source comparison →</a>
+      <a href="/world.html">World Map →</a>
     </header>
     <div id="layout">
       <div id="list"></div>
       <div id="detail"><p class="none">Cargando datos…</p></div>
     </div>
     <script type="module" src="/src/compare/dexMain.ts"></script>
+  <script type="module" src="/src/web/siteNavigation.ts"></script>
   </body>
 </html>

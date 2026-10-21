@@ -1,339 +1,57 @@
 <!doctype html>
-<html lang="es">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-    <title>Pokémon Odyssey — La Gran Aventura GBA Unificada</title>
-    <link rel="stylesheet" href="/src/web/landing.css" />
-  </head>
-  <body class="odyssey-hub">
-    <!-- Barra superior de navegación y accesos rápidos -->
-    <header class="hub-nav">
-      <a href="/" class="hub-brand">
-        <span class="hub-logo-icon">🧭</span>
-        <span class="hub-brand-name">POKÉMON ODYSSEY</span>
-        <span class="hub-tag">GBA Web</span>
-      </a>
-
-      <div class="hub-nav-links">
-        <a href="/play.html" class="hub-nav-btn primary">
-          <span>🎮 Modo Historia</span>
-        </a>
-        <a href="/world.html" class="hub-nav-btn">
-          <span>🗺️ Mundo Abierto</span>
-        </a>
-        <a href="/dex.html" class="hub-nav-btn">
-          <span>📕 Pokédex</span>
-        </a>
-        <a href="/atlas.html" class="hub-nav-btn">
-          <span>☰ Atlas</span>
-        </a>
-        <button id="btn-open-controls" class="hub-nav-btn" title="Ver guía de controles (H)">
-          <span>⌨️ Controles</span>
-        </button>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Pokémon Odyssey</title>
+  <link rel="stylesheet" href="/src/web/landing.css" />
+</head>
+<body class="odyssey-hub">
+  <header class="hub-nav">
+    <a href="/" class="hub-brand"><span class="hub-logo-icon" aria-hidden="true">🧭</span><span class="hub-brand-name">POKÉMON ODYSSEY</span></a>
+    <nav data-site-navigation="home"></nav>
+  </header>
+  <main class="hub-main">
+    <section class="hub-hero">
+      <div class="hero-pill">Kanto · Johto · Hoenn</div>
+      <h1 class="hero-title">Your Pokémon journey</h1>
+      <p class="hero-slogan">A connected Pokémon world in development, built from the original games. Start with FireRed or explore the regional maps.</p>
+    </section>
+    <section class="save-card-section" aria-label="Play or continue">
+      <div id="save-card-slot" aria-live="polite"><p>Checking for a saved game…</p></div>
+      <noscript><p>Enable JavaScript to play. <a href="/play.html">Open game</a></p></noscript>
+    </section>
+    <section class="modes-section" aria-labelledby="explore-heading">
+      <div class="section-heading"><h2 id="explore-heading" class="section-title">Explore and discover</h2><p class="section-subtitle">Regional exploration is available while the shared adventure takes shape.</p></div>
+      <div class="satellites-grid">
+        <a href="/world.html" class="satellite-card"><span class="satellite-icon" aria-hidden="true">🗺️</span><div class="satellite-text"><h3>World Map</h3><p>Browse Kanto, Johto and Hoenn, or switch to exploration.</p></div></a>
+        <a href="/dex.html" class="satellite-card"><span class="satellite-icon" aria-hidden="true">📕</span><div class="satellite-text"><h3>Pokédex</h3><p>Look up Pokémon, moves, types and sprites.</p></div></a>
       </div>
-    </header>
-
-    <!-- Contenido Principal -->
-    <main class="hub-main">
-      <!-- Hero de bienvenida -->
-      <section class="hub-hero">
-        <div class="hero-pill">
-          <span>✨ Expedición de Tercera Generación</span>
-        </div>
-        <h1 class="hero-title">POKÉMON ODYSSEY</h1>
-        <p class="hero-slogan">
-          La gran aventura Pokémon de tercera generación, unificada en la web moderna.
-          Disfruta de la campaña canónica oficial de GBA o sumérgete en un mundo abierto continuo sin barreras.
-        </p>
-      </section>
-
-      <!-- Tarjeta en vivo de detección de partida guardada -->
-      <section class="save-card-section" aria-label="Partida guardada">
-        <div id="save-card-slot">
-          <!-- Renderizado dinámicamente por landing.ts -->
-          <div class="save-card empty">
-            <div class="empty-save-content">
-              <div class="empty-icon">⏳</div>
-              <div class="empty-text">
-                <h3>Cargando datos de expedición…</h3>
-                <p>Verificando registro de guardado unificado en firered-save-v1.</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- Selector principal de experiencias / Modos de juego -->
-      <section class="modes-section" aria-label="Modos de juego principales">
-        <div class="section-heading">
-          <h2 class="section-title">Elige tu modo de expedición</h2>
-          <p class="section-subtitle">Dos formas de vivir la aventura sobre un mismo núcleo de datos y progresión unificada.</p>
-        </div>
-
-        <div class="modes-grid">
-          <!-- Modo Historia (Campaña Canónica) -->
-          <article class="mode-card story-mode">
-            <div class="mode-badge">Canónico GBA</div>
-            <div class="mode-card-header">
-              <div class="mode-icon-box">🎮</div>
-              <div class="mode-card-title">
-                <h3>Modo Historia</h3>
-                <p>Campaña oficial completa</p>
-              </div>
-            </div>
-
-            <p class="mode-desc">
-              Revive la experiencia clásica con total fidelidad al hardware de Game Boy Advance.
-              Secuencia de arranque de Game Freak, discurso del Prof. Oak, elección de inicial, gimnasios, rival y Liga Pokémon.
-            </p>
-
-            <ul class="mode-features-list">
-              <li><span class="check">✓</span> Pantalla retro con marco de consola GBA (3:2) o pantalla completa</li>
-              <li><span class="check">✓</span> Audio original M4A y WebAudio con desbloqueo táctil</li>
-              <li><span class="check">✓</span> Controles de teclado PC y mando táctil ergonómico en móvil</li>
-              <li><span class="check">✓</span> Progresión de eventos y cinemáticas oficiales 100% fieles</li>
-            </ul>
-
-            <a href="/play.html" class="mode-cta-btn">
-              <span>Jugar Modo Historia</span>
-              <span>→</span>
-            </a>
-          </article>
-
-          <!-- Modo Mundo Abierto (Exploración Libre) -->
-          <article class="mode-card world-mode">
-            <div class="mode-badge">Widescreen Libre</div>
-            <div class="mode-card-header">
-              <div class="mode-icon-box">🗺️</div>
-              <div class="mode-card-title">
-                <h3>Modo Mundo Abierto</h3>
-                <p>Exploración panorámica continua</p>
-              </div>
-            </div>
-
-            <p class="mode-desc">
-              Explora Kanto exterior en una vista panorámica continua en pantalla ancha.
-              Camina libremente con tu avatar sin bloqueos de historia, usa bicicleta o surf, disfruta del clima dinámico y observa a los NPCs con vida propia.
-            </p>
-
-            <ul class="mode-features-list">
-              <li><span class="check">✓</span> Mapa panorámico interconectado en pantalla ancha</li>
-              <li><span class="check">✓</span> Desplazamiento ágil en tiempo real, bicicleta (<kbd>B</kbd>) y surf</li>
-              <li><span class="check">✓</span> NPCs autónomos con deambular orgánico y scripts de campo</li>
-              <li><span class="check">✓</span> Minimapa radar en tiempo real y buscador rápido de mapas</li>
-            </ul>
-
-            <a href="/world.html" class="mode-cta-btn">
-              <span>Explorar Mundo Abierto</span>
-              <span>→</span>
-            </a>
-          </article>
-        </div>
-      </section>
-
-      <!-- Selector de Regiones de Expedición (Fase 4: Expansión Multirregión) -->
-      <section class="modes-section" aria-label="Destinos y regiones de expedición">
-        <div class="section-heading">
-          <h2 class="section-title">🗺️ Destinos de Expedición Multirregión</h2>
-          <p class="section-subtitle">Elige directamente la región que deseas explorar en Modo Mundo Abierto o viaja entre ellas en ferry transoceánico.</p>
-        </div>
-
-        <div class="regions-grid">
-          <!-- Kanto -->
-          <div class="region-card kanto-card">
-            <div class="region-card-header">
-              <div class="region-title-box">
-                <span class="region-icon">🏛️</span>
-                <div>
-                  <h3>Región de Kanto</h3>
-                  <p>Archipiélago original (FireRed)</p>
-                </div>
-              </div>
-              <span class="region-badge kanto">37 Mapas</span>
-            </div>
-
-            <p class="region-desc">
-              Desde Pueblo Paleta hasta la Meseta Añil. Explora el mapa exterior continuo, bosques, cuevas y ciudades legendarias.
-            </p>
-
-            <div class="region-meta">
-              <span>📍 Conexión: Muelle de Ciudad Carmín</span>
-            </div>
-
-            <a href="/world.html?region=kanto" class="region-btn">
-              <span>Explorar Kanto</span>
-              <span>→</span>
-            </a>
-          </div>
-
-          <!-- Hoenn -->
-          <div class="region-card hoenn-card">
-            <div class="region-card-header">
-              <div class="region-title-box">
-                <span class="region-icon">🌿</span>
-                <div>
-                  <h3>Continente de Hoenn</h3>
-                  <p>Mares y volcanes (Emerald)</p>
-                </div>
-              </div>
-              <span class="region-badge hoenn">49 Mapas</span>
-            </div>
-
-            <p class="region-desc">
-              Villa Raíz, Ciudad Portual, Ciudad Arborada y Monte Cenizo. Explora Hoenn con música original de Emerald y ferry transoceánico conectado.
-            </p>
-
-            <div class="region-meta">
-              <span>🚢 Conexión: Puerto de Ciudad Portual</span>
-            </div>
-
-            <a href="/world.html?region=hoenn" class="region-btn hoenn-btn">
-              <span>Explorar Hoenn</span>
-              <span>→</span>
-            </a>
-          </div>
-
-          <!-- Johto (Próximamente) -->
-          <div class="region-card johto-card">
-            <div class="region-card-header">
-              <div class="region-title-box">
-                <span class="region-icon">🌸</span>
-                <div>
-                  <h3>Región de Johto</h3>
-                  <p>Tradición y templos (Heart & Soul)</p>
-                </div>
-              </div>
-              <span class="region-badge johto">77 Mapas</span>
-            </div>
-
-            <p class="region-desc">
-              Pueblo Primavera, Ciudad Iris, Torre Bellsprout y Monte Plateado. Explora Johto con el mundo abierto continuo de Heart & Soul.
-            </p>
-
-            <div class="region-meta">
-              <span>📍 Conexión: Pueblo Primavera y Ruta 27</span>
-            </div>
-
-            <a href="/world.html?region=johto" class="region-btn johto-btn">
-              <span>Explorar Johto</span>
-              <span>→</span>
-            </a>
-          </div>
-        </div>
-      </section>
-
-      <!-- Herramientas Satélite y Cartografía -->
-      <section class="modes-section" aria-label="Herramientas y cartografía">
-        <div class="section-heading">
-          <h2 class="section-title">Herramientas y Satélites</h2>
-          <p class="section-subtitle">Bases de datos, cartografía mundial y seguimiento de la historia.</p>
-        </div>
-
-        <div class="satellites-grid">
-          <a href="/dex.html" class="satellite-card">
-            <div class="satellite-icon">📕</div>
-            <div class="satellite-text">
-              <h4>Pokédex Nacional</h4>
-              <p>386 Pokémon con stats, tipos, movimientos y gritos audibles.</p>
-            </div>
-          </a>
-
-          <a href="/atlas.html" class="satellite-card">
-            <div class="satellite-icon">🧭</div>
-            <div class="satellite-text">
-              <h4>Atlas Cartográfico</h4>
-              <p>Índice completo de mapas, conexiones e interiores de Kanto.</p>
-            </div>
-          </a>
-
-          <a href="/story.html" class="satellite-card">
-            <div class="satellite-icon">📜</div>
-            <div class="satellite-text">
-              <h4>Diario de Misiones</h4>
-              <p>Registro de eventos canónicos y tramos de historia completados.</p>
-            </div>
-          </a>
-
-          <a href="/quests.html" class="satellite-card">
-            <div class="satellite-icon">🎒</div>
-            <div class="satellite-text">
-              <h4>Quest Log & Extras</h4>
-              <p>Revisión de escenas guardadas, eventos de Sevii y coleccionables.</p>
-            </div>
-          </a>
-        </div>
-      </section>
-
-      <!-- Guía Rápida de Controles -->
-      <section class="controls-card" aria-label="Guía rápida de controles">
-        <div class="section-heading">
-          <h2 class="section-title">🎮 Controles Unificados</h2>
-          <p class="section-subtitle">Mapeo óptimo diseñado tanto para teclado en PC como para pantallas táctiles.</p>
-        </div>
-
-        <div class="controls-grid">
-          <div class="control-item">
-            <kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> o <kbd>Flechas</kbd>
-            <span class="control-label">Mover personaje / Navegar menús</span>
-          </div>
-          <div class="control-item">
-            <kbd>Z</kbd>
-            <span class="control-label">Botón A (Interactuar, hablar, confirmar)</span>
-          </div>
-          <div class="control-item">
-            <kbd>X</kbd>
-            <span class="control-label">Botón B (Cancelar, volver, mantener para correr)</span>
-          </div>
-          <div class="control-item">
-            <kbd>Enter</kbd>
-            <span class="control-label">Start (Abrir menú del juego)</span>
-          </div>
-          <div class="control-item">
-            <kbd>Espacio</kbd>
-            <span class="control-label">Select (Usar objeto registrado / caña)</span>
-          </div>
-          <div class="control-item">
-            <kbd>M</kbd>
-            <span class="control-label">Música y efectos (Silenciar / Activar sonido)</span>
-          </div>
-        </div>
-      </section>
-    </main>
-
-    <!-- Modal de Controles Completo -->
-    <dialog id="controls-dialog" class="controls-dialog" style="background: rgba(18, 20, 28, 0.95); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 16px; color: #f8fafc; padding: 24px; max-width: 500px; backdrop-filter: blur(20px);">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-        <h3 style="margin: 0; font-size: 18px; font-weight: 800;">⌨️ Guía de Controles</h3>
-        <button id="close-dialog-btn" style="background: none; border: none; color: #94a3b8; font-size: 18px; cursor: pointer;">✕</button>
+    </section>
+    <section class="modes-section" aria-labelledby="regions-heading">
+      <div class="section-heading"><h2 id="regions-heading" class="section-title">Regional maps</h2></div>
+      <div class="regions-grid">
+        <article class="region-card kanto-card"><h3>Kanto</h3><p class="region-desc">FireRed maps with the most developed gameplay integration.</p><a class="region-btn" href="/world.html?region=kanto">Explore Kanto →</a></article>
+        <article class="region-card johto-card"><h3>Johto</h3><p class="region-desc">GBA maps from the community Heart &amp; Soul project. Original-content review is pending.</p><a class="region-btn johto-btn" href="/world.html?region=johto">Explore Johto →</a></article>
+        <article class="region-card hoenn-card"><h3>Hoenn</h3><p class="region-desc">Emerald maps with selected exploration mechanics. Gameplay integration is in progress.</p><a class="region-btn hoenn-btn" href="/world.html?region=hoenn">Explore Hoenn →</a></article>
       </div>
-      <div style="font-size: 14px; color: #cbd5e1; display: flex; flex-direction: column; gap: 12px;">
-        <p>Los controles están 100% unificados en toda la plataforma Pokémon Odyssey:</p>
-        <ul style="padding-left: 20px; margin: 0; line-height: 1.8;">
-          <li><strong>Direcciones:</strong> <kbd style="background: rgba(255,255,255,0.1); padding: 2px 6px; border-radius: 4px;">WASD</kbd> o Flechas direccionales.</li>
-          <li><strong>Botón A:</strong> <kbd style="background: rgba(255,255,255,0.1); padding: 2px 6px; border-radius: 4px;">Z</kbd></li>
-          <li><strong>Botón B:</strong> <kbd style="background: rgba(255,255,255,0.1); padding: 2px 6px; border-radius: 4px;">X</kbd> (mantener para correr / activar bici)</li>
-          <li><strong>Start:</strong> <kbd style="background: rgba(255,255,255,0.1); padding: 2px 6px; border-radius: 4px;">Enter</kbd></li>
-          <li><strong>Select:</strong> <kbd style="background: rgba(255,255,255,0.1); padding: 2px 6px; border-radius: 4px;">Espacio</kbd></li>
-          <li><strong>Gatillos L / R:</strong> <kbd style="background: rgba(255,255,255,0.1); padding: 2px 6px; border-radius: 4px;">Q</kbd> / <kbd style="background: rgba(255,255,255,0.1); padding: 2px 6px; border-radius: 4px;">E</kbd></li>
-          <li><strong>Sonido:</strong> <kbd style="background: rgba(255,255,255,0.1); padding: 2px 6px; border-radius: 4px;">M</kbd></li>
-        </ul>
-        <p style="margin-top: 8px; color: #94a3b8; font-size: 13px;">
-          En móviles y tabletas, la cruceta táctil ergonómica y los botones virtuales aparecen automáticamente en los bordes de la pantalla.
-        </p>
-      </div>
-    </dialog>
-
-    <!-- Footer -->
-    <footer class="hub-footer">
-      <div class="footer-badge">
-        <span>🚀 Motor TypeScript Puro · 60 FPS · Basado en pret/pokefirered</span>
-      </div>
-      <div>
-        Pokémon Odyssey © Plataforma Web de Tercera Generación. Guardado unificado local.
-      </div>
-    </footer>
-
-    <script type="module" src="/src/web/landing.ts"></script>
-  </body>
+    </section>
+    <section class="controls-card" aria-labelledby="controls-heading">
+      <h2 id="controls-heading" class="section-title">Controls</h2>
+      <p>In FireRed: arrow keys or WASD to move, Z to confirm, X to cancel, Enter for Start, Space for Select, Q/E for L/R.</p>
+      <p>World exploration has its own controls. Open its menu for help.</p>
+      <button id="btn-open-controls" class="hub-nav-btn">Keyboard help</button>
+    </section>
+    <p class="section-subtitle">Looking for map inspectors, source comparisons or event tools? <a href="/tools.html">Open Tools →</a></p>
+  </main>
+  <dialog id="controls-dialog" class="controls-dialog" aria-labelledby="help-title">
+    <h2 id="help-title">FireRed keyboard controls</h2>
+    <p>Move: arrow keys or WASD. Confirm: Z. Cancel: X. Start: Enter. Select: Space. L/R: Q/E.</p>
+    <p>Use the game toolbar to toggle sound, touch controls and screen size.</p>
+    <button id="close-dialog-btn" class="hub-nav-btn" autofocus>Close</button>
+  </dialog>
+  <footer class="hub-footer"><span>Pokémon Odyssey · Work in progress</span><span>Saved games are stored in this browser.</span></footer>
+  <script type="module" src="/src/web/siteNavigation.ts"></script>
+  <script type="module" src="/src/web/landing.ts"></script>
+</body>
 </html>

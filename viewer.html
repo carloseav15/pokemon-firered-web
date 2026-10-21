@@ -8,64 +8,55 @@
   </head>
   <body>
     <header id="bar">
-      <a href="/" class="btn" title="Volver al Hub de Pokémon Odyssey" style="text-decoration:none; font-weight:700">🧭 Hub</a>
+      <nav data-site-navigation="world"></nav>
+      <a href="/" class="btn" title="Return home" style="text-decoration:none; font-weight:700">🧭 Hub</a>
       <div class="app-title"><span></span> Kanto Exterior · Pokémon Odyssey</div>
       <div class="search-wrap">
-        <input id="search" type="search" aria-label="Buscar mapa" placeholder="Buscar mapa..." title="Presiona '/' para buscar rápido" autocomplete="off" />
+        <input id="search" type="search" aria-label="Search maps" placeholder="Search maps…" title="Press / to search" autocomplete="off" />
         <span class="search-shortcut">/</span>
         <div id="search-results" class="search-results" style="display:none;"></div>
       </div>
 
       <div class="btn-group">
-        <button id="zoom-in" class="btn btn-icon" title="Acercar (+)">+</button>
-        <button id="zoom-out" class="btn btn-icon" title="Alejar (−)">−</button>
+        <button id="zoom-in" class="btn btn-icon" title="Zoom in (+)">+</button>
+        <button id="zoom-out" class="btn btn-icon" title="Zoom out (−)">−</button>
       </div>
 
-      <button id="layers-btn" class="btn" popovertarget="layers-menu" title="Alternar capas visibles">
-        Capas ▾
+      <button id="layers-btn" class="btn" popovertarget="layers-menu" title="Toggle map layers">
+        Layers ▾
       </button>
 
       <div id="layers-menu" popover="auto">
         <div class="menu-header">
-          <span class="menu-header-title">Capas Visibles</span>
+          <span class="menu-header-title">Visible layers</span>
           <div class="layer-actions">
-            <button id="layers-all">Todas</button>
-            <button id="layers-none">Ninguna</button>
+            <button id="layers-all">All</button>
+            <button id="layers-none">None</button>
           </div>
         </div>
       </div>
 
       <div class="btn-group" id="mode-group">
-        <a href="/play.html" class="btn" title="Modo Historia (Campaña GBA)" style="text-decoration:none">
-          🎮 Modo Historia
-        </a>
-        <button id="mode-viewer-btn" class="btn active-mode" title="Modo Visor: Navegar libremente y consultar mapas">
-          🗺️ Visor
+        <button id="mode-viewer-btn" class="btn active-mode" title="Browse regional maps">
+          🗺️ Browse
         </button>
-        <button id="mode-explore-btn" class="btn" title="Modo Exploración: Camina por el mapa con tu avatar">
-          🧭 Explorar Mapa
+        <button id="mode-explore-btn" class="btn" title="Walk through the map">
+          🧭 Explore
         </button>
-        <button id="bike-btn" class="btn" style="display:none;" title="Alternar Bici (tecla B)">
-          🚲 Bici
+        <button id="bike-btn" class="btn" style="display:none;" title="Toggle bicycle (B)">
+          🚲 Bicycle
         </button>
       </div>
 
-      <a href="/dex.html" class="btn" title="Pokédex Nacional 386" style="text-decoration:none">
-        📕 Dex
-      </a>
-      <a href="/atlas.html" class="btn" title="Índice de secciones y mapas" style="text-decoration:none">
-        ☰ Atlas
-      </a>
-
-      <button id="audio-btn" class="btn" title="Activar/Silenciar Música y Sonido (M)">
+      <button id="audio-btn" class="btn" title="Toggle music and sound (M)">
         🔇 Audio
       </button>
 
-      <button id="panel-toggle" class="btn" title="Ocultar/mostrar panel lateral">Panel ◨</button>
+      <button id="panel-toggle" class="btn" title="Toggle side panel">Panel ◨</button>
       <div style="flex: 1"></div>
 
-      <button id="overflow-btn" class="btn" popovertarget="overflow-menu" title="Opciones avanzadas">
-        Opciones ⚙
+      <button id="overflow-btn" class="btn" popovertarget="overflow-menu" title="More options">
+        Options ⚙
       </button>
 
       <div id="overflow-menu" popover="auto">
@@ -139,5 +130,6 @@
       <span id="status-pos">Cursor: <code>--</code></span>
     </footer>
     <script type="module" src="/src/map-viewer/entry.ts"></script>
+  <script type="module" src="/src/web/siteNavigation.ts"></script>
   </body>
 </html>

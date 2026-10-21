@@ -76,7 +76,7 @@ export class ResponsiveManager {
 
     const updateAudioButton = () => {
       audioBtn.textContent = this.isMuted ? "🔇" : "🔊";
-      audioBtn.title = this.isMuted ? "Activar sonido (M)" : "Silenciar sonido (M)";
+      audioBtn.title = this.isMuted ? "Unmute sound (M)" : "Mute sound (M)";
       audioBtn.classList.toggle("muted", this.isMuted);
 
       // Silenciar en backend de audio si está disponible
@@ -135,8 +135,8 @@ export class ResponsiveManager {
     document.addEventListener("fullscreenchange", () => {
       fsBtn.textContent = document.fullscreenElement ? "🗗" : "⛶";
       fsBtn.title = document.fullscreenElement
-        ? "Salir de pantalla completa (Esc / F11)"
-        : "Pantalla completa del navegador (F11)";
+        ? "Exit fullscreen (Esc)"
+        : "Browser fullscreen";
     });
   }
 

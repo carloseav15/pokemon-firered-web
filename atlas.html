@@ -28,6 +28,7 @@
   </head>
   <body>
     <main>
+      <nav data-site-navigation="tools"></nav>
       <h1>Atlas <span class="a">Pokémon</span></h1>
       <p class="sub">Índice de las herramientas de consulta y validación. Todas leen los datos exportados de los decomps; ninguna ejecuta el motor del juego.</p>
 
@@ -84,7 +85,7 @@
       <h2>El juego</h2>
       <div class="grid">
         <div class="card"><h3>FireRed (port)</h3><p>El port jugable en el navegador. Emerald no es jugable: solo existe como datos y en el visor.</p>
-          <div class="links"><a class="btn ga" href="/index.html">Jugar</a></div></div>
+          <div class="links"><a class="btn ga" href="/play.html">Play</a></div></div>
       </div>
 
       <h2>Estado de los datos</h2>
@@ -126,5 +127,6 @@
         body.appendChild(tr);
       }
     </script>
+  <script type="module" src="/src/web/siteNavigation.ts"></script>
   </body>
 </html>

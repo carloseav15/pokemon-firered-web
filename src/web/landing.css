@@ -250,12 +250,12 @@ body.odyssey-hub {
 }
 
 .trainer-sprite-img {
-  width: 48px;
-  height: 48px;
+  width: 288px;
+  height: 64px;
   image-rendering: pixelated;
   image-rendering: -moz-crisp-edges;
   image-rendering: crisp-edges;
-  transform: scale(2);
+  transform: none;
 }
 
 .save-info-group {
@@ -937,4 +937,28 @@ body.odyssey-hub {
   .hub-nav-links {
     display: none;
   }
+}
+
+/* Entry pages keep the existing visual language with visible mobile navigation. */
+.controls-dialog {
+  background: #12141c;
+  color: var(--text-main);
+  border: 1px solid #475569;
+  border-radius: 16px;
+  padding: 24px;
+  width: min(500px, calc(100vw - 32px));
+}
+.controls-dialog::backdrop { background: rgba(0, 0, 0, .65); }
+.odyssey-hub main p a { color: #93c5fd; }
+.odyssey-hub .satellite-text h3 { margin: 0; font-size: 16px; }
+.odyssey-hub .hero-title { font-size: clamp(30px, 7vw, 56px); }
+@media (max-width: 480px) {
+  .odyssey-hub .hub-brand-name { font-size: 16px; }
+  .odyssey-hub .hub-main { padding-inline: 16px; }
+  .odyssey-hub .regions-grid, .odyssey-hub .satellites-grid { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 768px) {
+  .save-card.empty { flex-direction: column; padding: 24px; }
+  .empty-save-content { flex-direction: column; gap: 12px; }
+  .save-actions-group { min-width: 0; }
 }

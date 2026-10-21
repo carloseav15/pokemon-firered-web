@@ -591,24 +591,24 @@ function setupGameSelect(): void {
   });
   document.getElementById("layers-btn")?.before(select);
   if (HOENN) {
-    document.title = "Pokémon Odyssey — Hoenn Exterior";
+    document.title = "Pokémon Odyssey — Hoenn World Map";
     const title = document.querySelector(".app-title");
-    if (title) title.lastChild!.textContent = " Hoenn Continuo · Mundo Abierto";
+    if (title) title.lastChild!.textContent = " Hoenn · World Map";
     document.getElementById("anim-toggle")?.closest("label")?.style.setProperty("display", "none");
     const charSelect = document.getElementById("player-char") as HTMLSelectElement | null;
     if (charSelect) {
-      charSelect.options[0]!.text = "Bruno (Brendan)";
-      charSelect.options[1]!.text = "Aura (May)";
+      charSelect.options[0]!.text = "Brendan";
+      charSelect.options[1]!.text = "May";
     }
   } else if (JOHTO) {
-    document.title = "Pokémon Odyssey — Johto Exterior (Heart & Soul)";
+    document.title = "Pokémon Odyssey — Johto World Map (Heart & Soul)";
     const title = document.querySelector(".app-title");
-    if (title) title.lastChild!.textContent = " Johto Continuo · Heart & Soul";
+    if (title) title.lastChild!.textContent = " Johto · Heart & Soul";
     document.getElementById("anim-toggle")?.closest("label")?.style.setProperty("display", "none");
     const charSelect = document.getElementById("player-char") as HTMLSelectElement | null;
     if (charSelect) {
-      charSelect.options[0]!.text = "Eco / Bruno (Ethan)";
-      charSelect.options[1]!.text = "Lira / Aura (Lyra)";
+      charSelect.options[0]!.text = "Ethan";
+      charSelect.options[1]!.text = "Lyra";
     }
   }
 }
@@ -1520,7 +1520,7 @@ function toggleBike(): void {
       const bikeBtn = document.getElementById("bike-btn");
       if (bikeBtn) {
         bikeBtn.style.background = "#3b82f6";
-        bikeBtn.title = "Bici Acrobática";
+        bikeBtn.title = "Acro Bike";
       }
       audioController.playBikeBell();
       hoennBikeTracker.reset();
@@ -1538,7 +1538,7 @@ function toggleBike(): void {
   const bikeBtn = document.getElementById("bike-btn");
   if (bikeBtn) {
     bikeBtn.style.background = playerMode === "bike" ? "#f59e0b" : "";
-    bikeBtn.title = HOENN ? (playerMode === "bike" ? "Bici Carrera" : "Bicicleta") : "Bicicleta";
+    bikeBtn.title = HOENN ? (playerMode === "bike" ? "Mach Bike" : "Bicycle") : "Bicycle";
   }
   if (playerMode === "bike") {
     audioController.playBikeBell();
@@ -3535,8 +3535,8 @@ function setupUi(): void {
     } else if (JOHTO) {
       const redOpt = charSelect.querySelector('option[value="red"]');
       const leafOpt = charSelect.querySelector('option[value="leaf"]');
-      if (redOpt) redOpt.textContent = "Eco / Bruno (Ethan)";
-      if (leafOpt) leafOpt.textContent = "Lira / Aura (Lyra)";
+      if (redOpt) redOpt.textContent = "Ethan";
+      if (leafOpt) leafOpt.textContent = "Lyra";
     }
     charSelect.value = state.playerChar;
     charSelect.addEventListener("change", () => {
@@ -3628,7 +3628,7 @@ function setupUi(): void {
 
   const updateLayersBtnText = () => {
     const btn = document.getElementById("layers-btn");
-    if (btn) btn.textContent = `Capas (${state.activeLayers.size}/${LAYERS.length}) ▾`;
+    if (btn) btn.textContent = `Layers (${state.activeLayers.size}/${LAYERS.length}) ▾`;
   };
   updateLayersBtnText();
 

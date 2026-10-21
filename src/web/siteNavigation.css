@@ -1,0 +1,38 @@
+.site-navigation {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+  font: 600 13px/1.5 system-ui, sans-serif;
+}
+.site-navigation a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 8px 12px;
+  color: #cbd5e1;
+  border-radius: 8px;
+  text-decoration: none;
+}
+.site-navigation a:hover, .site-navigation a[aria-current="page"] {
+  color: #fff;
+  background: #263247;
+}
+.site-navigation a:focus-visible, .odyssey-hub a:focus-visible, .odyssey-hub button:focus-visible {
+  outline: 2px solid #7dd3fc;
+  outline-offset: 3px;
+}
+#bar > .site-navigation { flex-basis: 100%; }
+@media (max-width: 768px) {
+  .hub-nav { height: auto; min-height: 64px; flex-wrap: wrap; padding-block: 8px; gap: 4px; }
+  .hub-nav .site-navigation { width: 100%; }
+  .top-nav { flex-wrap: wrap; }
+  .top-nav .site-navigation { order: 3; width: 100%; }
+  .site-navigation a { padding-inline: 9px; }
+}
+/* The game toolbar must grow when navigation wraps instead of covering the screen. */
+#top-nav.top-nav { height: auto; flex: 0 0 auto; flex-wrap: wrap; padding-block: 6px; }
+@media (max-width: 640px) {
+  .top-nav { gap: 4px; }
+  .top-nav .nav-brand { flex-basis: 100%; }
+}

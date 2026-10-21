@@ -36,6 +36,7 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: "index.html",
+        tools: "tools.html",
         play: "play.html",
         world: "world.html",
         viewer: "viewer.html",
