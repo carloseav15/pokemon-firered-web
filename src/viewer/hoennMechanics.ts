@@ -1289,3 +1289,596 @@ export class LavaridgeGymTracker {
     this.revealedTrainers.clear();
   }
 }
+
+/**
+ * Dewford Town Gym (Pueblo Azuliza - Marcial / Brawly):
+ * Stepped Dynamic Darkness (dewford_gym.c / SetFlashLevel / AnimateFlash).
+ *
+ * In pokeemerald / field_screen_effect.c:
+ * sFlashLevelToRadius[] = { 200, 72, 64, 56, 48, 40, 32, 24, 0 };
+ * Level 7 is maximum darkness (minimum radius = 24px circular spotlight around player).
+ * Defeating each of the 6 martial arts dojo trainers progressively expands the light:
+ * - 0 defeated: level 7 (24px)
+ * - 1 defeated: level 6 (32px)
+ * - 2 defeated: level 5 (40px)
+ * - 3 defeated: level 4 (48px)
+ * - 4 defeated: level 3 (56px)
+ * - 5 defeated: level 2 (64px)
+ * - 6 defeated: level 1 (72px)
+ * Defeating Leader Brawly: level 0 (200px / floodlights illuminate entire gym)!
+ */
+export const DEWFORD_FLASH_LEVEL_RADII = [200, 72, 64, 56, 48, 40, 32, 24, 0] as const;
+
+export interface DewfordGymTrainer {
+  id: string;
+  name: string;
+  species: string;
+  x: number;
+  y: number;
+}
+
+export const DEWFORD_GYM_TRAINERS: DewfordGymTrainer[] = [
+  { id: "TRAINER_TAKAO", name: "Takao", species: "Machop", x: 2, y: 18 },
+  { id: "TRAINER_JOCELYN", name: "Jocelyn", species: "Meditite", x: 15, y: 3 },
+  { id: "TRAINER_LAURA", name: "Laura", species: "Meditite", x: 12, y: 25 },
+  { id: "TRAINER_BRENDEN", name: "Brenden", species: "Machop", x: 14, y: 12 },
+  { id: "TRAINER_CRISTIAN", name: "Cristian", species: "Makuhita", x: 7, y: 8 },
+  { id: "TRAINER_LILITH", name: "Lilith", species: "Meditite", x: 16, y: 9 },
+];
+
+export const DEWFORD_GYM_LEADER = {
+  id: "TRAINER_BRAWLY_1",
+  name: "Brawly",
+  species: "Makuhita",
+  x: 4,
+  y: 3,
+};
+
+export class DewfordGymDarknessTracker {
+  private defeatedTrainers = new Set<string>();
+  private brawlyDefeated = false;
+
+  getDefeatedCount(): number {
+    return this.defeatedTrainers.size;
+  }
+
+  isTrainerDefeated(id: string): boolean {
+    return this.defeatedTrainers.has(id);
+  }
+
+  isBrawlyDefeated(): boolean {
+    return this.brawlyDefeated;
+  }
+
+  getFlashLevel(): number {
+    if (this.brawlyDefeated) return 0;
+    const count = this.defeatedTrainers.size;
+    return Math.max(1, 7 - count);
+  }
+
+  getFlashRadius(): number {
+    const level = this.getFlashLevel();
+    return DEWFORD_FLASH_LEVEL_RADII[level] ?? 200;
+  }
+
+  defeatTrainer(trainerId: string): {
+    changed: boolean;
+    prevLevel: number;
+    newLevel: number;
+    prevRadius: number;
+    newRadius: number;
+    sound?: number;
+    brawlyDefeated?: boolean;
+    trainer?: DewfordGymTrainer;
+  } {
+    const prevLevel = this.getFlashLevel();
+    const prevRadius = this.getFlashRadius();
+
+    if (trainerId === DEWFORD_GYM_LEADER.id) {
+      if (this.brawlyDefeated) {
+        return { changed: false, prevLevel, newLevel: prevLevel, prevRadius, newRadius: prevRadius };
+      }
+      this.brawlyDefeated = true;
+      const newLevel = this.getFlashLevel();
+      const newRadius = this.getFlashRadius();
+      return {
+        changed: true,
+        prevLevel,
+        newLevel,
+        prevRadius,
+        newRadius,
+        sound: EmeraldConstants.SE_SWITCH,
+        brawlyDefeated: true,
+      };
+    }
+
+    if (this.defeatedTrainers.has(trainerId)) {
+      return { changed: false, prevLevel, newLevel: prevLevel, prevRadius, newRadius: prevRadius };
+    }
+
+    const trainer = DEWFORD_GYM_TRAINERS.find(t => t.id === trainerId);
+    if (!trainer) {
+      return { changed: false, prevLevel, newLevel: prevLevel, prevRadius, newRadius: prevRadius };
+    }
+
+    this.defeatedTrainers.add(trainerId);
+    const newLevel = this.getFlashLevel();
+    const newRadius = this.getFlashRadius();
+    return {
+      changed: true,
+      prevLevel,
+      newLevel,
+      prevRadius,
+      newRadius,
+      sound: EmeraldConstants.SE_SWITCH,
+      brawlyDefeated: false,
+      trainer,
+    };
+  }
+
+  checkTrainerProximity(playerX: number, playerY: number): DewfordGymTrainer | null {
+    for (const trainer of DEWFORD_GYM_TRAINERS) {
+      if (this.defeatedTrainers.has(trainer.id)) continue;
+      const dist = Math.max(Math.abs(trainer.x - playerX), Math.abs(trainer.y - playerY));
+      if (dist <= 1) return trainer;
+    }
+    return null;
+  }
+
+  checkLeaderProximity(playerX: number, playerY: number): boolean {
+    if (this.brawlyDefeated) return false;
+    const dist = Math.max(Math.abs(DEWFORD_GYM_LEADER.x - playerX), Math.abs(DEWFORD_GYM_LEADER.y - playerY));
+    return dist <= 1;
+  }
+
+  reset(): void {
+    this.defeatedTrainers.clear();
+    this.brawlyDefeated = false;
+  }
+}
+
+/**
+ * Petalburg City Gym (Ciudad Petalia - Norman):
+ * Shoji sliding doors (sliding_door / field_specials.c) and thematic battle rooms.
+ * 7 specialized rooms with trainers enhanced with battle items:
+ * - Room 1 (Entrance / Vestíbulo): leads to Room 2 (Speed) or Room 3 (Accuracy).
+ * - Room 2 (Speed Room): Trainer Randall (Swellow, Agility / X Speed) -> Room 4 (Confusion) or Room 5 (Defense).
+ * - Room 3 (Accuracy Room): Trainer Mary (Delcatty, Faint Attack / Dire Hit / X Accuracy) -> Room 5 (Defense) or Room 6 (Recovery).
+ * - Room 4 (Confusion Room): Trainer Parker (Spinda, Teeter Dance / X Special) -> Room 7 (Strength).
+ * - Room 5 (Defense Room): Trainer Alexia (Wigglytuff, Defense Curl / X Defend) -> Room 7 (Strength) or Room 8 (OHKO).
+ * - Room 6 (Recovery Room): Trainer George (Slakoth, Slack Off / Sitrus Berry) -> Room 8 (OHKO).
+ * - Room 7 (Strength Room): Trainer Jody (Zangoose, Swords Dance / Slash) -> Room 9 (Norman).
+ * - Room 8 (OHKO Room): Trainer Berke (Vigoroth, Focus Energy / Slash) -> Room 9 (Norman).
+ * - Room 9 (Gym Leader): Norman (Spinda, Vigoroth, Linoone, Slaking).
+ */
+
+export const METATILE_PetalburgGym_Door = 548; // 0x224
+export const METATILE_PetalburgGym_RoomEntrance_Left = 528; // 0x210
+export const METATILE_PetalburgGym_RoomEntrance_Right = 529; // 0x211
+export const METATILE_PetalburgGym_SlidingDoor_Frame0 = 536; // 0x218
+export const METATILE_PetalburgGym_SlidingDoor_Frame1 = 537; // 0x219
+export const METATILE_PetalburgGym_SlidingDoor_Frame2 = 538; // 0x21A
+export const METATILE_PetalburgGym_SlidingDoor_Frame3 = 539; // 0x21B
+export const METATILE_PetalburgGym_SlidingDoor_Frame4 = 540; // 0x21C
+
+export const PETALBURG_SLIDING_DOOR_ANIM_FRAMES = [
+  METATILE_PetalburgGym_SlidingDoor_Frame0,
+  METATILE_PetalburgGym_SlidingDoor_Frame1,
+  METATILE_PetalburgGym_SlidingDoor_Frame2,
+  METATILE_PetalburgGym_SlidingDoor_Frame3,
+  METATILE_PetalburgGym_SlidingDoor_Frame4,
+];
+
+export interface PetalburgGymTrainerInfo {
+  id: string;
+  name: string;
+  roomNumber: number;
+  roomName: string;
+  species: string;
+  enhancedItem: string;
+  x: number;
+  y: number;
+}
+
+export const PETALBURG_GYM_TRAINERS: PetalburgGymTrainerInfo[] = [
+  {
+    id: "TRAINER_RANDALL",
+    name: "Randall",
+    roomNumber: 2,
+    roomName: "Speed Room",
+    species: "Swellow",
+    enhancedItem: "X Speed",
+    x: 4,
+    y: 81,
+  },
+  {
+    id: "TRAINER_MARY",
+    name: "Mary",
+    roomNumber: 3,
+    roomName: "Accuracy Room",
+    species: "Delcatty",
+    enhancedItem: "Dire Hit & X Accuracy",
+    x: 4,
+    y: 94,
+  },
+  {
+    id: "TRAINER_PARKER",
+    name: "Parker",
+    roomNumber: 4,
+    roomName: "Confusion Room",
+    species: "Spinda",
+    enhancedItem: "X Special",
+    x: 4,
+    y: 42,
+  },
+  {
+    id: "TRAINER_ALEXIA",
+    name: "Alexia",
+    roomNumber: 5,
+    roomName: "Defense Room",
+    species: "Wigglytuff",
+    enhancedItem: "X Defend",
+    x: 4,
+    y: 55,
+  },
+  {
+    id: "TRAINER_GEORGE",
+    name: "George",
+    roomNumber: 6,
+    roomName: "Recovery Room",
+    species: "Slakoth",
+    enhancedItem: "Sitrus Berry & Potion",
+    x: 4,
+    y: 68,
+  },
+  {
+    id: "TRAINER_JODY",
+    name: "Jody",
+    roomNumber: 7,
+    roomName: "Strength Room",
+    species: "Zangoose",
+    enhancedItem: "X Attack & Slash",
+    x: 4,
+    y: 16,
+  },
+  {
+    id: "TRAINER_BERKE",
+    name: "Berke",
+    roomNumber: 8,
+    roomName: "One-Hit KO Room",
+    species: "Vigoroth",
+    enhancedItem: "Dire Hit & Focus Energy",
+    x: 4,
+    y: 29,
+  },
+];
+
+export const PETALBURG_GYM_LEADER = {
+  id: "TRAINER_NORMAN_1",
+  name: "Norman",
+  species: "Slaking",
+  x: 4,
+  y: 2,
+};
+
+export interface PetalburgDoorWarp {
+  sourceX: number;
+  sourceY: number;
+  destX: number;
+  destY: number;
+  requiredTrainer?: string;
+  roomFrom: number;
+  roomTo: number;
+  name: string;
+}
+
+export const PETALBURG_NORTH_DOORS: PetalburgDoorWarp[] = [
+  // Room 1 (Entrance) -> Room 2 (Speed) or Room 3 (Accuracy)
+  { sourceX: 1, sourceY: 104, destX: 7, destY: 85, roomFrom: 1, roomTo: 2, name: "Speed Room Door" },
+  { sourceX: 7, sourceY: 104, destX: 1, destY: 98, roomFrom: 1, roomTo: 3, name: "Accuracy Room Door" },
+
+  // Room 2 (Speed) -> Room 4 (Confusion) or Room 5 (Defense)
+  { sourceX: 1, sourceY: 78, destX: 7, destY: 46, requiredTrainer: "TRAINER_RANDALL", roomFrom: 2, roomTo: 4, name: "Confusion Room Door" },
+  { sourceX: 7, sourceY: 78, destX: 1, destY: 59, requiredTrainer: "TRAINER_RANDALL", roomFrom: 2, roomTo: 5, name: "Defense Room Door (Left)" },
+
+  // Room 3 (Accuracy) -> Room 5 (Defense) or Room 6 (Recovery)
+  { sourceX: 1, sourceY: 91, destX: 7, destY: 59, requiredTrainer: "TRAINER_MARY", roomFrom: 3, roomTo: 5, name: "Defense Room Door (Right)" },
+  { sourceX: 7, sourceY: 91, destX: 1, destY: 72, requiredTrainer: "TRAINER_MARY", roomFrom: 3, roomTo: 6, name: "Recovery Room Door" },
+
+  // Room 4 (Confusion) -> Room 7 (Strength)
+  { sourceX: 7, sourceY: 39, destX: 1, destY: 20, requiredTrainer: "TRAINER_PARKER", roomFrom: 4, roomTo: 7, name: "Strength Room Door (Left)" },
+
+  // Room 5 (Defense) -> Room 7 (Strength) or Room 8 (OHKO)
+  { sourceX: 1, sourceY: 52, destX: 7, destY: 20, requiredTrainer: "TRAINER_ALEXIA", roomFrom: 5, roomTo: 7, name: "Strength Room Door (Right)" },
+  { sourceX: 7, sourceY: 52, destX: 1, destY: 33, requiredTrainer: "TRAINER_ALEXIA", roomFrom: 5, roomTo: 8, name: "One-Hit KO Room Door (Left)" },
+
+  // Room 6 (Recovery) -> Room 8 (OHKO)
+  { sourceX: 1, sourceY: 65, destX: 7, destY: 33, requiredTrainer: "TRAINER_GEORGE", roomFrom: 6, roomTo: 8, name: "One-Hit KO Room Door (Right)" },
+
+  // Room 7 (Strength) -> Room 9 (Norman)
+  { sourceX: 7, sourceY: 13, destX: 1, destY: 7, requiredTrainer: "TRAINER_JODY", roomFrom: 7, roomTo: 9, name: "Gym Leader's Room Door (Left)" },
+
+  // Room 8 (OHKO) -> Room 9 (Norman)
+  { sourceX: 1, sourceY: 26, destX: 7, destY: 7, requiredTrainer: "TRAINER_BERKE", roomFrom: 8, roomTo: 9, name: "Gym Leader's Room Door (Right)" },
+];
+
+export const PETALBURG_SOUTH_EXITS: Record<string, { destX: number; destY: number }> = {
+  // Speed Room south exit -> Entrance
+  "7,85": { destX: 1, destY: 105 },
+  "6,85": { destX: 1, destY: 105 },
+  // Accuracy Room south exit -> Entrance
+  "1,98": { destX: 7, destY: 105 },
+  "2,98": { destX: 7, destY: 105 },
+  // Confusion Room south exit -> Speed Room
+  "7,46": { destX: 1, destY: 79 },
+  "6,46": { destX: 1, destY: 79 },
+  // Defense Room south left exit -> Speed Room
+  "1,59": { destX: 7, destY: 79 },
+  "2,59": { destX: 7, destY: 79 },
+  // Defense Room south right exit -> Accuracy Room
+  "7,59": { destX: 1, destY: 92 },
+  "6,59": { destX: 1, destY: 92 },
+  // Recovery Room south exit -> Accuracy Room
+  "1,72": { destX: 7, destY: 92 },
+  "2,72": { destX: 7, destY: 92 },
+  // Strength Room south left exit -> Confusion Room
+  "1,20": { destX: 7, destY: 40 },
+  "2,20": { destX: 7, destY: 40 },
+  // Strength Room south right exit -> Defense Room
+  "7,20": { destX: 1, destY: 53 },
+  "6,20": { destX: 1, destY: 53 },
+  // OHKO Room south left exit -> Defense Room
+  "1,33": { destX: 7, destY: 53 },
+  "2,33": { destX: 7, destY: 53 },
+  // OHKO Room south right exit -> Recovery Room
+  "7,33": { destX: 1, destY: 66 },
+  "6,33": { destX: 1, destY: 66 },
+  // Leader Room south left exit -> Strength Room
+  "1,7": { destX: 7, destY: 14 },
+  "2,7": { destX: 7, destY: 14 },
+  // Leader Room south right exit -> OHKO Room
+  "7,7": { destX: 1, destY: 27 },
+  "6,7": { destX: 1, destY: 27 },
+};
+
+export const PETALBURG_ROOM_DOOR_TILES: Record<number, MetatileTileUpdate[]> = {
+  1: [
+    { x: 1, y: 104, metatileId: METATILE_PetalburgGym_SlidingDoor_Frame4 },
+    { x: 7, y: 104, metatileId: METATILE_PetalburgGym_SlidingDoor_Frame4 },
+    { x: 6, y: 85, metatileId: METATILE_PetalburgGym_RoomEntrance_Left },
+    { x: 7, y: 85, metatileId: METATILE_PetalburgGym_RoomEntrance_Right },
+    { x: 1, y: 98, metatileId: METATILE_PetalburgGym_RoomEntrance_Left },
+    { x: 2, y: 98, metatileId: METATILE_PetalburgGym_RoomEntrance_Right },
+  ],
+  2: [
+    { x: 1, y: 78, metatileId: METATILE_PetalburgGym_SlidingDoor_Frame4 },
+    { x: 7, y: 78, metatileId: METATILE_PetalburgGym_SlidingDoor_Frame4 },
+    { x: 6, y: 46, metatileId: METATILE_PetalburgGym_RoomEntrance_Left },
+    { x: 7, y: 46, metatileId: METATILE_PetalburgGym_RoomEntrance_Right },
+    { x: 1, y: 59, metatileId: METATILE_PetalburgGym_RoomEntrance_Left },
+    { x: 2, y: 59, metatileId: METATILE_PetalburgGym_RoomEntrance_Right },
+  ],
+  3: [
+    { x: 1, y: 91, metatileId: METATILE_PetalburgGym_SlidingDoor_Frame4 },
+    { x: 7, y: 91, metatileId: METATILE_PetalburgGym_SlidingDoor_Frame4 },
+    { x: 6, y: 59, metatileId: METATILE_PetalburgGym_RoomEntrance_Left },
+    { x: 7, y: 59, metatileId: METATILE_PetalburgGym_RoomEntrance_Right },
+    { x: 1, y: 72, metatileId: METATILE_PetalburgGym_RoomEntrance_Left },
+    { x: 2, y: 72, metatileId: METATILE_PetalburgGym_RoomEntrance_Right },
+  ],
+  4: [
+    { x: 7, y: 39, metatileId: METATILE_PetalburgGym_SlidingDoor_Frame4 },
+    { x: 1, y: 20, metatileId: METATILE_PetalburgGym_RoomEntrance_Left },
+    { x: 2, y: 20, metatileId: METATILE_PetalburgGym_RoomEntrance_Right },
+  ],
+  5: [
+    { x: 1, y: 52, metatileId: METATILE_PetalburgGym_SlidingDoor_Frame4 },
+    { x: 7, y: 52, metatileId: METATILE_PetalburgGym_SlidingDoor_Frame4 },
+    { x: 6, y: 20, metatileId: METATILE_PetalburgGym_RoomEntrance_Left },
+    { x: 7, y: 20, metatileId: METATILE_PetalburgGym_RoomEntrance_Right },
+    { x: 1, y: 33, metatileId: METATILE_PetalburgGym_RoomEntrance_Left },
+    { x: 2, y: 33, metatileId: METATILE_PetalburgGym_RoomEntrance_Right },
+  ],
+  6: [
+    { x: 1, y: 65, metatileId: METATILE_PetalburgGym_SlidingDoor_Frame4 },
+    { x: 6, y: 33, metatileId: METATILE_PetalburgGym_RoomEntrance_Left },
+    { x: 7, y: 33, metatileId: METATILE_PetalburgGym_RoomEntrance_Right },
+  ],
+  7: [
+    { x: 7, y: 13, metatileId: METATILE_PetalburgGym_SlidingDoor_Frame4 },
+    { x: 1, y: 7, metatileId: METATILE_PetalburgGym_RoomEntrance_Left },
+    { x: 2, y: 7, metatileId: METATILE_PetalburgGym_RoomEntrance_Right },
+  ],
+  8: [
+    { x: 1, y: 26, metatileId: METATILE_PetalburgGym_SlidingDoor_Frame4 },
+    { x: 6, y: 7, metatileId: METATILE_PetalburgGym_RoomEntrance_Left },
+    { x: 7, y: 7, metatileId: METATILE_PetalburgGym_RoomEntrance_Right },
+  ],
+};
+
+export class PetalburgGymDoorTracker {
+  private defeatedTrainers = new Set<string>();
+  private normanDefeated = false;
+  private gymUnlocked = true;
+
+  setGymUnlocked(unlocked: boolean): void {
+    this.gymUnlocked = unlocked;
+  }
+
+  isGymUnlocked(): boolean {
+    return this.gymUnlocked;
+  }
+
+  isTrainerDefeated(id: string): boolean {
+    return this.defeatedTrainers.has(id);
+  }
+
+  isNormanDefeated(): boolean {
+    return this.normanDefeated;
+  }
+
+  getDefeatedCount(): number {
+    return this.defeatedTrainers.size + (this.normanDefeated ? 1 : 0);
+  }
+
+  defeatTrainer(id: string): {
+    changed: boolean;
+    trainer?: PetalburgGymTrainerInfo;
+    isNorman?: boolean;
+    tileUpdates?: MetatileTileUpdate[];
+    sound?: number;
+    unlockedAll?: boolean;
+  } {
+    if (id === PETALBURG_GYM_LEADER.id) {
+      if (this.normanDefeated) return { changed: false };
+      this.normanDefeated = true;
+      const tileUpdates: MetatileTileUpdate[] = [];
+      for (let r = 1; r <= 8; r++) {
+        tileUpdates.push(...(PETALBURG_ROOM_DOOR_TILES[r] ?? []));
+      }
+      return {
+        changed: true,
+        isNorman: true,
+        tileUpdates,
+        sound: EmeraldConstants.SE_UNLOCK,
+        unlockedAll: true,
+      };
+    }
+
+    if (this.defeatedTrainers.has(id)) return { changed: false };
+
+    const trainer = PETALBURG_GYM_TRAINERS.find(t => t.id === id);
+    if (!trainer) return { changed: false };
+
+    this.defeatedTrainers.add(id);
+    const tileUpdates = PETALBURG_ROOM_DOOR_TILES[trainer.roomNumber] ?? [];
+    return {
+      changed: true,
+      trainer,
+      isNorman: false,
+      tileUpdates,
+      sound: EmeraldConstants.SE_UNLOCK,
+      unlockedAll: false,
+    };
+  }
+
+  isDoorUnlocked(door: PetalburgDoorWarp): boolean {
+    if (this.normanDefeated) return true;
+    if (!door.requiredTrainer) return this.gymUnlocked;
+    return this.defeatedTrainers.has(door.requiredTrainer);
+  }
+
+  checkDoorMovement(
+    playerX: number,
+    playerY: number,
+    targetX: number,
+    targetY: number,
+  ): {
+    isDoor: boolean;
+    canEnter: boolean;
+    locked: boolean;
+    door?: PetalburgDoorWarp;
+    destX?: number;
+    destY?: number;
+    sound?: number;
+  } {
+    const door = PETALBURG_NORTH_DOORS.find(
+      d => (d.sourceX === targetX || d.sourceX === playerX) && d.sourceY === targetY,
+    );
+    if (!door) return { isDoor: false, canEnter: false, locked: false };
+
+    const unlocked = this.isDoorUnlocked(door);
+    if (!unlocked) {
+      return {
+        isDoor: true,
+        canEnter: false,
+        locked: true,
+        door,
+        sound: EmeraldConstants.SE_WALL_HIT,
+      };
+    }
+
+    return {
+      isDoor: true,
+      canEnter: true,
+      locked: false,
+      door,
+      destX: door.destX,
+      destY: door.destY,
+      sound: EmeraldConstants.SE_UNLOCK,
+    };
+  }
+
+  checkSouthExit(
+    playerX: number,
+    playerY: number,
+  ): {
+    isExit: boolean;
+    destX?: number;
+    destY?: number;
+    sound?: number;
+  } {
+    const key = `${playerX},${playerY}`;
+    const exit = PETALBURG_SOUTH_EXITS[key];
+    if (exit) {
+      return {
+        isExit: true,
+        destX: exit.destX,
+        destY: exit.destY,
+        sound: EmeraldConstants.SE_DOOR,
+      };
+    }
+    return { isExit: false };
+  }
+
+  checkTrainerProximity(
+    playerX: number,
+    playerY: number,
+  ): {
+    found: boolean;
+    trainer?: PetalburgGymTrainerInfo;
+    isNorman?: boolean;
+  } {
+    if (!this.normanDefeated) {
+      const normanDist = Math.max(Math.abs(PETALBURG_GYM_LEADER.x - playerX), Math.abs(PETALBURG_GYM_LEADER.y - playerY));
+      if (normanDist <= 1) {
+        return { found: true, isNorman: true };
+      }
+    }
+
+    for (const trainer of PETALBURG_GYM_TRAINERS) {
+      if (this.defeatedTrainers.has(trainer.id)) continue;
+      const dist = Math.max(Math.abs(trainer.x - playerX), Math.abs(trainer.y - playerY));
+      if (dist <= 1) {
+        return { found: true, trainer, isNorman: false };
+      }
+    }
+
+    return { found: false };
+  }
+
+  getAllUnlockedDoorMetatiles(): MetatileTileUpdate[] {
+    const updates: MetatileTileUpdate[] = [];
+    if (this.normanDefeated) {
+      for (let r = 1; r <= 8; r++) {
+        updates.push(...(PETALBURG_ROOM_DOOR_TILES[r] ?? []));
+      }
+      return updates;
+    }
+
+    if (this.gymUnlocked) {
+      updates.push(...(PETALBURG_ROOM_DOOR_TILES[1] ?? []));
+    }
+    for (const trainer of PETALBURG_GYM_TRAINERS) {
+      if (this.defeatedTrainers.has(trainer.id)) {
+        updates.push(...(PETALBURG_ROOM_DOOR_TILES[trainer.roomNumber] ?? []));
+      }
+    }
+    return updates;
+  }
+
+  reset(): void {
+    this.defeatedTrainers.clear();
+    this.normanDefeated = false;
+  }
+}

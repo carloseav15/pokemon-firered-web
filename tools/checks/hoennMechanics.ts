@@ -58,6 +58,20 @@ import {
   LavaridgeGymTracker,
   LAVARIDGE_BURIED_TRAINERS,
   LAVARIDGE_GYM_GEYSER_WARPS,
+  DewfordGymDarknessTracker,
+  DEWFORD_FLASH_LEVEL_RADII,
+  DEWFORD_GYM_TRAINERS,
+  DEWFORD_GYM_LEADER,
+  PetalburgGymDoorTracker,
+  PETALBURG_GYM_TRAINERS,
+  PETALBURG_GYM_LEADER,
+  PETALBURG_NORTH_DOORS,
+  PETALBURG_SOUTH_EXITS,
+  METATILE_PetalburgGym_Door,
+  METATILE_PetalburgGym_RoomEntrance_Left,
+  METATILE_PetalburgGym_RoomEntrance_Right,
+  METATILE_PetalburgGym_SlidingDoor_Frame0,
+  METATILE_PetalburgGym_SlidingDoor_Frame4,
 } from "../../src/viewer/hoennMechanics";
 import * as MBEmerald from "../../src/games/emerald/generated/metatileBehavior";
 import * as EmeraldConstants from "../../src/games/emerald/generated/constants";
@@ -481,4 +495,208 @@ assert.equal(lavaridgeGym.isTrainerRevealed("COLE"), true);
 const duplicateCheck = lavaridgeGym.checkBuriedTrainers("MAP_LAVARIDGE_TOWN_GYM_1F", 3, 13);
 assert.equal(duplicateCheck.revealed, false);
 
-console.log("PASS: hoennMechanics test (Mach & Acro Bike, Balance Rails, Rapids, Sealed Chamber, Dive, Gyms, Fortree Rotating Gates, Mauville Laser Barriers, Lavaridge Geysers, Ash Grass, Shoal Cave Tides, Cable Car).");
+// 15. Dewford Gym (Brawly / Marcial) - Stepped Dynamic Darkness (dewford_gym.c / SetFlashLevel)
+const dewfordGym = new DewfordGymDarknessTracker();
+assert.equal(DEWFORD_GYM_TRAINERS.length, 6, "6 dojo martial arts trainers in Dewford Gym");
+assert.equal(DEWFORD_FLASH_LEVEL_RADII.length, 9, "9 flash level radius tiers (0 to 8)");
+assert.equal(DEWFORD_FLASH_LEVEL_RADII[7], 24, "Level 7 = 24px initial darkness radius");
+assert.equal(DEWFORD_FLASH_LEVEL_RADII[0], 200, "Level 0 = 200px full brightness radius");
+
+// Initial state: Level 7, radius 24px, 0 defeated
+assert.equal(dewfordGym.getDefeatedCount(), 0);
+assert.equal(dewfordGym.isBrawlyDefeated(), false);
+assert.equal(dewfordGym.getFlashLevel(), 7);
+assert.equal(dewfordGym.getFlashRadius(), 24);
+
+// Defeat Trainer 1 (Takao): Level 6, radius 32px
+const defeat1 = dewfordGym.defeatTrainer("TRAINER_TAKAO");
+assert.equal(defeat1.changed, true);
+assert.equal(defeat1.prevLevel, 7);
+assert.equal(defeat1.newLevel, 6);
+assert.equal(defeat1.prevRadius, 24);
+assert.equal(defeat1.newRadius, 32);
+assert.equal(defeat1.sound, EmeraldConstants.SE_SWITCH);
+assert.equal(dewfordGym.getFlashLevel(), 6);
+assert.equal(dewfordGym.getFlashRadius(), 32);
+assert.equal(dewfordGym.getDefeatedCount(), 1);
+
+// Defeating Takao again returns changed: false
+const duplicateTakao = dewfordGym.defeatTrainer("TRAINER_TAKAO");
+assert.equal(duplicateTakao.changed, false);
+assert.equal(dewfordGym.getDefeatedCount(), 1);
+
+// Defeat Trainer 2 (Jocelyn): Level 5, radius 40px
+const defeat2 = dewfordGym.defeatTrainer("TRAINER_JOCELYN");
+assert.equal(defeat2.changed, true);
+assert.equal(defeat2.newLevel, 5);
+assert.equal(defeat2.newRadius, 40);
+
+// Defeat Trainer 3 (Laura): Level 4, radius 48px
+const defeat3 = dewfordGym.defeatTrainer("TRAINER_LAURA");
+assert.equal(defeat3.changed, true);
+assert.equal(defeat3.newLevel, 4);
+assert.equal(defeat3.newRadius, 48);
+
+// Defeat Trainer 4 (Brenden): Level 3, radius 56px
+const defeat4 = dewfordGym.defeatTrainer("TRAINER_BRENDEN");
+assert.equal(defeat4.changed, true);
+assert.equal(defeat4.newLevel, 3);
+assert.equal(defeat4.newRadius, 56);
+
+// Defeat Trainer 5 (Cristian): Level 2, radius 64px
+const defeat5 = dewfordGym.defeatTrainer("TRAINER_CRISTIAN");
+assert.equal(defeat5.changed, true);
+assert.equal(defeat5.newLevel, 2);
+assert.equal(defeat5.newRadius, 64);
+
+// Defeat Trainer 6 (Lilith): Level 1, radius 72px
+const defeat6 = dewfordGym.defeatTrainer("TRAINER_LILITH");
+assert.equal(defeat6.changed, true);
+assert.equal(defeat6.newLevel, 1);
+assert.equal(defeat6.newRadius, 72);
+assert.equal(dewfordGym.getDefeatedCount(), 6);
+assert.equal(dewfordGym.isBrawlyDefeated(), false);
+
+// Defeat Leader Brawly (Marcial): Level 0, radius 200px (floodlights fully illuminated)
+const defeatBrawly = dewfordGym.defeatTrainer(DEWFORD_GYM_LEADER.id);
+assert.equal(defeatBrawly.changed, true);
+assert.equal(defeatBrawly.prevLevel, 1);
+assert.equal(defeatBrawly.newLevel, 0);
+assert.equal(defeatBrawly.newRadius, 200);
+assert.equal(defeatBrawly.sound, EmeraldConstants.SE_SWITCH);
+assert.equal(defeatBrawly.brawlyDefeated, true);
+assert.equal(dewfordGym.isBrawlyDefeated(), true);
+assert.equal(dewfordGym.getFlashLevel(), 0);
+assert.equal(dewfordGym.getFlashRadius(), 200);
+
+// Proximity tests
+dewfordGym.reset();
+assert.equal(dewfordGym.getFlashLevel(), 7);
+assert.equal(dewfordGym.checkTrainerProximity(2, 17)?.id, "TRAINER_TAKAO", "Takao adjacent at (2, 17)");
+assert.equal(dewfordGym.checkTrainerProximity(10, 10), null, "No trainer nearby at (10, 10)");
+assert.equal(dewfordGym.checkLeaderProximity(4, 4), true, "Adjacent to Brawly at (4, 4)");
+assert.equal(dewfordGym.checkLeaderProximity(0, 0), false);
+
+// 16. Petalburg Gym (Norman) - Shoji Sliding Doors & Thematic Battle Rooms
+const petalburgGym = new PetalburgGymDoorTracker();
+assert.equal(PETALBURG_GYM_TRAINERS.length, 7, "7 specialized room trainers in Petalburg Gym");
+assert.equal(PETALBURG_NORTH_DOORS.length, 12, "12 north door connections across all routes");
+assert.ok(PETALBURG_SOUTH_EXITS["7,85"], "Speed Room south exit configured");
+assert.ok(PETALBURG_SOUTH_EXITS["1,7"], "Leader Room south exit configured");
+
+// Check trainer rooms and enhanced item roles
+const randall = PETALBURG_GYM_TRAINERS.find(t => t.id === "TRAINER_RANDALL");
+assert.equal(randall?.roomName, "Speed Room");
+assert.equal(randall?.enhancedItem, "X Speed");
+
+const mary = PETALBURG_GYM_TRAINERS.find(t => t.id === "TRAINER_MARY");
+assert.equal(mary?.roomName, "Accuracy Room");
+assert.ok(mary?.enhancedItem.includes("Accuracy"));
+
+const alexia = PETALBURG_GYM_TRAINERS.find(t => t.id === "TRAINER_ALEXIA");
+assert.equal(alexia?.roomName, "Defense Room");
+assert.equal(alexia?.enhancedItem, "X Defend");
+
+const jody = PETALBURG_GYM_TRAINERS.find(t => t.id === "TRAINER_JODY");
+assert.equal(jody?.roomName, "Strength Room");
+assert.ok(jody?.enhancedItem.includes("Slash"));
+
+const berke = PETALBURG_GYM_TRAINERS.find(t => t.id === "TRAINER_BERKE");
+assert.equal(berke?.roomName, "One-Hit KO Room");
+
+// Entrance Room (Room 1):
+// Player at (1, 105) moving North into (1, 104) to enter Speed Room
+const enterSpeed = petalburgGym.checkDoorMovement(1, 105, 1, 104);
+assert.equal(enterSpeed.isDoor, true);
+assert.equal(enterSpeed.canEnter, true);
+assert.equal(enterSpeed.locked, false);
+assert.equal(enterSpeed.destX, 7);
+assert.equal(enterSpeed.destY, 85);
+assert.equal(enterSpeed.sound, EmeraldConstants.SE_UNLOCK);
+
+// Speed Room (Room 2):
+// Randall not yet defeated -> Confusion Room door at (1, 78) is locked
+assert.equal(petalburgGym.isTrainerDefeated("TRAINER_RANDALL"), false);
+const enterConfusionLocked = petalburgGym.checkDoorMovement(1, 79, 1, 78);
+assert.equal(enterConfusionLocked.isDoor, true);
+assert.equal(enterConfusionLocked.canEnter, false);
+assert.equal(enterConfusionLocked.locked, true, "Door to Confusion Room locked before Randall defeat");
+assert.equal(enterConfusionLocked.sound, EmeraldConstants.SE_WALL_HIT);
+
+// Defeat Randall: doors to Confusion Room and Defense Room slide open
+const defeatRandall = petalburgGym.defeatTrainer("TRAINER_RANDALL");
+assert.equal(defeatRandall.changed, true);
+assert.equal(defeatRandall.sound, EmeraldConstants.SE_UNLOCK);
+assert.ok(defeatRandall.tileUpdates && defeatRandall.tileUpdates.length > 0);
+assert.equal(petalburgGym.isTrainerDefeated("TRAINER_RANDALL"), true);
+
+// Confusion Room door at (1, 78) is now unlocked and warps to (7, 46)
+const enterConfusionUnlocked = petalburgGym.checkDoorMovement(1, 79, 1, 78);
+assert.equal(enterConfusionUnlocked.isDoor, true);
+assert.equal(enterConfusionUnlocked.canEnter, true);
+assert.equal(enterConfusionUnlocked.locked, false);
+assert.equal(enterConfusionUnlocked.destX, 7);
+assert.equal(enterConfusionUnlocked.destY, 46);
+
+// Defense Room left door at (7, 78) is also unlocked and warps to (1, 59)
+const enterDefenseUnlocked = petalburgGym.checkDoorMovement(7, 79, 7, 78);
+assert.equal(enterDefenseUnlocked.isDoor, true);
+assert.equal(enterDefenseUnlocked.canEnter, true);
+assert.equal(enterDefenseUnlocked.destX, 1);
+assert.equal(enterDefenseUnlocked.destY, 59);
+
+// Confusion Room (Room 4) -> Strength Room (Room 7) door at (7, 39)
+const enterStrengthFromConfusionLocked = petalburgGym.checkDoorMovement(7, 40, 7, 39);
+assert.equal(enterStrengthFromConfusionLocked.locked, true, "Locked before Parker defeat");
+petalburgGym.defeatTrainer("TRAINER_PARKER");
+const enterStrengthFromConfusion = petalburgGym.checkDoorMovement(7, 40, 7, 39);
+assert.equal(enterStrengthFromConfusion.canEnter, true);
+assert.equal(enterStrengthFromConfusion.destX, 1);
+assert.equal(enterStrengthFromConfusion.destY, 20);
+
+// Strength Room (Room 7) -> Norman's Room (Room 9) door at (7, 13)
+const enterNormanFromStrengthLocked = petalburgGym.checkDoorMovement(7, 14, 7, 13);
+assert.equal(enterNormanFromStrengthLocked.locked, true, "Locked before Jody defeat");
+petalburgGym.defeatTrainer("TRAINER_JODY");
+const enterNormanFromStrength = petalburgGym.checkDoorMovement(7, 14, 7, 13);
+assert.equal(enterNormanFromStrength.canEnter, true);
+assert.equal(enterNormanFromStrength.destX, 1);
+assert.equal(enterNormanFromStrength.destY, 7);
+
+// South exit checks
+const southExitSpeed = petalburgGym.checkSouthExit(7, 85);
+assert.equal(southExitSpeed.isExit, true);
+assert.equal(southExitSpeed.destX, 1);
+assert.equal(southExitSpeed.destY, 105);
+
+const southExitLeader = petalburgGym.checkSouthExit(1, 7);
+assert.equal(southExitLeader.isExit, true);
+assert.equal(southExitLeader.destX, 7);
+assert.equal(southExitLeader.destY, 14);
+
+// Defeating Leader Norman: unlocks all rooms across the whole gym simultaneously!
+assert.equal(petalburgGym.isNormanDefeated(), false);
+// OHKO door to Norman at (1, 26) was locked because Berke was never defeated
+const enterNormanFromOHKOBefore = petalburgGym.checkDoorMovement(1, 27, 1, 26);
+assert.equal(enterNormanFromOHKOBefore.locked, true);
+
+const defeatNorman = petalburgGym.defeatTrainer(PETALBURG_GYM_LEADER.id);
+assert.equal(defeatNorman.changed, true);
+assert.equal(defeatNorman.isNorman, true);
+assert.equal(defeatNorman.unlockedAll, true);
+assert.equal(defeatNorman.sound, EmeraldConstants.SE_UNLOCK);
+assert.equal(petalburgGym.isNormanDefeated(), true);
+
+// Now all doors, including OHKO door, are unlocked!
+const enterNormanFromOHKOAfter = petalburgGym.checkDoorMovement(1, 27, 1, 26);
+assert.equal(enterNormanFromOHKOAfter.canEnter, true);
+assert.equal(enterNormanFromOHKOAfter.locked, false);
+assert.equal(enterNormanFromOHKOAfter.destX, 7);
+assert.equal(enterNormanFromOHKOAfter.destY, 7);
+
+// Reset
+petalburgGym.reset();
+assert.equal(petalburgGym.isNormanDefeated(), false);
+assert.equal(petalburgGym.isTrainerDefeated("TRAINER_RANDALL"), false);
+
+console.log("PASS: hoennMechanics test (Mach & Acro Bike, Balance Rails, Rapids, Sealed Chamber, Dive, Gyms, Fortree Rotating Gates, Mauville Laser Barriers, Lavaridge Geysers, Ash Grass, Shoal Cave Tides, Cable Car, Dewford Darkness, Petalburg Sliding Doors).");

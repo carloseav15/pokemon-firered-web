@@ -63,6 +63,10 @@ import {
   MauvilleGymLaserTracker,
   isElectricBarrierMetatile,
   LavaridgeGymTracker,
+  DewfordGymDarknessTracker,
+  DEWFORD_GYM_LEADER,
+  PetalburgGymDoorTracker,
+  PETALBURG_GYM_LEADER,
 } from "./hoennMechanics";
 import {
   type CinematicHost,
@@ -181,6 +185,8 @@ const hoennAshTracker = new HoennAshTracker();
 const fortreeGymTracker = new FortreeGymRotatingGateTracker();
 const mauvilleGymTracker = new MauvilleGymLaserTracker();
 const lavaridgeGymTracker = new LavaridgeGymTracker();
+const dewfordGymTracker = new DewfordGymDarknessTracker();
+const petalburgGymTracker = new PetalburgGymDoorTracker();
 const hoennCinematicHost: CinematicHost = {
   get content() { return content; },
   get viewport() { return viewport; },
@@ -715,6 +721,19 @@ function updatePlayerDisplay(): void {
         : header.weather ?? 0;
       weatherOverlay?.setWeather(defaultWeather);
       weatherOverlay?.setRequiresFlash(Boolean(header.requiresFlash));
+      if (here === "MAP_DEWFORD_TOWN_GYM") {
+        weatherOverlay?.setCustomDarknessRadius(dewfordGymTracker.getFlashRadius());
+      } else {
+        weatherOverlay?.setCustomDarknessRadius(null);
+      }
+      if (here === "MAP_PETALBURG_CITY_GYM") {
+        const hit = findMapAt(playerX, playerY);
+        for (const tu of petalburgGymTracker.getAllUnlockedDoorMetatiles()) {
+          const wx = hit ? hit[1].x + tu.x : tu.x;
+          const wy = hit ? hit[1].y + tu.y : tu.y;
+          paintNavigationMetatile(wx, wy, tu.metatileId);
+        }
+      }
       if (header.showMapName !== false) {
         let theme: "town" | "city" | "route" | "cave" | "indoor" = "route";
         if (header.requiresFlash || header.mapType === C.MAP_TYPE_UNDERGROUND) theme = "cave";
@@ -1468,6 +1487,29 @@ function processPlayerStep(): void {
         return;
       }
     }
+
+    if (curMap === "MAP_PETALBURG_CITY_GYM") {
+      const targetLocX = locX + dx;
+      const targetLocY = locY + dy;
+      const doorCheck = petalburgGymTracker.checkDoorMovement(locX, locY, targetLocX, targetLocY);
+      if (doorCheck.isDoor) {
+        if (doorCheck.locked) {
+          audioController.playWallBump();
+          return;
+        }
+        if (doorCheck.canEnter && doorCheck.destX !== undefined && doorCheck.destY !== undefined) {
+          if (doorCheck.sound) audioController.playSE(doorCheck.sound);
+          const srcHdr = mapHeaders.get(curMap) ?? ({ id: curMap, warps: [], regionMapSection: 0, mapType: 0 } as unknown as MapHeader);
+          void followNavigationWarp(srcHdr, -1, "step", {
+            mapId: "MAP_PETALBURG_CITY_GYM",
+            warpId: -1,
+            x: doorCheck.destX,
+            y: doorCheck.destY,
+          });
+          return;
+        }
+      }
+    }
   }
   if (!forcedStep && !isMudSlide && tryNavigationWarp("input", playerDir)) return;
   // PlayerNotOnBikeTurningInPlace -> PlayerTurnInPlace -> WalkInPlaceFast (8 ticks).
@@ -1728,6 +1770,78 @@ function processPlayerStep(): void {
                 warpId: -1,
                 x: lavaWarp.destX ?? locX,
                 y: lavaWarp.destY ?? locY,
+              });
+              return;
+            }
+          }
+
+          // Dewford Gym (Brawly) Stepped Dynamic Darkness
+          if (curMap === "MAP_DEWFORD_TOWN_GYM") {
+            weatherOverlay?.setCustomDarknessRadius(dewfordGymTracker.getFlashRadius());
+            const nearLeader = dewfordGymTracker.checkLeaderProximity(locX, locY);
+            if (nearLeader) {
+              const res = dewfordGymTracker.defeatTrainer(DEWFORD_GYM_LEADER.id);
+              if (res.changed) {
+                audioController.playSE(EmeraldConstants.SE_APPLAUSE);
+                if (res.sound) audioController.playSE(res.sound);
+                weatherOverlay?.setCustomDarknessRadius(res.newRadius);
+              }
+            } else {
+              const nearTrainer = dewfordGymTracker.checkTrainerProximity(locX, locY);
+              if (nearTrainer) {
+                const res = dewfordGymTracker.defeatTrainer(nearTrainer.id);
+                if (res.changed) {
+                  audioController.playSE(EmeraldConstants.SE_FU_ZAKU);
+                  if (res.sound) audioController.playSE(res.sound);
+                  weatherOverlay?.setCustomDarknessRadius(res.newRadius);
+                }
+              }
+            }
+          }
+
+          // Petalburg Gym (Norman) Shoji Sliding Doors & Thematic Rooms
+          if (curMap === "MAP_PETALBURG_CITY_GYM") {
+            const proximity = petalburgGymTracker.checkTrainerProximity(locX, locY);
+            if (proximity.found) {
+              if (proximity.isNorman) {
+                const defeatRes = petalburgGymTracker.defeatTrainer(PETALBURG_GYM_LEADER.id);
+                if (defeatRes.changed) {
+                  audioController.playSE(EmeraldConstants.SE_APPLAUSE);
+                  if (defeatRes.sound) audioController.playSE(defeatRes.sound);
+                  if (defeatRes.tileUpdates) {
+                    for (const tu of defeatRes.tileUpdates) {
+                      const wx = hit ? hit[1].x + tu.x : tu.x;
+                      const wy = hit ? hit[1].y + tu.y : tu.y;
+                      paintNavigationMetatile(wx, wy, tu.metatileId);
+                    }
+                  }
+                }
+              } else if (proximity.trainer) {
+                const defeatRes = petalburgGymTracker.defeatTrainer(proximity.trainer.id);
+                if (defeatRes.changed) {
+                  audioController.playSE(EmeraldConstants.SE_FU_ZAKU);
+                  if (defeatRes.sound) audioController.playSE(defeatRes.sound);
+                  if (defeatRes.tileUpdates) {
+                    for (const tu of defeatRes.tileUpdates) {
+                      const wx = hit ? hit[1].x + tu.x : tu.x;
+                      const wy = hit ? hit[1].y + tu.y : tu.y;
+                      paintNavigationMetatile(wx, wy, tu.metatileId);
+                    }
+                  }
+                }
+              }
+            }
+
+            // Check south exit doors
+            const exitCheck = petalburgGymTracker.checkSouthExit(locX, locY);
+            if (exitCheck.isExit && exitCheck.destX !== undefined && exitCheck.destY !== undefined) {
+              if (exitCheck.sound) audioController.playSE(exitCheck.sound);
+              const srcHdr = mapHeaders.get(curMap) ?? ({ id: curMap, warps: [], regionMapSection: 0, mapType: 0 } as unknown as MapHeader);
+              void followNavigationWarp(srcHdr, -1, "step", {
+                mapId: "MAP_PETALBURG_CITY_GYM",
+                warpId: -1,
+                x: exitCheck.destX,
+                y: exitCheck.destY,
               });
               return;
             }
@@ -2425,7 +2539,7 @@ async function build(): Promise<void> {
     if (weatherOverlay && playerActive && !interiorViewer.isOpen()) {
       const screenX = (playerVisualX + minX * TILE) * camera.zoom - viewport.scrollLeft + (TILE * camera.zoom) / 2;
       const screenY = (playerVisualY + minY * TILE) * camera.zoom - viewport.scrollTop + (TILE * camera.zoom) / 2;
-      weatherOverlay.update(screenX, screenY);
+      weatherOverlay.update(screenX, screenY, camera.zoom);
     }
   });
   window.addEventListener("pagehide", event => {

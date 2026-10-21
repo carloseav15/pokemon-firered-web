@@ -54,6 +54,7 @@ export class WeatherOverlay {
   private ctx: CanvasRenderingContext2D;
   private currentWeather = 0;
   private requiresFlash = false;
+  private customDarknessRadius: number | null = null;
   private rainDrops: RainDrop[] = [];
   private fogParticles: FogParticle[] = [];
   private ashParticles: AshParticle[] = [];
@@ -134,7 +135,11 @@ export class WeatherOverlay {
     this.requiresFlash = requires;
   }
 
-  update(playerScreenX: number, playerScreenY: number): void {
+  setCustomDarknessRadius(radius: number | null): void {
+    this.customDarknessRadius = radius;
+  }
+
+  update(playerScreenX: number, playerScreenY: number, zoom = 1): void {
     const w = this.canvas.width;
     const h = this.canvas.height;
     if (w === 0 || h === 0) return;
@@ -146,7 +151,8 @@ export class WeatherOverlay {
     const isSand = this.currentWeather === C.WEATHER_SANDSTORM;
     const isDrought = this.currentWeather === C.WEATHER_DROUGHT;
     const isBubbles = this.currentWeather === C.WEATHER_UNDERWATER_BUBBLES || this.currentWeather === C.WEATHER_UNDERWATER;
-    const darkCave = this.requiresFlash && !flagGet(C.FLAG_SYS_FLASH_ACTIVE);
+    const isCustomDark = this.customDarknessRadius !== null && this.customDarknessRadius < 200;
+    const darkCave = (this.requiresFlash && !flagGet(C.FLAG_SYS_FLASH_ACTIVE)) || isCustomDark;
 
     const active = isRain || isFog || isAsh || isSand || isDrought || isBubbles || darkCave;
     if (!active) {
@@ -163,7 +169,7 @@ export class WeatherOverlay {
 
     this.ctx.clearRect(0, 0, w, h);
 
-    // 1. Cave darkness (requiresFlash without Flash active)
+    // 1. Cave darkness (requiresFlash without Flash active) or gym darkness (Dewford Gym)
     if (darkCave) {
       this.ctx.save();
       this.ctx.fillStyle = "rgba(10, 10, 15, 0.95)";
@@ -171,7 +177,9 @@ export class WeatherOverlay {
 
       // Cut illuminated circle around the player avatar
       this.ctx.globalCompositeOperation = "destination-out";
-      const rad = TILE * 2.5;
+      const rad = this.customDarknessRadius !== null
+        ? Math.max(16, this.customDarknessRadius * zoom)
+        : TILE * 2.5;
       const grad = this.ctx.createRadialGradient(playerScreenX, playerScreenY, rad * 0.4, playerScreenX, playerScreenY, rad);
       grad.addColorStop(0, "rgba(0, 0, 0, 1)");
       grad.addColorStop(0.8, "rgba(0, 0, 0, 0.85)");
