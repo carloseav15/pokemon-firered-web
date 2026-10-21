@@ -3,17 +3,16 @@
 Generado por `python3 tools/emeraldCoreGap.py` (compila `src/core` con `@game/*` → `src/games/emerald`). No editar a mano.
 Mide huecos de compilación, no de comportamiento: un núcleo que compila contra Emerald no es un Emerald que funciona.
 
-- Errores de tipos: **903** en 79 archivos del núcleo.
-- Módulos del contrato (`tools/checks/layers-contract.json`): 38; Emerald proporciona 4: data, generated/constants, generated/metatileBehavior, generated/structs.
+- Errores de tipos: **834** en 69 archivos del núcleo.
+- Módulos del contrato (`tools/checks/layers-contract.json`): 38; Emerald proporciona 5: data, generated/constants, generated/metatileBehavior, generated/structs, save.
 - Constantes de FireRed que Emerald no define: 228 nombres, 516 usos.
-- Campos de estructuras que Emerald no tiene: 8 campos en 3 estructuras.
-- Otros errores: 140.
+- Campos de estructuras que Emerald no tiene: 10 campos en 4 estructuras.
+- Otros errores: 118.
 
 ## Módulos que el núcleo importa de `@game/` y Emerald no tiene
 
 | Módulo | Archivos del núcleo que lo importan |
 |---|---:|
-| `save` | 47 |
 | `questLogEvents` | 14 |
 | `battle/main_init` | 11 |
 | `game` | 8 |
@@ -100,3 +99,4 @@ Mide huecos de compilación, no de comportamiento: un núcleo que compila contra
 | `BattlePokemon` | `type1` (22), `type2` (22) |
 | `BattleStruct` | `atkCancellerTracker` (19), `safariRockThrowCounter` (9), `safariBaitThrowCounter` (9), `lastAttackerToFaintOpponent` (1), `playerPartyIdx` (1) |
 | `SpecialStatus` | `dmg` (14) |
+| `SaveData` | `trainerTower` (1), `towerChallengeId` (1) |

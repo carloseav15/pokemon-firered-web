@@ -389,6 +389,15 @@ export class Overworld {
     this.game.setCallbacks(null, () => this.cb2());
   }
 
+  /** Viewer map-entry adapter for a region whose field graphics are not loaded (Hoenn):
+   * LoadCurrentMapData and LoadObjEventTemplatesFromHeader only, without BGs, sprites,
+   * object events or scripts. The caller runs the source map-load sequence on top. */
+  async prepareViewerMapScripts(mapId: string): Promise<void> {
+    this.LoadCurrentMapData(await this.prepareMap(mapId));
+    this.script.ScriptContext_Init();
+    this.loadObjEventTemplatesFromHeader();
+  }
+
   mapIdForWarp(w: WarpData): string {
     const id = rom.mapIdByNum(((w.mapGroup & 0xff) << 8) | (w.mapNum & 0xff));
     if (!id) throw new Error(`unknown map ${w.mapGroup}.${w.mapNum}`);
@@ -1499,7 +1508,7 @@ export class Overworld {
 
   // ---------------------------------------------------------------- map scripts
 
-  private MapHeaderGetScriptTable(tag: number): number {
+  MapHeaderGetScriptTable(tag: number): number {
     let p = this.header.mapScripts;
     if (!p) return 0;
     for (let guard = 0; guard < 16; guard++) {
@@ -1523,7 +1532,7 @@ export class Overworld {
   RunOnDiveWarpMapScript(): void { this.MapHeaderRunScriptType(MAP_SCRIPT_ON_DIVE_WARP); }
 
   /** MapHeaderCheckScriptTable */
-  private MapHeaderCheckScriptTable(tag: number): number {
+  MapHeaderCheckScriptTable(tag: number): number {
     let ptr = this.MapHeaderGetScriptTable(tag);
     if (!ptr) return 0;
     for (let guard = 0; guard < 64; guard++) {

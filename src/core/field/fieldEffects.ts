@@ -32,7 +32,8 @@ import {
 } from "../hw/ppu";
 
 type Template = { frames: Array<[string, number, number, number]>; anims: AnimCmd[][]; callback: string | null; size: [number, number] | null };
-type FieldFxData = { templates: Record<string, Template>; emoticons: { file: string; width: number; height: number } };
+// emoticons is null in the Emerald export, which has no FRLG emote sheet (gFieldEffectObjectPic_* differ).
+type FieldFxData = { templates: Record<string, Template>; emoticons: { file: string; width: number; height: number } | null };
 
 let fxData: FieldFxData | undefined;
 let fxPromise: Promise<FieldFxData> | undefined;
@@ -41,7 +42,7 @@ export function loadFieldFx(): Promise<FieldFxData> {
   if (!fxPromise) fxPromise = fetch(`${DATA_ROOT}/fieldfx.json`).then((r) => r.json()).then((d: FieldFxData) => {
     fxData = d;
     for (const t of Object.values(d.templates)) for (const f of t.frames) void loadImage(`${DATA_ROOT}/${f[0]}`);
-    void loadImage(`${DATA_ROOT}/${d.emoticons.file}`);
+    if (d.emoticons) void loadImage(`${DATA_ROOT}/${d.emoticons.file}`);
     return d;
   });
   return fxPromise;
@@ -1933,7 +1934,7 @@ export class FieldEffects {
     if (id === undefined) return;
     const anim = EMOTE_FROM_ACTION[actionIndex] ?? 0;
     const sprite = new Sprite();
-    sprite.frameImages = Array.from({ length: 15 }, (_, i) => ({ url: `${DATA_ROOT}/${fxData!.emoticons.file}`, index: i, width: 16, height: 16 }));
+    sprite.frameImages = Array.from({ length: 15 }, (_, i) => ({ url: `${DATA_ROOT}/${fxData!.emoticons!.file}`, index: i, width: 16, height: 16 }));
     sprite.anims = EMOTE_ANIMS;
     sprite.width = 16;
     sprite.height = 16;

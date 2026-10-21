@@ -1,11 +1,12 @@
 import { ViewerObjectSpawns, cloneElement } from "./data/objectSpawns";
-import { savedViewerObjects, storeViewerObjects, type ViewerObjectState } from "./objectState";
+import { readViewerTemplateState, savedViewerObjects, storeViewerObjects, type ViewerObjectState } from "./objectState";
 import { initializeViewerSession, initDefinitiveViewerSession, saveViewerSession, viewerCheckpoint, initializeRegionalSession, continueRegionalSession, type NavigationSave } from "./session";
 import { enterKanto, regionSessionFlags, reloadWorldSave, setRegionSessionFlags } from "./regionSave";
 import { onWarpForRoamer } from "@core/pokemon/roamer";
 import { enterViewerEventMap, restoreViewerEventMap, viewerEventMap } from "./mapEvents";
 import { isViewerObjectPresent } from "./data/objectPresence";
 import { EngineInteraction } from "./engineInteraction";
+import { HoennMapEntry } from "./hoennMapEntry";
 import { flagClear, flagGet, flagSet, PlayTimeCounter_Start, PlayTimeCounter_Update, save as gameSave } from "@game/save";
 import { ElevatorAnimation } from "@core/field/elevatorAnimation";
 import { ElevatorMenu } from "./ui/elevator";
@@ -235,6 +236,8 @@ function updateSectorBorder(): void {
 }
 let explorationUi: ExplorationUi | null = null;
 let engineInteraction: EngineInteraction | null = null;
+/** Hoenn: runs pokeemerald map scripts on map entry (hoennMapEntry.ts); EngineInteraction stays Kanto-only. */
+let hoennMapEntry: HoennMapEntry | null = null;
 let mapPopup: MapNamePopup | null = null;
 let weatherOverlay: WeatherOverlay | null = null;
 let battleFlashEl: HTMLElement | null = null;
@@ -779,10 +782,22 @@ function updatePlayerDisplay(): void {
       }
     }
     if (!HOENN && !JOHTO) void engineInteraction?.enterMap(navigationSnapshot()).catch(error => console.error("Map entry", error));
+    else if (HOENN) void enterHoennMap(navigationSnapshot()).catch(error => console.error("Hoenn map entry", error));
   }
   updateEntitiesView();
   checkCurrentMapMusic();
   scheduleHashWrite();
+}
+
+/** Apply the source map scripts' effects (bank flags/vars, object templates) to the viewer. */
+async function enterHoennMap(nav: NavigationSave): Promise<void> {
+  const report = await hoennMapEntry?.enterMap(nav);
+  if (!report) return;
+  // Graphics IDs are Emerald's: keep the viewer's own graphics name for each object.
+  applyViewerObjects(report.changedTemplates.map(t => { const state = readViewerTemplateState(t, report.mapId); delete state.graphicsId; return state; }));
+  updateEntitiesView();
+  if (report.pendingWarpInto || report.pendingFrame)
+    console.warn(`Hoenn map scripts not run yet in ${report.mapId}: ${[report.pendingWarpInto, report.pendingFrame].filter(Boolean).join(", ")}`);
 }
 
 let enteredMapId = "";
@@ -1370,6 +1385,12 @@ async function continueHoennSession(): Promise<void> {
   playerDir = nav.direction; updatePlayerDisplay(); writeHash();
 }
 
+/**
+ * ADAPTATION of NewGameInitData's RunScriptImmediately(EventScript_ResetAllMapFlags) for a new
+ * Hoenn bank: sets the script's setflag list as extracted by world_index.py, but not its
+ * `call EventScript_ResetAllBerries` (berry trees have no place in the bank yet). To be replaced
+ * by running the script through HoennMapEntry's VM host once bank creation can await it.
+ */
 function initializeHoennSessionFlags(initialFlags?: Record<string, number>): void {
   if (!initialFlags) return;
   const flags = EmConstants as Record<string, number | undefined>;
@@ -3430,6 +3451,12 @@ function readViewerMapObjects(mapId: string): ViewerObjectState[] {
 }
 
 function setupUi(): void {
+  if (HOENN) hoennMapEntry = new HoennMapEntry({
+    onSetMetatile: (mapId, lx, ly, metatileId) => {
+      const origin = index.maps[mapId];
+      if (origin) paintNavigationMetatile(origin.x + lx, origin.y + ly, metatileId);
+    },
+  });
   if (!HOENN) engineInteraction = new EngineInteraction({
     pause: pauseInteraction,
     project: (canvas, game) => {
