@@ -159,6 +159,10 @@ export class ViewerAudioController {
     this.playSE(C.SE_SELECT ?? 5);
   }
 
+  playShop(): void {
+    this.playSE(C.SE_SHOP ?? 248);
+  }
+
   playHealFanfare(): void {
     if (!this.enabled) return;
     this.init();

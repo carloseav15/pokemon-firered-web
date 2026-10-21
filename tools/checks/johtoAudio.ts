@@ -8,6 +8,8 @@ import { JOHTO_WILD_MONS, getJohtoWildMon } from "../../src/viewer/audio/johtoWi
 import { getJohtoSign } from "../../src/viewer/interaction/johtoSigns.ts";
 import { getJohtoDialogue, formatJohtoInteriorName } from "../../src/viewer/interaction/johtoDialogues.ts";
 import { getJohtoItemInfo, getJohtoInspection } from "../../src/viewer/interaction/johtoItems.ts";
+import { isMartClerk, getMartCatalogue, buyMartItem } from "../../src/viewer/interaction/johtoMart.ts";
+import { GetMoney, SetMoney } from "../../src/core/pokemon/items.ts";
 import { createMon, giveMonToPlayer, setDexFlag } from "../../src/core/pokemon/pokemon.ts";
 import { save } from "../../src/games/firered/save.ts";
 import { rom } from "../../src/core/rom.ts";
@@ -19,6 +21,9 @@ if (!rom.species) {
 }
 if (!rom.moves) {
   rom.moves = JSON.parse(readFileSync(process.cwd() + "/public/fr/data/moves.json", "utf8")).moves;
+}
+if (!rom.items) {
+  rom.items = JSON.parse(readFileSync(process.cwd() + "/public/fr/data/items.json", "utf8")).items;
 }
 import { ViewerAudioController } from "../../src/viewer/audio/audioController.ts";
 
@@ -329,4 +334,41 @@ const chanseyDialogue = getJohtoDialogue("MAP_CHERRYGROVE_CITY_POKEMON_CENTER", 
 assert.ok(chanseyDialogue, "Debe existir diálogo para Chansey en el Centro Pokémon");
 assert.ok(chanseyDialogue.text.includes("Chaan"), "Chansey debe emitir su característico sonido");
 
-console.log("PASS: Johto ambient music, weather, wild cries, signs, dialogues, interiors, ground items, starters, wild encounters, and Pokemon Center healing verified.");
+// 13. Tiendas Pokémon (Poké Marts): Catálogo, compra con dinero y regalo de Honor Ball
+assert.ok(isMartClerk("OBJ_EVENT_GFX_CLERK", "Cherrygrove_Pokemart_EventScript_Clerk"), "Debe reconocer al dependiente de Cherrygrove");
+assert.ok(isMartClerk(undefined, "Common_OpenMart"), "Debe reconocer script genérico de tienda");
+
+// Catálogo básico vs avanzado
+const cherryCatalogue = getMartCatalogue("MAP_CHERRYGROVE_CITY_MART");
+assert.ok(cherryCatalogue.some(it => it.itemId === C.ITEM_POKE_BALL), "Cherrygrove debe tener Poké Balls");
+assert.ok(cherryCatalogue.some(it => it.itemId === C.ITEM_POTION), "Cherrygrove debe tener Pociones");
+assert.ok(!cherryCatalogue.some(it => it.itemId === C.ITEM_HYPER_POTION), "Cherrygrove no debe tener Hiperpociones al inicio");
+
+const goldenrodCatalogue = getMartCatalogue("MAP_GOLDENROD_CITY_MART");
+assert.ok(goldenrodCatalogue.some(it => it.itemId === C.ITEM_ULTRA_BALL), "Ciudad Trigal debe ofrecer Ultra Balls");
+assert.ok(goldenrodCatalogue.some(it => it.itemId === C.ITEM_REVIVE), "Ciudad Trigal debe ofrecer Revivir");
+
+// Probar compra con fondos
+SetMoney(3000);
+assert.equal(GetMoney(), 3000);
+
+// Comprar 2 Pociones (2 * 300 = 600)
+const potionBuy = buyMartItem(C.ITEM_POTION, 2);
+assert.ok(potionBuy.success, "La compra de 2 Pociones debe ser exitosa");
+assert.equal(GetMoney(), 2400, "El dinero debe restar 600");
+
+// Comprar 10 Poké Balls (10 * 200 = 2000) -> Debe regalar 1 Honor Ball
+const ballBuy = buyMartItem(C.ITEM_POKE_BALL, 10);
+assert.ok(ballBuy.success, "La compra de 10 Poké Balls debe ser exitosa");
+assert.equal(GetMoney(), 400, "El dinero debe restar 2000");
+assert.equal(ballBuy.premierBallAwarded, true, "Comprar 10 Poké Balls debe regalar una Honor Ball");
+
+// Probar compra fallida por dinero insuficiente
+const failedBuy = buyMartItem(C.ITEM_ULTRA_BALL, 1); // Cuesta 1200, tenemos 400
+assert.equal(failedBuy.success, false, "No debe permitir comprar sin suficiente dinero");
+assert.equal(GetMoney(), 400, "El saldo no debe cambiar tras intento fallido");
+
+// Probar sonido de caja registradora
+audio.playShop();
+
+console.log("PASS: Johto ambient music, weather, wild cries, signs, dialogues, interiors, ground items, starters, wild encounters, Pokemon Center healing, and Poke Mart shopping verified.");

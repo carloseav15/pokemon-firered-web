@@ -106,6 +106,7 @@ import { WeatherOverlay } from "./render/weatherOverlay";
 import { getJohtoSign, formatSignTitle } from "./interaction/johtoSigns";
 import { getJohtoDialogue, formatJohtoInteriorName } from "./interaction/johtoDialogues";
 import { getJohtoItemInfo, getJohtoInspection } from "./interaction/johtoItems";
+import { openJohtoMart, isMartClerk } from "./interaction/johtoMart";
 import { JOHTO_WILD_MONS } from "./audio/johtoWildMons";
 import { calculatePPWithBonus, createMon, giveMonToPlayer, setDexFlag } from "@core/pokemon/pokemon";
 import { addBagItem } from "@core/pokemon/items";
@@ -909,6 +910,14 @@ function interactWithEntity(ent: LiveEntity): void {
         return;
       }
 
+      const isClerk = isMartClerk(ent.element.graphics, typeof scriptName === "string" ? scriptName : undefined);
+      if (isClerk) {
+        audioController.playSelect();
+        entityManager.faceTowards(ent, playerX, playerY);
+        openJohtoMart(ent.element.map, dialogManager, audioController);
+        return;
+      }
+
       if (JOHTO) {
         const scriptKey = typeof scriptName === "string" ? scriptName : undefined;
         if (ent.element.map === "MAP_NEW_BARK_TOWN_LAB" || scriptKey?.includes("NewBarkTown_Lab")) {
@@ -1124,6 +1133,9 @@ function interactWithEntity(ent: LiveEntity): void {
   } else if (ent.element.graphics === "OBJ_EVENT_GFX_NURSE_CHANSEY" || (ent.element.graphics && ent.element.graphics.includes("CHANSEY"))) {
     audioController.playMonCry(C.SPECIES_CHANSEY);
     dialogManager.show("Chansey", ["CHANSEY: ¡Chaan! ¡Sii! 💕"]);
+    return;
+  } else if (isMartClerk(ent.element.graphics)) {
+    dialogManager.show("Dependiente", ["Acércate al mostrador de la Tienda Pokémon para comprar suministros."]);
     return;
   } else if (ent.element.trainer) {
     msg = [
