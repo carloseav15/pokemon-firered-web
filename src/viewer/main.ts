@@ -105,6 +105,10 @@ import { MapNamePopup } from "./ui/mapPopup";
 import { WeatherOverlay } from "./render/weatherOverlay";
 import { getJohtoSign, formatSignTitle } from "./interaction/johtoSigns";
 import { getJohtoDialogue, formatJohtoInteriorName } from "./interaction/johtoDialogues";
+import { getJohtoItemInfo, getJohtoInspection } from "./interaction/johtoItems";
+import { JOHTO_WILD_MONS } from "./audio/johtoWildMons";
+import { calculatePPWithBonus, createMon, giveMonToPlayer, setDexFlag } from "@core/pokemon/pokemon";
+import { addBagItem } from "@core/pokemon/items";
 
 // Juego del visor: Kanto (FireRed) por omisión; ?game=emerald abre Hoenn; ?game=hns o ?region=johto abre Johto (Heart & Soul).
 type ViewerGame = "firered" | "emerald" | "hns";
@@ -841,6 +845,112 @@ function interactWithEntity(ent: LiveEntity): void {
       if (!reachableInMap || ent.gx !== playerX+dx*reach || ent.gy !== playerY+dy*reach) return;
 
       if (JOHTO) {
+        const scriptKey = typeof scriptName === "string" ? scriptName : undefined;
+        if (ent.element.map === "MAP_NEW_BARK_TOWN_LAB" || scriptKey?.includes("NewBarkTown_Lab")) {
+          const isChikorita = ent.element.localId === 4 || scriptKey === "NewBarkTown_Lab_EventScript_ChikoritaBall";
+          const isCyndaquil = ent.element.localId === 5 || scriptKey === "NewBarkTown_Lab_EventScript_CyndaquilBall";
+          const isTotodile = ent.element.localId === 6 || scriptKey === "NewBarkTown_Lab_EventScript_TotodileBall";
+          if (isChikorita || isCyndaquil || isTotodile) {
+            if (gameSave.party.length > 0) {
+              dialogManager.show("Prof. Elm", ["¡Ya has elegido a tu compañero Pokémon! Cuídalo con cariño en tu viaje hacia Ciudad Cerezo."]);
+              return;
+            }
+            const starterSpecies = isChikorita ? C.SPECIES_CHIKORITA : isCyndaquil ? C.SPECIES_CYNDAQUIL : C.SPECIES_TOTODILE;
+            const starterName = isChikorita ? "Chikorita" : isCyndaquil ? "Cyndaquil" : "Totodile";
+            const starterType = isChikorita ? "Planta 🌱" : isCyndaquil ? "Fuego 🔥" : "Agua 💧";
+            const starterDesc = isChikorita
+              ? "Es un Pokémon dócil y alegre que usa la aromática hoja de su cabeza para calmar a los demás."
+              : isCyndaquil
+                ? "Es tímido y cauteloso; cuando se sorprende o se enfada, lanza llamaradas ardientes por su lomo."
+                : "Es enérgico y juguetón, pero posee unas potentes mandíbulas capaces de morder cualquier cosa.";
+
+            dialogManager.showChoice(
+              `Poké Ball: ${starterName}`,
+              [
+                `Contiene al Pokémon de tipo ${starterType} `,
+                { text: starterName, strong: true },
+                `.\n\n${starterDesc}\n\n¿Quieres elegir a `,
+                { text: starterName, strong: true },
+                " como tu Pokémon inicial de Johto?",
+              ],
+              [
+                {
+                  label: `¡Elegir a ${starterName}!`,
+                  primary: true,
+                  action: () => {
+                    const mon = createMon(starterSpecies, 5);
+                    giveMonToPlayer(mon);
+                    setDexFlag(starterSpecies, true);
+                    addBagItem(C.ITEM_POTION, 5);
+                    addBagItem(C.ITEM_POKE_BALL, 5);
+                    audioController.playSelect();
+                    ent.hidden = true;
+                    ent.removed = true;
+                    ent.el?.remove();
+                    worldGrid.setNpc(ent.gx, ent.gy, false);
+                    dialogManager.show(
+                      "¡Pokémon obtenido!",
+                      [
+                        "¡Has elegido a ",
+                        { text: starterName, strong: true },
+                        " (Nivel 5)!\n\nProf. Elm: «¡Una elección fantástica! He guardado en tu mochila ",
+                        { text: "5 Pociones y 5 Poké Balls", strong: true },
+                        " para ayudarte a comenzar. ¡Cuida mucho de tu nuevo compañero!»",
+                      ]
+                    );
+                  },
+                },
+                {
+                  label: "Pensarlo mejor",
+                  action: () => dialogManager.close(),
+                },
+              ]
+            );
+            return;
+          }
+
+          if (ent.element.localId === 2 || scriptKey === "NewBarkTown_Lab_EventScript_Elm") {
+            audioController.playSelect();
+            entityManager.faceTowards(ent, playerX, playerY);
+            if (gameSave.party.length === 0) {
+              dialogManager.show("Prof. Elm", [
+                "¡Hola, explorador! Te estaba esperando.",
+                "\n\nEn la mesa he preparado tres Poké Balls con Pokémon iniciales muy especiales: ",
+                { text: "Chikorita", strong: true }, ", ",
+                { text: "Cyndaquil", strong: true }, " y ",
+                { text: "Totodile", strong: true },
+                ".\n\n¡Acércate a la mesa y elige el que prefieras como tu compañero de viaje!",
+              ]);
+            } else {
+              const starterName = gameSave.party[0]?.species ? (rom.species[gameSave.party[0].species]?.name ?? "Pokémon") : "Pokémon";
+              dialogManager.show("Prof. Elm", [
+                `¡Tu ${starterName} parece muy contento contigo!`,
+                "\n\nSal del laboratorio y dirígete hacia el oeste por la Ruta 29 hacia Ciudad Cerezo. ¡Allí te espera el Sr. Pokémon con un gran misterio!",
+              ]);
+            }
+            return;
+          }
+        }
+
+        if (ent.element.graphics === "OBJ_EVENT_GFX_ITEM_BALL" || ent.element.graphics === "OBJ_EVENT_GFX_POKE_BALL" || (scriptKey && scriptKey.includes("Item"))) {
+          const itemInfo = getJohtoItemInfo(scriptKey);
+          const itemName = itemInfo?.name ?? "Objeto misterioso";
+          audioController.playSelect();
+          ent.hidden = true;
+          ent.removed = true;
+          ent.el?.remove();
+          worldGrid.setNpc(ent.gx, ent.gy, false);
+          if (itemInfo) {
+            addBagItem(itemInfo.itemId, 1);
+          }
+          dialogManager.show("Objeto encontrado", [
+            "¡Has encontrado: ",
+            { text: itemName, strong: true },
+            "!",
+          ]);
+          return;
+        }
+
         const dialogue = getJohtoDialogue(ent.element.map, ent.element.localId ?? 0, scriptName, ent.element.graphics);
         if (dialogue) {
           audioController.playSelect();
@@ -955,6 +1065,15 @@ function interactWithEntity(ent: LiveEntity): void {
     const scriptName = npc && !npc.clone && (npc.script || (npc.scriptName && npc.scriptName !== "0x0" && npc.scriptName !== "NULL"))
       ? (npc.scriptName || npc.script)
       : undefined;
+
+    const scriptKey = typeof scriptName === "string" ? scriptName : undefined;
+    if (ent.element.graphics === "OBJ_EVENT_GFX_ITEM_BALL" || ent.element.graphics === "OBJ_EVENT_GFX_POKE_BALL" || (scriptKey && scriptKey.includes("Item"))) {
+      const itemInfo = getJohtoItemInfo(scriptKey);
+      const itemName = itemInfo?.name ?? "Objeto misterioso";
+      dialogManager.show("Objeto", [`En el suelo descansa una Poké Ball que contiene: ${itemName}.`]);
+      return;
+    }
+
     const dialogue = getJohtoDialogue(ent.element.map, ent.element.localId ?? 0, scriptName, ent.element.graphics);
     if (dialogue) {
       dialogManager.show(dialogue.title, [dialogue.text]);
@@ -977,7 +1096,22 @@ function tryReadSign(fx: number, fy: number): boolean {
   const ly = fy - hit[1].y;
   const header = mapHeaders.get(mapId) ?? rom.cachedMap(mapId);
   const bg = header?.bgs?.find(b => b.x === lx && b.y === ly);
-  const scriptName = bg && bg.type === "sign" ? bg.scriptName : undefined;
+  const scriptName = bg && "scriptName" in bg ? (bg as { scriptName?: string }).scriptName : undefined;
+  if (JOHTO) {
+    const insp = getJohtoInspection(mapId, lx, ly, scriptName);
+    if (insp) {
+      audioController.playSelect();
+      if (insp.heal) {
+        for (const mon of gameSave.party) {
+          mon.hp = mon.stats[0];
+          mon.status = 0;
+          for (let i = 0; i < 4; i++) mon.pp[i] = mon.moves[i] ? calculatePPWithBonus(mon.moves[i], mon.ppBonuses, i) : 0;
+        }
+      }
+      dialogManager.show(insp.title, [insp.text]);
+      return true;
+    }
+  }
   const signInfo = getJohtoSign(mapId, lx, ly, scriptName);
   if (signInfo) {
     audioController.playSelect();
@@ -2000,7 +2134,7 @@ function processPlayerStep(): void {
 
         if (blockedArrival !== `${playerX},${playerY}`) blockedArrival = null;
         if (tryNavigationWarp("step", playerDir)) return;
-        if (HOENN || JOHTO || !engineInteraction) checkTrainerSight();
+        if (HOENN || !engineInteraction) checkTrainerSight();
         if (!HOENN && !JOHTO && engineInteraction) {
           // field_control_avatar.c CheckStandardWildEncounter on each tile-center step.
           isStepping = true;
@@ -2011,6 +2145,56 @@ function processPlayerStep(): void {
             else processPlayerStep();
           });
           return;
+        } else if (JOHTO && engineInteraction && !isStepping && !warpBusy && !elevatorBusy && !dialogManager.isOpen()) {
+          const behavior = worldGrid.behaviorAt(playerX, playerY);
+          const isGrass = MB.MetatileBehavior_IsPokeGrass(behavior) || MB.MetatileBehavior_IsTallGrass(behavior) || MB.MetatileBehavior_IsLongGrass(behavior);
+          const isWater = playerMode === "surf" || MB.MetatileBehavior_IsSurfable(behavior);
+          if (isGrass || isWater) {
+            if (gameSave.party.length === 0) {
+              const hit = findMapAt(playerX, playerY);
+              const curMap = hit ? hit[0] : "";
+              if (curMap.includes("ROUTE29") || curMap.includes("NEW_BARK")) {
+                dialogManager.show("Prof. Elm", [
+                  "¡Espera! ¡No te adentres en la hierba alta sin un Pokémon!",
+                  { text: " Ve a mi laboratorio en Pueblo Primavera para elegir a tu inicial.", strong: true }
+                ]);
+                playerMoving = false;
+                avatarAnimator?.stop(state.playerChar, playerMode, playerDir, viewerClock.tick);
+                updatePlayerDisplay();
+                return;
+              }
+            } else if (Math.random() < 0.12) {
+              isStepping = true;
+              playerMoving = false;
+              avatarAnimator?.stop(state.playerChar, playerMode, playerDir, viewerClock.tick);
+              updatePlayerDisplay();
+              const hit = findMapAt(playerX, playerY);
+              const curMap = hit ? hit[0] : "";
+              const wildOptions = isWater ? JOHTO_WILD_MONS[curMap]?.water : JOHTO_WILD_MONS[curMap]?.land;
+              const speciesList = wildOptions && wildOptions.length > 0 ? wildOptions : (isWater ? [C.SPECIES_TENTACOOL] : [C.SPECIES_SENTRET, C.SPECIES_PIDGEY]);
+              const species = speciesList[Math.floor(Math.random() * speciesList.length)]!;
+              let level = 3;
+              if (curMap.includes("ROUTE29") || curMap.includes("NEW_BARK") || curMap.includes("CHERRYGROVE")) level = Math.floor(Math.random() * 3) + 2;
+              else if (curMap.includes("ROUTE30") || curMap.includes("ROUTE31")) level = Math.floor(Math.random() * 3) + 3;
+              else if (curMap.includes("ROUTE32") || curMap.includes("ROUTE33")) level = Math.floor(Math.random() * 4) + 6;
+              else if (curMap.includes("ROUTE34") || curMap.includes("ROUTE35") || curMap.includes("ILEX")) level = Math.floor(Math.random() * 4) + 10;
+              else if (curMap.includes("ROUTE38") || curMap.includes("ROUTE39") || curMap.includes("LAKE")) level = Math.floor(Math.random() * 5) + 14;
+              else if (isWater) level = Math.floor(Math.random() * 6) + 15;
+              else level = Math.floor(Math.random() * 5) + 4;
+
+              const enemy = createMon(species, level);
+              const nav = navigationSnapshot();
+              void engineInteraction.startWildBattle(enemy, nav).catch(error => {
+                console.error("Encuentro salvaje Johto", error);
+              }).finally(() => {
+                isStepping = false;
+                playerMoving = false;
+                avatarAnimator?.stop(state.playerChar, playerMode, playerDir, viewerClock.tick);
+                updatePlayerDisplay();
+              });
+              return;
+            }
+          }
         }
 
         if (!dialogManager.isOpen()) {
@@ -3049,7 +3233,7 @@ function readViewerMapObjects(mapId: string): ViewerObjectState[] {
 }
 
 function setupUi(): void {
-  if (!HOENN && !JOHTO) engineInteraction = new EngineInteraction({
+  if (!HOENN) engineInteraction = new EngineInteraction({
     pause: pauseInteraction,
     project: (canvas, game) => {
       const info=index.maps[game.overworld.header.id];

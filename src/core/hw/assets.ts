@@ -14,7 +14,8 @@ const cdataLoads = new Map<string, Promise<void>>();
 
 export async function loadIncbinIndex(): Promise<void> {
   if (index) return;
-  const response = await fetch(`${DATA_ROOT}/incbin/index.json`);
+  const root = DATA_ROOT === "/hns" ? "/fr" : DATA_ROOT;
+  const response = await fetch(`${root}/incbin/index.json`);
   index = await response.json();
 }
 
@@ -33,7 +34,8 @@ export async function loadPack(name: string): Promise<void> {
   if (packs.has(name)) return;
   let p = packLoads.get(name);
   if (!p) {
-    p = fetch(`${DATA_ROOT}/incbin/${name}.bin`).then(async (r) => {
+    const root = DATA_ROOT === "/hns" ? "/fr" : DATA_ROOT;
+    p = fetch(`${root}/incbin/${name}.bin`).then(async (r) => {
       if (!r.ok) throw new Error(`missing incbin pack ${name}`);
       packs.set(name, new Uint8Array(await r.arrayBuffer()));
     });

@@ -6,7 +6,7 @@ import { joy } from '@core/gba/input';
 import { loadFieldFx } from '@core/field/fieldEffects';
 import { preloadFieldAssets } from '@core/field/preloadField';
 import { loadCData, preloadPacks } from '@core/hw/assets';
-import { rom } from '@core/rom';
+import { DATA_ROOT, rom } from '@core/rom';
 import { loadTrig } from '@core/hw/trig';
 import { gWindows } from '@core/hw/window';
 import { GetBgTilemapBuffer } from '@core/hw/bg';
@@ -30,6 +30,7 @@ import { syncViewerLocation, type NavigationSave } from './session';
 import { IncrementRenewableHiddenItemStepCounter } from '@game/renewableHiddenItems';
 import { WonderNews_IncrementStepCounter } from '@game/wonderNews';
 import { IncrementBirthIslandRockStepCount, IncrementResortGorgeousStepCounter, RunMassageCooldownStepCounter } from '@core/field/fieldStepCounters';
+import type { Pokemon } from '@core/pokemon/pokemon';
 
 type Hooks = {
   pause(active: boolean): void;
@@ -144,6 +145,7 @@ export class EngineInteraction {
     storeViewerObjects(this.interactionMapId, [...this.observedObjects.values()]);
   }
   private async prepareObjects(nav: NavigationSave): Promise<void> {
+    if (DATA_ROOT === "/hns") return;
     const ow=this.game!.overworld;
     const states=this.hooks.readObjects(nav.mapId);
     await ow.prepareViewerInteraction(nav.mapId,states.filter(s=>!s.removed).map(s=>({mapId:s.mapId,localId:s.localId})));
@@ -670,6 +672,25 @@ export class EngineInteraction {
       if (this.hooks.onBattleStart) await this.hooks.onBattleStart();
       await this.run(nav, 0, true, () => {}, true);
       return true;
+    } finally {
+      this.testingWild = false;
+      if (!started) this.root.dataset.loading = 'false';
+    }
+  }
+
+  /** Inicia un combate salvaje directo en el visor con el Pokémon enemigo indicado. */
+  async startWildBattle(enemy: Pokemon, nav: NavigationSave): Promise<void> {
+    if (this.busy) return;
+    this.testingWild = true;
+    let started = false;
+    try {
+      await (this.loading ??= this.initialize());
+      const game = this.game!;
+      syncViewerLocation(nav);
+      game.battleSetup.StartWildBattle(enemy);
+      started = true;
+      if (this.hooks.onBattleStart) await this.hooks.onBattleStart();
+      await this.run(nav, 0, true, () => {}, true);
     } finally {
       this.testingWild = false;
       if (!started) this.root.dataset.loading = 'false';

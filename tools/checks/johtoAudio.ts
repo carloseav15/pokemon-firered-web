@@ -7,6 +7,19 @@ import { JOHTO_MUSIC_MAP, resolveJohtoMusic } from "../../src/viewer/audio/johto
 import { JOHTO_WILD_MONS, getJohtoWildMon } from "../../src/viewer/audio/johtoWildMons.ts";
 import { getJohtoSign } from "../../src/viewer/interaction/johtoSigns.ts";
 import { getJohtoDialogue, formatJohtoInteriorName } from "../../src/viewer/interaction/johtoDialogues.ts";
+import { getJohtoItemInfo, getJohtoInspection } from "../../src/viewer/interaction/johtoItems.ts";
+import { createMon, giveMonToPlayer, setDexFlag } from "../../src/core/pokemon/pokemon.ts";
+import { save } from "../../src/games/firered/save.ts";
+import { rom } from "../../src/core/rom.ts";
+
+if (!rom.species) {
+  const speciesData = JSON.parse(readFileSync(process.cwd() + "/public/fr/data/species.json", "utf8"));
+  rom.species = speciesData.species;
+  rom.expTables = speciesData.exp;
+}
+if (!rom.moves) {
+  rom.moves = JSON.parse(readFileSync(process.cwd() + "/public/fr/data/moves.json", "utf8")).moves;
+}
 import { ViewerAudioController } from "../../src/viewer/audio/audioController.ts";
 
 // 1. Verificar resolución canónica de Johto
@@ -203,4 +216,87 @@ assert.equal(cherrygroveMap.warps[1].destMap, "MAP_CHERRYGROVE_CITY_POKEMON_CENT
 assert.equal(cherryCenterMap.warps[0].destMap, "MAP_CHERRYGROVE_CITY");
 assert.equal(cherryCenterMap.warps[0].destWarpId, 1);
 
-console.log("PASS: Johto ambient music, weather, wild cries, signs, authentic NPC dialogues, and interior layouts verified.");
+// 9. Objetos del suelo e inspección de interiores en Johto
+const potionItem = getJohtoItemInfo("Route29_EventScript_ItemPotion");
+assert.ok(potionItem, "Debe resolver objeto de la Ruta 29");
+assert.equal(potionItem.name, "Poción");
+assert.equal(potionItem.itemId, C.ITEM_POTION);
+
+const ballItem = getJohtoItemInfo("Route31_EventScript_ItemPokeBall");
+assert.ok(ballItem, "Debe resolver Poké Ball de la Ruta 31");
+assert.equal(ballItem.name, "Poké Ball");
+assert.equal(ballItem.itemId, C.ITEM_POKE_BALL);
+
+const antidoteItem = getJohtoItemInfo("Route31_EventScript_ItemAntidote");
+assert.ok(antidoteItem, "Debe resolver Antídoto de la Ruta 31");
+assert.equal(antidoteItem.name, "Antídoto");
+assert.equal(antidoteItem.itemId, C.ITEM_ANTIDOTE);
+
+const nesInspection = getJohtoInspection("MAP_NEW_BARK_TOWN_PLAYERS_HOUSE_2F", 4, 2, "NewBarkTown_PlayersHouse_2F_EventScript_NES");
+assert.ok(nesInspection, "Debe existir inspección de la consola NES");
+assert.equal(nesInspection.title, "Consola NES");
+assert.ok(nesInspection.text.includes("NES"), "El texto debe mencionar la consola NES");
+
+const clockInspection = getJohtoInspection("MAP_NEW_BARK_TOWN_PLAYERS_HOUSE_2F", 10, 1, "LittlerootTown_BrendansHouse_2F_EventScript_WallClock");
+assert.ok(clockInspection, "Debe existir inspección del reloj de pared");
+assert.equal(clockInspection.title, "Reloj de pared");
+
+const pcInspection = getJohtoInspection("MAP_NEW_BARK_TOWN_PLAYERS_HOUSE_2F", 1, 1, "LittlerootTown_BrendansHouse_2F_EventScript_PC");
+assert.ok(pcInspection, "Debe existir inspección del PC");
+assert.equal(pcInspection.title, "PC de Almacenamiento");
+
+const labPcInspection = getJohtoInspection("MAP_NEW_BARK_TOWN_LAB", 3, 1, "LittlerootTown_ProfessorBirchsLab_EventScript_PC");
+assert.ok(labPcInspection, "Debe existir inspección del ordenador del laboratorio");
+assert.equal(labPcInspection.title, "Ordenador del Laboratorio");
+
+const healingInspection = getJohtoInspection("MAP_NEW_BARK_TOWN_LAB", 2, 2, "NewBarkTown_Lab_EventScript_HealingMachine1");
+assert.ok(healingInspection, "Debe existir inspección de la máquina regeneradora de Elm");
+assert.equal(healingInspection.heal, true, "La máquina debe tener propiedad heal activa");
+
+// 10. Elección de Pokémon Iniciales en el Laboratorio de Elm
+const initialPartyCount = save.party.length;
+
+// Crear Chikorita a nivel 5 y añadir al equipo
+const chikorita = createMon(C.SPECIES_CHIKORITA, 5);
+assert.equal(chikorita.species, C.SPECIES_CHIKORITA);
+assert.equal(chikorita.level, 5);
+assert.ok(chikorita.hp > 0, "Chikorita debe tener HP positivo");
+assert.ok(chikorita.moves.some(m => m > 0), "Chikorita debe tener movimientos aprendidos");
+
+// Crear Cyndaquil y Totodile
+const cyndaquil = createMon(C.SPECIES_CYNDAQUIL, 5);
+assert.equal(cyndaquil.species, C.SPECIES_CYNDAQUIL);
+assert.equal(cyndaquil.level, 5);
+
+const totodile = createMon(C.SPECIES_TOTODILE, 5);
+assert.equal(totodile.species, C.SPECIES_TOTODILE);
+assert.equal(totodile.level, 5);
+
+// Probar giveMonToPlayer y registro en Pokédex
+const giveResult = giveMonToPlayer(chikorita);
+assert.equal(giveResult, 0, "giveMonToPlayer debe devolver 0 (añadido al equipo)");
+assert.equal(save.party.length, initialPartyCount + 1, "El equipo del jugador debe tener 1 Pokémon");
+assert.equal(save.party[save.party.length - 1].species, C.SPECIES_CHIKORITA);
+
+setDexFlag(C.SPECIES_CHIKORITA, true);
+const dexIndex = C.SPECIES_CHIKORITA - 1;
+assert.ok((save.pokedexSeen[dexIndex >> 3] & (1 << (dexIndex & 7))) !== 0, "Chikorita debe quedar registrado como visto en la Pokédex");
+
+// 11. Encuentros salvajes en la hierba de Johto
+assert.ok(JOHTO_WILD_MONS["MAP_ROUTE29"]?.land, "Ruta 29 debe tener Pokémon terrestres");
+assert.ok(
+  JOHTO_WILD_MONS["MAP_ROUTE29"].land!.includes(C.SPECIES_SENTRET) &&
+  JOHTO_WILD_MONS["MAP_ROUTE29"].land!.includes(C.SPECIES_PIDGEY),
+  "Ruta 29 debe contener a Sentret y Pidgey"
+);
+
+assert.ok(JOHTO_WILD_MONS["MAP_CHERRYGROVE_CITY"]?.water, "Ciudad Cerezo debe tener fauna marina");
+assert.ok(JOHTO_WILD_MONS["MAP_CHERRYGROVE_CITY"].water!.includes(C.SPECIES_POLIWAG), "Ciudad Cerezo debe contener Poliwag");
+
+// Generación de salvaje
+const wildEnemy = createMon(C.SPECIES_SENTRET, 3);
+assert.equal(wildEnemy.species, C.SPECIES_SENTRET);
+assert.equal(wildEnemy.level, 3);
+assert.ok(wildEnemy.stats[0] > 0, "El enemigo salvaje debe tener PS máximos calculados");
+
+console.log("PASS: Johto ambient music, weather, wild cries, signs, dialogues, interiors, ground items, starters and wild encounters verified.");
