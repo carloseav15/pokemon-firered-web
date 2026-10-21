@@ -21,6 +21,10 @@ let embeddedSavedCallback: MainCallback = null;
 export const battleHost = {
   preBattleCallback1: null as MainCallback,
 
+  get currentRequest(): BattleRequest | null {
+    return current?.request ?? null;
+  },
+
   /** BattleSetup_GetTerrainId */
   BattleSetup_GetTerrainId(): number {
     if (!game) return C.BATTLE_TERRAIN_PLAIN;

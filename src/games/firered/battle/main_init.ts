@@ -218,6 +218,9 @@ function nameSum(bytes: Uint8Array): number {
 /** CreateNPCTrainerParty */
 function CreateNPCTrainerParty(trainerNum: number): number {
   if (trainerNum === C.TRAINER_SECRET_BASE) return 0;
+  if (battleHost.currentRequest?.customTrainer) {
+    return battleHost.currentRequest.enemyParty.length;
+  }
   const trainer = rom.trainers[trainerNum];
   if (!trainer) return 0;
   let nameHash = 0;

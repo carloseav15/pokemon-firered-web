@@ -9,6 +9,7 @@ import { getJohtoSign } from "../../src/viewer/interaction/johtoSigns.ts";
 import { getJohtoDialogue, formatJohtoInteriorName } from "../../src/viewer/interaction/johtoDialogues.ts";
 import { getJohtoItemInfo, getJohtoInspection } from "../../src/viewer/interaction/johtoItems.ts";
 import { isMartClerk, getMartCatalogue, buyMartItem } from "../../src/viewer/interaction/johtoMart.ts";
+import { getJohtoTrainerInfo, isJohtoTrainer } from "../../src/viewer/interaction/johtoTrainers.ts";
 import { GetMoney, SetMoney } from "../../src/core/pokemon/items.ts";
 import { createMon, giveMonToPlayer, setDexFlag } from "../../src/core/pokemon/pokemon.ts";
 import { save } from "../../src/games/firered/save.ts";
@@ -371,4 +372,41 @@ assert.equal(GetMoney(), 400, "El saldo no debe cambiar tras intento fallido");
 // Probar sonido de caja registradora
 audio.playShop();
 
-console.log("PASS: Johto ambient music, weather, wild cries, signs, dialogues, interiors, ground items, starters, wild encounters, Pokemon Center healing, and Poke Mart shopping verified.");
+// 14. Combates contra Entrenadores en las Rutas de Johto (Joven Joey, Mikey, Don, Wade)
+const joey = getJohtoTrainerInfo("Route30_EventScript_Youngster_Joey");
+assert.ok(joey, "Debe existir la ficha del Joven Joey");
+assert.equal(joey.name, "Joven Joey");
+assert.equal(joey.party.length, 1);
+assert.equal(joey.party[0].species, C.SPECIES_RATTATA);
+assert.equal(joey.party[0].level, 4);
+assert.equal(joey.reward, 64);
+assert.equal(joey.visionRange, 4);
+assert.ok(joey.introText.includes("percentil superior"), "Joey debe mencionar su famoso percentil superior");
+
+const mikey = getJohtoTrainerInfo("Route30_EventScript_Youngster_Mikey");
+assert.ok(mikey, "Debe existir la ficha del Joven Mikey");
+assert.equal(mikey.party.length, 2);
+assert.equal(mikey.party[0].species, C.SPECIES_PIDGEY);
+assert.equal(mikey.party[1].species, C.SPECIES_RATTATA);
+
+const don = getJohtoTrainerInfo("Route30_EventScript_Bugcatcher_Don");
+assert.ok(don, "Debe existir la ficha de Cazabichos Don");
+assert.equal(don.party.length, 2);
+assert.equal(don.party[0].species, C.SPECIES_CATERPIE);
+
+const wade = getJohtoTrainerInfo("Route31_EventScript_Bugcatcher_Wade");
+assert.ok(wade, "Debe existir la ficha de Cazabichos Wade");
+assert.equal(wade.party.length, 4);
+
+// Verificación de reconocimiento
+assert.ok(isJohtoTrainer("Route30_EventScript_Youngster_Joey"), "isJohtoTrainer debe ser true para Joey");
+assert.ok(isJohtoTrainer(undefined, "MAP_ROUTE30", 2), "isJohtoTrainer debe resolver por localId en Ruta 30");
+
+// Generación de equipo de entrenador
+const joeyParty = joey.party.map(p => createMon(p.species, p.level));
+assert.equal(joeyParty.length, 1);
+assert.equal(joeyParty[0].species, C.SPECIES_RATTATA);
+assert.equal(joeyParty[0].level, 4);
+assert.ok(joeyParty[0].stats[0] > 0, "Rattata de Joey debe tener estadísticas calculadas");
+
+console.log("PASS: Johto ambient music, weather, wild cries, signs, dialogues, interiors, ground items, starters, wild encounters, Pokemon Center healing, Poke Mart shopping, and Route trainers verified.");

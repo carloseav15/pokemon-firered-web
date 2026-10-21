@@ -110,6 +110,7 @@ function TrainerBattleLoadArgs(target: TrainerBattleArgTarget, specs: readonly P
 export type BattleRequest = {
   kind: "wild" | "trainer";
   trainerId?: number;
+  customTrainer?: boolean;
   enemyParty: Pokemon[];
   isFirstBattle?: boolean;
   isOldMan?: boolean;

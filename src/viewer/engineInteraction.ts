@@ -696,4 +696,37 @@ export class EngineInteraction {
       if (!started) this.root.dataset.loading = 'false';
     }
   }
+
+  /** Inicia un combate contra entrenador directo en el visor con el equipo indicado. */
+  async startTrainerBattle(
+    trainerId: number,
+    enemyParty: Pokemon[],
+    nav: NavigationSave,
+    onEnd?: (outcome: number) => void
+  ): Promise<void> {
+    if (this.busy) return;
+    this.testingWild = true;
+    let started = false;
+    try {
+      await (this.loading ??= this.initialize());
+      const game = this.game!;
+      syncViewerLocation(nav);
+      game.startBattle({
+        kind: "trainer",
+        trainerId,
+        customTrainer: true,
+        enemyParty,
+        onEnd: (outcome) => {
+          if (onEnd) onEnd(outcome);
+          this.game?.returnToFieldContinueScript(true);
+        },
+      });
+      started = true;
+      if (this.hooks.onBattleStart) await this.hooks.onBattleStart();
+      await this.run(nav, 0, true, () => {}, true);
+    } finally {
+      this.testingWild = false;
+      if (!started) this.root.dataset.loading = 'false';
+    }
+  }
 }

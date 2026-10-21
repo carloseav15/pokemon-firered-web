@@ -107,9 +107,10 @@ import { getJohtoSign, formatSignTitle } from "./interaction/johtoSigns";
 import { getJohtoDialogue, formatJohtoInteriorName } from "./interaction/johtoDialogues";
 import { getJohtoItemInfo, getJohtoInspection } from "./interaction/johtoItems";
 import { openJohtoMart, isMartClerk } from "./interaction/johtoMart";
+import { getJohtoTrainerInfo, isJohtoTrainer } from "./interaction/johtoTrainers";
 import { JOHTO_WILD_MONS } from "./audio/johtoWildMons";
 import { calculatePPWithBonus, createMon, giveMonToPlayer, setDexFlag } from "@core/pokemon/pokemon";
-import { addBagItem } from "@core/pokemon/items";
+import { addBagItem, addMoney } from "@core/pokemon/items";
 
 // Juego del visor: Kanto (FireRed) por omisión; ?game=emerald abre Hoenn; ?game=hns o ?region=johto abre Johto (Heart & Soul).
 type ViewerGame = "firered" | "emerald" | "hns";
@@ -1025,6 +1026,65 @@ function interactWithEntity(ent: LiveEntity): void {
           return;
         }
 
+        const jTrainer = getJohtoTrainerInfo(scriptKey, ent.element.map, ent.element.localId);
+        if (jTrainer) {
+          audioController.playExclamation();
+          entityManager.faceTowards(ent, playerX, playerY);
+
+          if (ent.defeated) {
+            dialogManager.show(jTrainer.name, [jTrainer.defeatedText]);
+            return;
+          }
+
+          if (gameSave.party.length === 0) {
+            dialogManager.show(jTrainer.name, [
+              "¡Hola! Pareces un entrenador novato... ¡Vuelve cuando tengas un Pokémon listo para combatir!",
+            ]);
+            return;
+          }
+
+          dialogManager.showChoice(
+            `¡Desafío de Entrenador: ${jTrainer.name}!`,
+            [
+              { text: jTrainer.name, strong: true },
+              `: «${jTrainer.introText}»\n\n¿Aceptas el combate Pokémon?`,
+            ],
+            [
+              {
+                label: "⚔️ ¡Aceptar combate!",
+                primary: true,
+                action: () => {
+                  const enemyParty = jTrainer.party.map(p => createMon(p.species, p.level));
+                  const nav = navigationSnapshot();
+                  if (engineInteraction) {
+                    void engineInteraction.startTrainerBattle(jTrainer.trainerId, enemyParty, nav, (outcome) => {
+                      if (outcome === 1) {
+                        ent.defeated = true;
+                        addMoney(jTrainer.reward);
+                        dialogManager.show(jTrainer.name, [
+                          `«${jTrainer.defeatText}»\n\n`,
+                          { text: `¡Has vencido a ${jTrainer.name} y has ganado ¥${jTrainer.reward.toLocaleString()}!`, strong: true },
+                        ]);
+                      } else {
+                        dialogManager.show(jTrainer.name, [
+                          "«¡Buen intento! Sigue entrenando a tu equipo y vuelve a intentarlo cuando quieras.»",
+                        ]);
+                      }
+                    }).catch(err => {
+                      console.error("Error en combate contra entrenador Johto:", err);
+                    });
+                  }
+                },
+              },
+              {
+                label: "🏃 Ahora no",
+                action: () => dialogManager.close(),
+              },
+            ]
+          );
+          return;
+        }
+
         const dialogue = getJohtoDialogue(ent.element.map, ent.element.localId ?? 0, scriptName, ent.element.graphics);
         if (dialogue) {
           audioController.playSelect();
@@ -1158,6 +1218,20 @@ function interactWithEntity(ent: LiveEntity): void {
       return;
     }
 
+    const jTrainer = getJohtoTrainerInfo(scriptKey, ent.element.map, ent.element.localId);
+    if (jTrainer) {
+      if (ent.defeated) {
+        dialogManager.show(jTrainer.name, [`${jTrainer.name} ya ha sido derrotado: «${jTrainer.defeatedText}»`]);
+      } else {
+        dialogManager.show(jTrainer.name, [
+          `El entrenador `,
+          { text: jTrainer.name, strong: true },
+          ` está esperando un rival en la ruta. Rango de visión: ${jTrainer.visionRange} casillas.`,
+        ]);
+      }
+      return;
+    }
+
     const dialogue = getJohtoDialogue(ent.element.map, ent.element.localId ?? 0, scriptName, ent.element.graphics);
     if (dialogue) {
       dialogManager.show(dialogue.title, [dialogue.text]);
@@ -1213,9 +1287,24 @@ function tryReadSign(fx: number, fy: number): boolean {
 
 function checkTrainerSight(): void {
   for (const ent of entityManager.entities) {
-    if (ent.hidden || !ent.element.trainer || ent.defeated) continue;
-    const r = ent.element.trainerRange ?? 0;
-    if (r <= 0) continue;
+    if (ent.hidden || ent.defeated) continue;
+    let r = ent.element.trainerRange ?? 0;
+    let isTrainer = !!ent.element.trainer;
+
+    if (JOHTO && !isTrainer) {
+      const header = mapHeaders.get(ent.element.map) ?? rom.cachedMap(ent.element.map);
+      const npc = header?.objects.find(o => !o.clone && "localId" in o && o.localId === ent.element.localId);
+      const scriptName = npc && !npc.clone && (npc.script || (npc.scriptName && npc.scriptName !== "0x0" && npc.scriptName !== "NULL"))
+        ? (npc.scriptName || npc.script)
+        : undefined;
+      const jTrainer = getJohtoTrainerInfo(typeof scriptName === "string" ? scriptName : undefined, ent.element.map, ent.element.localId);
+      if (jTrainer) {
+        isTrainer = true;
+        r = jTrainer.visionRange;
+      }
+    }
+
+    if (!isTrainer || r <= 0) continue;
 
     let inSight = false;
     if (ent.dir === "south" && playerX === ent.gx && playerY > ent.gy && playerY <= ent.gy + r) inSight = true;
@@ -2218,7 +2307,7 @@ function processPlayerStep(): void {
 
         if (blockedArrival !== `${playerX},${playerY}`) blockedArrival = null;
         if (tryNavigationWarp("step", playerDir)) return;
-        if (HOENN || !engineInteraction) checkTrainerSight();
+        if (HOENN || JOHTO || !engineInteraction) checkTrainerSight();
         if (!HOENN && !JOHTO && engineInteraction) {
           // field_control_avatar.c CheckStandardWildEncounter on each tile-center step.
           isStepping = true;
