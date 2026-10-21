@@ -1,7 +1,7 @@
 import { TouchPad } from "./touchPad";
 
 type Hooks = {
-  region?: "kanto" | "hoenn";
+  region?: "kanto" | "hoenn" | "johto";
   save(): boolean;
   continue(): Promise<void>;
   newGame?(): Promise<void> | void;
@@ -41,13 +41,18 @@ export class ExplorationUi {
   get paused(): boolean { return this.menu.open; }
   constructor(private readonly hooks: Hooks) {
     const isHoenn = hooks.region === "hoenn";
-    const regionName = isHoenn ? "Hoenn" : "Kanto";
-    const charOptions = isHoenn
-      ? `<option value="red">Bruno (Brendan)</option><option value="leaf">Aura (May)</option>`
-      : `<option value="red">Rojo</option><option value="leaf">Hoja</option>`;
-    const noteText = isHoenn
-      ? "Exploración de mundo abierto en Hoenn. Bici Acrobática en rieles de equilibrio, corrientes rápidas marinas hacia Pacifidlog, buceo submarino (Dive), y puzzles de gimnasios de Arrecípolis (hielo) y Algaria (flechas giratorias)."
-      : "Navegación por exteriores e interiores en desarrollo. Equipo, mochila y demás opciones están en Juego · Intro. Historia general con inicio definitivo en Paleta.";
+    const isJohto = hooks.region === "johto";
+    const regionName = isJohto ? "Johto" : isHoenn ? "Hoenn" : "Kanto";
+    const charOptions = isJohto
+      ? `<option value="red">Eco / Bruno (Ethan)</option><option value="leaf">Lira / Aura (Lyra)</option>`
+      : isHoenn
+        ? `<option value="red">Bruno (Brendan)</option><option value="leaf">Aura (May)</option>`
+        : `<option value="red">Rojo</option><option value="leaf">Hoja</option>`;
+    const noteText = isJohto
+      ? "Exploración de mundo abierto en Johto (Heart & Soul). 77 mapas exteriores continuos desde Pueblo Primavera hasta el Monte Plateado, con bicicleta, surf y colisiones nativas."
+      : isHoenn
+        ? "Exploración de mundo abierto en Hoenn. Bici Acrobática en rieles de equilibrio, corrientes rápidas marinas hacia Pacifidlog, buceo submarino (Dive), y puzzles de gimnasios de Arrecípolis (hielo) y Algaria (flechas giratorias)."
+        : "Navegación por exteriores e interiores en desarrollo. Equipo, mochila y demás opciones están en Juego · Intro. Historia general con inicio definitivo en Paleta.";
 
     this.root.id = "explore-hud";
     this.root.hidden = true;
@@ -64,7 +69,7 @@ export class ExplorationUi {
     gameMenuButton.className = "btn";
     gameMenuButton.id = "explore-game-menu";
     gameMenuButton.textContent = "Juego · Intro";
-    if (isHoenn) gameMenuButton.style.display = "none";
+    if (isHoenn || isJohto) gameMenuButton.style.display = "none";
     gameMenuButton.addEventListener("click", () => this.openGameMenu());
     this.root.append(this.location, this.notice, this.performance, gameMenuButton, menuButton);
     this.menu.id = "explore-menu";
@@ -82,7 +87,7 @@ export class ExplorationUi {
         <button class="btn" id="explore-rayquaza-scene">🐉 Cinemática: Rayquaza (Pilar Celeste)</button>
         <button class="btn" id="explore-clash-scene">🌋 Cinemática: Kyogre vs Groudon</button>
         <button class="btn" id="explore-cave-scene">🌌 Cinemática: Cueva Origen</button>
-      ` : `<button class="btn" id="explore-open-game-menu">Abrir menú del juego</button>`}<button class="btn" id="explore-save">Guardar partida</button><button class="btn" id="explore-continue">Continuar guardado</button><button class="btn" id="explore-new-game">Nueva partida</button><p id="explore-save-result" role="status"></p>
+      ` : isJohto ? "" : `<button class="btn" id="explore-open-game-menu">Abrir menú del juego</button>`}<button class="btn" id="explore-save">Guardar partida</button><button class="btn" id="explore-continue">Continuar guardado</button><button class="btn" id="explore-new-game">Nueva partida</button><p id="explore-save-result" role="status"></p>
       <p id="explore-note">${noteText}</p>
       <div class="explore-actions"><button class="btn" id="explore-resume">Continuar</button><button class="btn" id="explore-fullscreen">Pantalla completa</button><button class="btn" id="explore-exit">Volver al atlas</button></div>`;
     document.body.append(this.root, this.menu);

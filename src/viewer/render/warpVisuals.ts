@@ -10,13 +10,14 @@ import type { AvatarDepth } from "./depth";
 
 const doorDataCache = new Map<string, Promise<Rom["doors"]>>();
 function loadDoors(): Promise<Rom["doors"]> {
-  let p = doorDataCache.get(DATA_ROOT);
+  const root = DATA_ROOT === "/hns" ? "/emerald" : DATA_ROOT;
+  let p = doorDataCache.get(root);
   if (!p) {
-    p = Promise.all([loadCData("field_door"), fetch(`${DATA_ROOT}/gfx/doors.json`).then(async r => {
+    p = Promise.all([loadCData("field_door"), fetch(`${root}/gfx/doors.json`).then(async r => {
       if (!r.ok) throw Error(`doors.json: HTTP ${r.status}`);
       return await r.json() as Rom["doors"];
-    })]).then(([, data]) => data).catch(error => { doorDataCache.delete(DATA_ROOT); throw error; });
-    doorDataCache.set(DATA_ROOT, p);
+    })]).then(([, data]) => data).catch(error => { doorDataCache.delete(root); throw error; });
+    doorDataCache.set(root, p);
   }
   return p;
 }

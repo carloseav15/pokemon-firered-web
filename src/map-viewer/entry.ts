@@ -3,7 +3,7 @@ const url = new URL(location.href);
 const hash = new URLSearchParams(url.hash.slice(1));
 const legacy = url.searchParams.get("legacy") === "1";
 const page = url.pathname.split("/").pop();
-if (page === "viewer.html" && (legacy || hash.get("modo") === "explore")) {
+if ((page === "viewer.html" || page === "world.html") && (legacy || hash.get("modo") === "explore" || page === "world.html")) {
   await import("../viewer/main");
 } else if (page === "crystal-world.html" && legacy) {
   await import("../compare/crystalWorldMain");

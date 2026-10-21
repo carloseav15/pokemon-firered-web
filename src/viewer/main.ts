@@ -104,19 +104,21 @@ import { ViewerAudioController } from "./audio/audioController";
 import { MapNamePopup } from "./ui/mapPopup";
 import { WeatherOverlay } from "./render/weatherOverlay";
 
-// Juego del visor: Kanto (FireRed) por omisión; ?game=emerald abre Hoenn (mapa, capas, fichas y exploración a pie).
-// Hoenn usa los datos de public/emerald, el reparto 512/6 de tiles y paletas de pokeemerald y sus propios comportamientos de
-// metatile. Se explora con Brendan o May (sus hojas de Emerald), sin bici, efectos de campo (hierba, polvo, huellas), combates
-// ni interiores; sin animación de tiles (transcrita de FireRed). La música sí es la de Emerald.
-type ViewerGame = "firered" | "emerald";
+// Juego del visor: Kanto (FireRed) por omisión; ?game=emerald abre Hoenn; ?game=hns o ?region=johto abre Johto (Heart & Soul).
+type ViewerGame = "firered" | "emerald" | "hns";
 const queryParams = new URLSearchParams(location.search);
 const isHoennParam = queryParams.get("game") === "emerald" || queryParams.get("region") === "hoenn";
-const GAME: ViewerGame = isHoennParam ? "emerald" : "firered";
+const isHnsParam = queryParams.get("game") === "hns" || queryParams.get("region") === "johto" || queryParams.get("region") === "hns";
+const GAME: ViewerGame = isHnsParam ? "hns" : isHoennParam ? "emerald" : "firered";
 const HOENN = isHoennParam;
-const GAME_NAME = HOENN ? "Hoenn" : "Kanto";
+const JOHTO = isHnsParam;
+const GAME_NAME = JOHTO ? "Johto" : HOENN ? "Hoenn" : "Kanto";
 if (HOENN) {
   setDataRoot("/emerald");
   SetTilesetProfile("emerald");
+} else if (JOHTO) {
+  setDataRoot("/hns");
+  SetTilesetProfile("firered");
 }
 
 /** Predicados de comportamiento de metatile que usan las capas, según el juego. */
@@ -129,7 +131,7 @@ type BehaviorTests = {
   jumpSouth: (b: number) => boolean;
   jumpNorth: (b: number) => boolean;
 };
-const BEHAVIOR_TESTS: BehaviorTests = HOENN
+const BEHAVIOR_TESTS: BehaviorTests = (HOENN || JOHTO)
   ? {
       water: MBEmerald.MetatileBehavior_IsSurfableWaterOrUnderwater,
       grass: (b) => MBEmerald.MetatileBehavior_IsPokeGrass(b) || MBEmerald.MetatileBehavior_IsTallGrass(b) || MBEmerald.MetatileBehavior_IsLongGrass(b),
@@ -481,7 +483,7 @@ function writeHash(): void {
 }
 
 function setZoom(next: number, ax = viewport.clientWidth / 2, ay = viewport.clientHeight / 2): void {
-  if (playerActive && !HOENN) next = Math.round(Math.max(1, next));
+  if (playerActive && !HOENN && !JOHTO) next = Math.round(Math.max(1, next));
   camera.setZoom(next, ax, ay);
   minimapController?.updateRadar();
   scheduleHashWrite();
@@ -539,7 +541,15 @@ async function fetchHoennIndex(): Promise<WorldIndexData> {
   return { index: hoennIndex, minX: Math.min(...maps.map((m) => m.x)), minY: Math.min(...maps.map((m) => m.y)) };
 }
 
-/** Selector Kanto/Hoenn (recarga la página con ?game=); Hoenn oculta los controles que dependen de FireRed. */
+async function fetchJohtoIndex(): Promise<WorldIndexData> {
+  const res = await fetch("/viewer/johto.json");
+  if (!res.ok) throw new Error("falta public/viewer/johto.json");
+  const johtoIndex = (await res.json()) as KantoIndex;
+  const maps = Object.values(johtoIndex.maps);
+  return { index: johtoIndex, minX: Math.min(...maps.map((m) => m.x)), minY: Math.min(...maps.map((m) => m.y)) };
+}
+
+/** Selector Kanto/Hoenn/Johto (recarga la página con ?region=); Hoenn y Johto ocultan los controles que dependen de FireRed. */
 function setupGameSelect(): void {
   const select = document.createElement("select");
   select.id = "game-select";
@@ -553,9 +563,12 @@ function setupGameSelect(): void {
   }
   select.value = GAME;
   select.addEventListener("change", () => {
-    if (select.value === "hns") { location.href = "/hns.html"; return; }
     const url = new URL(location.href);
-    if (select.value === "emerald") {
+    if (select.value === "hns") {
+      url.searchParams.set("region", "johto");
+      url.searchParams.delete("game");
+      url.searchParams.delete("mapa");
+    } else if (select.value === "emerald") {
       url.searchParams.set("region", "hoenn");
       url.searchParams.delete("game");
       url.searchParams.delete("mapa");
@@ -577,6 +590,16 @@ function setupGameSelect(): void {
     if (charSelect) {
       charSelect.options[0]!.text = "Bruno (Brendan)";
       charSelect.options[1]!.text = "Aura (May)";
+    }
+  } else if (JOHTO) {
+    document.title = "Pokémon Odyssey — Johto Exterior (Heart & Soul)";
+    const title = document.querySelector(".app-title");
+    if (title) title.lastChild!.textContent = " Johto Continuo · Heart & Soul";
+    document.getElementById("anim-toggle")?.closest("label")?.style.setProperty("display", "none");
+    const charSelect = document.getElementById("player-char") as HTMLSelectElement | null;
+    if (charSelect) {
+      charSelect.options[0]!.text = "Eco / Bruno (Ethan)";
+      charSelect.options[1]!.text = "Lira / Aura (Lyra)";
     }
   }
 }
@@ -619,8 +642,8 @@ function updatePlayerDisplay(): void {
 
   const running = isStepping ? stepRunning : playerRunning && playerMoving;
   const isBike = playerMode === "bike";
-  // Emerald surfing sheet: 32x32 cells (a player riding the Pokémon), like the FireRed bike's width.
-  const wide = isBike || (HOENN && playerMode === "surf");
+  // Emerald and Johto surfing sheet: 32x32 cells (a player riding the Pokémon), like the FireRed bike's width.
+  const wide = isBike || ((HOENN || JOHTO) && playerMode === "surf");
   const spriteW = wide ? 32 : 16;
   const spriteH = 32;
 
@@ -631,13 +654,13 @@ function updatePlayerDisplay(): void {
   playerEl.style.display = "block";
   playerEl.style.visibility = playerWarpHidden ? "hidden" : "";
 
-  // Hoenn retains its earlier adapter; Kanto resolves all frames through AvatarAnimator.
+  // Hoenn and Johto retain the sprite-sheet adapter; Kanto resolves all frames through AvatarAnimator.
   let frameIdx = 0;
   const flip = playerDir === "east";
   if (!avatarAnimator) {
-    const facing = playerDir === "south" ? 0 : playerDir === "north" ? playerMode === "surf" && HOENN ? 2 : 1 : playerMode === "surf" && HOENN ? 4 : 2;
+    const facing = playerDir === "south" ? 0 : playerDir === "north" ? playerMode === "surf" && (HOENN || JOHTO) ? 2 : 1 : playerMode === "surf" && (HOENN || JOHTO) ? 4 : 2;
     frameIdx = !playerMoving ? facing
-      : playerMode === "surf" && HOENN ? (playerDir === "south" ? (playerStep % 2 === 0 ? 0 : 1) : playerDir === "north" ? (playerStep % 2 === 0 ? 2 : 3) : (playerStep % 2 === 0 ? 4 : 5))
+      : playerMode === "surf" && (HOENN || JOHTO) ? (playerDir === "south" ? (playerStep % 2 === 0 ? 0 : 1) : playerDir === "north" ? (playerStep % 2 === 0 ? 2 : 3) : (playerStep % 2 === 0 ? 4 : 5))
       : (playerDir === "south" ? 3 : playerDir === "north" ? 5 : 7) + (playerStep % 2 === 0 ? 0 : 1);
   }
 
@@ -703,7 +726,7 @@ function updatePlayerDisplay(): void {
     const type = mapHeaders.get(here)?.mapType;
     const outdoors = type === C.MAP_TYPE_ROUTE || type === C.MAP_TYPE_TOWN || type === C.MAP_TYPE_CITY || type === C.MAP_TYPE_UNDERWATER || type === C.MAP_TYPE_OCEAN_ROUTE;
     if (outdoors) lastOutdoorNav = navigationSnapshot();
-    else if (!HOENN && type !== undefined && here !== enteredMapId && lastOutdoorNav && lastOutdoorNav.mapId !== here)
+    else if (!HOENN && !JOHTO && type !== undefined && here !== enteredMapId && lastOutdoorNav && lastOutdoorNav.mapId !== here)
       void engineInteraction?.recordEscapeWarp(lastOutdoorNav, here).catch(error => console.error("Escape warp", error));
   }
   if (playerActive && here && here !== enteredMapId) {
@@ -712,7 +735,7 @@ function updatePlayerDisplay(): void {
     const header = mapHeaders.get(here) ?? rom.cachedMap(here);
     const type = header?.mapType;
     const outdoors = type === C.MAP_TYPE_ROUTE || type === C.MAP_TYPE_TOWN || type === C.MAP_TYPE_CITY || type === C.MAP_TYPE_UNDERWATER || type === C.MAP_TYPE_OCEAN_ROUTE;
-    if (!HOENN) audioController.chooseAmbientCry(here, Boolean(outdoors));
+    if (!HOENN && !JOHTO) audioController.chooseAmbientCry(here, Boolean(outdoors));
     if (header) {
       const defaultWeather = HOENN && here.startsWith("MAP_UNDERWATER")
         ? EmConstants.WEATHER_UNDERWATER_BUBBLES
@@ -744,7 +767,7 @@ function updatePlayerDisplay(): void {
         if (mapTitle) mapPopup?.show(mapTitle, theme);
       }
     }
-    if (!HOENN) void engineInteraction?.enterMap(navigationSnapshot()).catch(error => console.error("Entrada de mapa", error));
+    if (!HOENN && !JOHTO) void engineInteraction?.enterMap(navigationSnapshot()).catch(error => console.error("Entrada de mapa", error));
   }
   updateEntitiesView();
   checkCurrentMapMusic();
@@ -758,8 +781,8 @@ function syncEntityPresence(): boolean {
   if (!playerActive || !entityManager) return false;
   const here=findMapAt(playerX,playerY)?.[0];
   const header=here?mapHeaders.get(here):undefined,info=here?index.maps[here]:undefined;
-  if(header&&info&&!HOENN)objectSpawns.update(header,{x:playerX-info.x,y:playerY-info.y},info.width,info.height,mapHeaders);
-  const changed = entityManager.syncPresence(e=>isViewerObjectPresent(e)&&(HOENN || objectSpawns.present(e)));
+  if(header&&info&&!HOENN&&!JOHTO)objectSpawns.update(header,{x:playerX-info.x,y:playerY-info.y},info.width,info.height,mapHeaders);
+  const changed = entityManager.syncPresence(e=>isViewerObjectPresent(e)&&(HOENN || JOHTO || objectSpawns.present(e)));
   if (changed) {
     // Clear first, then rebuild the union: conditional templates may share a tile.
     for (const tile of entityManager.takeVacatedTiles()) worldGrid.setNpc(tile.gx,tile.gy,false);
@@ -770,8 +793,8 @@ function syncEntityPresence(): boolean {
 }
 function updateEntitiesView(): void {
   syncEntityPresence();
-  // Hoenn muestra sus personajes también fuera de la exploración (fijos), siempre que haya algo a la vista.
-  if (!playerActive && !HOENN) {
+  // Hoenn y Johto muestran sus personajes también fuera de la exploración (fijos), siempre que haya algo a la vista.
+  if (!playerActive && !HOENN && !JOHTO) {
     entityManager.hideAll();
     return;
   }
@@ -781,7 +804,7 @@ function updateEntitiesView(): void {
   const viewBottom = viewTop + viewport.clientHeight / camera.zoom + 128;
 
   entityManager.updateVisibility(viewLeft, viewTop, viewRight, viewBottom, (ent) => {
-    if (!HOENN || playerActive) interactWithEntity(ent);
+    if (!HOENN && !JOHTO || playerActive) interactWithEntity(ent);
   });
 }
 
@@ -914,7 +937,9 @@ function interactWithEntity(ent: LiveEntity): void {
   } else {
     msg = [HOENN
       ? "Hola viajero. Bienvenido a Hoenn. ¿Estás listo para convertirte en el campeón de la Liga Pokémon?"
-      : "Hola viajero. Bienvenido a las rutas de Kanto. ¿Estás listo para convertirte en el campeón de la Liga Pokémon?"];
+      : JOHTO
+        ? "Hola viajero. Bienvenido a Johto. ¿Estás listo para convertirte en el campeón de la Liga Pokémon?"
+        : "Hola viajero. Bienvenido a las rutas de Kanto. ¿Estás listo para convertirte en el campeón de la Liga Pokémon?"];
   }
   dialogManager.show(title, msg);
 }
@@ -947,7 +972,7 @@ async function preloadExplorationSprites(): Promise<void> {
     getPlayerSpriteSheet(state.playerChar, "surf", false, state.bikeType), getPlayerSpriteSheet(state.playerChar, "bike", false, state.bikeType)]);
   for (const ent of entityManager.entities) if (Math.abs(ent.gx - playerX) <= halfW && Math.abs(ent.gy - playerY) <= halfH) {
     const gfx = gfxInfoOf(ent.element.graphics ?? "") ?? fallbackGfx();
-    urls.add(`${HOENN ? "/emerald" : "/fr"}/${gfx.file}`);
+    urls.add(`${(HOENN || JOHTO) ? "/emerald" : "/fr"}/${gfx.file}`);
   }
   await Promise.all([...urls].map(async url => { const image = new Image(); image.src = url; await image.decode(); }));
 }
@@ -977,7 +1002,7 @@ async function startExploration(targetGx?: number, targetGy?: number): Promise<v
     location.hash = h.toString(); location.reload(); return;
   }
   if (!playerActive) camera.setZoom(exploreManualZoom || exploreAutoZoom());
-  if (!HOENN) {
+  if (!HOENN && !JOHTO) {
     const explicitExternalMap = startMapId && startMapId !== "MAP_PALLET_TOWN_PLAYERS_HOUSE_2F";
     await initializeViewerSession(index.initialFlags, {
       forceTemporary: !!explicitExternalMap,
@@ -987,7 +1012,7 @@ async function startExploration(targetGx?: number, targetGy?: number): Promise<v
   } else {
     initializeHoennSessionFlags(index.initialFlags);
   }
-  if (!HOENN) window.setTimeout(() => void engineInteraction?.warm().catch(() => {}), 1500);
+  if (!HOENN && !JOHTO) window.setTimeout(() => void engineInteraction?.warm().catch(() => {}), 1500);
   resetExploreSession();
   state.appMode = "explore";
 
@@ -1005,7 +1030,7 @@ async function startExploration(targetGx?: number, targetGy?: number): Promise<v
   const requestedY = startY !== null ? minY + Math.floor((startY + viewport.clientHeight / 2) / camera.zoom / TILE) : null;
   const selected = targetGx !== undefined && targetGy !== undefined ? findMapAt(targetGx, targetGy)?.[1] : startMapId && index.maps[startMapId];
   const nearCamera = requestedX !== null && requestedY !== null ? Object.values(index.maps).find(m => requestedX >= m.x && requestedX < m.x + m.width && requestedY >= m.y && requestedY < m.y + m.height) : undefined;
-  const fallbackMapId = HOENN ? "MAP_LITTLEROOT_TOWN" : "MAP_PALLET_TOWN";
+  const fallbackMapId = JOHTO ? "MAP_NEW_BARK_TOWN" : HOENN ? "MAP_LITTLEROOT_TOWN" : "MAP_PALLET_TOWN";
 
   if (sectorLoader) {
     if (preferred && index.maps[preferred]) {
@@ -1032,14 +1057,18 @@ async function startExploration(targetGx?: number, targetGy?: number): Promise<v
           ? requestedX
           : selected
             ? paleta.x + Math.floor(paleta.width / 2)
-            : paleta.x + 8;
+            : JOHTO
+              ? paleta.x + 20
+              : paleta.x + 8;
       const spawnY = targetGy !== undefined && targetGy >= paleta.y && targetGy < paleta.y + paleta.height
         ? targetGy
         : nearCamera && !selected && requestedY !== null && requestedY >= paleta.y && requestedY < paleta.y + paleta.height
           ? requestedY
           : selected
             ? paleta.y + Math.floor(paleta.height / 2)
-            : paleta.y + 8;
+            : JOHTO
+              ? paleta.y + 12
+              : paleta.y + 8;
       playerX = spawnX;
       playerY = spawnY;
       // El centro del mapa puede ser un muro o edificio: busca la casilla libre más cercana dentro de los límites del mapa.
@@ -1085,7 +1114,7 @@ async function startExploration(targetGx?: number, targetGy?: number): Promise<v
   groundVisualY = playerVisualY;
   updatePlayerDisplay();
   checkCurrentMapMusic();
-  fieldEffects.onGroundStep("spawn", { x: playerX, y: playerY, previousX: playerX, previousY: playerY, direction: playerDir, previousDirection: playerDir, landingJump: false, elevation:playerElevation, priority:HOENN?2:cdata<number[]>("event_object_movement","sElevationToPriority")[playerElevation],vehicle: playerMode });
+  fieldEffects.onGroundStep("spawn", { x: playerX, y: playerY, previousX: playerX, previousY: playerY, direction: playerDir, previousDirection: playerDir, landingJump: false, elevation:playerElevation, priority:(HOENN || JOHTO)?2:cdata<number[]>("event_object_movement","sElevationToPriority")[playerElevation],vehicle: playerMode });
 }
 
 function stopExploration(): void {
@@ -1230,7 +1259,7 @@ function triggerAcroHop(): void {
 const keysDown = new Set<string>();
 
 function tryPushBoulder(boulderEnt: LiveEntity, direction: Direction): boolean {
-  if (HOENN || !playerActive || isStepping || warpBusy || elevatorBusy) return false;
+  if (HOENN || JOHTO || !playerActive || isStepping || warpBusy || elevatorBusy) return false;
   if (playerMode === "surf") return false;
   const flagId = C.FLAG_SYS_USE_STRENGTH;
   if (!flagGet(flagId)) return false;
@@ -1531,7 +1560,7 @@ function processPlayerStep(): void {
   }
 
   if (!forcedStep && !isMudSlide && tryNavigationWarp("front", playerDir)) return;
-  const allowAutoSurf = HOENN || new URLSearchParams(location.hash.slice(1)).get("autosurf") === "1" || new URLSearchParams(location.hash.slice(1)).get("autoSurf") === "1";
+  const allowAutoSurf = HOENN || JOHTO || new URLSearchParams(location.hash.slice(1)).get("autosurf") === "1" || new URLSearchParams(location.hash.slice(1)).get("autoSurf") === "1";
   const plan = forcedStep?.plan ?? planStep(worldGrid, playerX, playerY, playerDir, playerMode, playerCurrentElevation, allowAutoSurf);
   const targetX = plan.x, targetY = plan.y;
   const isLedgeJump = plan.jump;
@@ -1569,13 +1598,13 @@ function processPlayerStep(): void {
     const transition = !!avatarAnimator && (previousVehicle === "surf") !== (playerMode === "surf");
     const groundActor = { x: targetX, y: targetY, previousX: playerX, previousY: playerY,
       direction: playerDir, previousDirection, landingJump: isLedgeJump || (transition && previousVehicle === "surf"), airborne:isLedgeJump||transition,
-      elevation:playerElevation,priority:HOENN?2:cdata<number[]>("event_object_movement","sElevationToPriority")[playerElevation],vehicle: playerMode };
+      elevation:playerElevation,priority:(HOENN||JOHTO)?2:cdata<number[]>("event_object_movement","sElevationToPriority")[playerElevation],vehicle: playerMode };
     fieldEffects.onGroundStep("begin", groundActor);
 
     // Kanto uses the C step tables and 32-tick jumps (far/special); Hoenn retains its adapter timings.
     const forcedAction: AvatarAction | undefined = isMudSlide ? "ice" : forcedStep ? ({PlayerGoSpin:"spin",PlayerRideWaterCurrent:"current",PlayerWalkFast:"ice",PlayerWalkNormal:"walk",PlayerJumpLedge:"jump"} as const)[forcedStep.action] : undefined;
     // PlayerIsMovingOnRockStairs (field_player_avatar.c): north uses the current cell, south the destination.
-    const rockStairs = !forcedStep && !isLedgeJump && !transition && !HOENN && playerMode === "walk"
+    const rockStairs = !forcedStep && !isLedgeJump && !transition && !HOENN && !JOHTO && playerMode === "walk"
       && (playerDir === "north" ? MB.MetatileBehavior_IsRockStairs(worldGrid.behaviorAt(playerX, playerY))
         : playerDir === "south" ? MB.MetatileBehavior_IsRockStairs(worldGrid.behaviorAt(targetX, targetY)) : false);
     const action: AvatarAction = transition ? playerMode === "surf" ? "board" : "dismount" : isLedgeJump ? "jump" : forcedAction ?? (playerMode === "bike" ? "bike" : playerMode === "surf" ? "surf" : stepRunning ? (rockStairs ? "runSlow" : "run") : (rockStairs ? "walkSlow" : "walk"));
@@ -1912,8 +1941,8 @@ function processPlayerStep(): void {
 
         if (blockedArrival !== `${playerX},${playerY}`) blockedArrival = null;
         if (tryNavigationWarp("step", playerDir)) return;
-        if (HOENN || !engineInteraction) checkTrainerSight();
-        if (!HOENN && engineInteraction) {
+        if (HOENN || JOHTO || !engineInteraction) checkTrainerSight();
+        if (!HOENN && !JOHTO && engineInteraction) {
           // field_control_avatar.c CheckStandardWildEncounter on each tile-center step.
           isStepping = true;
           const here = navigationSnapshot();
@@ -2239,7 +2268,7 @@ async function animateEscalator(outgoing: boolean, behavior: number): Promise<vo
 
 /** Source elevator destination scripts; DOM menu adapts presentation, not floor/warp data. */
 function tryElevatorPanel(x:number,y:number):boolean {
-  if(HOENN||isStepping||warpBusy||elevatorBusy)return false;
+  if(HOENN||JOHTO||isStepping||warpBusy||elevatorBusy)return false;
   const found=findMapAt(playerX,playerY);if(!found)return false;
   const [mapId,info]=found,definition=elevators[mapId];if(!definition)return false;
   if(!definition.panels.some(p=>p.x===x-info.x&&p.y===y-info.y&&(p.elevation===0||p.elevation===playerElevation)))return false;
@@ -2326,7 +2355,7 @@ async function followNavigationWarp(source: MapHeader, warpId: number, phase: "i
       }
     }
     let cavePreview = false;
-    if (!HOENN) {
+    if (!HOENN && !JOHTO) {
       await loadCData("map_preview_screen");
       cavePreview = source.regionMapSection !== destination.header.regionMapSection
         && cdata<Array<{mapsec:number;type:number}>>("map_preview_screen","sMapPreviewScreenData")
@@ -2428,7 +2457,7 @@ async function followNavigationWarp(source: MapHeader, warpId: number, phase: "i
     }
     blockedArrival = `${playerX},${playerY}`;
     fieldEffects.onGroundStep("spawn", { x:playerX,y:playerY,previousX:playerX,previousY:playerY,direction:playerDir,previousDirection:playerDir,
-      landingJump:false,vehicle:playerMode,elevation:playerElevation,priority:HOENN?(hasCData("event_object_movement","sElevationToPriority")?cdata<number[]>("event_object_movement","sElevationToPriority")[playerElevation]??2:2):cdata<number[]>("event_object_movement","sElevationToPriority")[playerElevation] });
+      landingJump:false,vehicle:playerMode,elevation:playerElevation,priority:(HOENN||JOHTO)?(hasCData("event_object_movement","sElevationToPriority")?cdata<number[]>("event_object_movement","sElevationToPriority")[playerElevation]??2:2):cdata<number[]>("event_object_movement","sElevationToPriority")[playerElevation] });
     updatePlayerDisplay(); writeHash();
   } catch (error) {
     console.error("Navigation warp", error);
@@ -2452,7 +2481,8 @@ async function build(): Promise<void> {
   state.loadStored();
   parseHash();
   if (startExplore) { document.body.classList.add("exploring"); document.body.setAttribute("aria-busy", "true"); }
-  const mapsReady = fetch(`${HOENN ? "/emerald" : "/fr"}/maps.json`).then(async response => {
+  const mapsRoot = JOHTO ? "/hns" : HOENN ? "/emerald" : "/fr";
+  const mapsReady = fetch(`${mapsRoot}/maps.json`).then(async response => {
     if (!response.ok) throw new Error(`maps.json: HTTP ${response.status}`);
     return (await response.json()).maps as typeof allMaps;
   });
@@ -2462,13 +2492,13 @@ async function build(): Promise<void> {
   });
 
   if (loadingText) loadingText.textContent = `Descargando índice cartográfico de ${GAME_NAME}…`;
-  const avatarReady = startExplore ? (HOENN ? jumpReady.then(async () => {
+  const avatarReady = startExplore ? ((HOENN || JOHTO) ? jumpReady.then(async () => {
     avatarDepth = new AvatarDepth(content);
     warpVisuals = new ViewerWarpVisuals(document.getElementById("main")!, viewerClock);
     try {
       jumpShadow = await JumpShadow.create(content);
     } catch (e) {
-      console.warn("No jump shadow in Hoenn", e);
+      console.warn("No jump shadow in " + GAME_NAME, e);
     }
   }) : fetch("/fr/objects.json").then(async response => {
     if (!response.ok) throw new Error(`objects.json: HTTP ${response.status}`);
@@ -2482,20 +2512,20 @@ async function build(): Promise<void> {
     avatarDepth = new AvatarDepth(content);
     warpVisuals = new ViewerWarpVisuals(document.getElementById("main")!,viewerClock);
   })) : Promise.resolve();
-  const elevatorReady = HOENN ? Promise.resolve() : loadElevators().then(data=>{elevators=data;});
-  const [,worldData] = await Promise.all([elevatorReady,HOENN ? fetchHoennIndex() : fetchWorldIndex(), mapsReady, jumpReady, avatarReady]);
-  if (HOENN) await loadHoennGfx("/emerald");
+  const elevatorReady = (HOENN || JOHTO) ? Promise.resolve() : loadElevators().then(data=>{elevators=data;});
+  const [,worldData] = await Promise.all([elevatorReady, JOHTO ? fetchJohtoIndex() : (HOENN ? fetchHoennIndex() : fetchWorldIndex()), mapsReady, jumpReady, avatarReady]);
+  if (HOENN || JOHTO) await loadHoennGfx("/emerald");
   exteriorWorld = worldData;
   index = worldData.index;
   minX = worldData.minX;
   minY = worldData.minY;
-  if (!HOENN && startExplore) {
+  if (!HOENN && !JOHTO && startExplore) {
     const explicitExternalMap = startMapId && startMapId !== "MAP_PALLET_TOWN_PLAYERS_HOUSE_2F";
     await initializeViewerSession(index.initialFlags, {
       forceTemporary: !!explicitExternalMap,
       gender: state.playerChar === "leaf" ? C.FEMALE : C.MALE,
     });
-  } else if (HOENN && startExplore) {
+  } else if ((HOENN || JOHTO) && startExplore) {
     initializeHoennSessionFlags(index.initialFlags);
   }
 
@@ -2516,7 +2546,7 @@ async function build(): Promise<void> {
   });
   // Sonda de pruebas (tools/playtest/smoke/interiors.job.mjs): abre cualquier interior sin pasar por la UI.
   (window as unknown as { frInterior?: InteriorViewer }).frInterior = interiorViewer;
-  const effectsReady = ViewerFieldEffects.create(worldGrid, viewerClock, HOENN);
+  const effectsReady = ViewerFieldEffects.create(worldGrid, viewerClock, HOENN || JOHTO);
   [allMaps, fieldEffects] = await Promise.all([mapsReady, effectsReady, jumpReady]).then(([maps, effects]) => [maps, effects] as const);
   let disposeEffects = installFieldFxRenderer(fieldEffects, content, minX, minY);
   let disposeEffectsSound = fieldEffects.subscribe(event => { if (event.type === "sound") audioController.playSE(event.id); });
@@ -2524,7 +2554,7 @@ async function build(): Promise<void> {
   const unsubscribeSimulation = viewerClock.subscribe(frame => {
     audioController.frame(Boolean(engineInteraction?.open));
     // One GBA frame of exploration; the engine counts its own frames while the clock is paused for it.
-    if (!HOENN) PlayTimeCounter_Update();
+    if (!HOENN && !JOHTO) PlayTimeCounter_Update();
     playerReflection?.tick(frame.tick);
     if(playerActive&&!interiorViewer.isOpen())avatarDepth?.update(playerVisualX,isStepping?groundVisualY:playerVisualY,minX,minY,playerElevation);
     if (playerActive && playerEl && avatarAnimator && !isStepping && !interiorViewer.isOpen()) {
@@ -2599,7 +2629,7 @@ async function build(): Promise<void> {
     const data = contextData ?? (streaming ? new Rom() : rom);
     const layout = layoutsByMap.get(id) ?? await data.loadLayout(info.layout);
     if (!mapHeaders.has(id)) mapHeaders.set(id, await data.loadMap(id));
-    if(streaming&&!HOENN){
+    if(streaming&&!HOENN&&!JOHTO){
       const header=mapHeaders.get(id)!;
       for(const entry of header.objects){
         if(!entry.clone)continue;
@@ -2882,7 +2912,7 @@ async function build(): Promise<void> {
     if (!exterior) for (const e of elementsByMap.get(mapId) ?? []) {
       entityManager.addEntity(e,e.x,e.y,e.direction === "up" ? "north" : e.direction === "left" ? "west" : e.direction === "right" ? "east" : "south");
     }
-    fieldEffects = await ViewerFieldEffects.create(worldGrid, viewerClock, HOENN);
+    fieldEffects = await ViewerFieldEffects.create(worldGrid, viewerClock, HOENN || JOHTO);
     disposeEffects = installFieldFxRenderer(fieldEffects,content,minX,minY);
     disposeEffectsSound = fieldEffects.subscribe(event => {if(event.type === "sound")audioController.playSE(event.id);});
     camera.configure(index.world.width*TILE,index.world.height*TILE,camera.zoom);
@@ -2959,7 +2989,7 @@ function readViewerMapObjects(mapId: string): ViewerObjectState[] {
 }
 
 function setupUi(): void {
-  if (!HOENN) engineInteraction = new EngineInteraction({
+  if (!HOENN && !JOHTO) engineInteraction = new EngineInteraction({
     pause: pauseInteraction,
     project: (canvas, game) => {
       const info=index.maps[game.overworld.header.id];
@@ -3012,7 +3042,7 @@ function setupUi(): void {
   mapPopup = new MapNamePopup(document.body);
   weatherOverlay = new WeatherOverlay(document.body);
   explorationUi = new ExplorationUi({
-    region: HOENN ? "hoenn" : "kanto",
+    region: JOHTO ? "johto" : HOENN ? "hoenn" : "kanto",
     save: () => {
       const nav = navigationSnapshot();
       storeViewerObjects(nav.mapId, readViewerMapObjects(nav.mapId));
@@ -3020,7 +3050,7 @@ function setupUi(): void {
     },
     continue: () => continueViewerSession(),
     newGame: async () => {
-      if (!HOENN) {
+      if (!HOENN && !JOHTO) {
         initDefinitiveViewerSession(index.initialFlags, state.playerChar === "leaf" ? C.FEMALE : C.MALE);
         const nav = viewerCheckpoint()!;
         await changeNavigationWorld(nav.mapId);
@@ -3032,9 +3062,11 @@ function setupUi(): void {
         await startExploration(info.x + nav.x, info.y + nav.y);
         playerDir = nav.direction; updatePlayerDisplay(); writeHash();
       } else {
-        const lr = index.maps["MAP_LITTLEROOT_TOWN"];
-        if (lr) {
-          await startExploration(lr.x + 8, lr.y + 8);
+        const startMap = JOHTO ? index.maps["MAP_NEW_BARK_TOWN"] : index.maps["MAP_LITTLEROOT_TOWN"];
+        if (startMap) {
+          const spawnX = JOHTO ? startMap.x + 20 : startMap.x + 8;
+          const spawnY = JOHTO ? startMap.y + 12 : startMap.y + 8;
+          await startExploration(spawnX, spawnY);
           playerDir = "south"; updatePlayerDisplay(); writeHash();
         }
       }
@@ -3083,11 +3115,16 @@ function setupUi(): void {
       const leafOpt = charSelect.querySelector('option[value="leaf"]');
       if (redOpt) redOpt.textContent = "Brendan";
       if (leafOpt) leafOpt.textContent = "May";
+    } else if (JOHTO) {
+      const redOpt = charSelect.querySelector('option[value="red"]');
+      const leafOpt = charSelect.querySelector('option[value="leaf"]');
+      if (redOpt) redOpt.textContent = "Eco / Bruno (Ethan)";
+      if (leafOpt) leafOpt.textContent = "Lira / Aura (Lyra)";
     }
     charSelect.value = state.playerChar;
     charSelect.addEventListener("change", () => {
       state.playerChar = (charSelect.value as "red" | "leaf") || "red";
-      if (!HOENN && playerActive) gameSave.playerGender = state.playerChar === "leaf" ? C.FEMALE : C.MALE;
+      if (!HOENN && !JOHTO && playerActive) gameSave.playerGender = state.playerChar === "leaf" ? C.FEMALE : C.MALE;
       state.saveStored();
       updatePlayerDisplay();
     });
@@ -3301,12 +3338,12 @@ function setupUi(): void {
       triggerAcroHop();
       return;
     }
-    if ((key === "backspace" || key === "f") && playerActive && !HOENN && engineInteraction && !isStepping && !warpBusy && !elevatorBusy && !dialogManager.isOpen()) {
+    if ((key === "backspace" || key === "f") && playerActive && !HOENN && !JOHTO && engineInteraction && !isStepping && !warpBusy && !elevatorBusy && !dialogManager.isOpen()) {
       e.preventDefault();
       void engineInteraction.useRegisteredKeyItem(navigationSnapshot());
       return;
     }
-    if (key === "u" && playerActive && !HOENN && engineInteraction && !isStepping && !warpBusy && !elevatorBusy && !dialogManager.isOpen()) {
+    if (key === "u" && playerActive && !HOENN && !JOHTO && engineInteraction && !isStepping && !warpBusy && !elevatorBusy && !dialogManager.isOpen()) {
       e.preventDefault();
       void engineInteraction.useSweetScent(navigationSnapshot());
       return;
@@ -3495,7 +3532,7 @@ build()
       else void interiorViewer.open(startMapId);
     }
     if (startExplore) {
-      if (!HOENN) {
+      if (!HOENN && !JOHTO) {
         const explicitExternalMap = startMapId && startMapId !== "MAP_PALLET_TOWN_PLAYERS_HOUSE_2F";
         await initializeViewerSession(index.initialFlags, {
           forceTemporary: !!explicitExternalMap,
