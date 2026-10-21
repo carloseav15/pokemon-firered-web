@@ -159,6 +159,12 @@ export class ViewerAudioController {
     this.playSE(C.SE_SELECT ?? 5);
   }
 
+  playHealFanfare(): void {
+    if (!this.enabled) return;
+    this.init();
+    sound.playFanfare(this.isHoenn ? 368 : C.MUS_HEAL);
+  }
+
   playMonCry(species: number, pan = 0, volume = 100): void {
     if (!this.enabled) return;
     sound.PlayCry_NormalNoDucking(species, pan, volume, C.CRY_PRIORITY_NORMAL ?? 10);

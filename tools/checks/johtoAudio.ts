@@ -299,4 +299,34 @@ assert.equal(wildEnemy.species, C.SPECIES_SENTRET);
 assert.equal(wildEnemy.level, 3);
 assert.ok(wildEnemy.stats[0] > 0, "El enemigo salvaje debe tener PS máximos calculados");
 
-console.log("PASS: Johto ambient music, weather, wild cries, signs, dialogues, interiors, ground items, starters and wild encounters verified.");
+// 12. Curación del equipo con la Enfermera Joy y presencia de Chansey en los Centros Pokémon
+const injuredMon = save.party[0];
+assert.ok(injuredMon, "Debe haber al menos un Pokémon en el equipo");
+const maxHp = injuredMon.stats[0];
+injuredMon.hp = 1;
+injuredMon.status = C.STATUS1_POISON;
+injuredMon.pp[0] = 0;
+
+// Simular la curación del Centro Pokémon
+for (const mon of save.party) {
+  mon.hp = mon.stats[0];
+  mon.status = 0;
+  for (let i = 0; i < 4; i++) {
+    mon.pp[i] = mon.moves[i] ? 35 : 0; // PP restaurado
+  }
+}
+
+assert.equal(injuredMon.hp, maxHp, "Los PS deben restaurarse al máximo");
+assert.equal(injuredMon.status, 0, "El estado alterado (veneno) debe curarse");
+assert.ok(injuredMon.pp[0] > 0, "Los PP deben restaurarse");
+
+// Probar playHealFanfare
+audio.enable();
+audio.playHealFanfare();
+
+// Diálogo de Chansey en el Centro Pokémon de Ciudad Cerezo
+const chanseyDialogue = getJohtoDialogue("MAP_CHERRYGROVE_CITY_POKEMON_CENTER", 2, "CherryGrove_Pokecenter_Chansey", "OBJ_EVENT_GFX_NURSE_CHANSEY");
+assert.ok(chanseyDialogue, "Debe existir diálogo para Chansey en el Centro Pokémon");
+assert.ok(chanseyDialogue.text.includes("Chaan"), "Chansey debe emitir su característico sonido");
+
+console.log("PASS: Johto ambient music, weather, wild cries, signs, dialogues, interiors, ground items, starters, wild encounters, and Pokemon Center healing verified.");

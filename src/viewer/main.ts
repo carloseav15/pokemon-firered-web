@@ -844,6 +844,71 @@ function interactWithEntity(ent: LiveEntity): void {
         || (here ? mapHeaders.get(here)?.objects.some(o => o.clone && o.targetMap === ent.element.map && o.targetLocalId === ent.element.localId) : false);
       if (!reachableInMap || ent.gx !== playerX+dx*reach || ent.gy !== playerY+dy*reach) return;
 
+      const isNurse = ent.element.graphics === "OBJ_EVENT_GFX_NURSE"
+        || (typeof scriptName === "string" && (scriptName.includes("Nurse") || scriptName.includes("PkmnCenterNurse")))
+        || (typeof ent.element.graphics === "string" && ent.element.graphics.includes("NURSE") && !ent.element.graphics.includes("CHANSEY"));
+
+      const isChansey = ent.element.graphics === "OBJ_EVENT_GFX_NURSE_CHANSEY"
+        || (typeof scriptName === "string" && scriptName.includes("Chansey"))
+        || (typeof ent.element.graphics === "string" && ent.element.graphics.includes("CHANSEY"));
+
+      if (isNurse) {
+        audioController.playSelect();
+        entityManager.faceTowards(ent, playerX, playerY);
+
+        if (gameSave.party.length === 0) {
+          dialogManager.show("Enfermera Joy", [
+            "¡Hola! Te damos la bienvenida al Centro Pokémon.\n\nNos encargamos de devolverles la vitalidad a los Pokémon para que recuperen toda su energía.\n\n",
+            { text: "¡Pásate por aquí cuando tengas un compañero Pokémon en tu equipo!", strong: true },
+          ]);
+          return;
+        }
+
+        dialogManager.showChoice(
+          "Centro Pokémon - Enfermera Joy",
+          [
+            "¡Hola! Te damos la bienvenida al Centro Pokémon.\n\nNos encargamos de devolverles la vitalidad a tus Pokémon para que recuperen toda su energía.\n\n¿Quieres que nos ocupemos de ellos?",
+          ],
+          [
+            {
+              label: "Curar equipo",
+              primary: true,
+              action: () => {
+                for (const mon of gameSave.party) {
+                  mon.hp = mon.stats[0];
+                  mon.status = 0;
+                  for (let i = 0; i < 4; i++) {
+                    mon.pp[i] = mon.moves[i] ? calculatePPWithBonus(mon.moves[i], mon.ppBonuses, i) : 0;
+                  }
+                }
+                audioController.playHealFanfare();
+                dialogManager.show("Enfermera Joy", [
+                  "¡Gracias por esperar!\n\nTus Pokémon han recuperado toda su energía y están rebosantes de salud.\n\n",
+                  { text: "¡Esperamos volver a verte!", strong: true },
+                ]);
+              },
+            },
+            {
+              label: "Ahora no",
+              action: () => {
+                dialogManager.show("Enfermera Joy", ["¡Esperamos volver a verte!"]);
+              },
+            },
+          ]
+        );
+        return;
+      }
+
+      if (isChansey) {
+        audioController.playSelect();
+        entityManager.faceTowards(ent, playerX, playerY);
+        audioController.playMonCry(C.SPECIES_CHANSEY);
+        dialogManager.show("Chansey", [
+          "¡Chan! ¡Siiii! 💕\n\n(Chansey te dedica una alegre sonrisa mientras cuida a los Pokémon del centro).",
+        ]);
+        return;
+      }
+
       if (JOHTO) {
         const scriptKey = typeof scriptName === "string" ? scriptName : undefined;
         if (ent.element.map === "MAP_NEW_BARK_TOWN_LAB" || scriptKey?.includes("NewBarkTown_Lab")) {
@@ -1053,6 +1118,13 @@ function interactWithEntity(ent: LiveEntity): void {
     msg = ["¡Un árbol pequeño bloquea el paso! Un Pokémon podría cortarlo con la MO Corte."];
   } else if (ent.element.graphics === "OBJ_EVENT_GFX_ITEM_BALL") {
     msg = [`¡Has encontrado un objeto en el suelo! (${ent.element.flag ?? "Objeto misterioso"}).`];
+  } else if (ent.element.graphics === "OBJ_EVENT_GFX_NURSE" || (ent.element.graphics && ent.element.graphics.includes("NURSE") && !ent.element.graphics.includes("CHANSEY"))) {
+    dialogManager.show("Enfermera Joy", ["Acércate al mostrador del Centro Pokémon para que la Enfermera Joy cure a tu equipo."]);
+    return;
+  } else if (ent.element.graphics === "OBJ_EVENT_GFX_NURSE_CHANSEY" || (ent.element.graphics && ent.element.graphics.includes("CHANSEY"))) {
+    audioController.playMonCry(C.SPECIES_CHANSEY);
+    dialogManager.show("Chansey", ["CHANSEY: ¡Chaan! ¡Sii! 💕"]);
+    return;
   } else if (ent.element.trainer) {
     msg = [
       "¡El entrenador ",
