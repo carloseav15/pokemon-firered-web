@@ -16,7 +16,13 @@ Meta de producto acordada: el visor en modo navegación debe evolucionar hasta s
 la interfaz del juego completo, incorporando NPC, scripts, historia, combates,
 menús y guardado sobre la navegación existente.
 
-## Ahora (2026-10-18)
+## Ahora (actualizado 2026-10-21)
+
+- [x] Accesos web y navegación principal en inglés — `38eda5b3`: Home con Play/Continue,
+  World Map/Pokédex y Tools; nueve enlaces de herramientas, móvil 390 px y smoke de
+  entradas en Vite/build servido PASS. Resumen de guardado comprobado con checkpoint
+  PREPARED sin modificarlo; no valida campaña ni continuidad entre regiones.
+  Traducción de pantallas internas pendiente en HOJA-DE-RUTA punto 3.
 
 Puntos 1–8 cerrados y probados con smoke jobs (`tools/playtest/smoke/viewer-game-*`):
 Centros, tiendas (Kanto, Sete, Isla Dos por etapas, Casino), combates salvajes y de

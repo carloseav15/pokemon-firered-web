@@ -36,6 +36,16 @@ en `../pokefirered` y por último en el submódulo; ver la
 `public/fr/` y `src/games/firered/generated/` ya están versionados, así que solo hace falta
 reexportar si cambias `tools/decomp/`.
 
+## Accesos web
+
+- `/`: Home, con Play o Continue según la partida detectada.
+- `/play.html`: FireRed; `/world.html`: mapa regional y exploración.
+- `/dex.html`: Pokédex; `/tools.html`: inspectores, fuentes y herramientas.
+
+La portada y la navegación principal están en inglés. Las pantallas internas se
+traducen en la siguiente tanda. Los accesos `.html` funcionan en el build servido;
+las reescrituras `/play` y `/world` siguen siendo solo del servidor de desarrollo.
+
 ## Documentación
 
 | Archivo | Contenido |

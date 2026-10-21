@@ -30,9 +30,12 @@ No borrar código útil ni desactivar funciones existentes sin estudiar consumid
 ## Orden de trabajo, de fácil a difícil
 
 1. [x] Fijar objetivo, idioma, límites y diagnóstico por región (esta entrega).
-2. [ ] Ordenar accesos: Home → Play / Continue; World Map y Pokédex secundarios;
+2. [x] Ordenar accesos: Home → Play / Continue; World Map y Pokédex secundarios;
    herramientas bajo Tools. Traducir primero raíz y navegación compartida. Conservar
    enlaces antiguos y comprobar rutas tanto en desarrollo como en build servido.
+   Hecho: `38eda5b3`; Home/Tools y navegación principal en inglés, nueve enlaces
+   de herramientas, escritorio/móvil 390 px, lectura de checkpoint PREPARED sin
+   modificarlo. Smoke de entradas PASS en Vite y build servido; no prueba la campaña.
 3. [ ] Auditar el resto de textos visibles y migrarlos al inglés, por superficie;
    incluir etiquetas accesibles y expectativas de los smoke jobs en español.
 4. [ ] Fijar fuentes por región y reemplazar datos manuales de Johto por extracción:
@@ -63,15 +66,17 @@ subirlos. Las reglas de fidelidad y comprobación de AGENTS siguen vigentes.
 
 ## Accesos: estado y destino
 
-Actualmente `/` carga la landing; `play.html` arranca FireRed; `world.html` carga
+Actualmente `/` ofrece Play/Continue y accesos secundarios; `tools.html` agrupa
+inspectores, fuentes y eventos. La navegación común enlaza Home, Play, World Map,
+Pokédex y Tools, con disposición móvil. `play.html` arranca FireRed; `world.html` carga
 el visor regional; `maps.html` consulta mapas. `viewer.html`, Crystal y HnS tienen
 redirecciones o modos legacy. Dex, atlas, biblioteca, quests, story, compare y
 expansion se publican como entradas independientes en vite.config.ts.
-El README todavía describe `/` como arranque del juego: corregido en esta entrega.
+El README describe los accesos vigentes. Los enlaces anteriores siguen disponibles.
 
-Destino: una entrada principal con Play/Continue, mapa y Pokédex; un índice Tools
-para inspectores y comparadores. La estructura de URLs no obliga a mover archivos
-físicos ahora. `/play` y `/world` solo tienen reescritura explícita de desarrollo;
+La entrada principal y Tools ya están organizados (`38eda5b3`). Quedan para el
+punto 3 los menús internos, diálogos, paneles e inspectores en español. La
+estructura de URLs no obliga a mover archivos físicos ahora. `/play` y `/world` solo tienen reescritura explícita de desarrollo;
 no prometer esos accesos en producción sin configurar y probar el hosting.
 
 ## Diagnóstico por región (lectura de código, 2026-10-21)
@@ -103,8 +108,9 @@ registrados en TAREAS son antecedentes; no se repitieron en esta revisión.
 - src/viewer/hoennCinematics.ts: escenas DOM y temporización propia; sustituir o
   marcar adaptadas hasta comparar eventos, condiciones y secuencia originales.
 - tools/viewer/hns_maps.py declara exportación de mapas sin ejecución de scripts.
-- index.html, world.html y src/web/landing.ts contienen UI española. El hub afirma
-  campaña canónica y mundo sin barreras: moderar esa promesa hasta verificarla.
+- Home, Tools y navegación principal en inglés (`38eda5b3`); retiradas las
+  promesas de campaña completa/paridad total. World conserva menús y paneles
+  españoles; diálogos e inspectores quedan en el punto 3.
 - TAREAS-FINALES §4 conserva divergencia ROM/port en combate del Bosque Verde.
 
 ## Cómo medir avance
