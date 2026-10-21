@@ -36,8 +36,13 @@ No borrar código útil ni desactivar funciones existentes sin estudiar consumid
    Hecho: `38eda5b3`; Home/Tools y navegación principal en inglés, nueve enlaces
    de herramientas, escritorio/móvil 390 px, lectura de checkpoint PREPARED sin
    modificarlo. Smoke de entradas PASS en Vite y build servido; no prueba la campaña.
-3. [ ] Auditar el resto de textos visibles y migrarlos al inglés, por superficie;
+3. [x] Auditar el resto de textos visibles y migrarlos al inglés, por superficie;
    incluir etiquetas accesibles y expectativas de los smoke jobs en español.
+   Hecho: `fd61199e`; menús, diálogos adaptados, paneles, controles, fichas e
+   inspectores traducidos. Smoke de presentación en Vite/build servido: Kanto,
+   Hoenn, controles táctiles/390 px y ocho inspectores; no acredita paridad fuente.
+   **Pendiente de ejecución Johto:** falta `/hns/fieldfx.json`; conservar este
+   bloqueo hasta resolver su exportación y repetir el smoke, sin fallback inventado.
 4. [ ] Fijar fuentes por región y reemplazar datos manuales de Johto por extracción:
    diálogos, encuentros con niveles/probabilidades/horarios, entrenadores, tiendas,
    objetos y recompensas. Cada lote debe comparar su salida con la fuente.
@@ -74,15 +79,17 @@ redirecciones o modos legacy. Dex, atlas, biblioteca, quests, story, compare y
 expansion se publican como entradas independientes en vite.config.ts.
 El README describe los accesos vigentes. Los enlaces anteriores siguen disponibles.
 
-La entrada principal y Tools ya están organizados (`38eda5b3`). Quedan para el
-punto 3 los menús internos, diálogos, paneles e inspectores en español. La
+La entrada principal y Tools ya están organizados (`38eda5b3`). Menús internos,
+diálogos adaptados, paneles e inspectores ya usan inglés
+(`fd61199e`); la ejecución de exploración Johto queda bloqueada por sus recursos. La
 estructura de URLs no obliga a mover archivos físicos ahora. `/play` y `/world` solo tienen reescritura explícita de desarrollo;
 no prometer esos accesos en producción sin configurar y probar el hosting.
 
 ## Diagnóstico por región (lectura de código, 2026-10-21)
 
-No es una prueba de navegador ni una certificación visual. Los checks anteriores
-registrados en TAREAS son antecedentes; no se repitieron en esta revisión.
+La matriz resume una lectura de código, sin certificar fidelidad visual o de
+historia. La entrega `fd61199e` añade comprobación de presentación en inglés en
+Vite/build servido; las demás pruebas históricas de TAREAS siguen como antecedentes.
 
 | Área | Kanto | Johto | Hoenn |
 |---|---|---|---|
@@ -108,9 +115,14 @@ registrados en TAREAS son antecedentes; no se repitieron en esta revisión.
 - src/viewer/hoennCinematics.ts: escenas DOM y temporización propia; sustituir o
   marcar adaptadas hasta comparar eventos, condiciones y secuencia originales.
 - tools/viewer/hns_maps.py declara exportación de mapas sin ejecución de scripts.
-- Home, Tools y navegación principal en inglés (`38eda5b3`); retiradas las
-  promesas de campaña completa/paridad total. World conserva menús y paneles
-  españoles; diálogos e inspectores quedan en el punto 3.
+- UI web en inglés (`38eda5b3`, `fd61199e`); retiradas las promesas de campaña
+  completa/paridad total. Los textos de sprites y capítulos se corrigen desde sus
+  generadores; las claves de datos y los alias de búsqueda permanecen estables.
+- Exploración Johto: falta `public/hns/fieldfx.json`; el cargador sin modificar
+  recibe HTML de Vite en vez del manifiesto. Smoke de Johto MANUAL, pendiente
+  resolver la exportación con su fuente y revisar también los recursos de frames.
+- Navegador de mapas: raíz de catálogo corregida a `/map-viewer/principal/`,
+  coherente con `principal_world.py`; geometría y discrepancias fuente conservadas.
 - TAREAS-FINALES §4 conserva divergencia ROM/port en combate del Bosque Verde.
 
 ## Cómo medir avance

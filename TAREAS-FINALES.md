@@ -22,7 +22,19 @@ menús y guardado sobre la navegación existente.
   World Map/Pokédex y Tools; nueve enlaces de herramientas, móvil 390 px y smoke de
   entradas en Vite/build servido PASS. Resumen de guardado comprobado con checkpoint
   PREPARED sin modificarlo; no valida campaña ni continuidad entre regiones.
-  Traducción de pantallas internas pendiente en HOJA-DE-RUTA punto 3.
+  Traducción de pantallas internas entregada en `fd61199e` (línea siguiente).
+
+- [x] UI e inspectores en inglés — `fd61199e`: diálogos adaptados, paneles, menús,
+  etiquetas accesibles y expectativas de smoke; capítulos/sprites desde sus
+  generadores. Kanto/Hoenn, controles táctiles/390 px y ocho inspectores comprobados
+  en Vite/build servido; nombres/IDs, geometría y datos de escenas conservados.
+  Johto en ejecución no aprobado por el bloqueo de recursos descrito abajo.
+- [ ] **Recurso de exploración Johto**: `world.html?region=johto#modo=explore`
+  solicita `/hns/fieldfx.json`, ausente del exportador actual de mapas HnS. Vite
+  devuelve HTML y falla la lectura JSON; cargador no modificado en `fd61199e`.
+  Resolver manifiesto y frames desde la fuente correspondiente y repetir
+  `web-english.job.mjs` antes de ampliar la integración; no sustituir por gráficos
+  de otra fuente sin justificar la adaptación.
 
 Puntos 1–8 cerrados y probados con smoke jobs (`tools/playtest/smoke/viewer-game-*`):
 Centros, tiendas (Kanto, Sete, Isla Dos por etapas, Casino), combates salvajes y de

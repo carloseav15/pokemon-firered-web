@@ -42,9 +42,14 @@ reexportar si cambias `tools/decomp/`.
 - `/play.html`: FireRed; `/world.html`: mapa regional y exploración.
 - `/dex.html`: Pokédex; `/tools.html`: inspectores, fuentes y herramientas.
 
-La portada y la navegación principal están en inglés. Las pantallas internas se
-traducen en la siguiente tanda. Los accesos `.html` funcionan en el build servido;
+La UI web, los menús y los inspectores están en inglés. La exploración Johto
+requiere resolver el manifiesto `/hns/fieldfx.json`; su validación queda pendiente. Los accesos `.html` funcionan en el build servido;
 las reescrituras `/play` y `/world` siguen siendo solo del servidor de desarrollo.
+
+Las etiquetas de sprites se regeneran desde el exportador: si ya existe el índice,
+`python3 tools/viewer/sprite_sources.py --labels-only` actualiza solo sus textos.
+El exportador completo también produce esas etiquetas en inglés. Las imágenes,
+URLs y datos de animación permanecen sin cambios en el modo de etiquetas.
 
 ## Documentación
 
