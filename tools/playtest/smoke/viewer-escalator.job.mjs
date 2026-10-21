@@ -18,7 +18,7 @@ export default async function run(ctx){
  const posOf=async()=>p.evaluate(()=>{const q=new URLSearchParams(location.hash.slice(1));return [Number(q.get('px')),Number(q.get('py'))];});
  await p.goto(new URL('viewer.html#modo=explore&mapa=MAP_VIRIDIAN_CITY_POKEMON_CENTER_1F&px=2&py=6',process.env.PW_BASE).href);
  await p.waitForFunction(()=>!document.body.hasAttribute('aria-busy')&&document.querySelector('#player-sprite'));await p.waitForTimeout(1500);
- if(await p.locator('#player-char').inputValue()!==character){await p.getByRole('button',{name:'Menú · Esc'}).click();await p.locator('#explore-character').selectOption(character);await p.keyboard.press('Escape');await p.waitForTimeout(800);}
+ if(await p.locator('#player-char').inputValue()!==character){await p.getByRole('button',{name:"Menu · Esc"}).click();await p.locator('#explore-character').selectOption(character);await p.keyboard.press('Escape');await p.waitForTimeout(800);}
  const results=[];
  for(const leg of [{from:'MAP_VIRIDIAN_CITY_POKEMON_CENTER_1F',to:'MAP_VIRIDIAN_CITY_POKEMON_CENTER_2F',out:'escalator-out'},
                    {from:'MAP_VIRIDIAN_CITY_POKEMON_CENTER_2F',to:'MAP_VIRIDIAN_CITY_POKEMON_CENTER_1F',out:'escalator-out'}]){

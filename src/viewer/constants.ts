@@ -33,18 +33,18 @@ export const LAYER_COLORS: Record<Layer, string> = {
 };
 
 export const LAYER_LABELS: Record<Layer, string> = {
-  colision: "Colisión",
-  agua: "Agua",
-  salientes: "Salientes",
-  corte: "Corte",
-  fuerza: "Fuerza",
-  golpe_roca: "Golpe roca",
+  colision: "Collision",
+  agua: "Water",
+  salientes: "Ledges",
+  corte: "Cut",
+  fuerza: "Strength",
+  golpe_roca: "Rock Smash",
   snorlax: "Snorlax",
-  entrenador: "Entrenador",
-  npc_condicional: "NPC condicional",
+  entrenador: "Trainer",
+  npc_condicional: "Conditional NPC",
   npc: "NPC",
-  activador: "Activador",
-  puerta: "Puerta",
+  activador: "Trigger",
+  puerta: "Door",
 };
 
 // Fotograma de la GBA: 280896 ciclos a 16,78 MHz (59,73 por segundo). Mismo valor que
@@ -55,7 +55,7 @@ export const GBA_FRAME_MS = 1000 / (16777216 / 280896);
 export const BIOME_TREES = 0;
 export const BIOME_OCEAN = 1;
 export const BIOME_MOUNTAIN = 2;
-export const BIOME_NAMES = ["bosque (árboles densos)", "marítimo (océano)", "montañoso (cordillera)"] as const;
+export const BIOME_NAMES = ["forest (dense trees)", "ocean", "mountains"] as const;
 
 export const ANIM_RANGES: Record<string, Array<[number, number]>> = {
   // FireRed

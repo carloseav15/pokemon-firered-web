@@ -154,7 +154,7 @@ export class TileAnimationController {
         this.stop();
         const animBox = document.getElementById("anim-toggle") as HTMLInputElement | null;
         if (animBox) animBox.checked = false;
-        this.animDisabledNotice = ` · animaciones anuladas automáticamente (${this.fpsValue.toFixed(0)} FPS < 30 FPS)`;
+        this.animDisabledNotice = ` · animations automatically disabled (${this.fpsValue.toFixed(0)} FPS < 30 FPS)`;
       }
 
       this.onFpsUpdate();

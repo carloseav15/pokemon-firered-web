@@ -89,7 +89,7 @@ export default async function run(ctx) {
   }
 
   // Save/continue on this map must preserve the actual Strength push result
-  await p.getByRole('button', { name: 'Menú · Esc' }).click();
+  await p.getByRole('button', { name: "Menu · Esc" }).click();
   await p.locator('#explore-save').click();
   await p.keyboard.press('Escape');
   await p.waitForTimeout(1000);

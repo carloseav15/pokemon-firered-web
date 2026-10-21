@@ -1,4 +1,5 @@
-// Diálogos auténticos de personajes (NPCs) de Johto extraídos de Heart & Soul.
+// Heart & Soul community-source and adapted Johto NPC text.
+// English presentation does not certify fidelity to an official Johto release.
 
 export interface JohtoDialogueInfo {
   title: string;
@@ -6,140 +7,140 @@ export interface JohtoDialogueInfo {
 }
 
 export const JOHTO_MAP_NAMES: Record<string, string> = {
-  MAP_NEW_BARK_TOWN: "Pueblo Primavera",
-  MAP_NEW_BARK_TOWN_LAB: "Laboratorio del Prof. Elm",
-  MAP_NEW_BARK_TOWN_PLAYERS_HOUSE_1F: "Casa del Jugador (Planta 1)",
-  MAP_NEW_BARK_TOWN_PLAYERS_HOUSE_2F: "Habitación del Jugador (Planta 2)",
-  MAP_NEW_BARK_TOWN_HOUSE1: "Casa en Pueblo Primavera",
-  MAP_NEW_BARK_TOWN_HOUSE2: "Casa en Pueblo Primavera",
-  MAP_CHERRYGROVE_CITY: "Ciudad Cerezo",
-  MAP_CHERRYGROVE_CITY_MART: "Tienda Pokémon de Ciudad Cerezo",
-  MAP_CHERRYGROVE_CITY_POKEMON_CENTER: "Centro Pokémon de Ciudad Cerezo",
-  MAP_CHERRYGROVE_CITY_HOUSE1: "Casa en Ciudad Cerezo",
-  MAP_CHERRYGROVE_CITY_HOUSE2: "Casa en Ciudad Cerezo",
-  MAP_CHERRYGROVE_CITY_HOUSE3: "Casa del Guía",
-  MAP_VIOLET_CITY: "Ciudad Malva",
-  MAP_VIOLET_CITY_GYM: "Gimnasio Pokémon de Ciudad Malva",
-  MAP_VIOLET_CITY_MART: "Tienda Pokémon de Ciudad Malva",
-  MAP_VIOLET_CITY_POKEMON_CENTER: "Centro Pokémon de Ciudad Malva",
-  MAP_VIOLET_CITY_SPROUT_TOWER_1F: "Torre Bellsprout (P1)",
-  MAP_VIOLET_CITY_SPROUT_TOWER_2F: "Torre Bellsprout (P2)",
-  MAP_VIOLET_CITY_SPROUT_TOWER_3F: "Torre Bellsprout (P3)",
-  MAP_AZALEA_TOWN: "Pueblo Azalea",
-  MAP_AZALEA_TOWN_GYM: "Gimnasio Pokémon de Pueblo Azalea",
-  MAP_AZALEA_TOWN_MART: "Tienda Pokémon de Pueblo Azalea",
-  MAP_AZALEA_TOWN_POKEMON_CENTER: "Centro Pokémon de Pueblo Azalea",
-  MAP_AZALEA_TOWN_KURTS_HOUSE: "Casa de César",
-  MAP_GOLDENROD_CITY: "Ciudad Trigal",
-  MAP_GOLDENROD_CITY_GYM: "Gimnasio Pokémon de Ciudad Trigal",
-  MAP_GOLDENROD_CITY_POKEMON_CENTER: "Centro Pokémon de Ciudad Trigal",
-  MAP_GOLDENROD_CITY_MART_1F: "Centro Comercial Trigal (P1)",
-  MAP_GOLDENROD_CITY_MART_2F: "Centro Comercial Trigal (P2)",
-  MAP_GOLDENROD_CITY_MART_3F: "Centro Comercial Trigal (P3)",
-  MAP_GOLDENROD_CITY_MART_4F: "Centro Comercial Trigal (P4)",
-  MAP_GOLDENROD_CITY_MART_5F: "Centro Comercial Trigal (P5)",
-  MAP_GOLDENROD_CITY_MART_6F: "Terraza Centro Comercial Trigal",
-  MAP_ECRUTEAK_CITY: "Ciudad Iris",
-  MAP_ECRUTEAK_CITY_GYM: "Gimnasio Pokémon de Ciudad Iris",
-  MAP_ECRUTEAK_CITY_POKEMON_CENTER: "Centro Pokémon de Ciudad Iris",
-  MAP_ECRUTEAK_CITY_MART: "Tienda Pokémon de Ciudad Iris",
-  MAP_OLIVINE_CITY: "Ciudad Olivo",
-  MAP_OLIVINE_CITY_GYM: "Gimnasio Pokémon de Ciudad Olivo",
-  MAP_OLIVINE_CITY_POKEMON_CENTER: "Centro Pokémon de Ciudad Olivo",
-  MAP_OLIVINE_CITY_MART: "Tienda Pokémon de Ciudad Olivo",
-  MAP_CIANWOOD_CITY: "Ciudad Orquídea",
-  MAP_CIANWOOD_CITY_GYM: "Gimnasio Pokémon de Ciudad Orquídea",
-  MAP_CIANWOOD_CITY_POKEMON_CENTER: "Centro Pokémon de Ciudad Orquídea",
-  MAP_MAHOGANYTOWN: "Pueblo Caoba",
-  MAP_MAHOGANY_TOWN_GYM: "Gimnasio Pokémon de Pueblo Caoba",
-  MAP_MAHOGANY_TOWN_POKEMON_CENTER: "Centro Pokémon de Pueblo Caoba",
-  MAP_BLACKTHORN_CITY: "Ciudad Endrino",
-  MAP_BLACKTHORN_CITY_GYM: "Gimnasio Pokémon de Ciudad Endrino",
-  MAP_BLACKTHORN_CITY_POKEMON_CENTER: "Centro Pokémon de Ciudad Endrino",
-  MAP_BLACKTHORN_CITY_MART: "Tienda Pokémon de Ciudad Endrino",
-  MAP_LAKE_OF_RAGE: "Lago de la Furia",
-  MAP_ILEX_FOREST: "Bosque Ilex",
-  MAP_ROUTE29: "Ruta 29",
-  MAP_ROUTE30: "Ruta 30",
-  MAP_ROUTE31: "Ruta 31",
-  MAP_ROUTE32: "Ruta 32",
-  MAP_ROUTE33: "Ruta 33",
-  MAP_ROUTE34: "Ruta 34",
-  MAP_ROUTE35: "Ruta 35",
-  MAP_ROUTE36: "Ruta 36",
-  MAP_ROUTE37: "Ruta 37",
-  MAP_ROUTE38: "Ruta 38",
-  MAP_ROUTE39: "Ruta 39",
-  MAP_ROUTE40: "Ruta 40",
-  MAP_ROUTE41: "Ruta 41",
-  MAP_ROUTE42: "Ruta 42",
-  MAP_ROUTE43: "Ruta 43",
-  MAP_ROUTE44: "Ruta 44",
-  MAP_ROUTE45: "Ruta 45",
-  MAP_ROUTE46: "Ruta 46",
-  MAP_ROUTE47: "Ruta 47",
-  MAP_ROUTE48: "Ruta 48",
+  MAP_NEW_BARK_TOWN: "New Bark Town",
+  MAP_NEW_BARK_TOWN_LAB: "Professor Elm's Lab",
+  MAP_NEW_BARK_TOWN_PLAYERS_HOUSE_1F: "Player's House (1F)",
+  MAP_NEW_BARK_TOWN_PLAYERS_HOUSE_2F: "Player's Room (2F)",
+  MAP_NEW_BARK_TOWN_HOUSE1: "House in New Bark Town",
+  MAP_NEW_BARK_TOWN_HOUSE2: "House in New Bark Town",
+  MAP_CHERRYGROVE_CITY: "Cherrygrove City",
+  MAP_CHERRYGROVE_CITY_MART: "Cherrygrove City Poké Mart",
+  MAP_CHERRYGROVE_CITY_POKEMON_CENTER: "Cherrygrove City Pokémon Center",
+  MAP_CHERRYGROVE_CITY_HOUSE1: "House in Cherrygrove City",
+  MAP_CHERRYGROVE_CITY_HOUSE2: "House in Cherrygrove City",
+  MAP_CHERRYGROVE_CITY_HOUSE3: "Guide's House",
+  MAP_VIOLET_CITY: "Violet City",
+  MAP_VIOLET_CITY_GYM: "Violet City Pokémon Gym",
+  MAP_VIOLET_CITY_MART: "Violet City Poké Mart",
+  MAP_VIOLET_CITY_POKEMON_CENTER: "Violet City Pokémon Center",
+  MAP_VIOLET_CITY_SPROUT_TOWER_1F: "Sprout Tower (1F)",
+  MAP_VIOLET_CITY_SPROUT_TOWER_2F: "Sprout Tower (2F)",
+  MAP_VIOLET_CITY_SPROUT_TOWER_3F: "Sprout Tower (3F)",
+  MAP_AZALEA_TOWN: "Azalea Town",
+  MAP_AZALEA_TOWN_GYM: "Azalea Town Pokémon Gym",
+  MAP_AZALEA_TOWN_MART: "Azalea Town Poké Mart",
+  MAP_AZALEA_TOWN_POKEMON_CENTER: "Azalea Town Pokémon Center",
+  MAP_AZALEA_TOWN_KURTS_HOUSE: "Kurt's House",
+  MAP_GOLDENROD_CITY: "Goldenrod City",
+  MAP_GOLDENROD_CITY_GYM: "Goldenrod City Pokémon Gym",
+  MAP_GOLDENROD_CITY_POKEMON_CENTER: "Goldenrod City Pokémon Center",
+  MAP_GOLDENROD_CITY_MART_1F: "Goldenrod Department Store (1F)",
+  MAP_GOLDENROD_CITY_MART_2F: "Goldenrod Department Store (2F)",
+  MAP_GOLDENROD_CITY_MART_3F: "Goldenrod Department Store (3F)",
+  MAP_GOLDENROD_CITY_MART_4F: "Goldenrod Department Store (4F)",
+  MAP_GOLDENROD_CITY_MART_5F: "Goldenrod Department Store (5F)",
+  MAP_GOLDENROD_CITY_MART_6F: "Goldenrod Department Store Roof",
+  MAP_ECRUTEAK_CITY: "Ecruteak City",
+  MAP_ECRUTEAK_CITY_GYM: "Ecruteak City Pokémon Gym",
+  MAP_ECRUTEAK_CITY_POKEMON_CENTER: "Ecruteak City Pokémon Center",
+  MAP_ECRUTEAK_CITY_MART: "Ecruteak City Poké Mart",
+  MAP_OLIVINE_CITY: "Olivine City",
+  MAP_OLIVINE_CITY_GYM: "Olivine City Pokémon Gym",
+  MAP_OLIVINE_CITY_POKEMON_CENTER: "Olivine City Pokémon Center",
+  MAP_OLIVINE_CITY_MART: "Olivine City Poké Mart",
+  MAP_CIANWOOD_CITY: "Cianwood City",
+  MAP_CIANWOOD_CITY_GYM: "Cianwood City Pokémon Gym",
+  MAP_CIANWOOD_CITY_POKEMON_CENTER: "Cianwood City Pokémon Center",
+  MAP_MAHOGANYTOWN: "Mahogany Town",
+  MAP_MAHOGANY_TOWN_GYM: "Mahogany Town Pokémon Gym",
+  MAP_MAHOGANY_TOWN_POKEMON_CENTER: "Mahogany Town Pokémon Center",
+  MAP_BLACKTHORN_CITY: "Blackthorn City",
+  MAP_BLACKTHORN_CITY_GYM: "Blackthorn City Pokémon Gym",
+  MAP_BLACKTHORN_CITY_POKEMON_CENTER: "Blackthorn City Pokémon Center",
+  MAP_BLACKTHORN_CITY_MART: "Blackthorn City Poké Mart",
+  MAP_LAKE_OF_RAGE: "Lake of Rage",
+  MAP_ILEX_FOREST: "Ilex Forest",
+  MAP_ROUTE29: "Route 29",
+  MAP_ROUTE30: "Route 30",
+  MAP_ROUTE31: "Route 31",
+  MAP_ROUTE32: "Route 32",
+  MAP_ROUTE33: "Route 33",
+  MAP_ROUTE34: "Route 34",
+  MAP_ROUTE35: "Route 35",
+  MAP_ROUTE36: "Route 36",
+  MAP_ROUTE37: "Route 37",
+  MAP_ROUTE38: "Route 38",
+  MAP_ROUTE39: "Route 39",
+  MAP_ROUTE40: "Route 40",
+  MAP_ROUTE41: "Route 41",
+  MAP_ROUTE42: "Route 42",
+  MAP_ROUTE43: "Route 43",
+  MAP_ROUTE44: "Route 44",
+  MAP_ROUTE45: "Route 45",
+  MAP_ROUTE46: "Route 46",
+  MAP_ROUTE47: "Route 47",
+  MAP_ROUTE48: "Route 48",
 };
 
 export function formatJohtoInteriorName(mapId: string): string | undefined {
   if (JOHTO_MAP_NAMES[mapId]) return JOHTO_MAP_NAMES[mapId];
   const clean = mapId.replace(/^MAP_/, '');
-  if (clean.includes('_MART')) return 'Tienda Pokémon';
-  if (clean.includes('_POKEMON_CENTER') || clean.includes('_POKE_CENTER')) return 'Centro Pokémon';
-  if (clean.includes('_GYM')) return 'Gimnasio Pokémon';
-  if (clean.includes('_LAB')) return 'Laboratorio Pokémon';
-  if (clean.includes('_HOUSE')) return 'Casa';
+  if (clean.includes('_MART')) return 'Poké Mart';
+  if (clean.includes('_POKEMON_CENTER') || clean.includes('_POKE_CENTER')) return 'Pokémon Center';
+  if (clean.includes('_GYM')) return 'Pokémon Gym';
+  if (clean.includes('_LAB')) return 'Pokémon Lab';
+  if (clean.includes('_HOUSE')) return 'House';
   return undefined;
 }
 
 export function formatNpcTitle(mapId: string, scriptName?: string, graphicsName?: string): string {
   if (scriptName) {
-    if (scriptName.includes("Lance")) return "Campeón Lance";
+    if (scriptName.includes("Lance")) return "Champion Lance";
     if (scriptName.includes("Elm")) return "Prof. Elm";
-    if (scriptName.includes("Mom")) return "Madre";
+    if (scriptName.includes("Mom")) return "Mom";
     if (scriptName.includes("Silver") || scriptName.includes("Rival")) return "Silver";
-    if (scriptName.includes("Pryce")) return "Líder Fredo";
-    if (scriptName.includes("Falkner")) return "Líder Pegaso";
-    if (scriptName.includes("Bugsy")) return "Líder Antón";
-    if (scriptName.includes("Whitney")) return "Líder Blanca";
-    if (scriptName.includes("Morty")) return "Líder Morti";
-    if (scriptName.includes("Chuck")) return "Líder Aníbal";
-    if (scriptName.includes("Jasmine")) return "Líder Yasmina";
-    if (scriptName.includes("Clair")) return "Líder Débora";
-    if (scriptName.includes("OldMan") || scriptName.includes("Gramps")) return "Anciano";
-    if (scriptName.includes("OldWoman") || scriptName.includes("Granny")) return "Anciana";
-    if (scriptName.includes("Lass")) return "Chica";
-    if (scriptName.includes("Youngster")) return "Joven";
-    if (scriptName.includes("FatMan")) return "Vecino";
-    if (scriptName.includes("Fisher") || scriptName.includes("Andre") || scriptName.includes("Raymond")) return "Pescador";
-    if (scriptName.includes("Cooltrainer") || scriptName.includes("Aaron") || scriptName.includes("Lois")) return "Entrenador Guay";
-    if (scriptName.includes("Aide")) return "Ayudante de Elm";
-    if (scriptName.includes("Nurse")) return "Enfermera Joy";
-    if (scriptName.includes("Clerk") || scriptName.includes("Mart")) return "Dependiente";
+    if (scriptName.includes("Pryce")) return "Leader Pryce";
+    if (scriptName.includes("Falkner")) return "Leader Falkner";
+    if (scriptName.includes("Bugsy")) return "Leader Bugsy";
+    if (scriptName.includes("Whitney")) return "Leader Whitney";
+    if (scriptName.includes("Morty")) return "Leader Morty";
+    if (scriptName.includes("Chuck")) return "Leader Chuck";
+    if (scriptName.includes("Jasmine")) return "Leader Jasmine";
+    if (scriptName.includes("Clair")) return "Leader Clair";
+    if (scriptName.includes("OldMan") || scriptName.includes("Gramps")) return "Elder";
+    if (scriptName.includes("OldWoman") || scriptName.includes("Granny")) return "Elder";
+    if (scriptName.includes("Lass")) return "Lass";
+    if (scriptName.includes("Youngster")) return "Youngster";
+    if (scriptName.includes("FatMan")) return "Resident";
+    if (scriptName.includes("Fisher") || scriptName.includes("Andre") || scriptName.includes("Raymond")) return "Fisherman";
+    if (scriptName.includes("Cooltrainer") || scriptName.includes("Aaron") || scriptName.includes("Lois")) return "Cooltrainer";
+    if (scriptName.includes("Aide")) return "Elm's Aide";
+    if (scriptName.includes("Nurse")) return "Nurse Joy";
+    if (scriptName.includes("Clerk") || scriptName.includes("Mart")) return "Clerk";
     if (scriptName.includes("Kurt")) return "César";
-    if (scriptName.includes("Tuscany")) return "Tuscany (Martes)";
+    if (scriptName.includes("Tuscany")) return "Tuscany (Tuesday)";
     if (scriptName.includes("Wesley")) return "Wesley (Miércoles)";
-    if (scriptName.includes("Arthur")) return "Arthur (Jueves)";
-    if (scriptName.includes("Frieda")) return "Frieda (Viernes)";
-    if (scriptName.includes("Santos")) return "Santos (Sábado)";
-    if (scriptName.includes("Sunny")) return "Sunny (Domingo)";
-    if (scriptName.includes("Monica")) return "Monica (Lunes)";
+    if (scriptName.includes("Arthur")) return "Arthur (Thursday)";
+    if (scriptName.includes("Frieda")) return "Frieda (Friday)";
+    if (scriptName.includes("Santos")) return "Santos (Saturday)";
+    if (scriptName.includes("Sunny")) return "Sunny (Sunday)";
+    if (scriptName.includes("Monica")) return "Monica (Monday)";
   }
   if (graphicsName) {
-    if (graphicsName.includes("LANCE")) return "Campeón Lance";
+    if (graphicsName.includes("LANCE")) return "Champion Lance";
     if (graphicsName.includes("ELM")) return "Prof. Elm";
-    if (graphicsName.includes("MOM")) return "Madre";
+    if (graphicsName.includes("MOM")) return "Mom";
     if (graphicsName.includes("SILVER")) return "Silver";
-    if (graphicsName.includes("PRYCE")) return "Líder Fredo";
-    if (graphicsName.includes("OLD_MAN")) return "Anciano";
-    if (graphicsName.includes("SCIENTIST")) return "Científico";
-    if (graphicsName.includes("FAT_MAN")) return "Vecino";
-    if (graphicsName.includes("LASS")) return "Chica";
-    if (graphicsName.includes("YOUNGSTER")) return "Joven";
-    if (graphicsName.includes("FISHER")) return "Pescador";
-    if (graphicsName.includes("POLICEMAN")) return "Agente de Policía";
+    if (graphicsName.includes("PRYCE")) return "Leader Pryce";
+    if (graphicsName.includes("OLD_MAN")) return "Elder";
+    if (graphicsName.includes("SCIENTIST")) return "Scientist";
+    if (graphicsName.includes("FAT_MAN")) return "Resident";
+    if (graphicsName.includes("LASS")) return "Lass";
+    if (graphicsName.includes("YOUNGSTER")) return "Youngster";
+    if (graphicsName.includes("FISHER")) return "Fisherman";
+    if (graphicsName.includes("POLICEMAN")) return "Police Officer";
     if (graphicsName.includes("WOOPER")) return "Wooper";
-    if (graphicsName.includes("GYARADOS")) return "Gyarados Rojo";
+    if (graphicsName.includes("GYARADOS")) return "Gyarados Red";
     if (graphicsName.includes("DRAGONITE")) return "Dragonite";
   }
   if (JOHTO_MAP_NAMES[mapId]) return JOHTO_MAP_NAMES[mapId];
@@ -168,7 +169,7 @@ export const JOHTO_SCRIPT_DIALOGUES: Record<string, string> = {
   "AzaleaTown_House1_EventScript_Farfetchd": "FARFETCH'D: Kwaa!",
   "AzaleaTown_KurtsHouse_EventScript_Girl": "The SLOWPOKE are gone… \nWere they taken away by bad people?",
   "AzaleaTown_KurtsHouse_EventScript_Kurt": "KURT: You have 5 BERRIES for me?\n\nFine! I'll turn them into BALLS.",
-  "AzaleaTown_KurtsHouse_EventScript_KurtBefore": "Hm? Who are you?\n\nviajero, eh? You want me to make\nsome BALLS?\n\nSorry, but that'll have to wait.\n\nDo you know TEAM ROCKET?\nAh, don't worry.\n\nI'll tell you anyhow.\n\nTEAM ROCKET's an evil gang that\nuses POKéMON for their dirty work.\n\nThey're supposed to have disbanded\nthree years ago.\n\nAnyway, they're at the WELL,\ncutting off SLOWPOKETAILS to sell!\n\nSo I'm going to go give them a\nlesson in pain!\n\nHang on, SLOWPOKE! Old KURT\nis on his way!",
+  "AzaleaTown_KurtsHouse_EventScript_KurtBefore": "Hm? Who are you?\n\nTraveler, eh? You want me to make\nsome BALLS?\n\nSorry, but that'll have to wait.\n\nDo you know TEAM ROCKET?\nAh, don't worry.\n\nI'll tell you anyhow.\n\nTEAM ROCKET's an evil gang that\nuses POKéMON for their dirty work.\n\nThey're supposed to have disbanded\nthree years ago.\n\nAnyway, they're at the WELL,\ncutting off SLOWPOKETAILS to sell!\n\nSo I'm going to go give them a\nlesson in pain!\n\nHang on, SLOWPOKE! Old KURT\nis on his way!",
   "AzaleaTown_Mart_EventScriptBugCatcher": "A GREAT BALL is better for catch-\ning POKéMON than a POKé BALL.\n\nBut KURT's might be better some-\ntimes.",
   "AzaleaTown_Mart_EventScriptCooltrainerM": "Are you able to buy a GREAT BALL?\nAll I can buy are POKé BALLS.\n\nI heard that more items become\navailable to buy when you earn\nGYM BADGES!\n\nI wish KURT would make me some\nof his custom BALLS.",
   "BattleFrontier_BattleArenaLobby_EventScript_Attendant": "Where the battling spirit of TRAINERS\nis put to the test!\n\nI welcome you to the BATTLE ARENA!\n\nI am your guide to the Set KO Tourney!",
@@ -330,7 +331,7 @@ export const JOHTO_SCRIPT_DIALOGUES: Record<string, string> = {
   "BurnedTower_1F_EventScript_Nard": "The reason this tower's burned is\nthat it was hit by lightning.\n\nThe fire I'm breathing is tiny\nin comparison...",
   "BurnedTower_1F_EventScript_Richardo": "Maybe a life of crime isn't for\nme...",
   "CeladonCity_EventScript_CreepGramps": "Nihihi! This GYM is great! Only\ngirls are allowed here!",
-  "CeladonCity_EventScript_Erika": "Oh, viajero.\nIsn't the fountain lovely today?\n\nIf you wish for another battle,\nI'll be at the FIGHTING DOJO.",
+  "CeladonCity_EventScript_Erika": "Oh, Traveler.\nIsn't the fountain lovely today?\n\nIf you wish for another battle,\nI'll be at the FIGHTING DOJO.",
   "CeladonCity_EventScript_Fatman": "This POLIWRATH is my partner.\n\nI wonder if it'll ever evolve\ninto a frog POKéMON.",
   "CeladonCity_EventScript_GrimerGramps": "GRIMER have been appearing lately.\n\nSee that pond out in front of the\nhouse? GRIMER live there now.\n\nWhere did they come from? This is\na serious problem…",
   "CeladonCity_EventScript_Lass": "Looking at the ground while I was\nwalking made me dizzy.",
@@ -395,7 +396,7 @@ export const JOHTO_SCRIPT_DIALOGUES: Record<string, string> = {
   "DragonsDen_Cavern_EventScript_Darin": "The SHRINE ahead is home to the\nMASTER of our dragon-user clan.\n\nYou're not allowed to just go in!",
   "DragonsDen_Cavern_EventScript_TwinLea": "It was like having to battle\nLANCE.",
   "DragonsDen_Cavern_EventScript_TwinPia": "We'll tell on you.\n\nMASTER will be angry with you.",
-  "DragonsDen_EventScript_ClairRematch": "viajero… So you're here.\n\nIf you think you can keep up,\nwith me, come to the FIGHTING\nDOJO in SAFFRON.",
+  "DragonsDen_EventScript_ClairRematch": "Traveler… So you're here.\n\nIf you think you can keep up,\nwith me, come to the FIGHTING\nDOJO in SAFFRON.",
   "DragonsDen_Shrine_EventScript_Elder": "Come again, if you so desire.",
   "DragonsDen_Shrine_EventScript_Elder2": "It's been quite some time since a\ntrainer has gained our MASTER's\nrare approval.\n\nIn fact, not since Master LANCE.",
   "DragonsDen_Shrine_EventScript_Elder3": "You know young Master LANCE?\n\nHe looks so much like our MASTER\ndid in his youth.\n\nIt's in their blood.",
@@ -419,7 +420,7 @@ export const JOHTO_SCRIPT_DIALOGUES: Record<string, string> = {
   "EcruteakCity_House1_EventScript_Youngster": "Is there really a POKéMON that big?\n\nIf it exists, it must be powerful.",
   "EcruteakCity_Mart_EventScript_Granny": "If you use REVIVE, a POKéMON that's\nfainted will wake right up.",
   "EcruteakCity_Mart_EventScript_Nerd": "My EEVEE evolved into an ESPEON.\n\nBut my friend's EEVEE turned into\nan UMBREON.\n\nI wonder why? We both were raising\nour EEVEE in the same way…",
-  "EcruteakCity_PokemonCenter_EventScript_Bill": "Hi, I'm BILL. And who are you?\n\nHmm, viajero, huh?\nYou've come at the right time.",
+  "EcruteakCity_PokemonCenter_EventScript_Bill": "Hi, I'm BILL. And who are you?\n\nHmm, Traveler, huh?\nYou've come at the right time.",
   "EcruteakCity_PokemonCenter_EventScript_Hiker": "The way the KIMONO GIRLS dance is\nmarvelous.\n\nJust like the way they use their\nPOKéMON.",
   "EcruteakCity_PokemonCenter_EventScript_Nerd": "LAKE OF RAGE…\n\nThe appearance of a GYARADOS\nswarm…\n\nI smell a conspiracy. I know it!",
   "EcruteakCity_PokemonCenter_EventScript_Woman": "MORTY, the GYM LEADER, is soooo\ncool.\n\nHis POKéMON are really tough too.",
@@ -560,7 +561,7 @@ export const JOHTO_SCRIPT_DIALOGUES: Record<string, string> = {
   "GoldenrodDeptStore5_EventScript_Receptionist": "Hello. Oh, your POKéMON…",
   "GoldenrodDeptStore6_EventScript_Lass": "Do you listen to LUCKY CHANNEL?\n\nThey say if you want to win,\nyou should trade POKéMON with as\nmany people as possible to get\ndifferent ID numbers.\n\nHowever, trading isn't as widely\navailable as it once was.",
   "GoldenrodDeptStore6_EventScript_Nerd": "If you're tired, try the vending\nmachine's drinks.\n\nYour POKéMON will love them too.",
-  "GoldenrodDeptStore6_EventScript_Whitney": "viajero! Fancy seeing you here!\n\nI'm picking up something for\nmy MILTANK.\n\nIf you want another battle, come to\nthe FIGHTING DOJO!",
+  "GoldenrodDeptStore6_EventScript_Whitney": "Traveler! Fancy seeing you here!\n\nI'm picking up something for\nmy MILTANK.\n\nIf you want another battle, come to\nthe FIGHTING DOJO!",
   "GoldenrodDeptStore7_EventScript_Bugcatcher": "My POKéMON always get paralyzed or\npoisoned when the chips are down…\n\nSo I came to buy some FULL HEAL.\n\nI wonder if there's any left?",
   "GoldenrodDeptStore7_EventScript_Nerd": "Oh, wow!",
   "GoldenrodDeptStore7_EventScript_PokefanF": "Whew, I'm tired.\n\nI sometimes come up to the rooftop\nto take a break from shopping.",
@@ -573,7 +574,7 @@ export const JOHTO_SCRIPT_DIALOGUES: Record<string, string> = {
   "GoldenrodRaidoTower3_EventScript_Grunt7": "I feel lousy over losing!\n\nDarn it! I hate useless POKéMON!",
   "GoldenrodRaidoTower3_EventScript_Grunt8": "What?! You made it past our men in\nthe UNDERGROUND?\n\nHow could you?",
   "GoldenrodRaidoTower3_EventScript_Scientist": "Bwahahaha…\n\nI can transmit as strong a signal\nas I need from here.",
-  "GoldenrodRaidoTower4_EventScript_ARIANA": "viajero, isn't it?\n\nA brat like you won't appreciate\nthe magnificence of TEAM ROCKET.\n\nThat's too bad. I really admire\nyour power.",
+  "GoldenrodRaidoTower4_EventScript_ARIANA": "Traveler, isn't it?\n\nA brat like you won't appreciate\nthe magnificence of TEAM ROCKET.\n\nThat's too bad. I really admire\nyour power.",
   "GoldenrodRaidoTower4_EventScript_Grunt28": "I love my beautiful self!\n\nWho cares about POKéMON?",
   "GoldenrodRaidoTower4_EventScript_Grunt9": "I don't believe it! I was beaten!",
   "GoldenrodRaidoTower4_EventScript_Proton": "PROTON: You may have won this\ntime... But all you did was make\n\nTEAM ROCKET's wrath grow.",
@@ -585,7 +586,7 @@ export const JOHTO_SCRIPT_DIALOGUES: Record<string, string> = {
   "GoldenrodUnderground_EventScript_SuperNerd": "I was challenged to a battle\ndownstairs.\n\nIt's rough down there. You'd\nbetter be careful.",
   "GoldenrodUnderground_EventScript_Teacher": "There are some shops downstairs…\nBut there are also trainers.\n\nI'm scared to go down there.",
   "GoldenrodUnderground_EventScript_Teru": "I know my POKéMON type alignments.\n\nBut I only use one type of POKéMON.",
-  "IcePath_1F_EventScript_KimonoGirl": "Me oh my... Is that you, viajero?\nFancy meeting you here!\n\nTo tell the truth... my sandals are\nfrozen on the ice, and I am stuck.\n\nIn other words, my flip-flops are\nquick-frozen to the ground.\n\nTee hee.\n\nWell, it's no laughing matter.\n\nWould you come around and push\nmy back?",
+  "IcePath_1F_EventScript_KimonoGirl": "Me oh my... Is that you, Traveler?\nFancy meeting you here!\n\nTo tell the truth... my sandals are\nfrozen on the ice, and I am stuck.\n\nIn other words, my flip-flops are\nquick-frozen to the ground.\n\nTee hee.\n\nWell, it's no laughing matter.\n\nWould you come around and push\nmy back?",
   "IcePath_B3F_EventScript_Delibird": "DELIBIRD: SKWAAAAA!",
   "IcePath_B3F_EventScript_Swinub": "SWINUB: Swiiiiii!",
   "IlexForest_EventScript_Apprentice": "Oh, man… My boss is going to be\nsteaming…\n\nThe FARFETCH'D that CUTS trees\nfor charcoal took off on me.\n\nI can't go looking for it here\nin the ILEX FOREST.\n\nIt's too big, dark and scary\nfor me…",
@@ -606,7 +607,7 @@ export const JOHTO_SCRIPT_DIALOGUES: Record<string, string> = {
   "LakeOfRage_EventScript_Lass": "Did my eyes deceive me? I saw a\nred GYARADOS in the LAKE…\n\nBut I thought GYARADOS were\nusually blue?",
   "LakeOfRage_EventScript_Lois": "Come to think of it, I've seen a\npink BUTTERFREE.",
   "LakeOfRage_EventScript_Nerd": "I heard this lake was made by\nrampaging GYARADOS.\n\nI wonder if there is any\nconnection to their mass outbreak\nnow?",
-  "LakeOfRage_EventScript_Pryce": "viajero.\n\nEven here, the cold keeps me sharp.\n\nIf you wish to battle again, come\nto the FIGHTING DOJO.",
+  "LakeOfRage_EventScript_Pryce": "Traveler.\n\nEven here, the cold keeps me sharp.\n\nIf you wish to battle again, come\nto the FIGHTING DOJO.",
   "LakeOfRage_EventScript_Raymond": "Why can't I catch any good\nPOKéMON?",
   "LakeOfRage_EventScript_Wesley": "WESLEY: Well, how do you do?\n\nI'm a member of the WEEKDAY family!\nCan you guess my favorite day?",
   "LakeOfRage_House1_EventScript_HiddenPowerGuy": "…You have strayed far…\n\nHere I have meditated. Inside me,\na new power has been awakened.\n\nLet me share my power with your\nPOKéMON. Take this, child.",
@@ -720,22 +721,22 @@ export const JOHTO_SCRIPT_DIALOGUES: Record<string, string> = {
   "NationalPark_Normal_EventScript_Youngster2": "I get the other guy's POKéDEX sticker\nif I win.",
   "NewBarkTown_EventScript_Aide1": "There are only three of us, so\nwe're always busy.",
   "NewBarkTown_EventScript_Aide2": "Don't forget to save your game\nregularly!\n\nPress the START button, then\nSAVE the game!",
-  "NewBarkTown_EventScript_FatMan": "Yo, viajero!\n\nI hear PROF.ELM discovered\nsome new POKéMON.",
+  "NewBarkTown_EventScript_FatMan": "Yo, Traveler!\n\nI hear PROF.ELM discovered\nsome new POKéMON.",
   "NewBarkTown_EventScript_Lass": "Call your mom on your POKéGEAR\nto let her know how you're doing.",
   "NewBarkTown_EventScript_Silver": ". . .\n\nSo this is the famous ELM\nPOKéMON LAB…",
   "NewBarkTown_EventScript_Wooper": "WOOPER: Woooooop.",
   "NewBarkTown_House1_EventScript_Daughter": "PIKACHU is an evolved POKéMON.\n\nI was amazed by PROF.ELM's\nfindings.\n\nHe's so famous for his research\non POKéMON evolution.\n\n…sigh…\n\nI wish I could be a researcher\nlike him…",
   "NewBarkTown_House1_EventScript_Mother": "My daughter is adamant about\nbecoming PROF.ELM's assistant.\n\nShe really loves POKéMON!\n\nBut then, so do I!",
   "NewBarkTown_House2_EventScript_ElmsSon": "When I grow up, I'm going to\nhelp my dad!\n\nI'm going to be a great\nPOKéMON professor!",
-  "NewBarkTown_House2_EventScript_ElmsWife": "Hi, viajero! My husband's always\nso busy--I hope he's OK.\n\nWhen he's caught up in his\nPOKéMON research, he even\nforgets to eat.",
+  "NewBarkTown_House2_EventScript_ElmsWife": "Hi, Traveler! My husband's always\nso busy--I hope he's OK.\n\nWhen he's caught up in his\nPOKéMON research, he even\nforgets to eat.",
   "NewBarkTown_Lab_EventScript_ChikoritaBall": "Probably shouldn't touch!",
   "NewBarkTown_Lab_EventScript_CyndaquilBall": "Probably shouldn't touch!",
-  "NewBarkTown_Lab_EventScript_Elm": "ELM: Hi, viajero!\n\nThanks to you, my research is\ngoing great!\n\nTake this as a token of my\nappreciation.",
+  "NewBarkTown_Lab_EventScript_Elm": "ELM: Hi, Traveler!\n\nThanks to you, my research is\ngoing great!\n\nTake this as a token of my\nappreciation.",
   "NewBarkTown_Lab_EventScript_TotodileBall": "Probably shouldn't touch!",
   "NewBarkTown_PlayersHouse_1F_EventScript_Mom": "MOM: PROF.ELM is waiting for you.\n\nHurry up, baby!",
-  "NewBarkTown_PlayersHouse_1F_EventScript_MomsFriend": "Hi, viajero!\n\nI'm visiting!\n\nHave you heard?\n\nMy daughter is adamant about\nbecoming PROF.ELM's assistant.\n\nShe really loves POKéMON!",
+  "NewBarkTown_PlayersHouse_1F_EventScript_MomsFriend": "Hi, Traveler!\n\nI'm visiting!\n\nHave you heard?\n\nMy daughter is adamant about\nbecoming PROF.ELM's assistant.\n\nShe really loves POKéMON!",
   "OlivineCityHouse3_EventScriptFishingGuru": "OLIVINE is on the sea!\n\nAnd if it's on the sea, there\nare bound to be fish!\n\nI've fished here for 30 years.\n\nWould you like to face the sea\nand try your hand at fishing?",
-  "OlivineCity_Cafe_EventScript_Jasmine": "Oh... Hello, viajero.\n\nThese dishes in front of me are\nnot all mine...\n\nUh...\n\nActually, the person who sat here\nbefore me ate a lot...\n\nIf you'd like to battle again,\nplease visit me at the FIGHTING\nDOJO in SAFFRON CITY.",
+  "OlivineCity_Cafe_EventScript_Jasmine": "Oh... Hello, Traveler.\n\nThese dishes in front of me are\nnot all mine...\n\nUh...\n\nActually, the person who sat here\nbefore me ate a lot...\n\nIf you'd like to battle again,\nplease visit me at the FIGHTING\nDOJO in SAFFRON CITY.",
   "OlivineCity_EventScript_Cook": "OLIVINE CAFE's menu is packed\nwith hearty fare for beefy\nSAILORS like me!",
   "OlivineCity_EventScript_EonTicketWoman": "My name is MARY!\n\nJust kidding, but I love MARY's\nradio show!",
   "OlivineCity_EventScript_Fisher": "The SAILOR in the OLIVINE CAFE\nnext door is really generous.\n\nHe taught my POKéMON STRENGTH.\n\nNow it can move big boulders\nwithout breaking a sweat.",
@@ -755,7 +756,7 @@ export const JOHTO_SCRIPT_DIALOGUES: Record<string, string> = {
   "OlivineCity_Gym_EventScript_Jasmine": "…Thank you for your help at the\nLIGHTHOUSE…\n\nBut this is different.\nPlease allow me to introduce myself.\n\nI am JASMINE, a GYM LEADER.\nI use the STEEL-type.\n\n…Do you know about the STEEL-type?\n\nIt's a type that was only recently\ndiscovered.\n\n…Um… May I begin?",
   "OlivineCity_Gym_EventScript_Lass": "Giggle...\nI know how capable you are\nfrom the LIGHTHOUSE.\n\nIt's time you showed that side of\nyourself to JASMINE! Good luck!",
   "OlivineCity_House1_EventScript_Tim": "I collect POKéMON!\nDo you have a {STR_VAR_1}?\n\nWant to trade it for my\n{STR_VAR_2}?",
-  "OlivineCity_PortInside_EventScript_Oak": "PROF.OAK: Hello!\nYou are starting to have the\nattitude of a CHAMPION, viajero!\n\nIt's time for your POKéDEX to\nmatch who you are.\n\nLet me see your POKéDEX for a\nsecond.\n\nI'll upgrade your POKéDEX with the\nNATIONAL MODE.",
+  "OlivineCity_PortInside_EventScript_Oak": "PROF.OAK: Hello!\nYou are starting to have the\nattitude of a CHAMPION, Traveler!\n\nIt's time for your POKéDEX to\nmatch who you are.\n\nLet me see your POKéDEX for a\nsecond.\n\nI'll upgrade your POKéDEX with the\nNATIONAL MODE.",
   "OlivineCity_PortOutside_EventScript_Fisherman1": "FAST SHIP S.S.AQUA used to sail to\nKANTO on Mondays and Fridays. But\nnow, it sails almost constantly!",
   "OlivineCity_PortOutside_EventScript_Fisherman2": "Aw yeah, I'm fishin'.",
   "OlivineCity_PortOutside_EventScript_Sabrina": "SABRINA: Out of the blue,\nI get the urge to see the ocean.\n\nI'll see you at the FIGHTING\nDOJO.",
@@ -795,9 +796,9 @@ export const JOHTO_SCRIPT_DIALOGUES: Record<string, string> = {
   "RocketHideout_B2F_EventScript_Grunt14": "Heh, I'm just a GRUNT.\n\nI don't know the password.\nToo bad for you.",
   "RocketHideout_B2F_EventScript_Grunt15": "I got wiped out on the last\nmission by a kid too.\n\nWhen we were abducting POKéMON,\nthis kid with long red hair and\nmean-looking eyes just\ncreamed me…",
   "RocketHideout_B2F_EventScript_Grunt16": "Heh, only the boss knows the\npassword for that door.\n\nWhere's the boss? Who knows?\nGo look for yourself.",
-  "RocketHideout_B2F_EventScript_ReadyForBattlePrompt": "LANCE: Quickly viajero, choose\nyour POKéMON!",
+  "RocketHideout_B2F_EventScript_ReadyForBattlePrompt": "LANCE: Quickly Traveler, choose\nyour POKéMON!",
   "RocketHideout_B3F_EventScript_Eto": "Hyuck-hyuck-hyuck!\n\nThe password to the boss' room…\n\nUh…, I think it is RATICATE TAIL.",
-  "RocketHideout_B3F_EventScript_Giovanni": "Muhahaha, we've been waiting\nfor you. So, you are viajero...\n\nMe? You don't know who I am?\nIt is me, GIOVANNI.\n\nThe majestic GIOVANNI himself!\nWahahaha!",
+  "RocketHideout_B3F_EventScript_Giovanni": "Muhahaha, we've been waiting\nfor you. So, you are Traveler...\n\nMe? You don't know who I am?\nIt is me, GIOVANNI.\n\nThe majestic GIOVANNI himself!\nWahahaha!",
   "RocketHideout_B3F_EventScript_GruntF5": "The password to the boss' room\nis SLOWPOKETAIL.\n\nBut it's useless unless you have\ntwo passwords.",
   "RocketHideout_B3F_EventScript_Mitch": "If we turn up the power of our\nradio signal for broadcast\nnationwide…\n\nThe very thought excites me!",
   "RocketHideout_B3F_EventScript_Murkrow": "MURKROW: Hail GIOVANNI.",
@@ -882,7 +883,7 @@ export const JOHTO_SCRIPT_DIALOGUES: Record<string, string> = {
   "Route25_EventScript_MistyRematch": "MISTY: I love the sunset here!\nIt gives me the courage to go on,\nyou know?\n\nRight!\n\nIf you're ready for a real splash,\nmeet me at the FIGHTING DOJO!",
   "Route25_EventScript_Pat": "I'm sorry… I won't cheat\nanymore…",
   "Route25_EventScript_Shannon": "I did my best.\nI have no regrets.",
-  "Route25_EventScript_Suicune": "viajero...\nYou two are truly amazing...\n\nI have never seen a battle this\nintense!\nI have no regrets...\n\nFarewell, SUICUNE!\nFarewell... viajero!",
+  "Route25_EventScript_Suicune": "Traveler...\nYou two are truly amazing...\n\nI have never seen a battle this\nintense!\nI have no regrets...\n\nFarewell, SUICUNE!\nFarewell... Traveler!",
   "Route26_EventScript_Beth": "POKéMON are in-valuable, lifelong\npartners.",
   "Route26_EventScript_Gaven": "To get to POKéMON LEAGUE, you have\nto get through VICTORY ROAD.\n\nBut VICTORY ROAD is tough.\n\nPractically nobody goes there!",
   "Route26_EventScript_Jake": "It's going to be tough to win at\nthe LEAGUE.\n\nI need to do some more training.\n\nI hear that the LEAGUE's ELITE\nFOUR are tougher than GYM LEADERS.",
@@ -1094,7 +1095,7 @@ export const JOHTO_SCRIPT_DIALOGUES: Record<string, string> = {
   "SlowpokeWell_B1F_EventScript_Eto": "We need the money,\nbut selling SLOWPOKETAILS?\n\nIt's tough being a ROCKET GRUNT!",
   "SlowpokeWell_B1F_EventScript_Grunt21": "Sure, we've been hacking the\ntails off SLOWPOKE and selling\nthem.\n\nEverything we do is for profit.\n\nThat's right! We're TEAM ROCKET,\nand we'll do anything for money!",
   "SlowpokeWell_B1F_EventScript_Grunt22F": "SLOWPOKETAILS grow back fast!\n\nWhat's wrong with selling them?",
-  "SlowpokeWell_B1F_EventScript_Kurt": "KURT: Hey there, viajero!\n\nThe guard up top took off when\nI shouted at him.\n\nBut then I took a tumble down\nthe WELL.\n\nI slammed down hard on my back,\nso I can't move.\n\nRats! If I were fit, my POKéMON\nwould've punished them…\n\nAh, it can't be helped.\n\nviajero, show them how gutsy\nyou are in my place!",
+  "SlowpokeWell_B1F_EventScript_Kurt": "KURT: Hey there, Traveler!\n\nThe guard up top took off when\nI shouted at him.\n\nBut then I took a tumble down\nthe WELL.\n\nI slammed down hard on my back,\nso I can't move.\n\nRats! If I were fit, my POKéMON\nwould've punished them…\n\nAh, it can't be helped.\n\nTraveler, show them how gutsy\nyou are in my place!",
   "SlowpokeWell_B1F_EventScript_Proton": "What do you want?\n\nIf you interrupt our work,\ndon't expect any mercy!",
   "SlowpokeWell_EventScript_Slowking": "SLOWKING: ........................",
   "SproutTower_1F_EventScript_Granny": "A BELLSPROUT over 100 feet\ntall…\n\nPeople say that it became the\ncenter pillar here.",
@@ -1167,7 +1168,7 @@ export const JOHTO_SCRIPT_DIALOGUES: Record<string, string> = {
   "VioletCity_Mart_EventScript_Granny": "When you first catch a POKéMON,\nit may be weak.\n\nBut it will eventually grow to\nbe strong.\n\nIt's important to treat POKéMON\nwith love.",
   "VioletCity_Mart_EventScript_Rocker": "POKéMON can hold items like\nPOTION and ANTIDOTE.\n\nBut they don't appear to know\nhow to use man-made items.",
   "VioletCity_PokemonCenter_EVentScript_Kid": "A guy named BILL made the\nPOKéMON PC storage system.",
-  "VioletCity_PokemonCenter_EventScript_Aide": "viajero, long time, no see.\n\nPROF.ELM asked me to find you.\n\nHe has another favor to ask.\n\nWould you take the POKéMON EGG?",
+  "VioletCity_PokemonCenter_EventScript_Aide": "Traveler, long time, no see.\n\nPROF.ELM asked me to find you.\n\nHe has another favor to ask.\n\nWould you take the POKéMON EGG?",
   "VioletCity_PokemonCenter_EventScript_Gentleman": "It was around three years ago.\n\nTEAM ROCKET was up to no good\nwith POKéMON.\n\nBut justice prevailed--a young\nkid broke 'em up.",
   "VioletCity_PokemonCenter_EventScript_Man": "POKéMON are smart. They won't\nobey a trainer they don't respect.\n\nWithout the right GYM BADGES,\nthey will just do as they please.",
   "VioletCity_PokemonCenter_Text_BookshelfWoman": "While my POKéMON are recovering\nI love to read a good book.",
@@ -1199,14 +1200,14 @@ export function getJohtoDialogue(
   }
   if (scriptKey === "Common_EventScript_PkmnCenterNurse" || (graphicsName && graphicsName.includes("NURSE"))) {
     return {
-      title: "Enfermera Joy",
-      text: "¡Hola! Te damos la bienvenida al Centro Pokémon.\n\nNos encargamos de curar a tus Pokémon para que recuperen toda su energía. ¡Vuelve cuando quieras!",
+      title: "Nurse Joy",
+      text: "Hello! Welcome to the Pokémon Center.\n\nWe restore your Pokémon to full health. Come back anytime!",
     };
   }
   if (scriptKey === "Common_OpenMart" || (graphicsName && graphicsName.includes("CLERK"))) {
     return {
-      title: "Dependiente",
-      text: "¡Hola! Bienvenido a la Tienda Pokémon.\n\nTenemos Poké Balls, Pociones y todo tipo de artículos útiles para tu viaje de entrenador.",
+      title: "Clerk",
+      text: "Hello! Welcome to the Poké Mart.\n\nWe have Poké Balls, Potions and supplies for your journey.",
     };
   }
   return undefined;

@@ -23,11 +23,11 @@ export const JOHTO_TRAINERS: Record<string, JohtoTrainerInfo> = {
   // Ruta 30: El Joven Joey
   "Route30_EventScript_Youngster_Joey": {
     id: "Route30_EventScript_Youngster_Joey",
-    name: "Joven Joey",
-    trainerClass: "Joven",
-    introText: "¡Te he visto mirarme fijamente a los ojos! ¡Mi Rattata está en el percentil superior de todos los Rattata del mundo! ¡Prepárate a luchar!",
-    defeatText: "¡Oh, no! ¡Mi querido e invencible Rattata ha caído derrotado!",
-    defeatedText: "Puede que mi Rattata haya perdido hoy, ¡pero entrenaremos más duro que nadie para ser los mejores de todo Johto!",
+    name: "Youngster Joey",
+    trainerClass: "Youngster",
+    introText: "I saw you looking right at me! My Rattata is in the top percentage of all Rattata! Get ready to battle!",
+    defeatText: "Oh no! My dear, unbeatable Rattata was defeated!",
+    defeatedText: "My Rattata lost today, but we will train hard to be the best in Johto!",
     party: [
       { species: C.SPECIES_RATTATA, level: 4 },
     ],
@@ -39,11 +39,11 @@ export const JOHTO_TRAINERS: Record<string, JohtoTrainerInfo> = {
   // Ruta 30: El Joven Mikey
   "Route30_EventScript_Youngster_Mikey": {
     id: "Route30_EventScript_Youngster_Mikey",
-    name: "Joven Mikey",
-    trainerClass: "Joven",
-    introText: "¡Para ser un buen entrenador no hay secretos: combatir contra todo el que se cruce! ¡Acepta mi desafío!",
-    defeatText: "¡Vaya! ¡Se nota que sabes entrenar a tus Pokémon de verdad!",
-    defeatedText: "Convertirse en un maestro Pokémon es un camino duro, ¡pero cada derrota me ayuda a mejorar!",
+    name: "Youngster Mikey",
+    trainerClass: "Youngster",
+    introText: "The secret to being a good Trainer is battling everyone you meet! Accept my challenge!",
+    defeatText: "Wow! You really know how to train your Pokémon!",
+    defeatedText: "Becoming a Pokémon master is hard, but every defeat helps me improve!",
     party: [
       { species: C.SPECIES_PIDGEY, level: 2 },
       { species: C.SPECIES_RATTATA, level: 4 },
@@ -56,11 +56,11 @@ export const JOHTO_TRAINERS: Record<string, JohtoTrainerInfo> = {
   // Ruta 30: Cazabichos Don
   "Route30_EventScript_Bugcatcher_Don": {
     id: "Route30_EventScript_Bugcatcher_Don",
-    name: "Cazabichos Don",
-    trainerClass: "Cazabichos",
-    introText: "¡Mis Pokémon bicho están llenos de energía y no temen a nada! ¡A ver cómo respondes a sus picotazos!",
-    defeatText: "¡Mis pobres bichitos no han podido resistir la fuerza de tus ataques!",
-    defeatedText: "Se me acabaron las Poké Balls atrapando bichos en la hierba... Menos mal que la tienda está cerca.",
+    name: "Bug Catcher Don",
+    trainerClass: "Bug Catcher",
+    introText: "My Bug Pokémon are full of energy and fearless! Let's see how you handle their attacks!",
+    defeatText: "My poor bugs could not withstand your attacks!",
+    defeatedText: "I used all my Poké Balls catching bugs in the grass... Good thing the shop is nearby.",
     party: [
       { species: C.SPECIES_CATERPIE, level: 3 },
       { species: C.SPECIES_CATERPIE, level: 3 },
@@ -73,11 +73,11 @@ export const JOHTO_TRAINERS: Record<string, JohtoTrainerInfo> = {
   // Ruta 31: Cazabichos Wade
   "Route31_EventScript_Bugcatcher_Wade": {
     id: "Route31_EventScript_Bugcatcher_Wade",
-    name: "Cazabichos Wade",
-    trainerClass: "Cazabichos",
-    introText: "¡He atrapado a todos estos Pokémon en el bosque! ¿Crees que tu equipo puede vencer a mi enjambre?",
-    defeatText: "¡He perdido! Veo que tus Pokémon tienen mucha mejor estrategia.",
-    defeatedText: "Aunque lleves 6 Pokémon contigo, si atrapas otro se enviará automáticamente a las cajas del PC.",
+    name: "Bug Catcher Wade",
+    trainerClass: "Bug Catcher",
+    introText: "I caught all these Pokémon in the forest! Can your team beat my swarm?",
+    defeatText: "I lost! Your Pokémon have a much better strategy.",
+    defeatedText: "If you have six Pokémon with you, any others you catch are sent to the PC Boxes.",
     party: [
       { species: C.SPECIES_CATERPIE, level: 2 },
       { species: C.SPECIES_CATERPIE, level: 2 },
@@ -92,11 +92,11 @@ export const JOHTO_TRAINERS: Record<string, JohtoTrainerInfo> = {
   // Ruta 32: Joven Albert
   "Route32_EventScript_YoungsterAlbert": {
     id: "Route32_EventScript_YoungsterAlbert",
-    name: "Joven Albert",
-    trainerClass: "Joven",
-    introText: "¡Voy a ganar combates usando solo a mis Pokémon favoritos, no los que todos usan!",
-    defeatText: "¡Mis favoritos no han sido suficientes hoy!",
-    defeatedText: "Seguiré entrenando a mis favoritos hasta hacerlos campeones.",
+    name: "Youngster Albert",
+    trainerClass: "Youngster",
+    introText: "I will win with my favorite Pokémon, not just the ones everyone uses!",
+    defeatText: "My favorites were not enough today!",
+    defeatedText: "I will keep training my favorites until they are champions.",
     party: [
       { species: C.SPECIES_RATTATA, level: 6 },
       { species: C.SPECIES_ZUBAT, level: 8 },
@@ -109,11 +109,11 @@ export const JOHTO_TRAINERS: Record<string, JohtoTrainerInfo> = {
   // Ruta 32: Joven Gordon
   "Route32_EventScript_YoungsterGordon": {
     id: "Route32_EventScript_YoungsterGordon",
-    name: "Joven Gordon",
-    trainerClass: "Joven",
-    introText: "¡La hierba alta está repleta de sorpresas! ¡Te presento a mi compañero de agua!",
-    defeatText: "¡Vaya chaparrón nos has dado!",
-    defeatedText: "El terreno húmedo de la Ruta 32 es el hogar ideal para los Pokémon de agua.",
+    name: "Youngster Gordon",
+    trainerClass: "Youngster",
+    introText: "The tall grass is full of surprises! Meet my Water-type partner!",
+    defeatText: "You really rained on our parade!",
+    defeatedText: "Route 32's wet ground is ideal for Water Pokémon.",
     party: [
       { species: C.SPECIES_WOOPER, level: 10 },
     ],
@@ -125,11 +125,11 @@ export const JOHTO_TRAINERS: Record<string, JohtoTrainerInfo> = {
   // Ruta 34: Joven Ian
   "Route34_EventScript_YoungsterIan": {
     id: "Route34_EventScript_YoungsterIan",
-    name: "Joven Ian",
-    trainerClass: "Joven",
-    introText: "¡Entreno a diario para ser el número uno de mi clase de entrenadores!",
-    defeatText: "¡Tu equipo está en otra liga!",
-    defeatedText: "Aún me queda mucho por estudiar para llegar a la altura de entrenadores como tú.",
+    name: "Youngster Ian",
+    trainerClass: "Youngster",
+    introText: "I train every day to be the best Trainer in my class!",
+    defeatText: "Your team is in another league!",
+    defeatedText: "I still have much to learn to match Trainers like you.",
     party: [
       { species: C.SPECIES_MANKEY, level: 10 },
       { species: C.SPECIES_DIGLETT, level: 12 },
@@ -142,11 +142,11 @@ export const JOHTO_TRAINERS: Record<string, JohtoTrainerInfo> = {
   // Ruta 34: Joven Samuel
   "Route34_EventScript_YoungsterSamuel": {
     id: "Route34_EventScript_YoungsterSamuel",
-    name: "Joven Samuel",
-    trainerClass: "Joven",
-    introText: "¡Mi sueño es convertirme en Líder de Gimnasio algún día! ¡Demuéstrame tu fuerza!",
-    defeatText: "¡Impresionante! Tienes madera de futuro campeón.",
-    defeatedText: "Algún día abriré mi propio gimnasio y te desafiaré por la medalla.",
+    name: "Youngster Samuel",
+    trainerClass: "Youngster",
+    introText: "My dream is to become a Gym Leader! Show me your strength!",
+    defeatText: "Impressive! You have what it takes to become a Champion.",
+    defeatedText: "Someday I will open my own Gym and challenge you for the Badge.",
     party: [
       { species: C.SPECIES_RATTATA, level: 7 },
       { species: C.SPECIES_SANDSHREW, level: 10 },

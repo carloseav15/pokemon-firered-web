@@ -14,7 +14,7 @@ export default async function run(ctx){
  });
  await p.goto(new URL('viewer.html#modo=explore&mapa=MAP_VICTORY_ROAD_1F&px=10&py=10',process.env.PW_BASE).href);
  await p.waitForFunction(()=>window.caveProbe.steps.length&&!document.body.hasAttribute('aria-busy'));await p.waitForTimeout(1200);
- if(await p.locator('#player-char').inputValue()!==character){await p.getByRole('button',{name:'Menú · Esc'}).click();await p.locator('#explore-character').selectOption(character);await p.keyboard.press('Escape');await p.waitForTimeout(800);}
+ if(await p.locator('#player-char').inputValue()!==character){await p.getByRole('button',{name:"Menu · Esc"}).click();await p.locator('#explore-character').selectOption(character);await p.keyboard.press('Escape');await p.waitForTimeout(800);}
  const finished=n=>p.waitForFunction(k=>window.caveProbe.steps.filter(s=>s.phase==='finish').length>=k,n,{timeout:8000})
   .catch(async()=>{throw Error('Walk stalled '+JSON.stringify(await p.evaluate(()=>({steps:window.caveProbe.steps.slice(-6),hash:location.hash.slice(0,80)}))));});
  const walk=async(key,n)=>{await p.evaluate(()=>{window.caveProbe.steps=window.caveProbe.steps.filter(s=>s.phase==='spawn');});

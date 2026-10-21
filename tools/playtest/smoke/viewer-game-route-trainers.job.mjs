@@ -39,7 +39,7 @@ export default async function run(ctx){
    const after=await state(flag);
    if(!after.flag)throw Error('defeat flag not set '+JSON.stringify(after));
    if(after.money<=before.money)throw Error('no prize money '+before.money+'→'+after.money);
-   await p.getByRole('button',{name:'Menú · Esc'}).click();
+   await p.getByRole('button',{name:"Menu · Esc"}).click();
    await p.locator('#explore-save').click();await p.keyboard.press('Escape');
    await p.reload();await p.waitForFunction(()=>performance.getEntriesByName('viewer-interactive').length);
    await p.waitForTimeout(3000);

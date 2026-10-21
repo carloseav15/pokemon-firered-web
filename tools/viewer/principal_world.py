@@ -192,7 +192,7 @@ def main():
     for island in ISLANDS:
         travels.append({'id':f'vermilion-{island.lower()}-island','a':'kanto/MAP_VERMILION_CITY',
             'b':f'sevii/MAP_{island}_ISLAND','label':f'Vermilion ↔ Sevii · {ISLANDS.index(island)+1}',
-            'kind':'source-navigation','description':'FireRed incluye los ferris Seagallop entre Vermilion y las Islas Sevii. Aquí puedes consultar sus destinos; no se ejecuta el viaje del juego.',
+            'kind':'source-navigation','description':'FireRed includes Seagallop ferries between Vermilion and the Sevii Islands. Inspect their destinations here; this does not execute in-game travel.',
             'basis':f'FireRed data/scripts/seagallop.inc: SEAGALLOP_{island}_ISLAND. Atlas endpoints are town maps; source pass/flag requirements are not simulated.'})
     for t in travels:
         assert t['a'] in maps and t['b'] in maps,t

@@ -38,17 +38,17 @@ function renderRows(rows: Row[], label: string): void {
   const diffCount = rows.filter((r) => r.diffs.length > 0 || r.onlyIn).length;
   let shown = rows.filter((r) => !onlyDiff.checked || r.diffs.length > 0 || r.onlyIn);
   if (term) shown = shown.filter((r) => `${r.nameA ?? ""} ${r.nameB ?? ""} ${r.key}`.toLowerCase().includes(term));
-  summary.textContent = `${label}: ${rows.length} comparados, ${diffCount} con diferencias; mostrando ${shown.length}.`;
+  summary.textContent = `${label}: ${rows.length} compared, ${diffCount} with differences; showing ${shown.length}.`;
   const body = shown.map((r) => {
     const name = r.nameA === r.nameB || r.nameB === null ? esc(r.nameA ?? "") : r.nameA === null ? esc(r.nameB) : `${esc(r.nameA)} <span class="b">/ ${esc(r.nameB)}</span>`;
     const detail = r.onlyIn
-      ? `<span class="only">solo en ${r.onlyIn === "A" ? "FireRed" : "Emerald"}</span>`
+      ? `<span class="only">only in ${r.onlyIn === "A" ? "FireRed" : "Emerald"}</span>`
       : r.diffs.length === 0
-        ? `<span class="only">sin diferencias</span>`
+        ? `<span class="only">no differences</span>`
         : r.diffs.map((d) => `<span class="chip"><em>${esc(d.field)}:</em> <span class="a">${esc(d.a)}</span> → <span class="b">${esc(d.b)}</span></span>`).join("");
     return `<tr><td class="id">${esc(r.key.replace(/^ITEM_/, ""))}</td><td>${name}</td><td>${detail}</td></tr>`;
   }).join("");
-  out.innerHTML = `<table><thead><tr><th>Id</th><th>Nombre</th><th>Diferencias</th></tr></thead><tbody>${body}</tbody></table>`;
+  out.innerHTML = `<table><thead><tr><th>Id</th><th>Name</th><th>Differences</th></tr></thead><tbody>${body}</tbody></table>`;
 }
 
 function renderTrainers(): void {
@@ -57,13 +57,13 @@ function renderTrainers(): void {
   const term = q.value.trim().toLowerCase();
   const filt = (l: TrainerView[]) => (term ? l.filter((t) => `${t.cls} ${t.name} ${t.party}`.toLowerCase().includes(term)) : l);
   const overlap = trainerOverlap(la, lb);
-  summary.textContent = `Entrenadores: FireRed ${la.length}, Emerald ${lb.length}; ${overlap.length} comparten clase y nombre. Los ids no coinciden entre juegos.`;
+  summary.textContent = `Trainers: FireRed ${la.length}, Emerald ${lb.length}; ${overlap.length} share a class and name. IDs differ between games.`;
   const table = (l: TrainerView[], cls: string) =>
-    `<table><thead><tr><th>Id</th><th class="${cls}">Clase / nombre</th><th>Equipo</th></tr></thead><tbody>${l
-      .map((t) => `<tr><td class="id">${t.id}</td><td>${esc(t.cls)} <strong>${esc(t.name)}</strong>${t.double ? " (doble)" : ""}</td><td>${esc(t.party)}</td></tr>`)
+    `<table><thead><tr><th>Id</th><th class="${cls}">Class / name</th><th>Party</th></tr></thead><tbody>${l
+      .map((t) => `<tr><td class="id">${t.id}</td><td>${esc(t.cls)} <strong>${esc(t.name)}</strong>${t.double ? " (double)" : ""}</td><td>${esc(t.party)}</td></tr>`)
       .join("")}</tbody></table>`;
   const ov = overlap.length
-    ? `<h3>Misma clase y nombre en ambos juegos (${overlap.length})</h3><table><thead><tr><th>Clase / nombre</th><th class="a">FireRed</th><th class="b">Emerald</th></tr></thead><tbody>${overlap
+    ? `<h3>Same class and name in both games (${overlap.length})</h3><table><thead><tr><th>Class / name</th><th class="a">FireRed</th><th class="b">Emerald</th></tr></thead><tbody>${overlap
         .map((o) => `<tr><td>${esc(o.cls)} <strong>${esc(o.name)}</strong></td><td>${esc(o.a.party)}</td><td>${esc(o.b.party)}</td></tr>`)
         .join("")}</tbody></table>`
     : "";
@@ -73,7 +73,7 @@ function renderTrainers(): void {
 function render(): void {
   if (!A || !B) return;
   if (tab === "trainers") renderTrainers();
-  else renderRows(rowsFor(tab), { species: "Pokémon", moves: "Movimientos", items: "Objetos" }[tab]!);
+  else renderRows(rowsFor(tab), { species: "Pokémon", moves: "Moves", items: "Items" }[tab]!);
   (window as unknown as { frCompare: unknown }).frCompare = {
     tab, species: rowsFor("species"), moves: rowsFor("moves"), items: rowsFor("items"),
   };
@@ -92,4 +92,4 @@ onlyDiff.addEventListener("change", render);
 (async () => {
   [A, B] = await Promise.all([load("/fr"), load("/emerald")]);
   render();
-})().catch((e) => { summary.textContent = `Error: ${String(e)}. ¿Están exportados public/fr y public/emerald?`; });
+})().catch((e) => { summary.textContent = `Error: ${String(e)}. Have public/fr and public/emerald been exported?`; });

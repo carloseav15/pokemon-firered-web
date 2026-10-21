@@ -15,7 +15,7 @@ export default async function run(ctx){
  });
  await p.goto(new URL(`viewer.html#modo=explore&mapa=MAP_ROUTE12&px=${OX+14}&py=${OY+71}`,process.env.PW_BASE).href);
  await p.waitForFunction(()=>window.bridgeProbe.steps.length&&!document.body.hasAttribute('aria-busy'));await p.waitForTimeout(1200);
- if(await p.locator('#player-char').inputValue()!==character){await p.getByRole('button',{name:'Menú · Esc'}).click();await p.locator('#explore-character').selectOption(character);await p.keyboard.press('Escape');await p.waitForTimeout(800);}
+ if(await p.locator('#player-char').inputValue()!==character){await p.getByRole('button',{name:"Menu · Esc"}).click();await p.locator('#explore-character').selectOption(character);await p.keyboard.press('Escape');await p.waitForTimeout(800);}
  const wait=n=>p.waitForFunction(k=>window.bridgeProbe.steps.filter(s=>s.phase==='finish').length>=k,n,{timeout:30000})
   .catch(async e=>{throw Error('Bridge walk stalled '+JSON.stringify(await p.evaluate(()=>({steps:window.bridgeProbe.steps.slice(-5),hash:location.hash.slice(0,90)}))));});
  await p.evaluate(()=>{window.bridgeProbe.steps=window.bridgeProbe.steps.filter(s=>s.phase==='spawn');});

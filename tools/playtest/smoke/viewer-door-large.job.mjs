@@ -41,7 +41,7 @@ export default async function run(ctx){
  });
  await p.goto(new URL(`viewer.html#modo=explore&mapa=${sourceMap}&px=${warp.x}&py=${warp.y+1}`,process.env.PW_BASE).href);
  await p.waitForFunction(()=>!document.body.hasAttribute('aria-busy')&&document.querySelector('#player-sprite'));await p.waitForTimeout(1500);
- if(await p.locator('#player-char').inputValue()!==character){await p.getByRole('button',{name:'Menú · Esc'}).click();await p.locator('#explore-character').selectOption(character);await p.keyboard.press('Escape');await p.waitForTimeout(800);}
+ if(await p.locator('#player-char').inputValue()!==character){await p.getByRole('button',{name:"Menu · Esc"}).click();await p.locator('#explore-character').selectOption(character);await p.keyboard.press('Escape');await p.waitForTimeout(800);}
  await p.keyboard.press('ArrowUp');await p.waitForTimeout(300);
  await p.keyboard.down('ArrowUp');await p.waitForTimeout(25);await p.keyboard.up('ArrowUp');
  await p.waitForFunction(m=>new URLSearchParams(location.hash.slice(1)).get('mapa')===m,warp.destMap,{timeout:20000});

@@ -60,7 +60,7 @@ export class NavigationWarps {
     const warp = source.warps[warpId];
     if (!warp) throw new Error(`Warp inexistente: ${source.id}:${warpId}`);
     const address = warp.destMap === "MAP_DYNAMIC" ? this.dynamic : { mapId: warp.destMap, warpId: warp.destWarpId };
-    if (!address) throw new Error(`Salida dinámica sin entrada previa: ${source.id}:${warpId}`);
+    if (!address) throw new Error(`Dynamic exit without a prior entrance: ${source.id}:${warpId}`);
     return this.resolveAddress(address, { mapId: source.id, warpId, x: warp.x, y: warp.y });
   }
   /** overworld.c SetPlayerCoordsFromWarp: signed warpId first, explicit coords second. */
@@ -70,7 +70,7 @@ export class NavigationWarps {
     if (!arrival && Number.isSafeInteger(address.x) && Number.isSafeInteger(address.y) && address.x! >= 0 && address.y! >= 0) {
       arrival = { x: address.x!, y: address.y!, elevation: 0, destMap: "", destWarpId: -1 };
     }
-    if (!arrival) throw new Error(`Destino inexistente: ${address.mapId}:${address.warpId}`);
+    if (!arrival) throw new Error(`Missing destination: ${address.mapId}:${address.warpId}`);
     return { ...address, header, arrival,
       dynamicReturn: arrival.destMap === "MAP_DYNAMIC" && source ? { ...source } : null };
   }

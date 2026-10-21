@@ -39,7 +39,7 @@ export default async function run(ctx){
  await p.locator('#engine-interaction').waitFor({state:'hidden',timeout:10000});
  const t2=await frames();
  if(t2<=t1)throw Error('Play time not counting in the engine '+t1+'→'+t2);
- await p.getByRole('button',{name:'Menú · Esc'}).click();await p.locator('#explore-save').click();await p.keyboard.press('Escape');
+ await p.getByRole('button',{name:"Menu · Esc"}).click();await p.locator('#explore-save').click();await p.keyboard.press('Escape');
  await p.reload();await p.waitForFunction(()=>performance.getEntriesByName('viewer-interactive').length);
  const t3=await frames();
  if(t3<t2)throw Error('Play time not persisted '+t2+'→'+t3);

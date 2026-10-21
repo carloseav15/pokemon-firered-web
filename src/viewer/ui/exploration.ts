@@ -44,21 +44,21 @@ export class ExplorationUi {
     const isJohto = hooks.region === "johto";
     const regionName = isJohto ? "Johto" : isHoenn ? "Hoenn" : "Kanto";
     const charOptions = isJohto
-      ? `<option value="red">Eco / Bruno (Ethan)</option><option value="leaf">Lira / Aura (Lyra)</option>`
+      ? `<option value="red">Ethan</option><option value="leaf">Lyra</option>`
       : isHoenn
-        ? `<option value="red">Bruno (Brendan)</option><option value="leaf">Aura (May)</option>`
-        : `<option value="red">Rojo</option><option value="leaf">Hoja</option>`;
+        ? `<option value="red">Brendan</option><option value="leaf">May</option>`
+        : `<option value="red">Red</option><option value="leaf">Leaf</option>`;
     const noteText = isJohto
-      ? "Exploración de mundo abierto en Johto (Heart & Soul). 77 mapas exteriores continuos desde Pueblo Primavera hasta el Monte Plateado, con bicicleta, surf y colisiones nativas."
+      ? "Explore Johto using Heart & Soul maps. Bicycle, Surf and map collisions are available; original-content review is pending."
       : isHoenn
-        ? "Exploración de mundo abierto en Hoenn. Bici Acrobática en rieles de equilibrio, corrientes rápidas marinas hacia Pacifidlog, buceo submarino (Dive), y puzzles de gimnasios de Arrecípolis (hielo) y Algaria (flechas giratorias)."
-        : "Navegación por exteriores e interiores en desarrollo. Equipo, mochila y demás opciones están en Juego · Intro. Historia general con inicio definitivo en Paleta.";
+        ? "Explore Hoenn with Acro Bike rails, ocean currents, Dive, and selected Sootopolis and Mossdeep Gym puzzles. Gameplay integration is in progress."
+        : "Outdoor and indoor navigation is in development. Open Game · Enter for your party, Bag and other game options. The story begins in Pallet Town.";
 
     this.root.id = "explore-hud";
     this.root.hidden = true;
     const menuButton = document.createElement("button");
     menuButton.className = "btn";
-    menuButton.textContent = "Menú · Esc";
+    menuButton.textContent = "Menu · Esc";
     menuButton.addEventListener("click", () => this.openMenu());
     this.location.id = "explore-location";
     this.performance.id = "explore-performance";
@@ -68,28 +68,28 @@ export class ExplorationUi {
     const gameMenuButton = document.createElement("button");
     gameMenuButton.className = "btn";
     gameMenuButton.id = "explore-game-menu";
-    gameMenuButton.textContent = "Juego · Intro";
+    gameMenuButton.textContent = "Game · Enter";
     if (isHoenn || isJohto) gameMenuButton.style.display = "none";
     gameMenuButton.addEventListener("click", () => this.openGameMenu());
     this.root.append(this.location, this.notice, this.performance, gameMenuButton, menuButton);
     this.menu.id = "explore-menu";
     this.menu.setAttribute("aria-labelledby", "explore-menu-title");
-    this.menu.innerHTML = `<h2 id="explore-menu-title">Explorar ${regionName}</h2>
-      <p>Flechas / WASD: caminar · Mayús: correr / botes · B: bicicleta (Carrera / Acrobática) · X: caballito/salto Acro · V / Z: Buceo (Dive/Emerger) · M: audio · H: HUD. En táctiles, cruceta y botones.</p>
-      <label>Personaje <select id="explore-character">${charOptions}</select></label>
-      <label>Presentación <select id="explore-format"><option value="viewport">Todo el viewport</option><option value="wide">16:9</option><option value="gba">GBA 3:2 (15×10)</option></select></label>
-      <label>Escala <select id="explore-scale"><option value="auto" selected>Auto (GBA)</option><option value="1">1×</option><option value="2">2×</option><option value="3">3×</option><option value="4">4×</option><option value="5">5×</option><option value="6">6×</option></select></label>
-      <label><input type="checkbox" id="explore-radar"> Mostrar minimapa</label>
-      <label><input type="checkbox" id="explore-clean"> Ocultar barra superior (H)</label>
-      <label><input type="checkbox" id="explore-touch"> Controles táctiles (cruceta, A, B, START, SELECT, L, R)</label>
-      <label><input type="checkbox" id="explore-metrics"> Mostrar rendimiento</label>
+    this.menu.innerHTML = `<h2 id="explore-menu-title">Explore ${regionName}</h2>
+      <p>Arrow keys / WASD: walk · Shift: run / hop · B: bicycle (Mach / Acro) · X: Acro wheelie / hop · V / Z: Dive / surface · M: audio · H: HUD. On touchscreens, use the directional pad and buttons.</p>
+      <label>Character <select id="explore-character">${charOptions}</select></label>
+      <label>Display <select id="explore-format"><option value="viewport">Full viewport</option><option value="wide">16:9</option><option value="gba">GBA 3:2 (15×10)</option></select></label>
+      <label>Scale <select id="explore-scale"><option value="auto" selected>Auto (GBA)</option><option value="1">1×</option><option value="2">2×</option><option value="3">3×</option><option value="4">4×</option><option value="5">5×</option><option value="6">6×</option></select></label>
+      <label><input type="checkbox" id="explore-radar"> Show minimap</label>
+      <label><input type="checkbox" id="explore-clean"> Hide toolbar (H)</label>
+      <label><input type="checkbox" id="explore-touch"> Touch controls (directional pad, A, B, START, SELECT, L, R)</label>
+      <label><input type="checkbox" id="explore-metrics"> Show performance</label>
       ${isHoenn ? `
-        <button class="btn" id="explore-rayquaza-scene">🐉 Cinemática: Rayquaza (Pilar Celeste)</button>
-        <button class="btn" id="explore-clash-scene">🌋 Cinemática: Kyogre vs Groudon</button>
-        <button class="btn" id="explore-cave-scene">🌌 Cinemática: Cueva Origen</button>
-      ` : isJohto ? "" : `<button class="btn" id="explore-open-game-menu">Abrir menú del juego</button>`}<button class="btn" id="explore-save">Guardar partida</button><button class="btn" id="explore-continue">Continuar guardado</button><button class="btn" id="explore-new-game">Nueva partida</button><p id="explore-save-result" role="status"></p>
+        <button class="btn" id="explore-rayquaza-scene">🐉 Scene: Rayquaza (Sky Pillar)</button>
+        <button class="btn" id="explore-clash-scene">🌋 Scene: Kyogre vs Groudon</button>
+        <button class="btn" id="explore-cave-scene">🌌 Scene: Cave of Origin</button>
+      ` : isJohto ? "" : `<button class="btn" id="explore-open-game-menu">Open game menu</button>`}<button class="btn" id="explore-save">Save game</button><button class="btn" id="explore-continue">Load saved game</button><button class="btn" id="explore-new-game">New game</button><p id="explore-save-result" role="status"></p>
       <p id="explore-note">${noteText}</p>
-      <div class="explore-actions"><button class="btn" id="explore-resume">Continuar</button><button class="btn" id="explore-fullscreen">Pantalla completa</button><button class="btn" id="explore-exit">Volver al atlas</button></div>`;
+      <div class="explore-actions"><button class="btn" id="explore-resume">Resume</button><button class="btn" id="explore-fullscreen">Fullscreen</button><button class="btn" id="explore-exit">Return to map browser</button></div>`;
     document.body.append(this.root, this.menu);
     const prefs = readPrefs();
     const formatSelect = this.menu.querySelector<HTMLSelectElement>("#explore-format")!;
@@ -127,14 +127,14 @@ export class ExplorationUi {
       this.hooks.onCaveCinematic?.();
     });
     this.menu.querySelector("#explore-save")!.addEventListener("click", () => {
-      this.menu.querySelector("#explore-save-result")!.textContent = this.hooks.save() ? "Partida guardada." : "No se pudo guardar la partida.";
+      this.menu.querySelector("#explore-save-result")!.textContent = this.hooks.save() ? "Game saved." : "Unable to save the game.";
     });
     this.menu.querySelector("#explore-continue")!.addEventListener("click", () => {
       this.menu.close();
       void this.hooks.continue().catch(error => { this.openMenu(); this.menu.querySelector("#explore-save-result")!.textContent = String(error); });
     });
     this.menu.querySelector("#explore-new-game")!.addEventListener("click", () => {
-      if (!confirm("¿Comenzar una nueva partida desde el inicio de la historia en Pueblo Paleta? Se reemplazará el guardado actual.")) return;
+      if (!confirm("Start a new game from the beginning of the story in Pallet Town? This will replace the current save.")) return;
       this.menu.close();
       void Promise.resolve(this.hooks.newGame?.()).catch(error => { this.openMenu(); this.menu.querySelector("#explore-save-result")!.textContent = String(error); });
     });
@@ -175,7 +175,7 @@ export class ExplorationUi {
       try {
         if (document.fullscreenElement) await document.exitFullscreen();
         else await document.documentElement.requestFullscreen();
-      } catch { this.menu.querySelector("#explore-note")!.textContent = "Pantalla completa no disponible; puedes continuar usando todo el viewport."; }
+      } catch { this.menu.querySelector("#explore-note")!.textContent = "Fullscreen is unavailable; you can continue using the full viewport."; }
     });
     this.menu.addEventListener("close", () => {
       this.hooks.pause(false); this.previous = 0; this.samples = []; this.since = 0;
@@ -260,11 +260,11 @@ export class ExplorationUi {
         const times = [...this.samples].sort((a, b) => a - b);
         const avg = this.samples.reduce((sum, dt) => sum + dt, 0) / times.length;
         const stats = this.hooks.stats();
-        this.notice.textContent = stats.error || (stats.pending ? "Preparando entorno…" : "");
+        this.notice.textContent = stats.error || (stats.pending ? "Preparing surroundings…" : "");
         const sample = { fps: 1000 / avg, p95: times[Math.ceil(times.length * 0.95) - 1]!, max: times[times.length - 1]!, ...stats };
         // Observational diagnostics: RAF intervals, not proof of GPU presentation or ROM parity.
-        this.performance.value = `${sample.fps.toFixed(0)} FPS · p95 ${sample.p95.toFixed(1)} ms · máx ${sample.max.toFixed(1)} ms · ${stats.sectors} mapas · ${(stats.bytes / 1048576).toFixed(1)} MiB*${stats.pending ? ` · cargando ${stats.pending}` : ""}${stats.error ? ` · ${stats.error}` : ""}`;
-        this.performance.title = "*Buffers de colisión y canvas residentes estimados; excluye cachés del navegador/GPU, tilesets y sprites. FPS mide intervalos RAF.";
+        this.performance.value = `${sample.fps.toFixed(0)} FPS · p95 ${sample.p95.toFixed(1)} ms · max ${sample.max.toFixed(1)} ms · ${stats.sectors} maps · ${(stats.bytes / 1048576).toFixed(1)} MiB*${stats.pending ? ` · loading ${stats.pending}` : ""}${stats.error ? ` · ${stats.error}` : ""}`;
+        this.performance.title = "*Estimated resident collision and canvas buffers; excludes browser/GPU caches, tilesets and sprites. FPS measures RAF intervals.";
         this.performance.dataset.sample = JSON.stringify(sample);
         this.samples = []; this.since = now;
       }

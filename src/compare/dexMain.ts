@@ -41,11 +41,11 @@ function ul(items: string[], empty = "—"): string {
 }
 
 function locs(l: Location[]): string {
-  if (!l.length) return `<span class="none">sin encuentros salvajes en este juego</span>`;
+  if (!l.length) return `<span class="none">no wild encounters in this game</span>`;
   const rows = l
     .slice()
     .sort((x, y) => x.map.localeCompare(y.map))
-    .map((x) => `${x.map} · ${x.kind} · Nv${x.min === x.max ? x.min : `${x.min}-${x.max}`} · ${x.chance}%`);
+    .map((x) => `${x.map} · ${x.kind} · Lv${x.min === x.max ? x.min : `${x.min}-${x.max}`} · ${x.chance}%`);
   return ul(rows);
 }
 
@@ -57,8 +57,8 @@ function showExtra(nat: number): void {
   selected = -nat;
   document.querySelectorAll(".tile").forEach((t) => t.classList.toggle("sel", (t as HTMLElement).dataset.extra === String(nat)));
   detailEl.innerHTML = `<h2>#${String(nat).padStart(3, "0")} ${esc(prettyName(nat))}</h2>
-    <p class="none">Sin datos de FireRed ni Emerald: solo sprites de las otras fuentes.</p>
-    <h3>Sprites de otros juegos</h3><div id="others"></div>`;
+    <p class="none">No FireRed or Emerald data; sprites from other sources only.</p>
+    <h3>Sprites from other games</h3><div id="others"></div>`;
   history.replaceState(null, "", `#n${nat}`);
   const others = document.getElementById("others")!;
   others.innerHTML = otherSourcesHtml(spriteIndex, nat);
@@ -77,20 +77,20 @@ function animPanelHtml(id: number): string {
   const allMoves = (A.game.raw.moves.moves as unknown[]).map((_m, i) => i).filter((i) => i > 0 && !seen.has(i));
   const opt = (m: number, lv?: number) => `<option value="${m}">${lv !== undefined ? `Nv${lv} · ` : ""}${esc(A.game.moveName(m))}</option>`;
   const targets = ids.map((i) => `<option value="${i}" ${i === DEFAULT_TARGET ? "selected" : ""}>${esc(A.game.speciesName(i))}</option>`).join("");
-  return `<h3>Animaciones de movimientos (motor de FireRed)</h3>
+  return `<h3>Move animations (FireRed engine)</h3>
     <div class="animPanel" data-species="${id}">
       <div class="animBar">
-        <button class="animOpen" type="button">Abrir la ventana del juego</button>
-        <span class="none animMsg">Carga el motor de FireRed en una ventana; solo para las especies de FireRed.</span>
+        <button class="animOpen" type="button">Open game window</button>
+        <span class="none animMsg">Load the FireRed engine in a window; FireRed species only.</span>
       </div>
       <div class="animBody" hidden>
         <div class="animCtl">
-          <label>Movimiento <select class="animMove"><optgroup label="Aprendidos por nivel">${learn.map((x) => opt(x.m, x.lv)).join("")}</optgroup>
-            <optgroup label="Otros movimientos">${allMoves.map((m) => opt(m)).join("")}</optgroup></select></label>
-          <button class="animPlay" type="button">Reproducir</button>
-          <label>Rival <select class="animTarget">${targets}</select></label>
+          <label>Move <select class="animMove"><optgroup label="Learned by level">${learn.map((x) => opt(x.m, x.lv)).join("")}</optgroup>
+            <optgroup label="Other moves">${allMoves.map((m) => opt(m)).join("")}</optgroup></select></label>
+          <button class="animPlay" type="button">Play</button>
+          <label>Opponent <select class="animTarget">${targets}</select></label>
         </div>
-        <iframe class="animFrame" title="Motor de FireRed" width="480" height="320" loading="lazy"></iframe>
+        <iframe class="animFrame" title="FireRed engine" width="480" height="320" loading="lazy"></iframe>
       </div>
     </div>`;
 }
@@ -113,8 +113,8 @@ function bindAnimPanel(root: HTMLElement): void {
     loading = true;
     api = null;
     playBtn.disabled = true;
-    msg.textContent = "Cargando el motor del juego…";
-    frame.src = `/?fr=anims&a=${species}&t=${target.value}`;
+    msg.textContent = "Loading game engine…";
+    frame.src = `/play.html?fr=anims&a=${species}&t=${target.value}`;
     await new Promise<void>((res) => frame.addEventListener("load", () => res(), { once: true }));
     const win = frame.contentWindow as (Window & { frAnim?: FrAnim }) | null;
     for (let i = 0; i < 400 && !win?.frAnim; i++) await new Promise((r) => setTimeout(r, 50));
@@ -122,10 +122,10 @@ function bindAnimPanel(root: HTMLElement): void {
     try {
       await win!.frAnim!.ready;
       api = win!.frAnim!;
-      msg.textContent = "Listo. Elige un movimiento y pulsa Reproducir.";
+      msg.textContent = "Ready. Choose a move and press Play.";
       playBtn.disabled = false;
     } catch (e) {
-      msg.textContent = `No se pudo montar el combate: ${String(e)}`;
+      msg.textContent = `Unable to set up the battle: ${String(e)}`;
     }
     loading = false;
   };
@@ -172,42 +172,42 @@ function show(id: number): void {
   detailEl.innerHTML = `
     <h2>#${String(c.national).padStart(3, "0")} ${esc(c.nameA)}${sameName ? "" : ` <span style="color:var(--b)">/ ${esc(c.nameB)}</span>`}</h2>
     <div class="sprites">
-      ${spr("/fr", "front", "FireRed")}${spr("/fr", "front_shiny", "FireRed · variocolor")}
-      ${spr("/fr", "back", "FireRed · espalda")}${spr("/fr", "back_shiny", "FireRed · espalda variocolor")}
+      ${spr("/fr", "front", "FireRed")}${spr("/fr", "front_shiny", "FireRed · shiny")}
+      ${spr("/fr", "back", "FireRed · back")}${spr("/fr", "back_shiny", "FireRed · back shiny")}
       ${spr("/fr", "icon", "FireRed · icono")}${spr("/fr", "footprint", "FireRed · huella")}
     </div>
     <div class="sprites">
-      ${spr("/emerald", "front", "Emerald")}${spr("/emerald", "front_shiny", "Emerald · variocolor")}
-      ${spr("/emerald", "front_anim", "Emerald · animación")}
-      ${spr("/emerald", "back", "Emerald · espalda")}${spr("/emerald", "back_shiny", "Emerald · espalda variocolor")}
+      ${spr("/emerald", "front", "Emerald")}${spr("/emerald", "front_shiny", "Emerald · shiny")}
+      ${spr("/emerald", "front_anim", "Emerald · animation")}
+      ${spr("/emerald", "back", "Emerald · back")}${spr("/emerald", "back_shiny", "Emerald · back shiny")}
       ${spr("/emerald", "icon", "Emerald · icono")}${spr("/emerald", "footprint", "Emerald · huella")}
     </div>
-    <h3>Sprites de otros juegos</h3>
-    <div id="others"><p class="none">Cargando…</p></div>
+    <h3>Sprites from other games</h3>
+    <div id="others"><p class="none">Loading…</p></div>
     ${animPanelHtml(id)}
-    <h3>En común</h3>
+    <h3>Shared</h3>
     ${dl(c.common)}
-    <h3>Movimientos por nivel en común</h3>${ul(c.commonLevelMoves)}
+    <h3>Level-up moves shared</h3>${ul(c.commonLevelMoves)}
     <div class="cols">
-      <div><h3>MT/MO en común</h3>${ul(c.commonTm, "ninguna")}</div>
-      <div><h3>Tutor en común</h3>${ul(c.commonTutor, "ninguno")}</div>
+      <div><h3>TM/HM shared</h3>${ul(c.commonTm, "none")}</div>
+      <div><h3>Tutor shared</h3>${ul(c.commonTutor, "none")}</div>
     </div>
     <div class="cols">
       <div>
-        <h3 class="a">Solo FireRed</h3>
-        ${c.onlyA.length ? dl(c.onlyA) : `<p class="none">Sin datos distintos.</p>`}
-        <h4>Movimientos por nivel exclusivos</h4>${ul(c.levelMovesA)}
-        <h4>MT/MO exclusivas</h4>${ul(c.tmA)}
-        <h4>Tutor exclusivo</h4>${ul(c.tutorA)}
-        <h4>Dónde aparece</h4>${locs(c.locA)}
+        <h3 class="a">FireRed only</h3>
+        ${c.onlyA.length ? dl(c.onlyA) : `<p class="none">No different data.</p>`}
+        <h4>Game-specific level-up moves</h4>${ul(c.levelMovesA)}
+        <h4>Game-specific TM/HM</h4>${ul(c.tmA)}
+        <h4>Game-specific tutor</h4>${ul(c.tutorA)}
+        <h4>Where to find it</h4>${locs(c.locA)}
       </div>
       <div>
-        <h3 class="b">Solo Emerald</h3>
-        ${c.onlyB.length ? dl(c.onlyB) : `<p class="none">Sin datos distintos.</p>`}
-        <h4>Movimientos por nivel exclusivos</h4>${ul(c.levelMovesB)}
-        <h4>MT/MO exclusivas</h4>${ul(c.tmB)}
-        <h4>Tutor exclusivo</h4>${ul(c.tutorB)}
-        <h4>Dónde aparece</h4>${locs(c.locB)}
+        <h3 class="b">Emerald only</h3>
+        ${c.onlyB.length ? dl(c.onlyB) : `<p class="none">No different data.</p>`}
+        <h4>Game-specific level-up moves</h4>${ul(c.levelMovesB)}
+        <h4>Game-specific TM/HM</h4>${ul(c.tmB)}
+        <h4>Game-specific tutor</h4>${ul(c.tutorB)}
+        <h4>Where to find it</h4>${locs(c.locB)}
       </div>
     </div>`;
   history.replaceState(null, "", `#${id}`);
@@ -228,7 +228,7 @@ function renderList(): void {
     const nat = A.game.raw.species.species[id].national;
     return `${A.game.speciesName(id)} ${B.game.speciesName(id)} ${nat}`.toLowerCase().includes(term);
   });
-  countEl.textContent = `${shown.length} de ${ids.length}`;
+  countEl.textContent = `${shown.length} of ${ids.length}`;
   const ex = extras.filter((n) => !term || `${prettyName(n)} ${n}`.toLowerCase().includes(term));
   const exTiles = ex
     .map((n) => {
@@ -238,7 +238,7 @@ function renderList(): void {
       return `<div class="tile" data-extra="${n}"><div class="thumb" ${bg}></div><span>#${n}</span><span>${esc(prettyName(n))}</span></div>`;
     })
     .join("");
-  countEl.textContent = `${shown.length + ex.length} de ${ids.length + extras.length}`;
+  countEl.textContent = `${shown.length + ex.length} of ${ids.length + extras.length}`;
   listEl.innerHTML = shown
     .map((id) => `<div class="tile" data-id="${id}"><img loading="lazy" src="${sprite("/fr", "front", id)}" alt="" /><span>#${A.game.raw.species.species[id].national}</span><span>${esc(A.game.speciesName(id))}</span></div>`)
     .join("") + exTiles;
@@ -268,4 +268,4 @@ q.addEventListener("input", renderList);
     show(ids.includes(fromHash) ? fromHash : ids[0]!);
   }
   (window as unknown as { frDex: unknown }).frDex = { ids, card: (id: number) => buildCard(A, B, id, locA, locB), selected: () => selected };
-})().catch((e) => { detailEl.innerHTML = `<p class="none">Error: ${esc(String(e))}. ¿Están exportados public/fr y public/emerald?</p>`; });
+})().catch((e) => { detailEl.innerHTML = `<p class="none">Error: ${esc(String(e))}. Have public/fr and public/emerald been exported?</p>`; });

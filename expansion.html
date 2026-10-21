@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="es">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Catálogo Gen 1-9 · pokeemerald-expansion</title>
+    <title>Catalog Gen 1-9 · pokeemerald-expansion</title>
     <style>
       :root { color-scheme: dark; --bg:#0b0f14; --panel:#111827; --line:#243040; --fg:#e5e7eb; --mut:#9ca3af; --acc:#38bdf8; }
       * { box-sizing:border-box; }
@@ -30,7 +30,7 @@
       .chip.flat { color:var(--fg); background:#1f2937; font-weight:400; }
       .t-NORMAL{background:#a8a77a}.t-FIRE{background:#ee8130}.t-WATER{background:#6390f0}.t-ELECTRIC{background:#f7d02c}.t-GRASS{background:#7ac74c}
       .t-ICE{background:#96d9d6}.t-FIGHTING{background:#c22e28}.t-POISON{background:#a33ea1}.t-GROUND{background:#e2bf65}.t-FLYING{background:#a98ff3}
-      .t-PSYCHIC{background:#f95587}.t-BUG{background:#a6b91a}.t-ROCK{background:#b6a136}.t-GHOST{background:#735797}.t-DRAGON{background:#6f35fc}
+      .t-HPYCHIC{background:#f95587}.t-BUG{background:#a6b91a}.t-ROCK{background:#b6a136}.t-GHOST{background:#735797}.t-DRAGON{background:#6f35fc}
       .t-DARK{background:#705746;color:#fff}.t-STEEL{background:#b7b7ce}.t-FAIRY{background:#d685ad}.t-STELLAR{background:#40b5a5}.t-MYSTERY{background:#68a090}
       .stats { display:grid; grid-template-columns:70px 40px 1fr; gap:3px 8px; max-width:520px; align-items:center; }
       .bar { height:9px; border-radius:5px; background:#1f2937; overflow:hidden; } .bar i { display:block; height:100%; }
@@ -56,19 +56,19 @@
   </head>
   <body>
     <header>
-      <h1>Catálogo Gen 1-9</h1>
+      <h1>Catalog Gen 1-9</h1>
       <a href="/atlas.html">☰ Atlas</a>
       <button class="tab on" data-tab="s">Pokémon</button>
-      <button class="tab" data-tab="m">Movimientos</button>
-      <button class="tab" data-tab="a">Habilidades</button>
-      <button class="tab" data-tab="i">Objetos</button>
+      <button class="tab" data-tab="m">Moves</button>
+      <button class="tab" data-tab="a">Abilities</button>
+      <button class="tab" data-tab="i">Items</button>
       <span id="count" class="meta"></span>
       <a href="/dex.html" style="margin-left:auto">Pokédex FireRed / Emerald →</a>
     </header>
     <div id="note"></div>
     <div id="layout">
       <div id="list"><div id="filters"></div><div id="rows"></div></div>
-      <div id="detail"><p class="none">Cargando…</p></div>
+      <div id="detail"><p class="none">Loading…</p></div>
     </div>
     <script type="module" src="/src/compare/expansionMain.ts"></script>
   </body>

@@ -31,7 +31,7 @@ export function setupMinimap(
   minimapCanvasWrap.setAttribute("role", "group");
   minimapCanvasWrap.setAttribute(
     "aria-label",
-    "Minimapa: usa las flechas del teclado para desplazar la cámara"
+    "Minimap: use the arrow keys to pan the camera"
   );
 
   // Paso estable de teclado, expresado en casillas del mundo.

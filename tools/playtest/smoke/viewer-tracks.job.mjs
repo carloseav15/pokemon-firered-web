@@ -24,7 +24,7 @@ export default async function run(ctx) {
  },{ox:kanto.x,oy:kanto.y,w:kanto.width,h:kanto.height});
  await p.goto('about:blank');await p.goto(base+`#modo=explore&mapa=MAP_ROUTE19&px=${start.x}&py=${start.y}`);
  await p.waitForFunction(()=>window.trackProbe?.spawns&&!document.body.hasAttribute('aria-busy'),null,{timeout:30000});
- if(await p.locator('#player-char').inputValue()!==character){await p.getByRole('button',{name:'Menú · Esc'}).click();await p.locator('#explore-character').selectOption(character);await p.keyboard.press('Escape');}
+ if(await p.locator('#player-char').inputValue()!==character){await p.getByRole('button',{name:"Menu · Esc"}).click();await p.locator('#explore-character').selectOption(character);await p.keyboard.press('Escape');}
  await p.waitForTimeout(900);
  const step=async key=>{await p.keyboard.down(key);await p.waitForTimeout(25);await p.keyboard.up(key);await p.waitForTimeout(450);};
  await p.keyboard.press('ArrowRight');await p.waitForTimeout(350); // turn in place east

@@ -42,7 +42,7 @@ export class ViewerAudioController {
       this.lastError = null;
       return true;
     } catch (error) {
-      this.lastError = `Audio del viewer: ${String(error)}`;
+      this.lastError = `Map audio: ${String(error)}`;
       return false;
     }
   }

@@ -11,7 +11,7 @@ export default async function run(ctx){
  const snap=()=>p.evaluate(async()=>{const {save}=await import('/src/games/firered/save.ts');return JSON.parse(JSON.stringify({hp:save.party[0].hp,max:save.party[0].stats[0],status:save.party[0].status,money:save.money,loc:save.location,heal:save.lastHealLocation,map:location.hash.match(/mapa=([A-Z0-9_]+)/)?.[1]}));});
  const visible=()=>p.locator('#engine-interaction').isVisible();
  const open=async(hash)=>{await p.goto(new URL('viewer.html#modo=explore&'+hash,BASE).href);await p.reload();await p.waitForFunction(()=>performance.getEntriesByName('viewer-interactive').length);await p.waitForTimeout(1500);};
- const saveGame=async()=>{await p.getByRole('button',{name:'Menú · Esc'}).click();await p.getByRole('button',{name:'Guardar partida',exact:true}).click();if(!await p.locator('#explore-save-result').innerText().then(t=>t.includes('guardada')))throw Error('Save failed');await p.keyboard.press('Escape');};
+ const saveGame=async()=>{await p.getByRole('button',{name:"Menu · Esc"}).click();await p.getByRole('button',{name:"Save game",exact:true}).click();if(!await p.locator('#explore-save-result').innerText().then(t=>t.includes("saved")))throw Error('Save failed');await p.keyboard.press('Escape');};
 
  // 1. Source nurse heal registers Viridian as the respawn point.
  await open('mapa=MAP_VIRIDIAN_CITY_POKEMON_CENTER_1F&px=7&py=4');

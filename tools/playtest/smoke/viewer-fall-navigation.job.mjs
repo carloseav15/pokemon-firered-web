@@ -21,7 +21,7 @@ export default async function run(ctx){
  });
  const idle=()=>p.waitForFunction(()=>window.fallProbe?.positions.length&&!document.body.hasAttribute('aria-busy')&&document.querySelector('#content').getAttribute('aria-busy')!=='true'&&!JSON.parse(document.querySelector('#player-sprite').dataset.animation).moving);
  const enter=async(map,point)=>{await p.goto('about:blank');await p.goto(new URL(`viewer.html#modo=explore&mapa=${map}${point?`&px=${point.x}&py=${point.y}`:''}`,process.env.PW_BASE).href);await idle();
-  if(await p.locator('#player-char').inputValue()!==character){await p.getByRole('button',{name:'Menú · Esc'}).click();await p.locator('#explore-character').selectOption(character);await p.keyboard.press('Escape');await idle();}
+  if(await p.locator('#player-char').inputValue()!==character){await p.getByRole('button',{name:"Menu · Esc"}).click();await p.locator('#explore-character').selectOption(character);await p.keyboard.press('Escape');await idle();}
  };
  const results=[];
  for(const map of ['MAP_SEAFOAM_ISLANDS_1F','MAP_SEAFOAM_ISLANDS_B2F']){

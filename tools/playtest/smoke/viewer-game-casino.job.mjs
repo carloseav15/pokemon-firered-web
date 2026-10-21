@@ -37,7 +37,7 @@ export default async function run(ctx){
  await finish('coin-clerk');
  const s1=await state();
  if(s1.coins!==s0.coins+500||s1.money!==s0.money-10000)throw Error('Coin purchase '+JSON.stringify({s0,s1}));
- await p.getByRole('button',{name:'Menú · Esc'}).click();await p.locator('#explore-save').click();await p.keyboard.press('Escape');
+ await p.getByRole('button',{name:"Menu · Esc"}).click();await p.locator('#explore-save').click();await p.keyboard.press('Escape');
 
  // 2. Slot machine 0 (bg event at 0,7), player at 1,7 facing west.
  await open('MAP_CELADON_CITY_GAME_CORNER',1,7,false);
@@ -63,7 +63,7 @@ export default async function run(ctx){
  const s3=await state();
  const payout=s3.coins-betting.coins;
  if(payout<0)throw Error('Coins lost after the spin '+JSON.stringify({betting,s3}));
- await p.getByRole('button',{name:'Menú · Esc'}).click();await p.locator('#explore-save').click();await p.keyboard.press('Escape');
+ await p.getByRole('button',{name:"Menu · Esc"}).click();await p.locator('#explore-save').click();await p.keyboard.press('Escape');
 
  // 3. Prize Room Pokémon clerk (4,2): Abra for 180 coins.
  await open('MAP_CELADON_CITY_GAME_CORNER_PRIZE_ROOM',4,4,false);

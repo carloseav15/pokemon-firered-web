@@ -14,27 +14,27 @@ export interface MartItem {
 
 export const BASE_MART_ITEMS: MartItem[] = [
   // Poké Balls
-  { itemId: C.ITEM_POKE_BALL, name: "Poké Ball", price: 200, description: "Cápsula estándar para atrapar Pokémon salvajes.", category: "balls" },
-  { itemId: C.ITEM_GREAT_BALL, name: "Super Ball", price: 600, description: "Poké Ball de alto rendimiento con mayor índice de éxito.", category: "balls" },
-  { itemId: C.ITEM_ULTRA_BALL, name: "Ultra Ball", price: 1200, description: "Poké Ball de calidad superior con altísima tasa de captura.", category: "balls" },
+  { itemId: C.ITEM_POKE_BALL, name: "Poké Ball", price: 200, description: "A standard ball for catching wild Pokémon.", category: "balls" },
+  { itemId: C.ITEM_GREAT_BALL, name: "Great Ball", price: 600, description: "A high-performance ball with a higher catch rate.", category: "balls" },
+  { itemId: C.ITEM_ULTRA_BALL, name: "Ultra Ball", price: 1200, description: "A high-quality ball with a very high catch rate.", category: "balls" },
 
   // Medicinas y Curas de PS
-  { itemId: C.ITEM_POTION, name: "Poción", price: 300, description: "Medicina en spray que restaura 20 PS de un Pokémon.", category: "potions" },
-  { itemId: C.ITEM_SUPER_POTION, name: "Superpoción", price: 700, description: "Medicina en spray que restaura 50 PS de un Pokémon.", category: "potions" },
-  { itemId: C.ITEM_HYPER_POTION, name: "Hiperpoción", price: 1200, description: "Restaura 200 PS de un Pokémon.", category: "potions" },
-  { itemId: C.ITEM_REVIVE, name: "Revivir", price: 1500, description: "Revive a un Pokémon debilitado recuperando la mitad de sus PS.", category: "potions" },
+  { itemId: C.ITEM_POTION, name: "Potion", price: 300, description: "A spray medicine that restores 20 HP.", category: "potions" },
+  { itemId: C.ITEM_SUPER_POTION, name: "Super Potion", price: 700, description: "A spray medicine that restores 50 HP.", category: "potions" },
+  { itemId: C.ITEM_HYPER_POTION, name: "Hyper Potion", price: 1200, description: "Restores 200 HP.", category: "potions" },
+  { itemId: C.ITEM_REVIVE, name: "Revive", price: 1500, description: "Revives a fainted Pokémon with half its HP.", category: "potions" },
 
   // Curas de Estado
-  { itemId: C.ITEM_ANTIDOTE, name: "Antídoto", price: 100, description: "Cura el envenenamiento de un Pokémon.", category: "status" },
-  { itemId: C.ITEM_PARALYZE_HEAL, name: "Antiparálisis", price: 200, description: "Cura la parálisis de un Pokémon.", category: "status" },
-  { itemId: C.ITEM_AWAKENING, name: "Despertar", price: 250, description: "Despierta a un Pokémon dormido.", category: "status" },
-  { itemId: C.ITEM_BURN_HEAL, name: "Antiquemar", price: 250, description: "Cura las quemaduras de un Pokémon.", category: "status" },
-  { itemId: C.ITEM_ICE_HEAL, name: "Antihielo", price: 250, description: "Descongela a un Pokémon congelado.", category: "status" },
+  { itemId: C.ITEM_ANTIDOTE, name: "Antidote", price: 100, description: "Cures a Pokémon's poisoning.", category: "status" },
+  { itemId: C.ITEM_PARALYZE_HEAL, name: "Parlyz Heal", price: 200, description: "Cures a Pokémon's paralysis.", category: "status" },
+  { itemId: C.ITEM_AWAKENING, name: "Awakening", price: 250, description: "Wakes a sleeping Pokémon.", category: "status" },
+  { itemId: C.ITEM_BURN_HEAL, name: "Burn Heal", price: 250, description: "Heals a Pokémon's burn.", category: "status" },
+  { itemId: C.ITEM_ICE_HEAL, name: "Ice Heal", price: 250, description: "Thaws a frozen Pokémon.", category: "status" },
 
   // Herramientas de Aventura
-  { itemId: C.ITEM_ESCAPE_ROPE, name: "Cuerda Huida", price: 550, description: "Cuerda resistente para escapar al instante de cuevas.", category: "tools" },
-  { itemId: C.ITEM_REPEL, name: "Repelente", price: 350, description: "Repele Pokémon salvajes débiles durante 100 pasos.", category: "tools" },
-  { itemId: C.ITEM_SUPER_REPEL, name: "Superrepelente", price: 500, description: "Repele Pokémon salvajes débiles durante 200 pasos.", category: "tools" },
+  { itemId: C.ITEM_ESCAPE_ROPE, name: "Escape Rope", price: 550, description: "A rope for escaping from caves.", category: "tools" },
+  { itemId: C.ITEM_REPEL, name: "Repel", price: 350, description: "Repels weak wild Pokémon for 100 steps.", category: "tools" },
+  { itemId: C.ITEM_SUPER_REPEL, name: "Super Repel", price: 500, description: "Repels weak wild Pokémon for 200 steps.", category: "tools" },
 ];
 
 /** Determina si un objeto o script corresponde al dependiente de la tienda. */
@@ -72,7 +72,7 @@ export function getMartCatalogue(mapId: string): MartItem[] {
 /** Ejecuta la transacción de compra de un artículo. */
 export function buyMartItem(itemId: number, count: number = 1): { success: boolean; message: string; premierBallAwarded?: boolean } {
   const item = BASE_MART_ITEMS.find(it => it.itemId === itemId);
-  if (!item) return { success: false, message: "Artículo no disponible en esta tienda." };
+  if (!item) return { success: false, message: "Item unavailable in this shop." };
 
   const totalCost = item.price * count;
   const currentMoney = GetMoney();
@@ -80,7 +80,7 @@ export function buyMartItem(itemId: number, count: number = 1): { success: boole
   if (currentMoney < totalCost) {
     return {
       success: false,
-      message: `No tienes suficiente dinero (necesitas ¥${totalCost.toLocaleString()} y tienes ¥${currentMoney.toLocaleString()}).`,
+      message: `Not enough money (you need ¥${totalCost.toLocaleString("en-US")} and have ¥${currentMoney.toLocaleString("en-US")}).`,
     };
   }
 
@@ -95,7 +95,7 @@ export function buyMartItem(itemId: number, count: number = 1): { success: boole
 
   return {
     success: true,
-    message: `¡Has comprado ${count}x ${item.name}!`,
+    message: `Purchased ${count}x ${item.name}!`,
     premierBallAwarded,
   };
 }
@@ -107,23 +107,23 @@ export function openJohtoMart(mapId: string, dialogManager: DialogManager, audio
   const showMainMenu = () => {
     const money = GetMoney();
     dialogManager.showChoice(
-      "Tienda Pokémon",
+      "Poké Mart",
       [
-        "¡Hola! Te damos la bienvenida a la Tienda Pokémon.\n\n",
-        "Tu dinero actual: ",
-        { text: `¥${money.toLocaleString()}`, strong: true },
-        "\n\n¿En qué podemos ayudarte hoy?",
+        "Hello! Welcome to the Poké Mart.\n\n",
+        "Your money: ",
+        { text: `¥${money.toLocaleString("en-US")}`, strong: true },
+        "\n\nHow can we help you today?",
       ],
       [
         {
-          label: "🛒 Ver catálogo de compra",
+          label: "🛒 Browse items",
           primary: true,
           action: () => showCategories(),
         },
         {
-          label: "👋 Salir",
+          label: "👋 Leave",
           action: () => {
-            dialogManager.show("Dependiente", ["¡Esperamos volver a verte! ¡Buena suerte en tu viaje!"]);
+            dialogManager.show("Clerk", ["We hope to see you again! Good luck on your journey!"]);
           },
         },
       ]
@@ -133,10 +133,10 @@ export function openJohtoMart(mapId: string, dialogManager: DialogManager, audio
   const showCategories = () => {
     const money = GetMoney();
     dialogManager.showChoice(
-      "Tienda Pokémon - Categorías",
+      "Poké Mart - Categories",
       [
-        "Selecciona el tipo de artículo que deseas comprar:\n(Tu saldo disponible: ",
-        { text: `¥${money.toLocaleString()}`, strong: true },
+        "Choose an item category:\n(Available money: ",
+        { text: `¥${money.toLocaleString("en-US")}`, strong: true },
         ")",
       ],
       [
@@ -146,19 +146,19 @@ export function openJohtoMart(mapId: string, dialogManager: DialogManager, audio
           action: () => showItemList("balls"),
         },
         {
-          label: "🧪 Pociones y Revivir",
+          label: "🧪 Potions and Revives",
           action: () => showItemList("potions"),
         },
         {
-          label: "🌿 Curas de estado",
+          label: "🌿 Status healing",
           action: () => showItemList("status"),
         },
         {
-          label: "🪢 Aventura y Repelentes",
+          label: "🪢 Adventure and Repels",
           action: () => showItemList("tools"),
         },
         {
-          label: "↩️ Volver",
+          label: "↩️ Back",
           action: () => showMainMenu(),
         },
       ]
@@ -167,25 +167,25 @@ export function openJohtoMart(mapId: string, dialogManager: DialogManager, audio
 
   const showItemList = (category: "balls" | "potions" | "status" | "tools") => {
     const items = catalogue.filter(it => it.category === category);
-    const categoryName = category === "balls" ? "Poké Balls" : category === "potions" ? "Medicinas" : category === "status" ? "Curas de Estado" : "Aventura";
+    const categoryName = category === "balls" ? "Poké Balls" : category === "potions" ? "Medicine" : category === "status" ? "Status healing" : "Adventure";
     const money = GetMoney();
 
     const choices = items.map(item => ({
-      label: `${item.name} (¥${item.price.toLocaleString()})`,
+      label: `${item.name} (¥${item.price.toLocaleString("en-US")})`,
       action: () => showItemDetail(item),
     }));
 
     choices.push({
-      label: "↩️ Cambiar categoría",
+      label: "↩️ Change category",
       action: () => showCategories(),
     });
 
     dialogManager.showChoice(
-      `Tienda Pokémon - ${categoryName}`,
+      `Poké Mart - ${categoryName}`,
       [
-        `Artículos de ${categoryName} disponibles.\nSaldo: `,
-        { text: `¥${money.toLocaleString()}`, strong: true },
-        "\n\nSelecciona un producto para ver sus detalles y comprar:",
+        `Items: ${categoryName} available.\nBalance: `,
+        { text: `¥${money.toLocaleString("en-US")}`, strong: true },
+        "\n\nSelect an item to see its details and buy:",
       ],
       choices
     );
@@ -199,42 +199,42 @@ export function openJohtoMart(mapId: string, dialogManager: DialogManager, audio
 
     const choices = [
       {
-        label: `Comprar x1 (¥${item.price.toLocaleString()})`,
+        label: `Buy x1 (¥${item.price.toLocaleString("en-US")})`,
         primary: canAfford1,
         action: () => processPurchase(item, 1),
       },
       {
-        label: `Comprar x5 (¥${(item.price * 5).toLocaleString()})`,
+        label: `Buy x5 (¥${(item.price * 5).toLocaleString("en-US")})`,
         action: () => processPurchase(item, 5),
       },
     ];
 
     if (item.itemId === C.ITEM_POKE_BALL) {
       choices.push({
-        label: `Comprar x10 (¥${(item.price * 10).toLocaleString()} + Honor Ball 🎁)`,
+        label: `Buy x10 (¥${(item.price * 10).toLocaleString("en-US")} + Premier Ball 🎁)`,
         action: () => processPurchase(item, 10),
       });
     } else {
       choices.push({
-        label: `Comprar x10 (¥${(item.price * 10).toLocaleString()})`,
+        label: `Buy x10 (¥${(item.price * 10).toLocaleString("en-US")})`,
         action: () => processPurchase(item, 10),
       });
     }
 
     choices.push({
-      label: "↩️ Volver a la lista",
+      label: "↩️ Back to list",
       action: () => showItemList(item.category),
     });
 
     dialogManager.showChoice(
-      `Comprar: ${item.name}`,
+      `Buy: ${item.name}`,
       [
         { text: item.name, strong: true },
-        `\n${item.description}\n\nPrecio unitario: `,
-        { text: `¥${item.price.toLocaleString()}`, strong: true },
-        `\nTu saldo actual: `,
-        { text: `¥${money.toLocaleString()}`, strong: true },
-        "\n\n¿Cuántas unidades deseas llevarte?",
+        `\n${item.description}\n\nUnit price: `,
+        { text: `¥${item.price.toLocaleString("en-US")}`, strong: true },
+        `\nYour current money: `,
+        { text: `¥${money.toLocaleString("en-US")}`, strong: true },
+        "\n\nHow many would you like?",
       ],
       choices
     );
@@ -243,10 +243,10 @@ export function openJohtoMart(mapId: string, dialogManager: DialogManager, audio
   const processPurchase = (item: MartItem, count: number) => {
     const res = buyMartItem(item.itemId, count);
     if (!res.success) {
-      dialogManager.show("Dependiente", [
+      dialogManager.show("Clerk", [
         res.message,
         "\n\n",
-        { text: "No podemos fiar artículos en la tienda.", strong: true },
+        { text: "We cannot offer credit.", strong: true },
       ]);
       return;
     }
@@ -254,37 +254,37 @@ export function openJohtoMart(mapId: string, dialogManager: DialogManager, audio
     audioController.playShop();
     const remainingMoney = GetMoney();
     const msgSegments: (string | { text: string; strong: true })[] = [
-      `¡Muchísimas gracias por tu compra!\n\nHas obtenido `,
+      `Thank you for your purchase!\n\nYou received `,
       { text: `${count}x ${item.name}`, strong: true },
-      " que ya están guardados en tu mochila.",
+      " and put them in your Bag.",
     ];
 
     if (res.premierBallAwarded) {
       msgSegments.push(
         "\n\n🎁 ",
-        { text: "¡Y por comprar 10 Poké Balls te obsequiamos con una Honor Ball de regalo!", strong: true }
+        { text: "You also receive a Premier Ball for buying 10 Poké Balls!", strong: true }
       );
     }
 
     msgSegments.push(
-      `\n\nTu saldo restante es de `,
-      { text: `¥${remainingMoney.toLocaleString()}`, strong: true },
-      ".\n¿Deseas seguir comprando?"
+      `\n\nTu saldo restante es of `,
+      { text: `¥${remainingMoney.toLocaleString("en-US")}`, strong: true },
+      ".\nWould you like to keep shopping?"
     );
 
     dialogManager.showChoice(
-      "¡Compra realizada con éxito!",
+      "Purchase successful!",
       msgSegments,
       [
         {
-          label: "🛒 Seguir comprando",
+          label: "🛒 Keep shopping",
           primary: true,
           action: () => showCategories(),
         },
         {
-          label: "👋 Terminar compra",
+          label: "👋 Finish shopping",
           action: () => {
-            dialogManager.show("Dependiente", ["¡Gracias por tu visita! ¡Vuelve cuando necesites más suministros!"]);
+            dialogManager.show("Clerk", ["Thank you! Come back when you need more supplies!"]);
           },
         },
       ]

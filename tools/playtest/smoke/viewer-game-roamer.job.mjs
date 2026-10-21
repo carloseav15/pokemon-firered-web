@@ -26,7 +26,7 @@ export default async function run(ctx){
  const moved=crossings.filter((c,i)=>c.loc!==(i?crossings[i-1].loc:start.loc)).length;
  // RoamerMove always picks another map of the set (or another set 1/16 of the time).
  if(moved<5)throw Error('Roamer did not move on map changes '+JSON.stringify({start,crossings}));
- await p.getByRole('button',{name:'Menú · Esc'}).click();await p.locator('#explore-save').click();await p.keyboard.press('Escape');
+ await p.getByRole('button',{name:"Menu · Esc"}).click();await p.locator('#explore-save').click();await p.keyboard.press('Escape');
  await p.reload();await p.waitForFunction(()=>performance.getEntriesByName('viewer-interactive').length);await p.waitForTimeout(2000);
  const reloaded=await roamer();
  if(reloaded.loc.endsWith(':0')&&reloaded.loc.startsWith('0'))throw Error('Roamer not placed after reload '+JSON.stringify(reloaded));

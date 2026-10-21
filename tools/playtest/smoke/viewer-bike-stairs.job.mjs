@@ -16,7 +16,7 @@ export default async function run(ctx){
  const mapOf=()=>p.evaluate(()=>new URLSearchParams(location.hash.slice(1)).get('mapa'));
  await p.goto(new URL('viewer.html#modo=explore&mapa=MAP_ROUTE16_NORTH_ENTRANCE_1F&px=8&py=16',process.env.PW_BASE).href);
  await p.waitForFunction(()=>!document.body.hasAttribute('aria-busy')&&document.querySelector('#player-sprite'));await p.waitForTimeout(1500);
- if(await p.locator('#player-char').inputValue()!==character){await p.getByRole('button',{name:'Menú · Esc'}).click();await p.locator('#explore-character').selectOption(character);await p.keyboard.press('Escape');await p.waitForTimeout(800);}
+ if(await p.locator('#player-char').inputValue()!==character){await p.getByRole('button',{name:"Menu · Esc"}).click();await p.locator('#explore-character').selectOption(character);await p.keyboard.press('Escape');await p.waitForTimeout(800);}
  await p.keyboard.press('b');await p.waitForTimeout(400);
  const mounted=await p.evaluate(()=>JSON.parse(document.querySelector('#player-sprite').dataset.animation).graphics);
  if(!/BIKE/i.test(mounted))throw Error('Bike was not mounted: '+mounted);

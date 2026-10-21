@@ -80,7 +80,7 @@ export default async function run(ctx) {
   const moved = await p.evaluate(() => location.hash) !== hashBefore;
 
   // Save via the viewer DOM menu and reload to verify persistence
-  await p.getByRole('button', { name: 'Menú · Esc' }).click();
+  await p.getByRole('button', { name: "Menu · Esc" }).click();
   await p.locator('#explore-save').click();
   await p.keyboard.press('Escape');
   await p.waitForTimeout(500);

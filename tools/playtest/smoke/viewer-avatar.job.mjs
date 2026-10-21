@@ -39,7 +39,7 @@ export default async function run(ctx){
   await p.goto('about:blank');await p.goto(base+`#modo=explore&px=${fixture.x}&py=${fixture.y}`);
   await p.waitForFunction(()=>window.avatarProbe?.events.some(e=>e.phase==='spawn')&&!document.body.hasAttribute('aria-busy'));
   if(await p.locator('#player-char').inputValue()!==character){
-   await p.getByRole('button',{name:'Menú · Esc'}).click();await p.locator('#explore-character').selectOption(character);await p.keyboard.press('Escape');
+   await p.getByRole('button',{name:"Menu · Esc"}).click();await p.locator('#explore-character').selectOption(character);await p.keyboard.press('Escape');
   }
   const read=()=>p.locator('#player-sprite').evaluate(el=>JSON.parse(el.dataset.animation));
   const initial=await read();
@@ -91,7 +91,7 @@ export default async function run(ctx){
     return [...new Set(samples)];
    });
    await ctx.shot(`surf-${character}-${direction}`);
-   await p.getByRole('button',{name:'Menú · Esc'}).click();
+   await p.getByRole('button',{name:"Menu · Esc"}).click();
    const paused=await p.locator('.surf-support').getAttribute('data-animation');
    await p.waitForTimeout(150);
    if(await p.locator('.surf-support').getAttribute('data-animation')!==paused)throw Error('Surf animated while paused');
@@ -105,7 +105,7 @@ export default async function run(ctx){
   const f=fixtures.bump;
   await p.goto('about:blank');await p.goto(base+`#modo=explore&px=${f.x}&py=${f.y}`);
   await p.waitForFunction(()=>window.avatarProbe?.events.some(e=>e.phase==='spawn')&&!document.body.hasAttribute('aria-busy'));
-  await p.getByRole('button',{name:'Menú · Esc'}).click();await p.locator('#explore-character').selectOption(character);await p.keyboard.press('Escape');
+  await p.getByRole('button',{name:"Menu · Esc"}).click();await p.locator('#explore-character').selectOption(character);await p.keyboard.press('Escape');
   if((await p.locator('#player-sprite').evaluate(el=>JSON.parse(el.dataset.animation))).direction!==f.direction){await p.keyboard.press(f.key);await p.waitForFunction(()=>!JSON.parse(document.querySelector('#player-sprite').dataset.animation).moving);}
   if(vehicle==='bike')await p.keyboard.press('b');
   const original=await p.locator('#player-sprite').evaluate(el=>[el.style.left,el.style.top]);
@@ -122,7 +122,7 @@ export default async function run(ctx){
   const f=fixtures.jump;if(!f)throw Error('No real ledge fixture');
   await p.goto('about:blank');await p.goto(base+`#modo=explore&px=${f.x}&py=${f.y}`);
   await p.waitForFunction(()=>window.avatarProbe?.events.some(e=>e.phase==='spawn')&&!document.body.hasAttribute('aria-busy'));
-  await p.getByRole('button',{name:'Menú · Esc'}).click();await p.locator('#explore-character').selectOption(character);await p.keyboard.press('Escape');
+  await p.getByRole('button',{name:"Menu · Esc"}).click();await p.locator('#explore-character').selectOption(character);await p.keyboard.press('Escape');
   if((await p.locator('#player-sprite').evaluate(el=>JSON.parse(el.dataset.animation))).direction!==f.direction){await p.keyboard.press(f.key);await p.waitForFunction(()=>!JSON.parse(document.querySelector('#player-sprite').dataset.animation).moving);}
   const n=await p.evaluate(()=>{window.avatarProbe.samples=[];return window.avatarProbe.events.length;});
   await p.keyboard.down(f.key);await p.waitForTimeout(20);await p.keyboard.up(f.key);await p.waitForTimeout(160);

@@ -29,12 +29,12 @@ function sceneHtml(s: Scene): string {
   const steps = s.steps.map((st) => {
     const scripts = st.scripts.map((x) => `${esc(x.label)} <span class="mut">(${mapLink(x.map)})</span>`).join("<br>");
     const gates = s.gates.filter((g) => String(g.value) === st.value).map((g) => `${mapLink(g.map)} (${g.x},${g.y})${g.script ? ` → ${esc(g.script)}` : ""}`);
-    const req = st.requires.length ? `<div class="mut">comprueba: ${st.requires.map(esc).join(", ")}</div>` : "";
-    return `<div class="step"><code>${esc(st.value)}</code> ← ${scripts}${gates.length ? `<div class="mut">lo espera: ${gates.join("; ")}</div>` : ""}${req}</div>`;
+    const req = st.requires.length ? `<div class="mut">checks: ${st.requires.map(esc).join(", ")}</div>` : "";
+    return `<div class="step"><code>${esc(st.value)}</code> ← ${scripts}${gates.length ? `<div class="mut">waited for by: ${gates.join("; ")}</div>` : ""}${req}</div>`;
   }).join("");
   const waits = s.gates.filter((g) => !s.steps.some((st) => st.value === String(g.value)));
-  const extra = waits.length ? `<div class="mut">Eventos que esperan otros valores: ${waits.map((g) => `${mapLink(g.map)} (${g.x},${g.y}) = ${g.value}`).join("; ")}</div>` : "";
-  return `<div class="scene"><h4>${esc(s.var)}</h4><div class="mut">Mapas: ${s.maps.map(mapLink).join(", ")}</div>${steps}${extra}</div>`;
+  const extra = waits.length ? `<div class="mut">Events that wait for other values: ${waits.map((g) => `${mapLink(g.map)} (${g.x},${g.y}) = ${g.value}`).join("; ")}</div>` : "";
+  return `<div class="scene"><h4>${esc(s.var)}</h4><div class="mut">Maps: ${s.maps.map(mapLink).join(", ")}</div>${steps}${extra}</div>`;
 }
 
 async function render(): Promise<void> {
@@ -47,14 +47,14 @@ async function render(): Promise<void> {
     const scenes = c.scenes.filter(match);
     if (!scenes.length) continue;
     shown += scenes.length;
-    parts.push(`<details class="ch" ${term ? "open" : ""}><summary>${c.index + 1}. ${esc(c.title)}<small>${scenes.length} escena${scenes.length === 1 ? "" : "s"}</small></summary>${scenes.map(sceneHtml).join("")}</details>`);
+    parts.push(`<details class="ch" ${term ? "open" : ""}><summary>${c.index + 1}. ${esc(c.title)}<small>${scenes.length} scene${scenes.length === 1 ? "" : "s"}</small></summary>${scenes.map(sceneHtml).join("")}</details>`);
   }
   const un = story.unplaced.filter(match);
   if (un.length) {
     shown += un.length;
-    parts.push(`<details class="ch" ${term ? "open" : ""}><summary>Sin situar en la ruta<small>${un.length} (enlace, cable, récords y otras)</small></summary>${un.map(sceneHtml).join("")}</details>`);
+    parts.push(`<details class="ch" ${term ? "open" : ""}><summary>Not placed on the route<small>${un.length} (link, cable, records and others)</small></summary>${un.map(sceneHtml).join("")}</details>`);
   }
-  out.innerHTML = parts.join("") || `<p class="mut">Sin resultados.</p>`;
+  out.innerHTML = parts.join("") || `<p class="mut">No results.</p>`;
   (window as unknown as { frStory: unknown }).frStory = { game, chapters: story.chapters.filter((c) => c.scenes.length).length, scenes: shown };
 }
 
@@ -66,6 +66,6 @@ for (const b of document.querySelectorAll<HTMLButtonElement>("button[data-game]"
   });
 }
 q.addEventListener("input", () => void render());
-void render().catch((e) => { out.innerHTML = `<p class="mut">Error: ${esc(String(e))}. ¿Ejecutaste tools/viewer/story_index.py?</p>`; });
+void render().catch((e) => { out.innerHTML = `<p class="mut">Error: ${esc(String(e))}. Have you run tools/viewer/story_index.py?</p>`; });
 
 export {};

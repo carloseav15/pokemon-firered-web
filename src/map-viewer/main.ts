@@ -17,12 +17,12 @@ let current = "world", mapDetail: MapDetail | null = null, frame: number | null 
 let currentGame = gameId(new URLSearchParams(location.search).get("game"));
 type Position = { map: string; zoom: string; x: number; y: number };
 const historyStack: Position[] = [], remembered = new Map<GameId, Position>();
-const pool = new TexturePool(stage, url => { meta.textContent = `No se pudo cargar ${url}. Revisa los datos en Atlas.`; });
+const pool = new TexturePool(stage, url => { meta.textContent = `No se pudo cargar ${url}. Check the data in Atlas.`; });
 const position = (): Position => ({ map: current, zoom: zoom.value, x: viewport.scrollLeft, y: viewport.scrollTop });
 
 function mapLink(id: string, text?: string, warp?: string, referenceUrl?: string): string {
-  if (!source?.maps.has(id) && referenceUrl) return `<a class="reference" href="${esc(referenceUrl)}">${esc(text ?? id)} · fuente alternativa</a>`;
-  if (!source?.maps.has(id)) return `<span>${esc(text ?? id)} (destino dinámico o ausente)</span>`;
+  if (!source?.maps.has(id) && referenceUrl) return `<a class="reference" href="${esc(referenceUrl)}">${esc(text ?? id)} · alternative source</a>`;
+  if (!source?.maps.has(id)) return `<span>${esc(text ?? id)} (dynamic or missing destination)</span>`;
   return `<a href="#mapa=${encodeURIComponent(id)}${warp != null ? `&warp=${encodeURIComponent(warp)}` : ""}">${esc(text ?? source.maps.get(id)!.name)}</a>`;
 }
 function renderList(): void {
@@ -30,8 +30,8 @@ function renderList(): void {
   const term = search.value.toLowerCase().replace(/[^a-z0-9]/g, "");
   const connected = new Set(source.world.rects.map(r => r.id));
   const maps = [...source.maps.values()].filter(m => (regionSelect.value === "all" || !source!.regions || m.region === regionSelect.value) && (filter.value !== "available" || m.available) && (filter.value !== "world" || connected.has(m.id)) && m.searchable.includes(term)).sort((a, b) => a.name.localeCompare(b.name));
-  $("count").textContent = `${maps.length} resultados · ${[...source.maps.values()].filter(m => m.available).length}/${source.maps.size} disponibles`;
-  list.innerHTML = maps.slice(0, listLimit).map(m => `<a class="map${m.id === current ? " selected" : ""}" href="#mapa=${encodeURIComponent(m.id)}">${esc(m.name)}<small>${m.width}×${m.height} px${m.available ? "" : " · Sin render"}</small></a>`).join("");
+  $("count").textContent = `${maps.length} results · ${[...source.maps.values()].filter(m => m.available).length}/${source.maps.size} available`;
+  list.innerHTML = maps.slice(0, listLimit).map(m => `<a class="map${m.id === current ? " selected" : ""}" href="#mapa=${encodeURIComponent(m.id)}">${esc(m.name)}<small>${m.width}×${m.height} px${m.available ? "" : " · Not rendered"}</small></a>`).join("");
   $("more").hidden = maps.length <= listLimit;
 }
 function resize(): void {
@@ -51,7 +51,7 @@ function update(): void {
     textures = source.textures(current, time.value, layers, true);
   }
   try { pool.render(textures); } catch (error) { meta.textContent = String(error); }
-  $("budget").textContent = `${pool.activeCount} imágenes visibles · ${(pool.retainedBytes / 1048576).toFixed(1)} MiB estimados retenidos (límite 96)`;
+  $("budget").textContent = `${pool.activeCount} visible images · ${(pool.retainedBytes / 1048576).toFixed(1)} estimated retained MiB (limit 96)`;
   const z = view.zoom;
   const regionFrames = current === "world" && source.regions ? source.regions.map(r => `<div class="region-outline" style="left:${r.x}px;top:${r.y}px;width:${r.w}px;height:${r.h}px"><button data-region="${esc(r.id)}" title="${esc(r.title)} · ${esc(r.version)}" style="font-size:${14 / z}px;max-width:${r.w}px;overflow:hidden;text-overflow:ellipsis">${esc(r.id === "sevii" ? "Sevii" : r.title)}</button></div>`).join("") : "";
   const rects = current === "world" ? source.world.rects.filter(r => r.x < view.x / z + view.width / z && r.y < view.y / z + view.height / z && r.x + r.w > view.x / z && r.y + r.h > view.y / z) : [];
@@ -87,16 +87,16 @@ function renderDetail(): void {
     ((m.originId?.includes("HARBOR") || m.originId === "MAP_OLIVINE_CITY_PORT_INSIDE") &&
       (mapDetail!.events.some(e => e.destination === j.a || e.destination === j.b) ||
        (m.originId === "MAP_OLIVINE_CITY_PORT_INSIDE" && j.a === "johto/MAP_OLIVINE_CITY")))) ?? [];
-  detail.innerHTML = `${m.level ? `<p>${m.level === "underwater" ? "Submarino" : m.level === "interior" ? "Interior" : "Superficie"}${m.positionPending ? " · ubicación pendiente de verificar; acceso desde sus entradas o el buscador" : ""}</p>` : ""}${m.level && m.level !== "surface" ? '<button data-surface-return>Volver a la superficie</button>' : ""}${m.available ? "" : `<p class="error">Sin imagen: ${esc(m.unavailable)}. Los datos se conservan sin gráficos aproximados.</p>`}
+  detail.innerHTML = `${m.level ? `<p>${m.level === "underwater" ? "Submarino" : m.level === "interior" ? "Interior" : "Surface"}${m.positionPending ? " · location awaiting verification; access through entrances or search" : ""}</p>` : ""}${m.level && m.level !== "surface" ? '<button data-surface-return>Return to surface</button>' : ""}${m.available ? "" : `<p class="error">No image: ${esc(m.unavailable)}. Data is retained without approximate graphics.</p>`}
     <p>${Object.entries(mapDetail.info).map(([k, v]) => `${esc(k)}: ${esc(Array.isArray(v) ? v.join(", ") : v)}`).join(" · ")}</p>
-    <h2>Conexiones</h2><div class="links">${mapDetail.connections.map(c => mapLink(c.destination, `${c.direction === "dive" ? "Sumergirse" : c.direction === "emerge" ? "Emerger" : c.direction} → ${source!.maps.get(c.destination)?.name ?? c.destination} (offset ${c.offset})${m.region && source!.maps.get(c.destination)?.region && m.originGame !== source!.maps.get(c.destination)?.originGame ? " · referencia entre fuentes" : ""}`, undefined, c.referenceUrl)).join("") || "Sin conexiones"}</div>
-    <h2>Puertas y warps</h2><div class="links">${mapDetail.events.filter(e => e.kind === "warp").map(e => mapLink(e.destination!, `#${e.index} (${e.x}, ${e.y}) → ${source!.maps.get(e.destination!)?.name ?? e.destination} ${e.details.atlasPolicy ? "· referencia entre fuentes" : e.destinationWarp != null ? `#${e.destinationWarp}` : ""}`, e.destinationWarp, e.referenceUrl)).join("") || "Sin warps"}</div>
-    ${journeys.length ? `<h2>Puertos y viajes de consulta</h2><div class="links">${journeys.map(j => `<button data-journey="${esc(j.id)}">${esc(j.label)}${j.kind === "project-navigation" ? " · proyecto" : ""}</button>`).join("")}</div>` : ""}
-    <h2>Objetos y eventos</h2><table class="event-table">${mapDetail.events.map(e => `<tr tabindex="-1" data-event-row="${e.kind}:${e.index}"><td>${esc(e.kind)} #${e.index}</td><td>(${e.x}, ${e.y})</td><td>${esc(JSON.stringify(e.details))}</td></tr>`).join("")}</table>`;
+    <h2>Connections</h2><div class="links">${mapDetail.connections.map(c => mapLink(c.destination, `${c.direction === "dive" ? "Sumergirse" : c.direction === "emerge" ? "Emerger" : c.direction} → ${source!.maps.get(c.destination)?.name ?? c.destination} (offset ${c.offset})${m.region && source!.maps.get(c.destination)?.region && m.originGame !== source!.maps.get(c.destination)?.originGame ? " · referencia entre fuentes" : ""}`, undefined, c.referenceUrl)).join("") || "No connections"}</div>
+    <h2>Doors and warps</h2><div class="links">${mapDetail.events.filter(e => e.kind === "warp").map(e => mapLink(e.destination!, `#${e.index} (${e.x}, ${e.y}) → ${source!.maps.get(e.destination!)?.name ?? e.destination} ${e.details.atlasPolicy ? "· referencia entre fuentes" : e.destinationWarp != null ? `#${e.destinationWarp}` : ""}`, e.destinationWarp, e.referenceUrl)).join("") || "No warps"}</div>
+    ${journeys.length ? `<h2>Ports and reference travel</h2><div class="links">${journeys.map(j => `<button data-journey="${esc(j.id)}">${esc(j.label)}${j.kind === "project-navigation" ? " · proyecto" : ""}</button>`).join("")}</div>` : ""}
+    <h2>Items and events</h2><table class="event-table">${mapDetail.events.map(e => `<tr tabindex="-1" data-event-row="${e.kind}:${e.index}"><td>${esc(e.kind)} #${e.index}</td><td>(${e.x}, ${e.y})</td><td>${esc(JSON.stringify(e.details))}</td></tr>`).join("")}</table>`;
 }
 async function show(id: string, restore?: Position, arrival?: string, remember = true): Promise<void> {
   if (!source) return;
-  if (id !== "world" && !source.maps.has(id)) { meta.textContent = `Mapa desconocido: ${id}`; renderList(); return; }
+  if (id !== "world" && !source.maps.has(id)) { meta.textContent = `Unknown map: ${id}`; renderList(); return; }
   const previousMap = current;
   if (id !== current && !restore && remember) historyStack.push(position());
   const worldRestore = id === "world" ? [...historyStack].reverse().find(p => p.map === "world") : undefined;
@@ -119,15 +119,15 @@ async function show(id: string, restore?: Position, arrival?: string, remember =
   $("inspector").hidden = !inspector;
   if (inspector) $("inspector").setAttribute("href", inspector);
   if (id === "world") {
-    meta.textContent = `${source.title} · ${source.world.rects.length} ${source.regions ? "mapas de superficie" : "mapas conectados"}`;
-    detail.innerHTML = `<p>${esc(source.world.notes)}</p>${source.journeys ? `<h2>Viajes del atlas</h2><div class="links">${source.journeys.map(j => `<button data-journey="${esc(j.id)}">${esc(j.label)}${j.kind === "project-navigation" ? " · proyecto" : j.kind === "source-navigation" ? " · referencia FireRed" : " · referencia HnS"}</button>`).join("")}</div>` : ""}`;
-    if (source.places?.length) detail.innerHTML += `<h2>Islas y destinos de superficie</h2><div class="links">${source.places.map(p => mapLink(p.id, p.label)).join("")}</div>`;
+    meta.textContent = `${source.title} · ${source.world.rects.length} ${source.regions ? "surface maps" : "connected maps"}`;
+    detail.innerHTML = `<p>${esc(source.world.notes)}</p>${source.journeys ? `<h2>Atlas travel</h2><div class="links">${source.journeys.map(j => `<button data-journey="${esc(j.id)}">${esc(j.label)}${j.kind === "project-navigation" ? " · proyecto" : j.kind === "source-navigation" ? " · referencia FireRed" : " · referencia HnS"}</button>`).join("")}</div>` : ""}`;
+    if (source.places?.length) detail.innerHTML += `<h2>Islands and surface destinations</h2><div class="links">${source.places.map(p => mapLink(p.id, p.label)).join("")}</div>`;
     const origin = source.world.rects.find(r => r.id === source!.world.origin);
     const z = Number(zoom.value);
     viewport.scrollTo(viewRestore?.x ?? Math.max(0, (origin ? origin.x + origin.w / 2 : 0) * z - viewport.clientWidth / 2), viewRestore?.y ?? Math.max(0, (origin ? origin.y + origin.h / 2 : 0) * z - viewport.clientHeight / 2));
   } else {
     const m = source.maps.get(id)!;
-    meta.textContent = `${m.name} · ${m.width}×${m.height} px · Cargando ficha…`;
+    meta.textContent = `${m.name} · ${m.width}×${m.height} px · Loading details…`;
     viewport.scrollTo(restore?.x ?? 0, restore?.y ?? 0);
   }
   update(); renderList();
@@ -147,7 +147,7 @@ async function show(id: string, restore?: Position, arrival?: string, remember =
     }
     update();
   } catch (error) {
-    if (!signal.aborted) { meta.textContent = `No se pudo cargar la ficha: ${String(error)}`; detail.innerHTML = `<p class="error">${esc(error)}</p>`; }
+    if (!signal.aborted) { meta.textContent = `Unable to load map details: ${String(error)}`; detail.innerHTML = `<p class="error">${esc(error)}</p>`; }
   }
 }
 function fitZoom(fit: number): string {
@@ -184,19 +184,19 @@ async function changeSource(game: GameId): Promise<void> {
   currentGame = game; sourceEpoch++; const epoch = sourceEpoch;
   sourceController.abort(); sourceController = new AbortController(); detailController.abort();
   source = null; pool.clear(); annotations.replaceChildren(); detail.replaceChildren(); list.replaceChildren(); historyStack.length = 0; current = "world";
-  meta.textContent = "Cargando catálogo…"; $("count").textContent = "Cargando…"; explore.hidden = true; back.disabled = true;
+  meta.textContent = "Loading catalog…"; $("count").textContent = "Loading…"; explore.hidden = true; back.disabled = true;
   try {
     const next = await loadSource(game, sourceController.signal);
     if (epoch !== sourceEpoch) return;
     source = next;
-    document.title = `Visor · ${source.title}`; gameSelect.value = game;
-    regionSelect.innerHTML = '<option value="all">Todas las regiones</option>' + (source.regions ?? []).map(r => `<option value="${esc(r.id)}">${esc(r.title)}</option>`).join("");
+    document.title = `Map browser · ${source.title}`; gameSelect.value = game;
+    regionSelect.innerHTML = '<option value="all">All regions</option>' + (source.regions ?? []).map(r => `<option value="${esc(r.id)}">${esc(r.title)}</option>`).join("");
     $("region-wrap").hidden = !source.regions;
     explore.hidden = !source.capabilities.explore;
     $("time-wrap").hidden = !source.capabilities.times.length;
     $("sprites-wrap").hidden = !source.capabilities.sprites;
     $("collision-wrap").hidden = !source.capabilities.collision;
-    $("source").textContent = `${source.title} · ${source.game === "world" ? source.commit : `fuente ${source.commit.slice(0, 10)}`}`;
+    $("source").textContent = `${source.title} · ${source.game === "world" ? source.commit : `source ${source.commit.slice(0, 10)}`}`;
     $("limits").textContent = source.limitations;
     const target = hashTarget(), stored = remembered.get(game);
     if (source.game === "world" && !stored && !target.restore && target.id === "world") {
@@ -205,13 +205,13 @@ async function changeSource(game: GameId): Promise<void> {
       target.restore = { map: "world", zoom: String(value), x: 0, y: 0 };
     }
     await show(stored?.map ?? target.id, stored ?? target.restore, target.arrival, false);
-  } catch (error) { if (epoch === sourceEpoch) { meta.textContent = String(error); $("count").textContent = "Datos no disponibles"; } }
+  } catch (error) { if (epoch === sourceEpoch) { meta.textContent = String(error); $("count").textContent = "Data unavailable"; } }
 }
 function go(id: string): void {
   const hash = id === "world" ? "#world" : `#mapa=${encodeURIComponent(id)}`;
   if (location.hash === hash) void show(id); else location.hash = hash;
 }
-for (const s of SOURCES) gameSelect.add(new Option(`${s.id === "world" ? "" : "Variante · "}${s.label}`, s.id));
+for (const s of SOURCES) gameSelect.add(new Option(`${s.id === "world" ? "" : "Variant · "}${s.label}`, s.id));
 gameSelect.value = currentGame;
 gameSelect.addEventListener("change", () => {
   const game = gameId(gameSelect.value), url = new URL(location.href);
@@ -238,7 +238,7 @@ detail.addEventListener("click", e => {
   const target = (e.target as HTMLElement).closest<HTMLElement>("[data-journey]");
   if (!target || !source?.journeys) return;
   const journey = source.journeys.find(j => j.id === target.dataset.journey)!;
-  detail.innerHTML = `<h2>${esc(journey.label)}</h2><p>${esc(journey.description ?? (journey.kind === "project-navigation" ? "Enlace propuesto por el proyecto para navegar entre regiones del atlas." : "Heart & Soul incluye un viaje entre Olivine y Vermilion. Aquí los destinos se adaptan a las versiones principales de cada región."))}</p><div class="links">${mapLink(journey.a)}${mapLink(journey.b)}</div><p>Estos enlaces cambian de lugar en el atlas; no ejecutan un viaje del juego.</p>`;
+  detail.innerHTML = `<h2>${esc(journey.label)}</h2><p>${esc(journey.description ?? (journey.kind === "project-navigation" ? "Project-proposed link for navigating between atlas regions." : "Heart & Soul includes travel between Olivine and Vermilion. Here the destinations are adapted to each region's main version."))}</p><div class="links">${mapLink(journey.a)}${mapLink(journey.b)}</div><p>These links change the atlas location; they do not execute in-game travel.</p>`;
 });
 window.addEventListener("hashchange", () => { const target = hashTarget(); void show(target.id, target.restore, target.arrival); });
 $("world-btn").addEventListener("click", () => go("world"));

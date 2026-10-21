@@ -75,7 +75,7 @@ function linksSvg(W: number, H: number): string {
     const bend = l.cross ? 0.15 : 0.25;
     const cx = (x1 + x2) / 2 - (y2 - y1) * bend;
     const cy = (y1 + y2) / 2 + (x2 - x1) * bend;
-    const tip = `${spaced(l.a.map)} ⇄ ${spaced(l.b.map)}\nvía ${l.via.map(spaced).join(" → ")}`;
+    const tip = `${spaced(l.a.map)} ⇄ ${spaced(l.b.map)}\nvia ${l.via.map(spaced).join(" → ")}`;
     const href = `/crystal.html#${l.via[0] ?? l.a.map}`;
     out.push(`<a href="${href}"><title>${esc(tip)}</title><path d="M${x1} ${y1} Q${cx} ${cy} ${x2} ${y2}" fill="none" stroke="${color}" stroke-width="${(l.cross ? 4 : 3) * k}" stroke-dasharray="${l.cross ? "" : `${10 * k} ${7 * k}`}" opacity=".95" /><path d="M${x1} ${y1} Q${cx} ${cy} ${x2} ${y2}" fill="none" stroke="transparent" stroke-width="${14 * k}" /><circle cx="${x1}" cy="${y1}" r="${7 * k}" fill="${color}" stroke="#000" stroke-width="${k}" /><circle cx="${x2}" cy="${y2}" r="${7 * k}" fill="${color}" stroke="#000" stroke-width="${k}" /></a>`);
   }
@@ -97,7 +97,7 @@ function sideList(): void {
       const towns = ms.filter((m) => m.environment === "TOWN").sort((a, b) => a.name.localeCompare(b.name));
       const routes = ms.filter((m) => m.environment !== "TOWN").sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
       const it = (m: Entry) => `<div class="it" data-n="${m.name}">${esc(spaced(m.name))}</div>`;
-      return `<h4>${esc(s)} · pueblos y ciudades</h4>${towns.map(it).join("")}<h4>${esc(s)} · rutas y otros</h4>${routes.map(it).join("")}`;
+      return `<h4>${esc(s)} · towns and cities</h4>${towns.map(it).join("")}<h4>${esc(s)} · routes and other maps</h4>${routes.map(it).join("")}`;
     })
     .join("");
 }
@@ -153,7 +153,7 @@ view.addEventListener("click", (e) => {
   const res = await fetch("/crystal/world/world.json");
   if (!res.ok) throw new Error("falta public/crystal/world: npm run crystal:maps && npm run crystal:world");
   world = (await res.json()) as World;
-  info.textContent = `${world.maps.length} mapas conectados · ${world.w}×${world.h} bloques · ${world.overlaps.length} solapes del decomp · ${world.links.filter((l) => l.cross).length} enlaces entre secciones, ${world.links.filter((l) => !l.cross).length} atajos`;
+  info.textContent = `${world.maps.length} connected maps · ${world.w}×${world.h} bloques · ${world.overlaps.length} source overlaps · ${world.links.filter((l) => l.cross).length} links between sections, ${world.links.filter((l) => !l.cross).length} atajos`;
   sideList();
   draw();
   const hash = decodeURIComponent(location.hash.slice(1));

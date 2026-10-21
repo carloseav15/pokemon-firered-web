@@ -37,7 +37,7 @@ export default async function run(ctx){
  await waitTask('Task_ShopMenu');await tap('x');
  for(let i=0;i<50;i++){if(await p.locator('#engine-interaction').getAttribute('data-script-active')==='false')break;await p.waitForTimeout(300);await tap('z');}
  await p.locator('#engine-interaction').waitFor({state:'hidden'});
- await p.getByRole('button',{name:'Menú · Esc'}).click();
+ await p.getByRole('button',{name:"Menu · Esc"}).click();
  await p.locator('#explore-save').click();await p.keyboard.press('Escape');
  await p.reload();await p.waitForFunction(()=>performance.getEntriesByName('viewer-interactive').length);
  const persisted=await read();if(persisted.money!==0||persisted.bag.pokeBalls[0].quantity!==20)throw Error('Purchase not persisted');

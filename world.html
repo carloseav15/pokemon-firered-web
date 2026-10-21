@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="es">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -61,42 +61,42 @@
 
       <div id="overflow-menu" popover="auto">
         <div class="menu-header">
-          <span class="menu-header-title">Ajustes del Visor</span>
+          <span class="menu-header-title">Map settings</span>
         </div>
-        <label><input id="audio-toggle" type="checkbox" /> Música y Sonidos (BGM/SE)</label>
-        <label><input id="anim-toggle" type="checkbox" /> Animar tiles</label>
+        <label><input id="audio-toggle" type="checkbox" /> Music and sounds (BGM/SE)</label>
+        <label><input id="anim-toggle" type="checkbox" /> Animate tiles</label>
         <label for="player-char" style="display:flex; justify-content:space-between; gap:12px;">
-          Personaje:
+          Character:
           <select id="player-char">
-            <option value="red">Rojo (Red)</option>
-            <option value="leaf">Hoja (Leaf)</option>
+            <option value="red">Red</option>
+            <option value="leaf">Leaf</option>
           </select>
         </label>
         <label for="fill-biome" style="display:flex; justify-content:space-between; gap:12px;">
-          Bioma de fondo:
-          <select id="fill-biome" title="El relleno automático es solo fondo visual, distinto del terreno pintado del proyecto">
-            <option value="auto">Automático (relleno visual)</option>
-            <option value="ocean">Solo Océano (Agua)</option>
-            <option value="trees">Solo Bosque (Árboles)</option>
-            <option value="mountain">Solo Montaña (Rocas)</option>
+          Background biome:
+          <select id="fill-biome" title="Automatic fill is a visual background, separate from the project's painted terrain">
+            <option value="auto">Automatic (visual fill)</option>
+            <option value="ocean">Ocean only (water)</option>
+            <option value="trees">Forest only (trees)</option>
+            <option value="mountain">Mountains only (rocks)</option>
           </select>
         </label>
         <label for="fill-mode" style="display:flex; justify-content:space-between; gap:12px;">
-          Relleno visual:
+          Visual fill:
           <select id="fill-mode">
-            <option value="full">Completo</option>
-            <option value="dim">Atenuado</option>
-            <option value="off">Desactivado</option>
+            <option value="full">Full</option>
+            <option value="dim">Dim</option>
+            <option value="off">Off</option>
           </select>
         </label>
-        <label><input id="radar-toggle" type="checkbox" checked /> Minimapa Radar</label>
+        <label><input id="radar-toggle" type="checkbox" checked /> Radar minimap</label>
       </div>
     </header>
 
     <main id="main">
       <div id="loading-overlay" class="loading-overlay">
         <div class="loading-spinner"></div>
-        <div id="loading-text" class="loading-text">Cargando mapas de Kanto…</div>
+        <div id="loading-text" class="loading-text">Loading regional maps…</div>
       </div>
       <div id="viewport">
         <div id="world-stage">
@@ -107,26 +107,26 @@
         </div>
       </div>
       <div id="dialog-box" role="status" aria-labelledby="dialog-title">
-        <div id="dialog-title">MENSAJE</div>
+        <div id="dialog-title">MESSAGE</div>
         <div id="dialog-text">...</div>
         <div id="dialog-foot">
-          <span id="dialog-prompt">Presiona Z / Espacio / Enter para continuar</span>
-          <button id="dialog-close" class="btn" type="button">Cerrar</button>
+          <span id="dialog-prompt">Press Z / Space / Enter to continue</span>
+          <button id="dialog-close" class="btn" type="button">Close</button>
         </div>
       </div>
       <div id="minimap-wrap">
-        <div id="minimap-title">Mapa de Navegación</div>
+        <div id="minimap-title">Navigation map</div>
         <div id="minimap-canvas-wrap">
           <canvas id="minimap-canvas" width="176" height="130"></canvas>
           <div id="minimap-viewbox"></div>
           <div id="minimap-player-dot"></div>
         </div>
       </div>
-      <aside id="panel"><p>Pincha una casilla para ver su ficha.</p></aside>
+      <aside id="panel"><p>Select a tile to inspect it.</p></aside>
     </main>
 
     <footer id="statusbar">
-      <span id="status-meta">37 mapas exteriores · Kanto GBA · Pokémon Odyssey</span>
+      <span id="status-meta">Outdoor maps · Kanto GBA · Pokémon Odyssey</span>
       <span id="status-pos">Cursor: <code>--</code></span>
     </footer>
     <script type="module" src="/src/map-viewer/entry.ts"></script>

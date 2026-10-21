@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="es">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Comparador FireRed / Emerald</title>
+    <title>Comparison FireRed / Emerald</title>
     <style>
       :root { color-scheme: dark; --bg:#0b0f14; --panel:#111827; --line:#243040; --fg:#e5e7eb; --mut:#9ca3af; --a:#f59e0b; --b:#38bdf8; }
       * { box-sizing: border-box; }
@@ -28,18 +28,18 @@
   </head>
   <body>
     <header>
-      <h1>Comparador <span class="a">FireRed</span> / <span class="b">Emerald</span></h1>
+      <h1>Comparison <span class="a">FireRed</span> / <span class="b">Emerald</span></h1>
       <a href="/atlas.html">☰ Atlas</a>
       <button data-tab="species" class="on">Pokémon</button>
-      <button data-tab="moves">Movimientos</button>
-      <button data-tab="items">Objetos</button>
-      <button data-tab="trainers">Entrenadores</button>
-      <input id="q" type="search" placeholder="Buscar por nombre…" />
-      <label><input id="onlyDiff" type="checkbox" checked /> solo con diferencias</label>
-      <a href="/viewer.html" style="color:var(--mut);margin-left:auto">Visor del mundo →</a>
+      <button data-tab="moves">Moves</button>
+      <button data-tab="items">Items</button>
+      <button data-tab="trainers">Trainers</button>
+      <input id="q" type="search" placeholder="Search by name…" />
+      <label><input id="onlyDiff" type="checkbox" checked /> differences only</label>
+      <a href="/viewer.html" style="color:var(--mut);margin-left:auto">World Map →</a>
     </header>
     <main>
-      <div id="summary">Cargando datos…</div>
+      <div id="summary">Loading data…</div>
       <div id="out"></div>
     </main>
     <script type="module" src="/src/compare/main.ts"></script>

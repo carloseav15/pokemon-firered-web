@@ -253,7 +253,7 @@ async function playBattleTransition(): Promise<void> {
 
 function navigationSnapshot(): NavigationSave {
   const found = findMapAt(playerX, playerY);
-  if (!found) throw Error("Jugador fuera del mapa");
+  if (!found) throw Error("Player is outside the map");
   return { mapId: found[0], x: playerX-found[1].x, y: playerY-found[1].y,
     direction: playerDir, dynamic: navigationWarps.returnAddress };
 }
@@ -263,11 +263,11 @@ function pauseInteraction(active: boolean): void {
 }
 async function continueViewerSession(): Promise<void> {
   const checkpoint = viewerCheckpoint();
-  if (!checkpoint) throw Error("Todavía no hay una partida guardada");
+  if (!checkpoint) throw Error("No saved game yet");
   // Reload the saved SaveBlock too, discarding unsaved purchases/healing.
   const { saveStore, setSave } = await import("@game/save");
   const stored = saveStore.load();
-  if (!stored) throw Error("No se pudo leer la partida");
+  if (!stored) throw Error("Unable to read the saved game");
   setSave(stored);
   PlayTimeCounter_Start();
   onWarpForRoamer(); // Overworld_ResetStateOnContinue
@@ -300,7 +300,7 @@ async function relocateViewer(nav: NavigationSave): Promise<void> {
       await startExploration(info.x + nav.x, info.y + nav.y);
       playerDir = nav.direction; updatePlayerDisplay(); writeHash();
       enteredMapId = nav.mapId;
-      void engineInteraction?.enterMap(nav).catch(error => console.error("Entrada de mapa tras relocate", error));
+      void engineInteraction?.enterMap(nav).catch(error => console.error("Map entry after relocation", error));
     } finally {
       warpBusy = prevWarpBusy;
     }
@@ -521,9 +521,9 @@ function applyLayerVisibility(): void {
 
 function updateMeta(): void {
   if (!statusMeta) return;
-  const base = `${Object.keys(index?.maps ?? {}).length || 37} mapas exteriores · ${GAME_NAME} GBA`;
+  const base = `${Object.keys(index?.maps ?? {}).length || 37} outdoor maps · ${GAME_NAME} GBA`;
   if (animController?.animOn) {
-    const fpsText = animController.fpsValue > 0 ? ` · ${animController.fpsValue.toFixed(0)} FPS` : " · midiendo FPS";
+    const fpsText = animController.fpsValue > 0 ? ` · ${animController.fpsValue.toFixed(0)} FPS` : " · measuring FPS";
     statusMeta.textContent = `${base}${fpsText}`;
   } else {
     statusMeta.textContent = `${base}${animController?.animDisabledNotice ?? ""}`;
@@ -544,7 +544,7 @@ function centerOnMap(id: string): boolean {
 
 async function fetchHoennIndex(): Promise<WorldIndexData> {
   const res = await fetch("/viewer/hoenn.json");
-  if (!res.ok) throw new Error("falta public/viewer/hoenn.json: ejecuta EXPORT_GAME=emerald python3 tools/viewer/world_index.py");
+  if (!res.ok) throw new Error("missing public/viewer/hoenn.json: run EXPORT_GAME=emerald python3 tools/viewer/world_index.py");
   const hoennIndex = (await res.json()) as KantoIndex;
   const maps = Object.values(hoennIndex.maps);
   return { index: hoennIndex, minX: Math.min(...maps.map((m) => m.x)), minY: Math.min(...maps.map((m) => m.y)) };
@@ -552,7 +552,7 @@ async function fetchHoennIndex(): Promise<WorldIndexData> {
 
 async function fetchJohtoIndex(): Promise<WorldIndexData> {
   const res = await fetch("/viewer/johto.json");
-  if (!res.ok) throw new Error("falta public/viewer/johto.json");
+  if (!res.ok) throw new Error("missing public/viewer/johto.json");
   const johtoIndex = (await res.json()) as KantoIndex;
   const maps = Object.values(johtoIndex.maps);
   return { index: johtoIndex, minX: Math.min(...maps.map((m) => m.x)), minY: Math.min(...maps.map((m) => m.y)) };
@@ -563,7 +563,7 @@ function setupGameSelect(): void {
   const select = document.createElement("select");
   select.id = "game-select";
   select.className = "btn";
-  select.title = "Región del mapa";
+  select.title = "Map region";
   for (const [value, label] of [["firered", "Kanto · FireRed"], ["emerald", "Hoenn · Emerald"], ["hns", "Johto / Kanto · HnS"]] as const) {
     const option = document.createElement("option");
     option.value = value;
@@ -728,7 +728,7 @@ function updatePlayerDisplay(): void {
   const baseTitle = findMapAt(playerX, playerY)?.[1].title ?? GAME_NAME;
   const safariStats = engineInteraction?.getSafariStats();
   const locationTitle = safariStats?.active
-    ? `${baseTitle} · Safari: ${safariStats.balls} bolas, ${safariStats.steps} pasos`
+    ? `${baseTitle} · Safari: ${safariStats.balls} bolas, ${safariStats.steps} steps`
     : baseTitle;
   explorationUi?.setLocation(locationTitle);
   const here = findMapAt(playerX, playerY)?.[0];
@@ -778,7 +778,7 @@ function updatePlayerDisplay(): void {
         if (mapTitle) mapPopup?.show(mapTitle, theme);
       }
     }
-    if (!HOENN && !JOHTO) void engineInteraction?.enterMap(navigationSnapshot()).catch(error => console.error("Entrada de mapa", error));
+    if (!HOENN && !JOHTO) void engineInteraction?.enterMap(navigationSnapshot()).catch(error => console.error("Map entry", error));
   }
   updateEntitiesView();
   checkCurrentMapMusic();
@@ -859,21 +859,21 @@ function interactWithEntity(ent: LiveEntity): void {
         entityManager.faceTowards(ent, playerX, playerY);
 
         if (gameSave.party.length === 0) {
-          dialogManager.show("Enfermera Joy", [
-            "¡Hola! Te damos la bienvenida al Centro Pokémon.\n\nNos encargamos de devolverles la vitalidad a los Pokémon para que recuperen toda su energía.\n\n",
-            { text: "¡Pásate por aquí cuando tengas un compañero Pokémon en tu equipo!", strong: true },
+          dialogManager.show("Nurse Joy", [
+            "Hello! Welcome to the Pokémon Center.\n\nWe restore Pokémon to full health.\n\n",
+            { text: "Come back when you have a Pokémon in your party!", strong: true },
           ]);
           return;
         }
 
         dialogManager.showChoice(
-          "Centro Pokémon - Enfermera Joy",
+          "Pokémon Center - Nurse Joy",
           [
-            "¡Hola! Te damos la bienvenida al Centro Pokémon.\n\nNos encargamos de devolverles la vitalidad a tus Pokémon para que recuperen toda su energía.\n\n¿Quieres que nos ocupemos de ellos?",
+            "Hello! Welcome to the Pokémon Center.\n\nWe restore your Pokémon to full health.\n\nWould you like us to heal them?",
           ],
           [
             {
-              label: "Curar equipo",
+              label: "Heal party",
               primary: true,
               action: () => {
                 for (const mon of gameSave.party) {
@@ -884,16 +884,16 @@ function interactWithEntity(ent: LiveEntity): void {
                   }
                 }
                 audioController.playHealFanfare();
-                dialogManager.show("Enfermera Joy", [
-                  "¡Gracias por esperar!\n\nTus Pokémon han recuperado toda su energía y están rebosantes de salud.\n\n",
-                  { text: "¡Esperamos volver a verte!", strong: true },
+                dialogManager.show("Nurse Joy", [
+                  "Thank you for waiting!\n\nYour Pokémon are now fully healed.\n\n",
+                  { text: "We hope to see you again!", strong: true },
                 ]);
               },
             },
             {
-              label: "Ahora no",
+              label: "Not now",
               action: () => {
-                dialogManager.show("Enfermera Joy", ["¡Esperamos volver a verte!"]);
+                dialogManager.show("Nurse Joy", ["We hope to see you again!"]);
               },
             },
           ]
@@ -906,7 +906,7 @@ function interactWithEntity(ent: LiveEntity): void {
         entityManager.faceTowards(ent, playerX, playerY);
         audioController.playMonCry(C.SPECIES_CHANSEY);
         dialogManager.show("Chansey", [
-          "¡Chan! ¡Siiii! 💕\n\n(Chansey te dedica una alegre sonrisa mientras cuida a los Pokémon del centro).",
+          "Chan! Siii! 💕\n\n(Chansey smiles as it looks after the Pokémon in the center.)",
         ]);
         return;
       }
@@ -927,30 +927,30 @@ function interactWithEntity(ent: LiveEntity): void {
           const isTotodile = ent.element.localId === 6 || scriptKey === "NewBarkTown_Lab_EventScript_TotodileBall";
           if (isChikorita || isCyndaquil || isTotodile) {
             if (gameSave.party.length > 0) {
-              dialogManager.show("Prof. Elm", ["¡Ya has elegido a tu compañero Pokémon! Cuídalo con cariño en tu viaje hacia Ciudad Cerezo."]);
+              dialogManager.show("Prof. Elm", ["You have already chosen your Pokémon! Take good care of it on your journey to Cherrygrove City."]);
               return;
             }
             const starterSpecies = isChikorita ? C.SPECIES_CHIKORITA : isCyndaquil ? C.SPECIES_CYNDAQUIL : C.SPECIES_TOTODILE;
             const starterName = isChikorita ? "Chikorita" : isCyndaquil ? "Cyndaquil" : "Totodile";
-            const starterType = isChikorita ? "Planta 🌱" : isCyndaquil ? "Fuego 🔥" : "Agua 💧";
+            const starterType = isChikorita ? "Grass 🌱" : isCyndaquil ? "Fire 🔥" : "Water 💧";
             const starterDesc = isChikorita
-              ? "Es un Pokémon dócil y alegre que usa la aromática hoja de su cabeza para calmar a los demás."
+              ? "A gentle, cheerful Pokémon that uses the aromatic leaf on its head to soothe others."
               : isCyndaquil
-                ? "Es tímido y cauteloso; cuando se sorprende o se enfada, lanza llamaradas ardientes por su lomo."
-                : "Es enérgico y juguetón, pero posee unas potentes mandíbulas capaces de morder cualquier cosa.";
+                ? "A shy, cautious Pokémon that releases flames from its back when startled or angry."
+                : "An energetic, playful Pokémon with powerful jaws that can bite anything.";
 
             dialogManager.showChoice(
               `Poké Ball: ${starterName}`,
               [
-                `Contiene al Pokémon de tipo ${starterType} `,
+                `It contains the ${starterType} `,
                 { text: starterName, strong: true },
-                `.\n\n${starterDesc}\n\n¿Quieres elegir a `,
+                `.\n\n${starterDesc}\n\nWould you like to choose `,
                 { text: starterName, strong: true },
-                " como tu Pokémon inicial de Johto?",
+                " as your Johto starter Pokémon?",
               ],
               [
                 {
-                  label: `¡Elegir a ${starterName}!`,
+                  label: `Choose ${starterName}!`,
                   primary: true,
                   action: () => {
                     const mon = createMon(starterSpecies, 5);
@@ -964,19 +964,19 @@ function interactWithEntity(ent: LiveEntity): void {
                     ent.el?.remove();
                     worldGrid.setNpc(ent.gx, ent.gy, false);
                     dialogManager.show(
-                      "¡Pokémon obtenido!",
+                      "Pokémon received!",
                       [
-                        "¡Has elegido a ",
+                        "You chose ",
                         { text: starterName, strong: true },
-                        " (Nivel 5)!\n\nProf. Elm: «¡Una elección fantástica! He guardado en tu mochila ",
-                        { text: "5 Pociones y 5 Poké Balls", strong: true },
-                        " para ayudarte a comenzar. ¡Cuida mucho de tu nuevo compañero!»",
+                        " (Level 5)!\n\nProf. Elm: A wonderful choice! I put ",
+                        { text: "5 Potions and 5 Poké Balls", strong: true },
+                        " in your Bag to get you started. Take good care of your new partner!",
                       ]
                     );
                   },
                 },
                 {
-                  label: "Pensarlo mejor",
+                  label: "Think it over",
                   action: () => dialogManager.close(),
                 },
               ]
@@ -989,18 +989,18 @@ function interactWithEntity(ent: LiveEntity): void {
             entityManager.faceTowards(ent, playerX, playerY);
             if (gameSave.party.length === 0) {
               dialogManager.show("Prof. Elm", [
-                "¡Hola, explorador! Te estaba esperando.",
-                "\n\nEn la mesa he preparado tres Poké Balls con Pokémon iniciales muy especiales: ",
+                "Hello, explorer! I have been waiting for you.",
+                "\n\nI have prepared three Poké Balls on the table, with special starter Pokémon: ",
                 { text: "Chikorita", strong: true }, ", ",
-                { text: "Cyndaquil", strong: true }, " y ",
+                { text: "Cyndaquil", strong: true }, " and ",
                 { text: "Totodile", strong: true },
-                ".\n\n¡Acércate a la mesa y elige el que prefieras como tu compañero de viaje!",
+                ".\n\nGo to the table and choose a partner for your journey!",
               ]);
             } else {
               const starterName = gameSave.party[0]?.species ? (rom.species[gameSave.party[0].species]?.name ?? "Pokémon") : "Pokémon";
               dialogManager.show("Prof. Elm", [
-                `¡Tu ${starterName} parece muy contento contigo!`,
-                "\n\nSal del laboratorio y dirígete hacia el oeste por la Ruta 29 hacia Ciudad Cerezo. ¡Allí te espera el Sr. Pokémon con un gran misterio!",
+                `Your ${starterName} looks very happy with you!`,
+                "\n\nLeave the lab and head west on Route 29 toward Cherrygrove City. Mr. Pokémon awaits with a mystery!",
               ]);
             }
             return;
@@ -1009,7 +1009,7 @@ function interactWithEntity(ent: LiveEntity): void {
 
         if (ent.element.graphics === "OBJ_EVENT_GFX_ITEM_BALL" || ent.element.graphics === "OBJ_EVENT_GFX_POKE_BALL" || (scriptKey && scriptKey.includes("Item"))) {
           const itemInfo = getJohtoItemInfo(scriptKey);
-          const itemName = itemInfo?.name ?? "Objeto misterioso";
+          const itemName = itemInfo?.name ?? "Unknown item";
           audioController.playSelect();
           ent.hidden = true;
           ent.removed = true;
@@ -1018,8 +1018,8 @@ function interactWithEntity(ent: LiveEntity): void {
           if (itemInfo) {
             addBagItem(itemInfo.itemId, 1);
           }
-          dialogManager.show("Objeto encontrado", [
-            "¡Has encontrado: ",
+          dialogManager.show("Item found", [
+            "You found: ",
             { text: itemName, strong: true },
             "!",
           ]);
@@ -1038,20 +1038,20 @@ function interactWithEntity(ent: LiveEntity): void {
 
           if (gameSave.party.length === 0) {
             dialogManager.show(jTrainer.name, [
-              "¡Hola! Pareces un entrenador novato... ¡Vuelve cuando tengas un Pokémon listo para combatir!",
+              "Hello! You look like a new Trainer... Come back when you have a Pokémon ready to battle!",
             ]);
             return;
           }
 
           dialogManager.showChoice(
-            `¡Desafío de Entrenador: ${jTrainer.name}!`,
+            `Trainer challenge: ${jTrainer.name}!`,
             [
               { text: jTrainer.name, strong: true },
-              `: «${jTrainer.introText}»\n\n¿Aceptas el combate Pokémon?`,
+              `: «${jTrainer.introText}»\n\nDo you accept the Pokémon battle?`,
             ],
             [
               {
-                label: "⚔️ ¡Aceptar combate!",
+                label: "⚔️ Accept battle!",
                 primary: true,
                 action: () => {
                   const enemyParty = jTrainer.party.map(p => createMon(p.species, p.level));
@@ -1063,21 +1063,21 @@ function interactWithEntity(ent: LiveEntity): void {
                         addMoney(jTrainer.reward);
                         dialogManager.show(jTrainer.name, [
                           `«${jTrainer.defeatText}»\n\n`,
-                          { text: `¡Has vencido a ${jTrainer.name} y has ganado ¥${jTrainer.reward.toLocaleString()}!`, strong: true },
+                          { text: `You defeated ${jTrainer.name} and earned ¥${jTrainer.reward.toLocaleString("en-US")}!`, strong: true },
                         ]);
                       } else {
                         dialogManager.show(jTrainer.name, [
-                          "«¡Buen intento! Sigue entrenando a tu equipo y vuelve a intentarlo cuando quieras.»",
+                          "Good try! Keep training your party and try again whenever you like.",
                         ]);
                       }
                     }).catch(err => {
-                      console.error("Error en combate contra entrenador Johto:", err);
+                      console.error("Johto Trainer battle error:", err);
                     });
                   }
                 },
               },
               {
-                label: "🏃 Ahora no",
+                label: "🏃 Not now",
                 action: () => dialogManager.close(),
               },
             ]
@@ -1099,21 +1099,21 @@ function interactWithEntity(ent: LiveEntity): void {
 
       if (isFerrySailor) {
         dialogManager.showChoice(
-          "🚢 Ferry Transoceánico S.S. Anne",
+          "🚢 S.S. Anne Ferry",
           [
-            "¡Saludos, explorador! El ferry transoceánico está listo para zarpar hacia nuevos horizontes.",
-            { text: " ¿Deseas navegar rumbo a Ciudad Portual (Slateport City) en la región de Hoenn?", strong: true },
+            "Hello, explorer! The ferry is ready to sail toward new horizons.",
+            { text: " Would you like to sail to Slateport City in Hoenn?", strong: true },
           ],
           [
             {
-              label: "🚢 ¡Zarpar hacia Hoenn!",
+              label: "🚢 Sail to Hoenn!",
               primary: true,
               action: () => {
                 location.href = "/world.html?region=hoenn&mapa=MAP_SLATEPORT_CITY&modo=explore";
               },
             },
             {
-              label: "Permanecer en Kanto",
+              label: "Stay in Kanto",
               action: () => dialogManager.close(),
             },
           ]
@@ -1123,21 +1123,21 @@ function interactWithEntity(ent: LiveEntity): void {
 
       if (HOENN && (scriptName === "SlateportCity_EventScript_Sailor1" || scriptName === "SlateportCity_EventScript_Sailor2" || (ent.element.map === "MAP_SLATEPORT_CITY" && (ent.gx >= 25 && ent.gy >= 40)))) {
         dialogManager.showChoice(
-          "🚢 Ferry Transoceánico S.S. Tidal",
+          "🚢 S.S. Tidal Ferry",
           [
-            "¡Saludos desde el puerto de Hoenn! El gran ferry transoceánico tiene prevista su salida.",
-            { text: " ¿Deseas regresar a Ciudad Carmín (Vermilion City) en la región de Kanto?", strong: true },
+            "Greetings from Hoenn's port! The ferry is ready to leave.",
+            { text: " Would you like to return to Vermilion City in Kanto?", strong: true },
           ],
           [
             {
-              label: "🚢 ¡Regresar a Kanto!",
+              label: "🚢 Return to Kanto!",
               primary: true,
               action: () => {
                 location.href = "/world.html?region=kanto&mapa=MAP_VERMILION_CITY&modo=explore";
               },
             },
             {
-              label: "Permanecer en Hoenn",
+              label: "Stay in Hoenn",
               action: () => dialogManager.close(),
             },
           ]
@@ -1160,7 +1160,7 @@ function interactWithEntity(ent: LiveEntity): void {
 
       if (engineInteraction) {
         if (npc && !npc.clone) {
-          void engineInteraction.show(navigationSnapshot(), { mapId: ent.element.map, localId: npc.localId }).catch(error => dialogManager.show("Interacción", [String(error)]));
+          void engineInteraction.show(navigationSnapshot(), { mapId: ent.element.map, localId: npc.localId }).catch(error => dialogManager.show("Interaction", [String(error)]));
         } else {
           void engineInteraction.triggerScript(navigationSnapshot(), scriptName).then(() => {
             if (ent.element.layer === "corte" || ent.element.layer === "roca") {
@@ -1170,7 +1170,7 @@ function interactWithEntity(ent: LiveEntity): void {
               ent.el = undefined;
               worldGrid.setNpc(ent.gx, ent.gy, false);
             }
-          }).catch(error => dialogManager.show("Interacción", [String(error)]));
+          }).catch(error => dialogManager.show("Interaction", [String(error)]));
         }
         return;
       }
@@ -1182,26 +1182,26 @@ function interactWithEntity(ent: LiveEntity): void {
   const title = ent.element.trainer ? `${ent.element.trainer}` : `${ent.element.map.replace("MAP_", "")}`;
   let msg: DialogSegment[] = [""];
   if (ent.element.layer === "snorlax") {
-    msg = ["¡Un enorme Pokémon duerme plácidamente en medio del camino! Está bloqueando el paso... Necesitas una Poké Flauta."];
+    msg = ["A huge Pokémon is sleeping in the road! It is blocking the path... You need a Poké Flute."];
   } else if (ent.element.layer === "corte") {
-    msg = ["¡Un árbol pequeño bloquea el paso! Un Pokémon podría cortarlo con la MO Corte."];
+    msg = ["A small tree blocks the path! A Pokémon could cut it using Cut."];
   } else if (ent.element.graphics === "OBJ_EVENT_GFX_ITEM_BALL") {
-    msg = [`¡Has encontrado un objeto en el suelo! (${ent.element.flag ?? "Objeto misterioso"}).`];
+    msg = [`You found an item on the ground! (${ent.element.flag ?? "Unknown item"}).`];
   } else if (ent.element.graphics === "OBJ_EVENT_GFX_NURSE" || (ent.element.graphics && ent.element.graphics.includes("NURSE") && !ent.element.graphics.includes("CHANSEY"))) {
-    dialogManager.show("Enfermera Joy", ["Acércate al mostrador del Centro Pokémon para que la Enfermera Joy cure a tu equipo."]);
+    dialogManager.show("Nurse Joy", ["Approach the Pokémon Center counter to have Nurse Joy heal your party."]);
     return;
   } else if (ent.element.graphics === "OBJ_EVENT_GFX_NURSE_CHANSEY" || (ent.element.graphics && ent.element.graphics.includes("CHANSEY"))) {
     audioController.playMonCry(C.SPECIES_CHANSEY);
-    dialogManager.show("Chansey", ["CHANSEY: ¡Chaan! ¡Sii! 💕"]);
+    dialogManager.show("Chansey", ["CHANSEY: Chaan! Sii! 💕"]);
     return;
   } else if (isMartClerk(ent.element.graphics)) {
-    dialogManager.show("Dependiente", ["Acércate al mostrador de la Tienda Pokémon para comprar suministros."]);
+    dialogManager.show("Clerk", ["Approach the Poké Mart counter to buy supplies."]);
     return;
   } else if (ent.element.trainer) {
     msg = [
-      "¡El entrenador ",
+      "Trainer ",
       { text: ent.element.trainer, strong: true },
-      ` te reta a un combate Pokémon! Rango de visión: ${ent.element.trainerRange ?? 1} casillas.`,
+      ` challenges you to a Pokémon battle! Sight range: ${ent.element.trainerRange ?? 1} tiles.`,
     ];
   } else if (JOHTO) {
     const header = mapHeaders.get(ent.element.map) ?? rom.cachedMap(ent.element.map);
@@ -1213,20 +1213,20 @@ function interactWithEntity(ent: LiveEntity): void {
     const scriptKey = typeof scriptName === "string" ? scriptName : undefined;
     if (ent.element.graphics === "OBJ_EVENT_GFX_ITEM_BALL" || ent.element.graphics === "OBJ_EVENT_GFX_POKE_BALL" || (scriptKey && scriptKey.includes("Item"))) {
       const itemInfo = getJohtoItemInfo(scriptKey);
-      const itemName = itemInfo?.name ?? "Objeto misterioso";
-      dialogManager.show("Objeto", [`En el suelo descansa una Poké Ball que contiene: ${itemName}.`]);
+      const itemName = itemInfo?.name ?? "Unknown item";
+      dialogManager.show("Item", [`A Poké Ball on the ground contains: ${itemName}.`]);
       return;
     }
 
     const jTrainer = getJohtoTrainerInfo(scriptKey, ent.element.map, ent.element.localId);
     if (jTrainer) {
       if (ent.defeated) {
-        dialogManager.show(jTrainer.name, [`${jTrainer.name} ya ha sido derrotado: «${jTrainer.defeatedText}»`]);
+        dialogManager.show(jTrainer.name, [`${jTrainer.name} has already been defeated: «${jTrainer.defeatedText}»`]);
       } else {
         dialogManager.show(jTrainer.name, [
-          `El entrenador `,
+          `Trainer `,
           { text: jTrainer.name, strong: true },
-          ` está esperando un rival en la ruta. Rango de visión: ${jTrainer.visionRange} casillas.`,
+          ` is waiting for an opponent on the route. Sight range: ${jTrainer.visionRange} tiles.`,
         ]);
       }
       return;
@@ -1237,11 +1237,11 @@ function interactWithEntity(ent: LiveEntity): void {
       dialogManager.show(dialogue.title, [dialogue.text]);
       return;
     }
-    msg = ["Hola viajero. Bienvenido a Johto. ¿Estás listo para convertirte en el campeón de la Liga Pokémon?"];
+    msg = ["Hello, traveler. Welcome to Johto. Are you ready to become the Pokémon League Champion?"];
   } else {
     msg = [HOENN
-      ? "Hola viajero. Bienvenido a Hoenn. ¿Estás listo para convertirte en el campeón de la Liga Pokémon?"
-      : "Hola viajero. Bienvenido a las rutas de Kanto. ¿Estás listo para convertirte en el campeón de la Liga Pokémon?"];
+      ? "Hello, traveler. Welcome to Hoenn. Are you ready to become the Pokémon League Champion?"
+      : "Hello, traveler. Welcome to Kanto. Are you ready to become the Pokémon League Champion?"];
   }
   dialogManager.show(title, msg);
 }
@@ -1462,7 +1462,7 @@ async function startExploration(targetGx?: number, targetGy?: number): Promise<v
   }
 
   playerMode = worldGrid.isWaterTile(playerX, playerY) ? "surf" : playerMode === "surf" ? "walk" : playerMode;
-  if (!worldGrid.isWalkable(playerX, playerY, playerMode)) throw new Error("No se encontró una posición inicial transitable");
+  if (!worldGrid.isWalkable(playerX, playerY, playerMode)) throw new Error("No walkable starting position found");
   await preloadExplorationSprites();
   playerActive = true;
   explorationUi?.enter();
@@ -2328,8 +2328,8 @@ function processPlayerStep(): void {
               const curMap = hit ? hit[0] : "";
               if (curMap.includes("ROUTE29") || curMap.includes("NEW_BARK")) {
                 dialogManager.show("Prof. Elm", [
-                  "¡Espera! ¡No te adentres en la hierba alta sin un Pokémon!",
-                  { text: " Ve a mi laboratorio en Pueblo Primavera para elegir a tu inicial.", strong: true }
+                  "Wait! Do not enter the tall grass without a Pokémon!",
+                  { text: " Visit my lab in New Bark Town to choose your starter.", strong: true }
                 ]);
                 playerMoving = false;
                 avatarAnimator?.stop(state.playerChar, playerMode, playerDir, viewerClock.tick);
@@ -2472,7 +2472,7 @@ function showAt(worldX: number, worldY: number): void {
       btn.className = "btn";
       const exterior = d.destMap! in index.maps;
       const destTitle = (JOHTO ? formatJohtoInteriorName(d.destMap!) : undefined) ?? d.destName ?? d.destMap;
-      btn.textContent = `${exterior ? "Ir a" : "Entrar en"} ${destTitle}`;
+      btn.textContent = `${exterior ? "Ir a" : "Enter"} ${destTitle}`;
       btn.addEventListener("click", () => {
         if (exterior) centerOnMap(d.destMap!);
         else void interiorViewer.open(d.destMap!);
@@ -2691,11 +2691,11 @@ function tryElevatorPanel(x:number,y:number):boolean {
   if(!definition.panels.some(p=>p.x===x-info.x&&p.y===y-info.y&&(p.elevation===0||p.elevation===playerElevation)))return false;
   keysDown.clear();playerRunning=false;
   if(definition.requiredFlag&&!state.eventFlags.has(definition.requiredFlag)){
-    dialogManager.show("Ascensor",[definition.deniedText!]);return true;
+    dialogManager.show("Elevator",[definition.deniedText!]);return true;
   }
   const address=navigationWarps.returnAddress;
   if(!address||definition.floors[address.mapId]===undefined){
-    dialogManager.show("Ascensor",["Entra desde una planta para establecer el destino de retorno."]);return true;
+    dialogManager.show("Elevator",["Enter from a floor to set the return destination."]);return true;
   }
   elevatorBusy=true;
   void (async()=>{
@@ -2710,7 +2710,7 @@ function tryElevatorPanel(x:number,y:number):boolean {
       if(choice.floor===from)return;
       await animateNavigationElevator(from,choice.floor);
       if(choice.autoExit)await exitTrainerTowerElevator(mapHeaders.get(mapId)!,choice);
-    }catch(error){console.error("Navigation elevator",error);dialogManager.show("Ascensor",[String(error)]);}
+    }catch(error){console.error("Navigation elevator",error);dialogManager.show("Elevator",[String(error)]);}
     finally{elevatorBusy=false;keysDown.clear();warpCameraY=0;updatePlayerDisplay();writeHash();}
   })();
   return true;
@@ -2885,7 +2885,7 @@ async function followNavigationWarp(source: MapHeader, warpId: number, phase: "i
       playerElevation = worldGrid.elevationAt(playerX, playerY);playerCurrentElevation = playerElevation;
       playerVisualX = (playerX-minX)*TILE; playerVisualY = groundVisualY = (playerY-minY)*TILE; playerActive = true;
     }
-    panel.textContent = `No se pudo cambiar de mapa: ${String(error)}`;
+    panel.textContent = `Unable to change maps: ${String(error)}`;
   } finally {
     stopStairs?.();door?.dispose();navigationTeleport.reset();navigationFall.reset();navigationEscalator.reset();fallPreventStep=false;warpCameraY=0;warpOffsetX=warpOffsetY=0;warpPriority=null;teleportFixedPriority=false;
     warpVisuals?.clear();playerWarpHidden=false;
@@ -2908,7 +2908,7 @@ async function build(): Promise<void> {
     if (jumpArc.length !== 16 || jumpArc.some(value => !Number.isInteger(value))) throw new Error("Invalid source jump arc");
   });
 
-  if (loadingText) loadingText.textContent = `Descargando índice cartográfico de ${GAME_NAME}…`;
+  if (loadingText) loadingText.textContent = `Downloading map index for ${GAME_NAME}…`;
   const avatarReady = startExplore ? ((HOENN || JOHTO) ? jumpReady.then(async () => {
     avatarDepth = new AvatarDepth(content);
     warpVisuals = new ViewerWarpVisuals(document.getElementById("main")!, viewerClock);
@@ -2999,7 +2999,7 @@ async function build(): Promise<void> {
   const byPair = new Map<string, string[]>();
   const layoutsByMap = new Map<string, Awaited<ReturnType<typeof rom.loadLayout>>>();
 
-  if (loadingText) loadingText.textContent = "Cargando layouts de mapas…";
+  if (loadingText) loadingText.textContent = "Loading map layouts…";
   const mapEntries = Object.entries(index.maps);
   const loadedLayouts = streaming ? [] : await Promise.all(
     mapEntries.map(async ([id, m]) => {
@@ -3053,8 +3053,8 @@ async function build(): Promise<void> {
         const target=mapHeaders.get(entry.targetMap)??await data.loadMap(entry.targetMap);
         mapHeaders.set(entry.targetMap,target);
         const source=target.objects[entry.targetLocalId-1],origin=index.maps[entry.targetMap];
-        if(!source||source.clone||!origin)throw Error(`Clone sin plantilla: ${id} -> ${entry.targetMap}#${entry.targetLocalId}`);
-        if(origin.x+source.x!==info.x+entry.x||origin.y+source.y!==info.y+entry.y)throw Error(`Clone fuera de la conexión: ${id}`);
+        if(!source||source.clone||!origin)throw Error(`Clone without a template: ${id} -> ${entry.targetMap}#${entry.targetLocalId}`);
+        if(origin.x+source.x!==info.x+entry.x||origin.y+source.y!==info.y+entry.y)throw Error(`Clone outside the connection: ${id}`);
         if(!entityManager.entities.some(e=>e.element.map===entry.targetMap&&e.element.localId===source.localId)){
           const element=cloneElement(entry.targetMap,source);
           const dir:Direction=element.direction==='up'?'north':element.direction==='left'?'west':element.direction==='right'?'east':'south';
@@ -3263,7 +3263,7 @@ async function build(): Promise<void> {
     let processedCount = 0;
     for (const ids of byPair.values()) for (const id of ids) {
       await renderMap(id);
-      if (loadingText) loadingText.textContent = `Renderizando mapas (${++processedCount}/${mapEntries.length})…`;
+      if (loadingText) loadingText.textContent = `Rendering maps (${++processedCount}/${mapEntries.length})…`;
     }
   }
 
@@ -3277,7 +3277,7 @@ async function build(): Promise<void> {
   const exteriorEntities = entityManager;
   let changeWorldChain: Promise<void> = Promise.resolve();
   const executeChangeNavigationWorld = async (mapId: string): Promise<void> => {
-    if (!streaming) throw new Error("Los interiores jugables requieren modo Explorar");
+    if (!streaming) throw new Error("Playable interiors require Explore mode");
     const exterior = !!exteriorWorld.index.maps[mapId];
     if (!exterior && navigationMap === mapId && worldGrid.isLoaded(index.maps[mapId]!.x, index.maps[mapId]!.y)) return;
     if (exterior && navigationMap === null && worldGrid.isLoaded(index.maps[mapId]!.x, index.maps[mapId]!.y)) return;
@@ -3342,7 +3342,7 @@ async function build(): Promise<void> {
     sectorBorder = new SectorBorder(content);
     sectorLoader = new SectorLoader(renderMap, () => { if (!warpBusy) {updateEntitiesView();updateSectorBorder();if(playerActive)updatePlayerDisplay();} });
     await sectorLoader.update([mapId]);
-    if (!worldGrid.isLoaded(index.maps[mapId]!.x,index.maps[mapId]!.y)) throw new Error(sectorLoader.error || `Mapa no cargado: ${mapId}`);
+    if (!worldGrid.isLoaded(index.maps[mapId]!.x,index.maps[mapId]!.y)) throw new Error(sectorLoader.error || `Map not loaded: ${mapId}`);
     content.dataset.navigationMap = mapId;
   };
   changeNavigationWorld = mapId => {
@@ -3500,7 +3500,7 @@ function setupUi(): void {
     exit: () => document.getElementById("mode-viewer-btn")?.click(),
     startMenu: () => {
       if (!engineInteraction || engineInteraction.open || !playerActive || isStepping || warpBusy || elevatorBusy || dialogManager.isOpen()) return;
-      void engineInteraction.showStartMenu(navigationSnapshot(), playerMode === "bike" ? "bike" : playerMode === "surf" ? "surf" : "walk").catch(error => dialogManager.show("Menú", [String(error)]));
+      void engineInteraction.showStartMenu(navigationSnapshot(), playerMode === "bike" ? "bike" : playerMode === "surf" ? "surf" : "walk").catch(error => dialogManager.show("Menu", [String(error)]));
     },
     stats: () => ({ sectors: sectorLoader?.ids.length ?? Object.keys(index.maps).length,
       bytes: (sectorLoader?.bytes ?? 0) + (sectorBorder?.bytes ?? 0) + (avatarDepth?.bytes ?? 0), pending: sectorLoader?.pending ?? 0, error: sectorLoader?.error ?? "" }),
@@ -3808,7 +3808,7 @@ function setupUi(): void {
             return;
           }
         } else if (engineInteraction && !isStepping && !warpBusy && !elevatorBusy) {
-          void engineInteraction.interactFront(navigationSnapshot(), playerMode === "surf").catch(error => console.error("Interacción", error));
+          void engineInteraction.interactFront(navigationSnapshot(), playerMode === "surf").catch(error => console.error("Interaction", error));
           return;
         }
       }
@@ -3980,14 +3980,14 @@ build()
     if (loadingOverlay) { loadingOverlay.classList.add("hidden"); setTimeout(() => loadingOverlay.remove(), 400); }
   })
   .catch((err) => {
-    const message = `Error al cargar el visor: ${String(err)}`;
+    const message = `Unable to load the map viewer: ${String(err)}`;
     panel.textContent = message;
     document.body.removeAttribute("aria-busy");
     if (loadingOverlay) {
       if (loadingText) loadingText.textContent = message;
       loadingOverlay.querySelector(".loading-spinner")?.remove();
       const retry = document.createElement("button");
-      retry.className = "btn"; retry.textContent = "Reintentar";
+      retry.className = "btn"; retry.textContent = "Retry";
       retry.addEventListener("click", () => location.reload());
       loadingOverlay.append(retry);
     }

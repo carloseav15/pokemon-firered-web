@@ -1,5 +1,5 @@
 // Sprites de otras fuentes para la ficha del dex (public/sprites/, generado por tools/viewer/sprite_sources.py):
-// PMD Red, pokeemerald-expansion, Platinum y HeartGold. Los elementos de PMD se componen en un canvas con las
+// PMD Red, pokeemerald-expansion, Platinum y HeartGold. Los items de PMD se componen en un canvas con las
 // animaciones y direcciones del C; el resto son imágenes o hojas de dos fotogramas.
 
 type Item = {
@@ -26,9 +26,9 @@ type PmdData = { atlas: string; cw: number; ch: number; cols: number; cells: num
 
 const SOURCE_ORDER = ["pmd-red", "pmd-sky", "heartgold-follower", "emerald-expansion", "crystal", "platinum", "heartgold", "spritecollab"];
 const ORIGIN: Record<string, { text: string; cls: string }> = {
-  official: { text: "Oficial · extraído del juego", cls: "o-official" },
-  project: { text: "Proyecto comunitario", cls: "o-project" },
-  community: { text: "Comunidad · arte de fans", cls: "o-community" },
+  official: { text: "Official · extracted from the game", cls: "o-official" },
+  project: { text: "Community project", cls: "o-project" },
+  community: { text: "Community · fan art", cls: "o-community" },
 };
 const TICK_MS = 1000 / 60;
 const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]!);
@@ -43,7 +43,7 @@ export function loadSpriteIndex(): Promise<SpriteIndex | null> {
 
 function itemHtml(it: Item): string {
   if (it.kind === "spritecollab") {
-    return `<div class="sc" data-json="${esc(it.data!)}"><div class="none">${esc(it.label)}: cargando…</div></div>`;
+    return `<div class="sc" data-json="${esc(it.data!)}"><div class="none">${esc(it.label)}: loading…</div></div>`;
   }
   if (it.kind === "portraits") {
     const k = 2;
@@ -59,11 +59,11 @@ function itemHtml(it: Item): string {
   if (it.kind === "frames") {
     const k = Math.max(1, Math.round(120 / Math.max(it.fw!, it.fh!)));
     const anims = (it.anims as { name: string; seq: number[][] }[]) ?? [];
-    const opts = [`<option value="-1">Fotograma 0</option>`, ...anims.map((a, i) => `<option value="${i}" ${i === 0 ? "selected" : ""}>${esc(a.name)}</option>`)].join("");
-    return `<div class="sprite frames" data-item="${esc(JSON.stringify(it))}" data-k="${k}"><canvas width="${it.fw! * k}" height="${it.fh! * k}"></canvas>${esc(it.label)}<br /><select>${opts}</select>${it.shiny ? ` <label><input type="checkbox" /> variocolor</label>` : ""}</div>`;
+    const opts = [`<option value="-1">Frame 0</option>`, ...anims.map((a, i) => `<option value="${i}" ${i === 0 ? "selected" : ""}>${esc(a.name)}</option>`)].join("");
+    return `<div class="sprite frames" data-item="${esc(JSON.stringify(it))}" data-k="${k}"><canvas width="${it.fw! * k}" height="${it.fh! * k}"></canvas>${esc(it.label)}<br /><select>${opts}</select>${it.shiny ? ` <label><input type="checkbox" /> shiny</label>` : ""}</div>`;
   }
   if (it.kind === "pmd") {
-    return `<div class="pmd" data-json="${esc(it.data!)}"><div class="none">${esc(it.label)}: cargando…</div></div>`;
+    return `<div class="pmd" data-json="${esc(it.data!)}"><div class="none">${esc(it.label)}: loading…</div></div>`;
   }
   const w = it.w!;
   const h = it.h!;
@@ -82,10 +82,10 @@ function itemHtml(it: Item): string {
 /** HTML de la sección «Otros juegos» para una especie nacional, o null si no hay datos de ninguna fuente. */
 export function otherSourcesHtml(index: SpriteIndex | null, national: number): string {
   if (!index) {
-    return `<p class="none">Sprites de otros juegos no generados: <code>npm run refs:fetch -- pmd-red pokeemerald-expansion pokeplatinum pokeheartgold &amp;&amp; npm run sprites:sources</code>.</p>`;
+    return `<p class="none">Sprites from other games not generated: <code>npm run refs:fetch -- pmd-red pokeemerald-expansion pokeplatinum pokeheartgold &amp;&amp; npm run sprites:sources</code>.</p>`;
   }
   const per = index.species[String(national)];
-  if (!per) return `<p class="none">Ninguna de las fuentes tiene sprites de esta especie.</p>`;
+  if (!per) return `<p class="none">None of the sources has sprites for this species.</p>`;
   const blocks = SOURCE_ORDER.filter((s) => per[s]?.length).map((s) => {
     const meta = index.sources[s];
     const items = per[s]!;
@@ -95,7 +95,7 @@ export function otherSourcesHtml(index: SpriteIndex | null, national: number): s
     const o = ORIGIN[meta?.origin ?? ""];
     const badge = o ? `<span class="origin ${o.cls}">${esc(o.text)}</span>` : "";
     const lic = meta?.license ? ` · licencia ${esc(meta.license)}` : "";
-    return `<details class="src" open><summary><b>${esc(meta?.label ?? s)}</b> ${badge} <span class="none">· ${items.length} elementos · ${esc(meta?.repo ?? "")}@${esc((meta?.commit ?? "").slice(0, 8))}${lic}</span></summary>
+    return `<details class="src" open><summary><b>${esc(meta?.label ?? s)}</b> ${badge} <span class="none">· ${items.length} items · ${esc(meta?.repo ?? "")}@${esc((meta?.commit ?? "").slice(0, 8))}${lic}</span></summary>
       ${pmd.map(itemHtml).join("")}
       ${rest.length ? `<div class="sprites">${rest.map(itemHtml).join("")}</div>` : ""}</details>`;
   });
@@ -111,7 +111,7 @@ const loadImage = (url: string) => {
     p = new Promise((res, rej) => {
       const im = new Image();
       im.onload = () => res(im);
-      im.onerror = () => rej(new Error(`no se pudo cargar ${url}`));
+      im.onerror = () => rej(new Error(`unable to load ${url}`));
       im.src = url;
     });
     imageCache.set(url, p);
@@ -132,14 +132,14 @@ async function mountPmd(host: HTMLElement, gen: number): Promise<void> {
   const H = (data.ch + pad * 2) * scale;
   const totalTicks = (a: PmdAnim, dir: number) => a.seq[a.dirs[dir]!]!.reduce((t, f) => t + f[1]!, 0);
   const opts = data.anims
-    .map((a, i) => `<option value="${i}">${a.name ? esc(a.name) : `Animación ${a.id}`} · ${Math.round(totalTicks(a, 0) * TICK_MS)} ms</option>`)
+    .map((a, i) => `<option value="${i}">${a.name ? esc(a.name) : `Animation ${a.id}`} · ${Math.round(totalTicks(a, 0) * TICK_MS)} ms</option>`)
     .join("");
   host.innerHTML = `
     <div class="pmd-bar">
-      <label>Animación <select class="pmd-anim">${opts}</select></label>
-      <button class="pmd-play" type="button">Pausa</button>
-      <label><input type="checkbox" class="pmd-sheet" /> Hoja de poses (${data.cells})</label>
-      <span class="none">Direcciones en el orden del juego (1 = de frente). Frames en ticks de 1/60 s.</span>
+      <label>Animation <select class="pmd-anim">${opts}</select></label>
+      <button class="pmd-play" type="button">Pause</button>
+      <label><input type="checkbox" class="pmd-sheet" /> Pose sheet (${data.cells})</label>
+      <span class="none">Directions follow game order (1 = facing forward). Frame durations use 1/60-second ticks.</span>
     </div>
     <div class="pmd-dirs">${DIR_NAMES.map((n, d) => `<div class="sprite"><canvas width="${W}" height="${H}" data-dir="${d}"></canvas>Dir ${n}</div>`).join("")}</div>
     <div class="pmd-atlas" hidden><img src="${data.atlas}" alt="" style="width:${atlas.width}px" /></div>`;
@@ -155,7 +155,7 @@ async function mountPmd(host: HTMLElement, gen: number): Promise<void> {
   let frozen = 0;
   playBtn.addEventListener("click", () => {
     playing = !playing;
-    playBtn.textContent = playing ? "Pausa" : "Reproducir";
+    playBtn.textContent = playing ? "Pause" : "Play";
     if (playing) t0 = performance.now() - frozen;
     else frozen = performance.now() - t0;
   });
@@ -204,8 +204,8 @@ const ATTACK_ACTIONS = new Set(["Attack", "QuickStrike", "Strike", "Shoot", "Cha
   "Appeal", "Dance", "Twirl", "TailWhip", "Sing", "Sound", "Rumble", "FlapAround", "Withdraw", "RearUp", "Swell", "Hover", "Wiggle", "Roar"]);
 const SC_DIRS = ["Abajo", "Abajo-der.", "Derecha", "Arriba-der.", "Arriba", "Arriba-izq.", "Izquierda", "Abajo-izq."];
 const scVariant = (v: { formName: string; form: string; shiny: boolean; gender: string }) =>
-  `${v.formName || (v.form === "0000" ? "Base" : `Forma ${v.form}`)}${v.shiny ? " · variocolor" : ""}${v.gender === "female" ? " · hembra" : ""}`;
-const scAuthors = (a: ScAuthor[]) => (a.length ? a.map((x) => (x.contact.startsWith("http") ? `<a href="${esc(x.contact)}" target="_blank" rel="noopener">${esc(x.name)}</a>` : esc(x.name))).join(", ") : "sin autores listados");
+  `${v.formName || (v.form === "0000" ? "Base" : `Forma ${v.form}`)}${v.shiny ? " · shiny" : ""}${v.gender === "female" ? " · female" : ""}`;
+const scAuthors = (a: ScAuthor[]) => (a.length ? a.map((x) => (x.contact.startsWith("http") ? `<a href="${esc(x.contact)}" target="_blank" rel="noopener">${esc(x.name)}</a>` : esc(x.name))).join(", ") : "no authors listed");
 
 async function mountSc(host: HTMLElement, gen: number): Promise<void> {
   const data: ScData = await (await fetch(host.dataset.json!)).json();
@@ -213,13 +213,13 @@ async function mountSc(host: HTMLElement, gen: number): Promise<void> {
   const spriteOpts = data.sprites.map((v, i) => `<option value="${i}">${esc(scVariant(v))}</option>`).join("");
   const portOpts = data.portraits.map((v, i) => `<option value="${i}">${esc(scVariant(v))}</option>`).join("");
   host.innerHTML = `
-    <div class="sc-head none">Arte de fans de la comunidad PMD (CC BY-NC 4.0); no es contenido oficial del juego.</div>
-    ${data.sprites.length ? `<div class="pmd-bar"><label>Variante <select class="sc-var">${spriteOpts}</select></label>
-      <label>Acción <select class="sc-act"></select></label>
-      <label><input type="checkbox" class="sc-atk" /> solo ataques</label><button class="sc-play" type="button">Pausa</button>
+    <div class="sc-head none">PMD community fan art (CC BY-NC 4.0); not official game content.</div>
+    ${data.sprites.length ? `<div class="pmd-bar"><label>Variant <select class="sc-var">${spriteOpts}</select></label>
+      <label>Action <select class="sc-act"></select></label>
+      <label><input type="checkbox" class="sc-atk" /> attacks only</label><button class="sc-play" type="button">Pause</button>
       <span class="none sc-info"></span></div>
-      <div class="pmd-dirs sc-dirs"></div><div class="none sc-credit"></div>` : `<div class="none">sin sprites animados</div>`}
-    ${data.portraits.length ? `<h4 style="margin:14px 0 4px">Retratos <select class="sc-pvar">${portOpts}</select></h4>
+      <div class="pmd-dirs sc-dirs"></div><div class="none sc-credit"></div>` : `<div class="none">no animated sprites</div>`}
+    ${data.portraits.length ? `<h4 style="margin:14px 0 4px">Portraits <select class="sc-pvar">${portOpts}</select></h4>
       <div class="pgrid sc-ports"></div><div class="none sc-pcredit"></div>` : ""}`;
   const q = <T extends Element>(c: string) => host.querySelector<T>(c)!;
   // --- sprites
@@ -241,10 +241,10 @@ async function mountSc(host: HTMLElement, gen: number): Promise<void> {
       const fh = anim.fh || sheet.height;
       const rows = Math.max(1, Math.round(sheet.height / fh));
       scale = Math.max(1, Math.min(4, Math.floor(150 / Math.max(fw, fh))));
-      dirsEl.innerHTML = Array.from({ length: rows }, (_, r) => `<div class="sprite"><canvas width="${fw * scale}" height="${fh * scale}" data-row="${r}"></canvas>${rows === 8 ? SC_DIRS[r] : "Sin dirección"}</div>`).join("");
+      dirsEl.innerHTML = Array.from({ length: rows }, (_, r) => `<div class="sprite"><canvas width="${fw * scale}" height="${fh * scale}" data-row="${r}"></canvas>${rows === 8 ? SC_DIRS[r] : "No direction"}</div>`).join("");
       canvases = [...dirsEl.querySelectorAll("canvas")];
       const marks = [anim.rush && `rush ${anim.rush}`, anim.hit && `golpe ${anim.hit}`, anim.ret && `retorno ${anim.ret}`].filter(Boolean).join(" · ");
-      info.textContent = `${anim.durations.length} fotogramas · ${anim.durations.reduce((a, b) => a + b, 0)} ticks${marks ? ` · ${marks}` : ""}${anim.inherited ? " · heredada de la forma base" : ""}`;
+      info.textContent = `${anim.durations.length} frames · ${anim.durations.reduce((a, b) => a + b, 0)} ticks${marks ? ` · ${marks}` : ""}${anim.inherited ? " · inherited from the base form" : ""}`;
       t0 = performance.now();
       frozen = 0;
     };
@@ -256,7 +256,7 @@ async function mountSc(host: HTMLElement, gen: number): Promise<void> {
         .filter(({ a }) => !atkChk.checked || ATTACK_ACTIONS.has(a.name))
         .map(({ a, i }) => `<option value="${i}">${esc(a.name)}${a.inherited ? " *" : ""}</option>`)
         .join("");
-      q(".sc-credit").innerHTML = `Autores de esta variante: ${scAuthors(v.authors)}${v.anims.some((a) => a.inherited) ? ` · <span class="none">* acción heredada de la forma base</span>` : ""}`;
+      q(".sc-credit").innerHTML = `Authors of this variant: ${scAuthors(v.authors)}${v.anims.some((a) => a.inherited) ? ` · <span class="none">* action inherited from the base form</span>` : ""}`;
     };
     fillActions();
     void loadAction();
@@ -265,7 +265,7 @@ async function mountSc(host: HTMLElement, gen: number): Promise<void> {
     actSel.addEventListener("change", () => void loadAction());
     playBtn.addEventListener("click", () => {
       playing = !playing;
-      playBtn.textContent = playing ? "Pausa" : "Reproducir";
+      playBtn.textContent = playing ? "Pause" : "Play";
       if (playing) t0 = performance.now() - frozen;
       else frozen = performance.now() - t0;
     });
@@ -300,7 +300,7 @@ async function mountSc(host: HTMLElement, gen: number): Promise<void> {
     const showPortraits = () => {
       const v = data.portraits[Number(pSel.value)]!;
       grid.innerHTML = v.emotions.map((e) => `<figure class="pt"><div style="width:80px;height:80px;background:url(${e.url}) 0 0/80px 80px;image-rendering:pixelated;border:1px solid var(--line);border-radius:4px"></div><figcaption>${esc(e.name)}</figcaption></figure>`).join("");
-      q(".sc-pcredit").innerHTML = `Autores: ${scAuthors(v.authors)}`;
+      q(".sc-pcredit").innerHTML = `Authors: ${scAuthors(v.authors)}`;
     };
     pSel.addEventListener("change", showPortraits);
     showPortraits();
@@ -353,7 +353,7 @@ export function thumbOf(index: SpriteIndex, national: number): { url: string; n:
   const per = index.species[String(national)];
   if (!per) return null;
   for (const src of ["emerald-expansion", "platinum", "heartgold", "crystal"]) {
-    const it = per[src]?.find((i) => /^Frente/.test(i.label) && !/variocolor|hembra|GBA/.test(i.label)) ?? per[src]?.find((i) => /^Frente/.test(i.label));
+    const it = per[src]?.find((i) => /^Frente/.test(i.label) && !/shiny|hembra|GBA/.test(i.label)) ?? per[src]?.find((i) => /^Frente/.test(i.label));
     if (it?.url) return { url: it.url, n: it.n ?? 1, axis: it.axis ?? "" };
   }
   return null;

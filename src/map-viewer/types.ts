@@ -19,7 +19,7 @@ export type Source = {
   inspector: (map: string) => string | null;
 };
 export const SOURCES: { id: GameId; label: string }[] = [
-  { id: "world", label: "Mundo principal · Kanto / Johto / Hoenn" },
+  { id: "world", label: "Main world · Kanto / Johto / Hoenn" },
   { id: "firered", label: "Kanto · FireRed" }, { id: "emerald", label: "Hoenn · Emerald" },
   { id: "hns", label: "Johto / Kanto · Heart & Soul" }, { id: "crystal", label: "Johto / Kanto · Crystal" },
 ];

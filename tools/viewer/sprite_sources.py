@@ -797,7 +797,40 @@ def build_pmd_sky() -> dict[int, list[dict]]:
 
 # ---------------------------------------------------------------- índice
 
+# Labels are presentation metadata; never translate keys, source names, URLs or image data.
+def english_labels(value) -> None:
+    replacements = {
+        "Pokémon HeartGold (batalla e iconos)": "Pokémon HeartGold (battle sprites and icons)",
+        "Pokémon HeartGold (compañero que te sigue)": "Pokémon HeartGold (following Pokémon)",
+        "Sprites de mazmorra": "Dungeon sprites", "Retratos": "Portraits", "Compañero": "Following Pokémon",
+        "variocolor": "shiny", "Frente": "Front", "Espalda": "Back", "Icono": "Icon",
+        "Huella": "Footprint", "hembra": "female", "macho": "male", "hoja": "sheet",
+        "forma": "form", "fila": "row", "Animación": "Animation",
+    }
+    if isinstance(value, dict):
+        for key, item in value.items():
+            if key == "label" and isinstance(item, str):
+                for source, english in replacements.items():
+                    item = item.replace(source, english)
+                value[key] = item
+            else:
+                english_labels(item)
+    elif isinstance(value, list):
+        for item in value:
+            english_labels(item)
+
+
 def main() -> None:
+    # Rebuild display labels from an existing export without recompressing images.
+    if sys.argv[1:] == ["--labels-only"]:
+        path = OUT / "index.json"
+        if not path.is_file():
+            sys.exit("Missing sprite index; run sprites:sources before --labels-only")
+        index = json.loads(path.read_text())
+        english_labels(index)
+        path.write_text(json.dumps(index, ensure_ascii=False, separators=(",", ":")) + "\n")
+        print("English sprite labels regenerated; image data unchanged")
+        return
     wanted = sys.argv[1:] or list(SOURCE_INFO)
     for w in wanted:
         if w not in SOURCE_INFO:
@@ -829,6 +862,7 @@ def main() -> None:
     index["names"] = {k: names[int(k)] for k in index["species"] if int(k) in names}
     index["species"] = dict(sorted(index["species"].items(), key=lambda kv: int(kv[0])))
     OUT.mkdir(parents=True, exist_ok=True)
+    english_labels(index)
     index_path.write_text(json.dumps(index, ensure_ascii=False, separators=(",", ":")) + "\n")
     print(f"índice: {len(index['species'])} especies nacionales")
 

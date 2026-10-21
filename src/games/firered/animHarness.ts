@@ -43,7 +43,7 @@ export async function launchAnimHarness(params: URLSearchParams): Promise<void> 
     status: () => ({ ...status }),
     async play(move: number, options: PlayOptions = {}): Promise<void> {
       await ready;
-      if (status.playing) throw new Error("ya hay una animación en curso");
+      if (status.playing) throw new Error("an animation is already playing");
       status.playing = true;
       try {
         const power = options.power ?? (gBattleMoves(move) as { power?: number } | undefined)?.power ?? 0;
@@ -55,7 +55,7 @@ export async function launchAnimHarness(params: URLSearchParams): Promise<void> 
         MarkBattlerForControllerExec(0);
         const deadline = performance.now() + (options.timeoutMs ?? 20000);
         while (G.gBattleControllerExecFlags & 1) {
-          if (performance.now() > deadline) throw new Error("la animación no terminó a tiempo");
+          if (performance.now() > deadline) throw new Error("the animation did not finish in time");
           await new Promise((r) => setTimeout(r, 16));
         }
       } catch (e) {
@@ -85,7 +85,7 @@ export async function launchAnimHarness(params: URLSearchParams): Promise<void> 
       await debug.wait(20);
     }
     if (!(gBattleBufferA[0][0] === C.CONTROLLER_CHOOSEACTION && (G.gBattleControllerExecFlags & 1) !== 0)) {
-      throw new Error("el combate no llegó al menú de acciones");
+      throw new Error("the battle did not reach the action menu");
     }
     await debug.wait(30);
     // Congelar la lógica de turnos y ocultar el menú: queda la escena con la caja de texto vacía.

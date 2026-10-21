@@ -98,16 +98,16 @@ export class TouchControls {
     wrap.className = "virtual-touch-controls";
     wrap.innerHTML = `
       <div class="touch-shoulder-row">
-        <button type="button" class="touch-btn touch-shoulder touch-l" data-btn="l" aria-label="Botón L">L</button>
-        <button type="button" class="touch-btn touch-shoulder touch-r" data-btn="r" aria-label="Botón R">R</button>
+        <button type="button" class="touch-btn touch-shoulder touch-l" data-btn="l" aria-label="L button">L</button>
+        <button type="button" class="touch-btn touch-shoulder touch-r" data-btn="r" aria-label="R button">R</button>
       </div>
       <div class="touch-dpad-wrap">
-        <div class="touch-dpad" id="touch-dpad" role="group" aria-label="Cruceta direccional">
+        <div class="touch-dpad" id="touch-dpad" role="group" aria-label="Directional pad">
           <div class="dpad-center"></div>
-          <button type="button" class="dpad-arm dpad-up" data-dir="up" aria-label="Arriba">▲</button>
-          <button type="button" class="dpad-arm dpad-right" data-dir="right" aria-label="Derecha">►</button>
-          <button type="button" class="dpad-arm dpad-down" data-dir="down" aria-label="Abajo">▼</button>
-          <button type="button" class="dpad-arm dpad-left" data-dir="left" aria-label="Izquierda">◄</button>
+          <button type="button" class="dpad-arm dpad-up" data-dir="up" aria-label="Up">▲</button>
+          <button type="button" class="dpad-arm dpad-right" data-dir="right" aria-label="Right">►</button>
+          <button type="button" class="dpad-arm dpad-down" data-dir="down" aria-label="Down">▼</button>
+          <button type="button" class="dpad-arm dpad-left" data-dir="left" aria-label="Left">◄</button>
         </div>
       </div>
       <div class="touch-menu-btns">
@@ -115,8 +115,8 @@ export class TouchControls {
         <button type="button" class="touch-btn touch-pill touch-start" data-btn="start" aria-label="Start">START</button>
       </div>
       <div class="touch-action-btns">
-        <button type="button" class="touch-btn touch-round touch-b" data-btn="b" aria-label="Botón B">B</button>
-        <button type="button" class="touch-btn touch-round touch-a" data-btn="a" aria-label="Botón A">A</button>
+        <button type="button" class="touch-btn touch-round touch-b" data-btn="b" aria-label="B button">B</button>
+        <button type="button" class="touch-btn touch-round touch-a" data-btn="a" aria-label="A button">A</button>
       </div>
     `;
     return wrap;

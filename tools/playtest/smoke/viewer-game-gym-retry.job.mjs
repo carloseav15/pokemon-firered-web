@@ -24,7 +24,7 @@ export default async function run(ctx){
  const lost=await state();
  if(lost.liam||lost.hp!==lost.max||lost.map==='MAP_PEWTER_CITY_GYM')throw Error('First attempt did not white out '+JSON.stringify(lost));
  await ctx.shot('after-loss');
- await p.getByRole('button',{name:'Menú · Esc'}).click();
+ await p.getByRole('button',{name:"Menu · Esc"}).click();
  await p.locator('#explore-save').click();await p.keyboard.press('Escape');
 
  await open();

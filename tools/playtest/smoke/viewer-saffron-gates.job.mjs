@@ -25,7 +25,7 @@ export default async function run(ctx){
   await p.goto('about:blank');
   await p.goto(new URL(`viewer.html#modo=explore&mapa=${g.map}&px=${w.x+g.from[0]}&py=${w.y+g.from[1]}`,process.env.PW_BASE).href);
   await p.waitForFunction(()=>window.gateProbe?.positions.length&&!document.body.hasAttribute('aria-busy'));await p.waitForTimeout(1200);
-  if(await p.locator('#player-char').inputValue()!==character){await p.getByRole('button',{name:'Menú · Esc'}).click();await p.locator('#explore-character').selectOption(character);await p.keyboard.press('Escape');await p.waitForTimeout(800);}
+  if(await p.locator('#player-char').inputValue()!==character){await p.getByRole('button',{name:"Menu · Esc"}).click();await p.locator('#explore-character').selectOption(character);await p.keyboard.press('Escape');await p.waitForTimeout(800);}
   await p.keyboard.press(g.key);await p.waitForTimeout(300);
   await p.keyboard.down(g.key);await p.waitForTimeout(25);await p.keyboard.up(g.key);
   // Arrow warps fire on the next input while standing on the warp tile; step-triggered warps already left.

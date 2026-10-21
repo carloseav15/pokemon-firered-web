@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="es">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Línea argumental FireRed / Emerald</title>
+    <title>Story progression FireRed / Emerald</title>
     <style>
       :root { color-scheme: dark; --bg:#0b0f14; --panel:#111827; --line:#243040; --fg:#e5e7eb; --mut:#9ca3af; }
       * { box-sizing:border-box; }
@@ -28,21 +28,18 @@
   </head>
   <body>
     <header>
-      <h1>Línea argumental</h1>
+      <h1>Story progression</h1>
       <a href="/atlas.html">☰ Atlas</a>
       <button data-game="firered" class="ga on">FireRed</button>
       <button data-game="emerald" class="gb">Emerald</button>
-      <input id="q" type="search" placeholder="Buscar escena, mapa o script…" />
+      <input id="q" type="search" placeholder="Search scene, map or script…" />
       <a href="/quests.html" style="margin-left:auto">Quests →</a>
-      <a href="/library.html">Biblioteca visual →</a>
-      <a href="/viewer.html">Visor del mundo →</a>
+      <a href="/library.html">Visual library →</a>
+      <a href="/viewer.html">World Map →</a>
     </header>
     <main>
       <div class="note">
-        <strong>Cómo leer esto.</strong> Los capítulos siguen el orden oficial de rutas y están escritos a mano; cada escena se
-        coloca por el nombre de su variable y, si no encaja, por sus mapas. Lo que sí sale de los datos: los pasos de cada
-        escena (valores que asignan los scripts), los scripts y mapas donde ocurren y lo que comprueban. Un primer intento de
-        ordenar por dependencias entre scripts se descartó porque no daba cronología fiable.
+        <strong>How to read this.</strong> Chapters follow a manually defined route order. Scenes are placed by variable name, then by map. Source-derived data includes scene steps, script assignments, maps and checks. Script dependencies alone do not establish a reliable chronology.
       </div>
       <div id="out"></div>
     </main>

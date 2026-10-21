@@ -39,7 +39,7 @@ export default async function run(ctx){
  await waitFor('start3',s=>s.tasks.includes('startInput'));
  const optAfter=await opts();
  await press('x');await p.locator('#engine-interaction').waitFor({state:'hidden',timeout:10000});
- await p.getByRole('button',{name:'Menú · Esc'}).click();await p.locator('#explore-save').click();await p.keyboard.press('Escape');
+ await p.getByRole('button',{name:"Menu · Esc"}).click();await p.locator('#explore-save').click();await p.keyboard.press('Escape');
  await p.reload();await p.waitForFunction(()=>performance.getEntriesByName('viewer-interactive').length);
  const persisted=await opts();
  const ok={switched:swapped[0]===first[1]&&swapped[1]===first[0],optionChanged:JSON.stringify(optBefore)!==JSON.stringify(optAfter),persisted:JSON.stringify(persisted)===JSON.stringify(optAfter)};

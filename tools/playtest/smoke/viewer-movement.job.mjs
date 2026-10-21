@@ -25,7 +25,7 @@ export default async function run(ctx) {
   await p.goto('about:blank');
   await p.goto(new URL(`viewer.html#modo=explore&px=${point.x}&py=${point.y}`,process.env.PW_BASE).href);
   await p.waitForFunction(()=>window.motionProbe?.events.some(e=>e.phase==='spawn')&&!document.body.hasAttribute('aria-busy'));
-  if(await p.locator('#player-char').inputValue()!==character){await p.getByRole('button',{name:'Menú · Esc'}).click();await p.locator('#explore-character').selectOption(character);await p.keyboard.press('Escape');}
+  if(await p.locator('#player-char').inputValue()!==character){await p.getByRole('button',{name:"Menu · Esc"}).click();await p.locator('#explore-character').selectOption(character);await p.keyboard.press('Escape');}
  };
  await p.goto(new URL('viewer.html#modo=explore&mapa=MAP_PALLET_TOWN',process.env.PW_BASE).href);
  await p.waitForFunction(()=>window.motionProbe?.grid&&window.motionProbe.events.some(e=>e.phase==='spawn'));

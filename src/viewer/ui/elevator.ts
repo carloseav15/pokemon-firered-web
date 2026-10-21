@@ -5,7 +5,7 @@ export class ElevatorMenu {
   private buttons: HTMLButtonElement[] = [];
   constructor() {
     this.dialog.id = "elevator-menu";
-    this.dialog.setAttribute("aria-label", "Ascensor");
+    this.dialog.setAttribute("aria-label", "Elevator");
     this.dialog.addEventListener("cancel", e => { e.preventDefault(); this.close(null); });
     this.dialog.addEventListener("keydown", e => {
       e.stopImmediatePropagation();
@@ -23,10 +23,10 @@ export class ElevatorMenu {
   choose(labels: string[], current: number): Promise<number | null> {
     if (this.finish) throw Error("Elevator menu already open");
     this.dialog.replaceChildren();
-    const title = document.createElement("h2"); title.textContent = "¿A qué planta quieres ir?";
-    const on = document.createElement("p"); on.textContent = `Planta actual: ${labels[current] ?? "—"}`;
+    const title = document.createElement("h2"); title.textContent = "Which floor would you like?";
+    const on = document.createElement("p"); on.textContent = `Current floor: ${labels[current] ?? "—"}`;
     this.dialog.append(title,on);
-    this.buttons = [...labels,"Salir"].map((label,index) => {
+    this.buttons = [...labels,"Exit"].map((label,index) => {
       const button = document.createElement("button");button.className="btn";button.textContent=label;
       button.style.display="block";button.style.width="100%";button.style.margin="4px 0";
       button.addEventListener("click",()=>this.close(index < labels.length ? index : null));

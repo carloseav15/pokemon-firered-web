@@ -153,7 +153,7 @@ export function setupSearch(
         item.setAttribute("role", "option");
         item.setAttribute("aria-disabled", "true");
         item.setAttribute("aria-selected", "false");
-        item.textContent = "Sin resultados";
+        item.textContent = "No results";
         resultsEl.appendChild(item);
         resultsEl.style.display = "flex";
         setExpanded(true);

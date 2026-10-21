@@ -21,7 +21,7 @@ export default async function run(ctx) {
   const idle=()=>p.waitForFunction(()=>document.querySelector('#content').getAttribute('aria-busy')!=='true'&&!JSON.parse(document.querySelector('#player-sprite').dataset.animation).moving);
   const press=async key=>{await idle();await p.keyboard.press(key);await p.waitForTimeout(40);await idle();};
   const character=process.env.PW_CHARACTER??'red';
-  if(await p.locator('#player-char').inputValue()!==character){await p.getByRole('button',{name:'Menú · Esc'}).click();await p.locator('#explore-character').selectOption(character);await p.keyboard.press('Escape');await idle();}
+  if(await p.locator('#player-char').inputValue()!==character){await p.getByRole('button',{name:"Menu · Esc"}).click();await p.locator('#explore-character').selectOption(character);await p.keyboard.press('Escape');await idle();}
   // Facing changes use native eight-tick turns before a subsequent input moves.
   await press('ArrowUp');await press('ArrowUp');
   await p.waitForFunction(map=>window.interiorNavigation.positions.at(-1)?.phase==='spawn'&&window.interiorNavigation.positions.at(-1)?.map===map,interiorMap);

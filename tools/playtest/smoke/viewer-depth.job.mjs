@@ -21,7 +21,7 @@ export default async function run(ctx){
  });
  await p.goto('about:blank');await p.goto(base+`#modo=explore&px=${fixture.x}&py=${fixture.y}`);
  await p.waitForFunction(()=>window.depthProbe?.sectors.size&&document.querySelector('.depth-upper')?.dataset.depth&&!document.body.hasAttribute('aria-busy'));
- if(await p.locator('#player-char').inputValue()!==motion.character){await p.getByRole('button',{name:'Menú · Esc'}).click();await p.locator('#explore-character').selectOption(motion.character);await p.keyboard.press('Escape');}
+ if(await p.locator('#player-char').inputValue()!==motion.character){await p.getByRole('button',{name:"Menu · Esc"}).click();await p.locator('#explore-character').selectOption(motion.character);await p.keyboard.press('Escape');}
  const layers=await p.evaluate(async()=>{
   const d=window.depthProbe,g=window.motionProbe.grid,upper=document.querySelector('.depth-upper'),middle=document.querySelector('.depth-middle');
   const {ExtractMetatileAttribute,METATILE_ATTRIBUTE_LAYER_TYPE,NUM_METATILES_IN_PRIMARY}=await import('/src/core/field/fieldmap.ts');

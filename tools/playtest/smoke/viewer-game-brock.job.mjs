@@ -33,7 +33,7 @@ export default async function run(ctx){
  // famechecker FAMECHECKER_BROCK in the source script updates his Fame Checker entry.
  if(end.fame===afterLiam.fame)throw Error('Fame Checker entry unchanged '+end.fame);
  // Save from the DOM menu and reload: badge, TM and defeat flags must persist.
- await p.getByRole('button',{name:'Menú · Esc'}).click();
+ await p.getByRole('button',{name:"Menu · Esc"}).click();
  await p.locator('#explore-save').click();await p.keyboard.press('Escape');
  await p.reload();await p.waitForFunction(()=>performance.getEntriesByName('viewer-interactive').length);
  const persisted=await state();

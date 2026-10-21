@@ -20,7 +20,7 @@ export default async function run(ctx){
   &&document.querySelector('#content').getAttribute('aria-busy')!=='true'&&!JSON.parse(document.querySelector('#player-sprite').dataset.animation).moving);
  const enter=async(map,point)=>{
   await p.goto('about:blank');await p.goto(new URL(`viewer.html#modo=explore&mapa=${map}${point?`&px=${point.x}&py=${point.y}`:''}`,process.env.PW_BASE).href);await idle();
-  if(await p.locator('#player-char').inputValue()!==character){await p.getByRole('button',{name:'Menú · Esc'}).click();await p.locator('#explore-character').selectOption(character);await p.keyboard.press('Escape');await idle();}
+  if(await p.locator('#player-char').inputValue()!==character){await p.getByRole('button',{name:"Menu · Esc"}).click();await p.locator('#explore-character').selectOption(character);await p.keyboard.press('Escape');await idle();}
  };
  const face=async key=>{await idle();const dir={ArrowDown:'south',ArrowUp:'north',ArrowLeft:'west',ArrowRight:'east'}[key];
   if(await p.locator('#player-sprite').evaluate((el,d)=>JSON.parse(el.dataset.animation).direction!==d,dir)){await p.keyboard.press(key);await idle();}
@@ -62,7 +62,7 @@ export default async function run(ctx){
   if(observed.at.vehicle!==fixture.vehicle)throw Error('Wrong native vehicle '+JSON.stringify(observed));
   await ctx.shot(`${test.name}-${character}`);
   // Menu pause freezes the shared source timeline and the live effect frame.
-  await p.getByRole('button',{name:'Menú · Esc'}).click();
+  await p.getByRole('button',{name:"Menu · Esc"}).click();
   const paused=await p.evaluate(async()=>({tick:(await import('/src/viewer/clock.ts')).viewerClock.tick,
    nodes:[...document.querySelectorAll('[data-effect-name]')].map(e=>[e.dataset.effectName,e.style.cssText])}));
   await p.waitForTimeout(150);

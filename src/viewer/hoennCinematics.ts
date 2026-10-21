@@ -88,7 +88,7 @@ export async function runSkyPillarRayquazaCinematic(host: CinematicHost): Promis
     }
 
     // 5. Message dialogue
-    await host.dialog.show("Pilar Celeste", ["¡El RAYQUAZA legendario ha despertado y asciende a los cielos!"]);
+    await host.dialog.show("Pilar Celeste", ["The legendary RAYQUAZA has awakened and rises into the sky!"]);
   } finally {
     host.lockControls(false);
   }
@@ -110,7 +110,7 @@ export async function runCaveOfOriginRumbleCinematic(host: CinematicHost): Promi
     await new Promise((r) => setTimeout(r, 500));
 
     await host.dialog.show("Cueva Origen", [
-      "¡La tierra y las aguas subterráneas retumban con los ecos de Groudon y Kyogre!",
+      "The earth and underground waters rumble with echoes of Groudon and Kyogre!",
     ]);
   } finally {
     host.lockControls(false);
@@ -149,9 +149,9 @@ export async function runSootopolisClashCinematic(host: CinematicHost): Promise<
     if (kyogre?.el) kyogre.el.style.transform = "";
     if (groudon?.el) groudon.el.style.transform = "";
 
-    await host.dialog.show("Arrecife de Sootopolis", [
-      "¡Groudon y Kyogre colisionan en un violento cataclismo de fuego y diluvio!",
-      "Solo el guardián de los cielos, Rayquaza, puede calmar su furia.",
+    await host.dialog.show("Arrecife of Sootopolis", [
+      "Groudon and Kyogre collide in a violent cataclysm of fire and flood!",
+      "Only Rayquaza, the guardian of the skies, can calm their fury.",
     ]);
   } finally {
     host.lockControls(false);

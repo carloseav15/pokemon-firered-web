@@ -32,8 +32,8 @@ export type Card = {
   locB: Location[];
 };
 
-const STATS = ["PS", "Ataque", "Defensa", "Velocidad", "At. esp.", "Def. esp."];
-const KIND: Record<string, string> = { land_mons: "Hierba", water_mons: "Agua", rock_smash_mons: "Golpe roca", fishing_mons: "Pesca" };
+const STATS = ["HP", "Attack", "Defense", "Speed", "Sp. Atk", "Sp. Def"];
+const KIND: Record<string, string> = { land_mons: "Grass", water_mons: "Water", rock_smash_mons: "Rock Smash", fishing_mons: "Fishing" };
 
 function bits(words: number[], names: string[]): string[] {
   const out: string[] = [];
@@ -91,32 +91,32 @@ export function buildCard(A: DexSource, B: DexSource, id: number, locA: Map<numb
       onlyB.push({ label, value: y });
     }
   };
-  cmp("Tipos", a.types.map(ga.type).join(" / "), b.types.map(gb.type).join(" / "));
+  cmp("Types", a.types.map(ga.type).join(" / "), b.types.map(gb.type).join(" / "));
   cmp("Base", a.base.map((v: number, i: number) => `${STATS[i]} ${v}`).join(" · "), b.base.map((v: number, i: number) => `${STATS[i]} ${v}`).join(" · "));
-  cmp("Habilidades", a.abilities.map(ga.ability).join(" / "), b.abilities.map(gb.ability).join(" / "));
-  cmp("Ratio de captura", String(a.catchRate), String(b.catchRate));
+  cmp("Abilities", a.abilities.map(ga.ability).join(" / "), b.abilities.map(gb.ability).join(" / "));
+  cmp("Catch rate", String(a.catchRate), String(b.catchRate));
   cmp("Exp. base", String(a.expYield), String(b.expYield));
   cmp("EV", a.evYield.join("/"), b.evYield.join("/"));
-  cmp("Ratio de género", String(a.genderRatio), String(b.genderRatio));
-  cmp("Ciclos de huevo", String(a.eggCycles), String(b.eggCycles));
-  cmp("Amistad", String(a.friendship), String(b.friendship));
+  cmp("Gender ratio", String(a.genderRatio), String(b.genderRatio));
+  cmp("Egg cycles", String(a.eggCycles), String(b.eggCycles));
+  cmp("Friendship", String(a.friendship), String(b.friendship));
   const ea = a.eggGroups.map(ga.eggGroup);
   const eb = b.eggGroups.map(gb.eggGroup);
   const aliasSame = ea.length === eb.length && ea.every((p: string, i: number) => p.split("|").some((n) => eb[i]!.split("|").includes(n)));
-  cmp("Grupos huevo", ea.map((s: string) => s.split("|")[0]).join(" / "), eb.map((s: string) => s.split("|")[0]).join(" / "), aliasSame);
+  cmp("Egg groups", ea.map((s: string) => s.split("|")[0]).join(" / "), eb.map((s: string) => s.split("|")[0]).join(" / "), aliasSame);
   const ha = a.items.map(ga.itemName).join(" / ");
   const hb = b.items.map(gb.itemName).join(" / ");
-  cmp("Objetos salvajes", ha, hb);
+  cmp("Held items in the wild", ha, hb);
   const evo = (g: GameData, s: any) => (s.evolutions as number[][]).map(([m, p, t]) => `${g.speciesName(t!)} (${m}:${p})`).join(", ") || "—";
-  cmp("Evoluciones", evo(ga, a), evo(gb, b));
+  cmp("Evolutions", evo(ga, a), evo(gb, b));
 
   const national = a.national as number;
   const pa = ga.raw.species.pokedex[national];
   const pb = gb.raw.species.pokedex[national];
   if (pa && pb) {
-    cmp("Categoría", ga.decode(pa.category), gb.decode(pb.category));
-    cmp("Altura / peso", `${pa.height / 10} m · ${pa.weight / 10} kg`, `${pb.height / 10} m · ${pb.weight / 10} kg`);
-    cmp("Entrada de la Pokédex", ga.decode(pa.description), gb.decode(pb.description));
+    cmp("Category", ga.decode(pa.category), gb.decode(pb.category));
+    cmp("Height / weight", `${pa.height / 10} m · ${pa.weight / 10} kg`, `${pb.height / 10} m · ${pb.weight / 10} kg`);
+    cmp("Pokédex entry", ga.decode(pa.description), gb.decode(pb.description));
   }
 
   const lv = (g: GameData, s: any) => (s.learnset as number[][]).map(([l, m]) => `Nv${l} ${g.moveName(m!)}`);

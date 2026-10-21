@@ -14,7 +14,7 @@ export default async function run(ctx){
  });
  await p.goto('about:blank');await p.goto(base+`#modo=explore&px=${shore.x}&py=${shore.y}`);
  await p.waitForFunction(()=>window.motionProbe?.events.some(e=>e.phase==='spawn')&&!document.body.hasAttribute('aria-busy'));
- if(await p.locator('#player-char').inputValue()!==motion.character){await p.getByRole('button',{name:'Menú · Esc'}).click();await p.locator('#explore-character').selectOption(motion.character);await p.keyboard.press('Escape');}
+ if(await p.locator('#player-char').inputValue()!==motion.character){await p.getByRole('button',{name:"Menu · Esc"}).click();await p.locator('#explore-character').selectOption(motion.character);await p.keyboard.press('Escape');}
  await p.waitForFunction(()=>document.querySelector('.player-reflection')?.style.display==='block');
  const directions=[];
  for(const [direction,key]of [['south','ArrowDown'],['north','ArrowUp'],['west','ArrowLeft'],['east','ArrowRight']]){
@@ -59,7 +59,7 @@ export default async function run(ctx){
   return{file:JSON.parse(el.dataset.reflection).file,offsets:[...offsets]};
  });
  await ctx.shot('reflection-surf');
- await p.getByRole('button',{name:'Menú · Esc'}).click();
+ await p.getByRole('button',{name:"Menu · Esc"}).click();
  const paused=await p.locator('.player-reflection').evaluate(el=>el.toDataURL());await p.waitForTimeout(150);
  if(await p.locator('.player-reflection').evaluate(el=>el.toDataURL())!==paused)throw Error('Reflection changed during pause');
  await p.keyboard.press('Escape');

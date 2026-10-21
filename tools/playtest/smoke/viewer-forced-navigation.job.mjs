@@ -25,7 +25,7 @@ export default async function run(ctx){
  const results=[];
  for(const c of cases){
   await p.goto('about:blank');await p.goto(new URL(`viewer.html#modo=explore&mapa=${c.map}&px=${c.x}&py=${c.y}`,process.env.PW_BASE).href);await idle();
-  if(await p.locator('#player-char').inputValue()!==character){await p.getByRole('button',{name:'Menú · Esc'}).click();await p.locator('#explore-character').selectOption(character);await p.keyboard.press('Escape');await idle();}
+  if(await p.locator('#player-char').inputValue()!==character){await p.getByRole('button',{name:"Menu · Esc"}).click();await p.locator('#explore-character').selectOption(character);await p.keyboard.press('Escape');await idle();}
   await p.waitForTimeout(150);
   if(await p.evaluate(()=>window.forcedProbe.positions.length)!==1)throw Error('Spawn bypassed CONTROLLABLE gate '+c.map);
   if(await p.locator('#player-sprite').evaluate((e,d)=>JSON.parse(e.dataset.animation).direction!==d,c.direction)){await p.keyboard.press(c.key);await idle();}

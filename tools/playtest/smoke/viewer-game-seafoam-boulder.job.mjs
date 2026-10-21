@@ -46,7 +46,7 @@ export default async function run(ctx){
  if(after.boulder&&!after.boulder.hidden)throw Error('Fallen boulder still shown on 1F '+JSON.stringify(after));
 
  // Save and open B1F: the revealed boulder is there, and 1F stays without it.
- await p.getByRole('button',{name:'Menú · Esc'}).click();await p.locator('#explore-save').click();await p.keyboard.press('Escape');
+ await p.getByRole('button',{name:"Menu · Esc"}).click();await p.locator('#explore-save').click();await p.keyboard.press('Escape');
  await p.goto(new URL('viewer.html#modo=explore&mapa=MAP_SEAFOAM_ISLANDS_B1F&px=22&py=10',BASE).href);await p.reload();
  await p.waitForFunction(()=>performance.getEntriesByName('viewer-interactive').length);await p.waitForTimeout(3000);
  const b1f=await boulder('MAP_SEAFOAM_ISLANDS_B1F');

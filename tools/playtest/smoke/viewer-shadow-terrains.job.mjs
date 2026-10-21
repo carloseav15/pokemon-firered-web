@@ -25,7 +25,7 @@ export default async function run(ctx){
   const o=kanto[c.map]??{x:0,y:0};
   await p.goto('about:blank');await p.goto(base+`#modo=explore&mapa=${c.map}&px=${o.x+c.x}&py=${o.y+c.y}`);
   await p.waitForFunction(()=>!document.body.hasAttribute('aria-busy')&&document.querySelector('#player-sprite')?.dataset.animation,null,{timeout:30000});await p.waitForTimeout(1200);
-  if(await p.locator('#player-char').inputValue()!==character){await p.getByRole('button',{name:'Menú · Esc'}).click();await p.locator('#explore-character').selectOption(character);await p.keyboard.press('Escape');await p.waitForTimeout(800);}
+  if(await p.locator('#player-char').inputValue()!==character){await p.getByRole('button',{name:"Menu · Esc"}).click();await p.locator('#explore-character').selectOption(character);await p.keyboard.press('Escape');await p.waitForTimeout(800);}
   const key=keys[c.dir];
   await p.keyboard.press(key);await p.waitForTimeout(300);
   await p.evaluate(()=>{Object.assign(window.shadowProbe,{seen:0,frames:0});});

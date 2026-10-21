@@ -6,62 +6,62 @@ export interface JohtoSignInfo {
 }
 
 const JOHTO_MAP_TITLES: Record<string, string> = {
-  MAP_NEW_BARK_TOWN: "Pueblo Primavera",
-  MAP_CHERRYGROVE_CITY: "Ciudad Cerezo",
-  MAP_VIOLET_CITY: "Ciudad Malva",
-  MAP_AZALEA_TOWN: "Pueblo Azalea",
-  MAP_GOLDENROD_CITY: "Ciudad Trigal",
-  MAP_ECRUTEAK_CITY: "Ciudad Iris",
-  MAP_OLIVINE_CITY: "Ciudad Olivo",
-  MAP_CIANWOOD_CITY: "Ciudad Orquídea",
-  MAP_MAHOGANYTOWN: "Pueblo Caoba",
-  MAP_BLACKTHORN_CITY: "Ciudad Endrino",
-  MAP_LAKE_OF_RAGE: "Lago de la Furia",
-  MAP_LAKE_OF_RAGE_LOW_TIDE: "Lago de la Furia",
-  MAP_ILEX_FOREST: "Bosque Ilex",
-  MAP_BELLCHIME_TRAIL: "Ruta Campana",
-  MAP_RUINS_OF_ALPH_OUTSIDE: "Ruinas Alfa",
-  MAP_MT_SILVER_OUTSIDE: "Monte Plateado",
-  MAP_ROUTE29: "Ruta 29",
-  MAP_ROUTE30: "Ruta 30",
-  MAP_ROUTE31: "Ruta 31",
-  MAP_ROUTE32: "Ruta 32",
-  MAP_ROUTE33: "Ruta 33",
-  MAP_ROUTE34: "Ruta 34",
-  MAP_ROUTE35: "Ruta 35",
-  MAP_ROUTE36: "Ruta 36",
-  MAP_ROUTE37: "Ruta 37",
-  MAP_ROUTE38: "Ruta 38",
-  MAP_ROUTE39: "Ruta 39",
-  MAP_ROUTE40: "Ruta 40",
-  MAP_ROUTE41: "Ruta 41",
-  MAP_ROUTE42: "Ruta 42",
-  MAP_ROUTE43: "Ruta 43",
-  MAP_ROUTE44: "Ruta 44",
-  MAP_ROUTE45: "Ruta 45",
-  MAP_ROUTE46: "Ruta 46",
-  MAP_ROUTE47: "Ruta 47",
-  MAP_ROUTE48: "Ruta 48",
+  MAP_NEW_BARK_TOWN: "New Bark Town",
+  MAP_CHERRYGROVE_CITY: "Cherrygrove City",
+  MAP_VIOLET_CITY: "Violet City",
+  MAP_AZALEA_TOWN: "Azalea Town",
+  MAP_GOLDENROD_CITY: "Goldenrod City",
+  MAP_ECRUTEAK_CITY: "Ecruteak City",
+  MAP_OLIVINE_CITY: "Olivine City",
+  MAP_CIANWOOD_CITY: "Cianwood City",
+  MAP_MAHOGANYTOWN: "Mahogany Town",
+  MAP_BLACKTHORN_CITY: "Blackthorn City",
+  MAP_LAKE_OF_RAGE: "Lake of Rage",
+  MAP_LAKE_OF_RAGE_LOW_TIDE: "Lake of Rage",
+  MAP_ILEX_FOREST: "Ilex Forest",
+  MAP_BELLCHIME_TRAIL: "Bellchime Trail",
+  MAP_RUINS_OF_ALPH_OUTSIDE: "Ruins of Alph",
+  MAP_MT_SILVER_OUTSIDE: "Mt. Silver",
+  MAP_ROUTE29: "Route 29",
+  MAP_ROUTE30: "Route 30",
+  MAP_ROUTE31: "Route 31",
+  MAP_ROUTE32: "Route 32",
+  MAP_ROUTE33: "Route 33",
+  MAP_ROUTE34: "Route 34",
+  MAP_ROUTE35: "Route 35",
+  MAP_ROUTE36: "Route 36",
+  MAP_ROUTE37: "Route 37",
+  MAP_ROUTE38: "Route 38",
+  MAP_ROUTE39: "Route 39",
+  MAP_ROUTE40: "Route 40",
+  MAP_ROUTE41: "Route 41",
+  MAP_ROUTE42: "Route 42",
+  MAP_ROUTE43: "Route 43",
+  MAP_ROUTE44: "Route 44",
+  MAP_ROUTE45: "Route 45",
+  MAP_ROUTE46: "Route 46",
+  MAP_ROUTE47: "Route 47",
+  MAP_ROUTE48: "Route 48",
 };
 
 export function formatSignTitle(mapId: string, scriptName?: string): string {
   if (scriptName) {
-    if (scriptName.includes("TrainerTips") || scriptName.includes("TrainerTip")) return "Pistas para Entrenadores";
-    if (scriptName.includes("GymSign")) return "Gimnasio Pokémon";
-    if (scriptName.includes("LabSign")) return "Laboratorio Pokémon";
-    if (scriptName.includes("Mailbox")) return "Buzón";
-    if (scriptName.includes("Door")) return "Puerta";
-    if (scriptName.includes("StoreSign")) return "Tienda Pokémon";
-    if (scriptName.includes("GameCorner")) return "Casino Pokémon";
-    if (scriptName.includes("WellSign")) return "Pozo Slowpoke";
-    if (scriptName.includes("IlexSign")) return "Bosque Ilex";
-    if (scriptName.includes("DragonsDen")) return "Guarida Dragón";
-    if (scriptName.includes("SproutTower")) return "Torre Bellsprout";
+    if (scriptName.includes("TrainerTips") || scriptName.includes("TrainerTip")) return "Trainer Tips";
+    if (scriptName.includes("GymSign")) return "Pokémon Gym";
+    if (scriptName.includes("LabSign")) return "Pokémon Lab";
+    if (scriptName.includes("Mailbox")) return "Mailbox";
+    if (scriptName.includes("Door")) return "Door";
+    if (scriptName.includes("StoreSign")) return "Poké Mart";
+    if (scriptName.includes("GameCorner")) return "Game Corner";
+    if (scriptName.includes("WellSign")) return "Slowpoke Well";
+    if (scriptName.includes("IlexSign")) return "Ilex Forest";
+    if (scriptName.includes("DragonsDen")) return "Dragon's Den";
+    if (scriptName.includes("SproutTower")) return "Sprout Tower";
   }
   if (JOHTO_MAP_TITLES[mapId]) return JOHTO_MAP_TITLES[mapId];
   const clean = mapId.replace(/^MAP_/, "");
   const m = clean.match(/^ROUTE(\d+)(.*)$/);
-  if (m) return `Ruta ${m[1]}${m[2] ? ' ' + m[2] : ''}`;
+  if (m) return `Route ${m[1]}${m[2] ? ' ' + m[2] : ''}`;
   return clean.replace(/_/g, " ");
 }
 

@@ -127,7 +127,7 @@ function setDiff(field: string, a: string[], b: string[]): FieldDiff | null {
   return { field, a: onlyA.length ? `solo A: ${onlyA.join(", ")}` : "—", b: onlyB.length ? `solo B: ${onlyB.join(", ")}` : "—" };
 }
 
-const STATS = ["PS", "Ataque", "Defensa", "Velocidad", "At. esp.", "Def. esp."];
+const STATS = ["HP", "Attack", "Defense", "Speed", "Sp. Atk", "Sp. Def"];
 
 export function compareSpecies(A: GameData, B: GameData): Row[] {
   const sa = A.raw.species.species as any[];
@@ -154,22 +154,22 @@ export function compareSpecies(A: GameData, B: GameData): Row[] {
       if (!sameAliased(fx, fy)) diffs.push({ field, a: fx.replace(/\|[A-Z_]+/g, ""), b: fy.replace(/\|[A-Z_]+/g, "") });
     };
     for (let i = 0; i < 6; i++) push(`Base ${STATS[i]}`, a.base[i], b.base[i]);
-    push("Tipos", a.types.map(A.type), b.types.map(B.type));
-    push("Ratio de captura", a.catchRate, b.catchRate);
+    push("Types", a.types.map(A.type), b.types.map(B.type));
+    push("Catch rate", a.catchRate, b.catchRate);
     push("Exp. base", a.expYield, b.expYield);
     push("EV", a.evYield, b.evYield);
-    push("Objetos salvajes", a.items.map(A.itemName), b.items.map(B.itemName));
-    push("Ratio de género", a.genderRatio, b.genderRatio);
-    push("Ciclos de huevo", a.eggCycles, b.eggCycles);
-    push("Amistad", a.friendship, b.friendship);
-    pushAliased("Crecimiento", A.growth(a.growthRate), B.growth(b.growthRate));
-    pushAliased("Grupos huevo", a.eggGroups.map(A.eggGroup), b.eggGroups.map(B.eggGroup));
-    push("Habilidades", a.abilities.map(A.ability), b.abilities.map(B.ability));
+    push("Held items in the wild", a.items.map(A.itemName), b.items.map(B.itemName));
+    push("Gender ratio", a.genderRatio, b.genderRatio);
+    push("Egg cycles", a.eggCycles, b.eggCycles);
+    push("Friendship", a.friendship, b.friendship);
+    pushAliased("Growth", A.growth(a.growthRate), B.growth(b.growthRate));
+    pushAliased("Egg groups", a.eggGroups.map(A.eggGroup), b.eggGroups.map(B.eggGroup));
+    push("Abilities", a.abilities.map(A.ability), b.abilities.map(B.ability));
     const lv = (g: GameData, s: any) => (s.learnset as number[][]).map(([l, m]) => `Nv${l} ${g.moveName(m)}`).join(", ");
-    push("Movimientos por nivel", lv(A, a), lv(B, b));
+    push("Level-up moves", lv(A, a), lv(B, b));
     const ev = (g: GameData, s: any) => (s.evolutions as number[][]).map(([m, p, t]) => `${m}:${p}→${g.speciesName(t)}`).join(", ");
-    push("Evoluciones (método:parámetro)", ev(A, a), ev(B, b));
-    const d1 = setDiff("MT/MO", bitSet(a.tmhm, tmA), bitSet(b.tmhm, tmB));
+    push("Evolutions (method:parameter)", ev(A, a), ev(B, b));
+    const d1 = setDiff("TM/HM", bitSet(a.tmhm, tmA), bitSet(b.tmhm, tmB));
     if (d1) diffs.push(d1);
     const d2 = setDiff("Tutor", bitSet([a.tutor], tuA), bitSet([b.tutor], tuB));
     if (d2) diffs.push(d2);
@@ -197,17 +197,17 @@ export function compareMoves(A: GameData, B: GameData): Row[] {
       const fy = fmt(y);
       if (!sameAliased(fx, fy)) diffs.push({ field, a: fx.replace(/\|[A-Z_]+/g, ""), b: fy.replace(/\|[A-Z_]+/g, "") });
     };
-    push("Nombre", A.decode(a.name), B.decode(b.name));
-    pushAliased("Efecto", A.effect(a.effect), B.effect(b.effect));
-    push("Potencia", a.power, b.power);
-    push("Tipo", A.type(a.type), B.type(b.type));
-    push("Precisión", a.accuracy, b.accuracy);
+    push("Name", A.decode(a.name), B.decode(b.name));
+    pushAliased("Effect", A.effect(a.effect), B.effect(b.effect));
+    push("Power", a.power, b.power);
+    push("Type", A.type(a.type), B.type(b.type));
+    push("Accuracy", a.accuracy, b.accuracy);
     push("PP", a.pp, b.pp);
     push("Prob. efecto", a.chance, b.chance);
-    push("Objetivo", a.target, b.target);
-    push("Prioridad", a.priority, b.priority);
+    push("Target", a.target, b.target);
+    push("Priority", a.priority, b.priority);
     push("Flags", a.flags, b.flags);
-    push("Descripción", A.decode(a.description), B.decode(b.description));
+    push("Description", A.decode(a.description), B.decode(b.description));
     rows.push({ key: String(i), id: i, nameA: A.decode(a.name), nameB: B.decode(b.name), diffs });
   }
   return rows;
@@ -239,15 +239,15 @@ export function compareItems(A: GameData, B: GameData): Row[] {
       const fy = fmt(y);
       if (!sameAliased(fx, fy)) diffs.push({ field, a: fx.replace(/\|[A-Z_]+/g, ""), b: fy.replace(/\|[A-Z_]+/g, "") });
     };
-    push("Nombre", A.decode(a.name), B.decode(b.name));
-    push("Precio", a.price, b.price);
-    pushAliased("Efecto al llevarlo", A.holdEffect(a.holdEffect), B.holdEffect(b.holdEffect));
-    push("Parámetro", a.holdEffectParam, b.holdEffectParam);
-    pushAliased("Bolsillo", A.pocket(a.pocket), B.pocket(b.pocket));
+    push("Name", A.decode(a.name), B.decode(b.name));
+    push("Price", a.price, b.price);
+    pushAliased("Held effect", A.holdEffect(a.holdEffect), B.holdEffect(b.holdEffect));
+    push("Parameter", a.holdEffectParam, b.holdEffectParam);
+    pushAliased("Pocket", A.pocket(a.pocket), B.pocket(b.pocket));
     push("Importancia", a.importance, b.importance);
     // type / fieldUseFunc se omiten: FireRed y Emerald nombran distinto esas funciones (FieldUseFunc_* / ItemUseOutOfBattle_*).
-    push("Uso en combate", a.battleUsage, b.battleUsage);
-    push("Descripción", A.decode(a.description), B.decode(b.description));
+    push("Battle use", a.battleUsage, b.battleUsage);
+    push("Description", A.decode(a.description), B.decode(b.description));
     rows.push({ key: k, id: idForSort, nameA: A.decode(a.name), nameB: B.decode(b.name), diffs });
   }
   return rows.sort((x, y) => x.id - y.id);
@@ -261,7 +261,7 @@ export function trainerList(G: GameData): TrainerView[] {
     cls: G.trainerClass(t.class),
     name: G.decode(t.name),
     double: !!t.double,
-    party: (t.party as any[]).map((p) => `${G.speciesName(p.species)} Nv${p.level}`).join(", "),
+    party: (t.party as any[]).map((p) => `${G.speciesName(p.species)} Lv${p.level}`).join(", "),
   })).filter((t) => t.name !== "" || t.party !== "");
 }
 

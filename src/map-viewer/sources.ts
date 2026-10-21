@@ -2,7 +2,7 @@ import type { GameId, Layer, MapDetail, MapEntry, MapEvent, Rect, Region, Journe
 
 async function json<T>(url: string, signal: AbortSignal): Promise<T> {
   const response = await fetch(url, { signal });
-  if (!response.ok) throw new Error(`${url}: HTTP ${response.status}. Consulta los comandos de datos en el Atlas.`);
+  if (!response.ok) throw new Error(`${url}: HTTP ${response.status}. See Atlas for data commands.`);
   return response.json() as Promise<T>;
 }
 const pretty = (s: string) => s.replace(/([a-z0-9])([A-Z])/g, "$1 $2").replaceAll("_", " ");
@@ -21,8 +21,8 @@ async function gba(game: "firered" | "emerald", signal: AbortSignal): Promise<So
   const mapEntries = new Map(Object.entries(doc.maps).map(([id, m]) => [id, entry(id, m.name, m.width, m.height, true, `${m.primary} ${m.secondary} ${m.section}`)]));
   return {
     game, title: game === "firered" ? "Kanto · FireRed" : "Hoenn · Emerald", commit: doc._meta.sourceCommit,
-    limitations: "Tiles y paletas estáticos. Los objetos representan los templates de la fuente, no una partida guardada. Animación, audio y análisis de flags disponibles en el inspector anterior.", maps: mapEntries,
-    world: { width: doc.world.w, height: doc.world.h, origin: doc.world.origin, rects: doc.world.maps, notes: `${doc.world.conflicts.length} discrepancias de conexiones registradas. Las zonas sin mapa quedan vacías; el relleno decorativo no es terreno del juego.` },
+    limitations: "Static tiles and palettes. Objects represent source templates, not a saved game. Animation, audio and flag analysis are available in the legacy inspector.", maps: mapEntries,
+    world: { width: doc.world.w, height: doc.world.h, origin: doc.world.origin, rects: doc.world.maps, notes: `${doc.world.conflicts.length} recorded connection discrepancies. Unmapped areas remain empty; decorative fill is not game terrain.` },
     capabilities: { explore: true, sprites: true, collision: true, times: [] },
     textures(id, _time, layers, overview) {
       if (id !== "world") {
@@ -51,9 +51,9 @@ async function hns(signal: AbortSignal): Promise<Source> {
   type M = { id: string; name: string; w: number; h: number; image: string | null; unavailable?: string; primary: string; secondary: string; section: string; layout: string; music: string; connections: { map: string; direction: string; offset: number }[]; warps: Record<string, unknown>[]; objects: Record<string, unknown>[]; bgs: Record<string, unknown>[]; coords: Record<string, unknown>[] };
   const doc = await json<{ _meta: { commit: string }; maps: Record<string, M>; world: { w: number; h: number; maps: Rect[]; chunks: { file: string; x: number; y: number; w: number; h: number }[]; conflicts: unknown[]; unavailable: string[] } }>("/hns/maps.json", signal);
   return { game: "hns", title: "Johto / Kanto · Heart & Soul", commit: doc._meta.commit,
-    limitations: "Adaptación GBA de HnS. Tiles estáticos; objetos como marcadores. Sin animación, horario, audio, scripts ni exploración jugable.",
+    limitations: "HnS GBA adaptation. Static tiles and object markers. No animation, time simulation, audio, scripts or playable exploration in this inspector.",
     maps: new Map(Object.entries(doc.maps).map(([id, m]) => [id, entry(id, m.name, m.w * 16, m.h * 16, !!m.image, `${m.primary} ${m.secondary}`, m.unavailable)])),
-    world: { width: doc.world.w, height: doc.world.h, origin: "MAP_NEW_BARK_TOWN", rects: doc.world.maps, notes: `${doc.world.conflicts.length} discrepancias de conexiones; ${doc.world.unavailable.length} mapa(s) sin render. Incluye variantes superpuestas y áreas especiales de la fuente.` },
+    world: { width: doc.world.w, height: doc.world.h, origin: "MAP_NEW_BARK_TOWN", rects: doc.world.maps, notes: `${doc.world.conflicts.length} discrepancias of conexiones; ${doc.world.unavailable.length} unrendered map(s). Includes overlapping variants and special source areas.` },
     capabilities: { explore: false, sprites: false, collision: false, times: [] },
     textures(id, _time, layers, overview) {
       if (!layers.has("base")) return [];
@@ -80,9 +80,9 @@ async function crystal(signal: AbortSignal): Promise<Source> {
   const byId = new Map(doc.maps.map(m => [m.name, m]));
   const width = world.w * 32, height = world.h * 32;
   return { game: "crystal", title: "Johto / Kanto · Crystal", commit: doc.commit,
-    limitations: "Gráficos GBC. Paletas de mañana/día/noche según disponibilidad del mapa; sprites estáticos. La colocación entre regiones es editorial; enlaces por interiores disponibles en el inspector anterior.",
+    limitations: "GBC graphics. Morning/day/night palettes where available; static sprites. Interregional placement is editorial; interior links are available in the legacy inspector.",
     maps: new Map(doc.maps.map(m => [m.name, entry(m.name, m.name, m.w * 32, m.h * 32, true, `${m.tileset} ${m.landmark}`)])),
-    world: { width, height, origin: "NewBarkTown", rects: world.maps.map(m => ({ id: m.name, x: m.x * 32, y: m.y * 32, w: m.w * 32, h: m.h * 32 })), notes: `${world.overlaps.length} solapes registrados. ${world.note}` },
+    world: { width, height, origin: "NewBarkTown", rects: world.maps.map(m => ({ id: m.name, x: m.x * 32, y: m.y * 32, w: m.w * 32, h: m.h * 32 })), notes: `${world.overlaps.length} recorded overlaps. ${world.note}` },
     capabilities: { explore: false, sprites: true, collision: false, times: ["morn", "day", "nite"] },
     textures(id, time, layers, overview) {
       if (id !== "world") {
@@ -136,11 +136,11 @@ async function principal(signal: AbortSignal): Promise<Source> {
     return { destination: target, referenceUrl: `/maps.html?game=${m.game}#mapa=${encodeURIComponent(target)}`, crossSource: false };
   };
   return {
-    game: "world", title: "Mundo principal · Kanto / Johto / Hoenn", commit: doc.regions.map(r => `${r.title}:${r.commit.slice(0, 7)}`).join(" · "),
-    limitations: "Kanto y Sevii: FireRed · Johto: HnS · Hoenn: Emerald. Disposición y viajes del atlas definidos por el proyecto. Sin unión física ni simulación compartida. Johto usa marcadores; sprites/colisión de bloques disponibles en Kanto y Hoenn.",
+    game: "world", title: "Main world · Kanto / Johto / Hoenn", commit: doc.regions.map(r => `${r.title}:${r.commit.slice(0, 7)}`).join(" · "),
+    limitations: "Kanto and Sevii: FireRed · Johto: HnS · Hoenn: Emerald. Atlas layout and travel are project-defined, without physical connections or shared simulation. Johto uses markers; sprites/block collision are available in Kanto and Hoenn.",
     maps: mapEntries, regions: doc.regions, journeys: doc.travels, places: doc.places.map(p => ({ ...p, label: pretty(p.label) })),
     world: { width: doc.world.w, height: doc.world.h, origin: doc.world.origin, rects: doc.world.maps,
-      notes: "Superficie de Kanto, Johto, Hoenn y sus islas. Los interiores se abren desde entradas y los submarinos desde referencias de inmersión; también están en el buscador. Las zonas terrestres de posición pendiente se consultan desde sus accesos sin representarlas como islas. La disposición entre regiones e islas es editorial y conserva discrepancias de fuente pendientes de revisión. Los viajes son navegación del atlas." },
+      notes: "Surface maps of Kanto, Johto, Hoenn and their islands. Open interiors through entrances and underwater maps through Dive references, or use search. Land areas awaiting placement remain accessible from their entrances without being represented as islands. Regional and island layout is editorial, with source discrepancies pending review. Travel here is atlas navigation." },
     capabilities: { explore: true, sprites: true, collision: true, times: [] },
     textures(id, time, layers, overview) {
       if (id !== "world") { const m = doc.maps[id]; return m ? providers[m.game].textures(m.sourceId, time, layers, false) : []; }

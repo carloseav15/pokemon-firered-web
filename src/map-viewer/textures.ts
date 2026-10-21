@@ -24,7 +24,7 @@ export class TexturePool {
     for (const key of this.active) if (!wanted.has(key)) this.cache.get(key)?.image.remove();
     this.active = wanted;
     const needed = textures.reduce((n, t) => n + textureBytes(t), 0);
-    if (needed > TEXTURE_BUDGET) throw new Error("La vista supera el presupuesto de imágenes; acerca el zoom o reduce capas.");
+    if (needed > TEXTURE_BUDGET) throw new Error("This view exceeds the image budget; zoom in or reduce layers.");
     // Evict older inactive images before inserting new ones.
     const missing = textures.filter(t => !this.cache.has(t.key)).reduce((n, t) => n + textureBytes(t), 0);
     let retained = this.retainedBytes;

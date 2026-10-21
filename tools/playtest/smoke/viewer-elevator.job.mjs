@@ -28,7 +28,7 @@ export default async function run(ctx){
  await p.goto(new URL(`viewer.html#modo=explore&mapa=${source}&px=${entry.x}&py=${entry.y+1}`,process.env.PW_BASE).href);
  const ready=()=>p.waitForFunction(()=>!document.body.hasAttribute('aria-busy')&&performance.getEntriesByName('viewer-interactive').length&&document.querySelector('#player-sprite'));
  await ready();await p.waitForTimeout(1000);
- if(await p.locator('#player-char').inputValue()!==character){await p.getByRole('button',{name:'Menú · Esc'}).click();await p.locator('#explore-character').selectOption(character);await p.keyboard.press('Escape');await p.waitForTimeout(500);}
+ if(await p.locator('#player-char').inputValue()!==character){await p.getByRole('button',{name:"Menu · Esc"}).click();await p.locator('#explore-character').selectOption(character);await p.keyboard.press('Escape');await p.waitForTimeout(500);}
  await p.locator('#viewport').focus();
  // Two taps: turn in place first, then walk through the animated door.
  const tap=async key=>{await p.keyboard.down(key);await p.waitForTimeout(25);await p.keyboard.up(key);await p.waitForTimeout(700);};

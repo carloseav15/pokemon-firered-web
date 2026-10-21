@@ -68,7 +68,7 @@ export default async function run(ctx) {
   await face(blocked.key);await p.keyboard.press(blocked.key);
   await p.waitForFunction(()=>!JSON.parse(document.querySelector('#player-sprite').dataset.animation).moving);
   if(!await p.evaluate(at=>{const now=window.navProbe.finished.at(-1),el=document.querySelector('#player-sprite');return now.x===at.x&&now.y===at.y&&el.style.left===at.left&&el.style.top===at.top;},blocked))throw Error('Blocked tile moved avatar');
-  await p.getByRole('button', { name: 'Menú · Esc' }).click();
+  await p.getByRole('button', { name: "Menu · Esc" }).click();
   const paused = await p.evaluate(async () => (await import('/src/viewer/clock.ts')).viewerClock.tick);
   await p.waitForTimeout(180);
   if (await p.evaluate(async () => (await import('/src/viewer/clock.ts')).viewerClock.tick) !== paused) throw Error('menu did not pause');
@@ -123,7 +123,7 @@ export default async function run(ctx) {
   }
   const effects=await p.evaluate(()=>window.navProbe.effects);
   if(!effects.includes('TallGrass'))throw Error('Real grass traversal did not emit TallGrass');
-  await p.getByRole('button',{name:'Menú · Esc'}).click();
+  await p.getByRole('button',{name:"Menu · Esc"}).click();
   await p.locator('#explore-scale').selectOption('4');
   await p.locator('#explore-format').selectOption('viewport');
   await p.keyboard.press('Escape');await p.waitForTimeout(1000);
@@ -139,8 +139,8 @@ export default async function run(ctx) {
   await p.locator('#explore').click();
   await p.waitForFunction(()=>document.body.classList.contains('exploring') && window.navProbe?.finished.length);
   const atlasReturn=await p.evaluate(()=>sessionStorage.getItem('atlas-explore-return'));
-  await p.getByRole('button',{name:'Menú · Esc'}).click();
-  await p.getByRole('button',{name:'Volver al atlas',exact:true}).click();
+  await p.getByRole('button',{name:"Menu · Esc"}).click();
+  await p.getByRole('button',{name:"Return to map browser",exact:true}).click();
   await p.waitForURL(url=>url.pathname==='/maps.html');
   if(new URL(p.url()).pathname+new URL(p.url()).search+new URL(p.url()).hash!==atlasReturn)throw Error('Atlas return changed selection/camera');
   if(ctx.errors().length)throw Error(ctx.errors().join(';'));

@@ -1,29 +1,29 @@
 <!doctype html>
-<html lang="es">
-<head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width,initial-scale=1" /><title>Atlas · Visor de mapas</title><link rel="stylesheet" href="/src/map-viewer/maps.css" /></head>
+<html lang="en">
+<head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width,initial-scale=1" /><title>Atlas · Map browser</title><link rel="stylesheet" href="/src/map-viewer/maps.css" /></head>
 <body>
 <header>
-  <nav data-site-navigation="tools"></nav><h1>Visor de mapas</h1>
-  <label>Vista <select id="game" aria-label="Mundo principal o fuente alternativa"></select></label>
-  <label id="region-wrap" hidden>Región <select id="region"><option value="all">Todas</option></select></label>
-  <button id="world-btn">Superficie</button><button id="back" disabled>← Volver</button>
+  <nav data-site-navigation="tools"></nav><h1>Map browser</h1>
+  <label>View <select id="game" aria-label="Main world or alternative source"></select></label>
+  <label id="region-wrap" hidden>Region <select id="region"><option value="all">All</option></select></label>
+  <button id="world-btn">Surface</button><button id="back" disabled>← Back</button>
   <label>Zoom <select id="zoom"><option value="0.0078125">¹⁄₁₂₈×</option><option value="0.015625">¹⁄₆₄×</option><option value="0.03125">¹⁄₃₂×</option><option value="0.0625">¹⁄₁₆×</option><option value="0.125">⅛×</option><option value="0.25">¼×</option><option value="0.5">½×</option><option value="1" selected>1×</option><option value="2">2×</option><option value="3">3×</option></select></label>
-  <label id="time-wrap" hidden>Hora <select id="time"><option value="morn">Mañana</option><option value="day" selected>Día</option><option value="nite">Noche</option></select></label>
-  <details id="layers"><summary>Capas</summary><div>
-    <label><input type="checkbox" data-layer="base" checked /> Terreno</label>
-    <label id="sprites-wrap"><input type="checkbox" data-layer="sprites" checked /> Sprites de objetos</label>
-    <label id="collision-wrap"><input type="checkbox" data-layer="collision" /> Colisión de bloques</label>
-    <label><input type="checkbox" id="labels" checked /> Nombres</label>
-    <label><input type="checkbox" id="events" checked /> Marcadores de eventos</label>
+  <label id="time-wrap" hidden>Time <select id="time"><option value="morn">Morning</option><option value="day" selected>Day</option><option value="nite">Night</option></select></label>
+  <details id="layers"><summary>Layers</summary><div>
+    <label><input type="checkbox" data-layer="base" checked /> Terrain</label>
+    <label id="sprites-wrap"><input type="checkbox" data-layer="sprites" checked /> Object sprites</label>
+    <label id="collision-wrap"><input type="checkbox" data-layer="collision" /> Block collision</label>
+    <label><input type="checkbox" id="labels" checked /> Names</label>
+    <label><input type="checkbox" id="events" checked /> Event markers</label>
   </div></details>
-  <a id="explore" hidden>🎮 Explorar</a><a id="inspector">Inspector avanzado</a>
+  <a id="explore" hidden>🎮 Explore</a><a id="inspector">Advanced inspector</a>
 </header>
 <main>
-  <aside><label for="search">Buscar mapa</label><input id="search" type="search" placeholder="Mapa, región o tileset…" />
-    <label for="filter">Catálogo</label><select id="filter"><option value="available">Mapas disponibles</option><option value="world">Superficie principal</option><option value="all">Toda la fuente</option></select>
-    <p id="count" role="status">Cargando…</p><nav id="list" aria-label="Mapas"></nav><button id="more" hidden>Mostrar más</button>
+  <aside><label for="search">Search maps</label><input id="search" type="search" placeholder="Map, region or tileset…" />
+    <label for="filter">Catalog</label><select id="filter"><option value="available">Maps available</option><option value="world">Main surface</option><option value="all">Entire source</option></select>
+    <p id="count" role="status">Loading…</p><nav id="list" aria-label="Maps"></nav><button id="more" hidden>Show more</button>
   </aside>
-  <section id="workspace"><div id="meta" role="status">Cargando…</div><div id="viewport" tabindex="0" aria-label="Mapa: arrastra para mover; usa zoom para acercar"><div id="sizer"><div id="stage"><div id="annotations"></div></div></div></div><div id="detail"></div></section>
+  <section id="workspace"><div id="meta" role="status">Loading…</div><div id="viewport" tabindex="0" aria-label="Map: drag to pan; use zoom to change scale"><div id="sizer"><div id="stage"><div id="annotations"></div></div></div></div><div id="detail"></div></section>
 </main>
 <footer><span id="source"></span><span id="budget"></span><span id="limits"></span></footer>
 <script type="module" src="/src/map-viewer/main.ts"></script>

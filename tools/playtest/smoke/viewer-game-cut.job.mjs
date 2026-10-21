@@ -16,11 +16,11 @@ export default async function run(ctx){
  const cutState=await p.evaluate(async()=>{const s=await import('/src/games/firered/save.ts');const C=await import('/src/games/firered/generated/constants.ts');return {temporary:s.flagGet(C.FLAG_TEMP_12),badge:s.flagGet(C.FLAG_BADGE02_GET)};});
  if(!cutState.temporary)throw Error('Source Cut did not set its temporary flag');
  // Save/continue on this map must preserve the actual Cut result.
- await p.getByRole('button',{name:'Menú · Esc'}).click();await p.locator('#explore-save').click();await p.keyboard.press('Escape');
+ await p.getByRole('button',{name:"Menu · Esc"}).click();await p.locator('#explore-save').click();await p.keyboard.press('Escape');
  // PREPARED: discard an unsaved flag edit; Continue must restore the saved
  // result of the real Cut script, rather than clear it as a new map transition.
  await p.evaluate(async()=>{const s=await import('/src/games/firered/save.ts');const C=await import('/src/games/firered/generated/constants.ts');s.flagClear(C.FLAG_TEMP_12);});
- await p.getByRole('button',{name:'Menú · Esc'}).click();await p.locator('#explore-continue').click();
+ await p.getByRole('button',{name:"Menu · Esc"}).click();await p.locator('#explore-continue').click();
  await p.waitForFunction(async()=>{const s=await import('/src/games/firered/save.ts');const C=await import('/src/games/firered/generated/constants.ts');return s.flagGet(C.FLAG_TEMP_12);});
  await p.waitForTimeout(1500);
  await p.reload();await p.waitForFunction(()=>performance.getEntriesByName('viewer-interactive').length);await p.waitForTimeout(1000);
@@ -51,8 +51,8 @@ export default async function run(ctx){
  const cloneState=await p.evaluate(async()=>{const S=await import('/src/games/firered/save.ts');return S.save.viewerObjects;});
  const clone=cloneState?.states.find(s=>s.mapId==='MAP_ROUTE9'&&s.localId===10);
  if(cloneState?.version!==2||cloneState.mapId!=='MAP_CERULEAN_CITY'||clone?.x!==2||clone?.y!==8)throw Error('Wrong clone identity/frame '+JSON.stringify(cloneState));
- await p.getByRole('button',{name:'Menú · Esc'}).click();await p.locator('#explore-save').click();await p.keyboard.press('Escape');
- await p.getByRole('button',{name:'Menú · Esc'}).click();await p.locator('#explore-continue').click();await p.waitForTimeout(1200);
+ await p.getByRole('button',{name:"Menu · Esc"}).click();await p.locator('#explore-save').click();await p.keyboard.press('Escape');
+ await p.getByRole('button',{name:"Menu · Esc"}).click();await p.locator('#explore-continue').click();await p.waitForTimeout(1200);
  await cutTree.waitFor({state:'visible'});
  await p.reload();await p.waitForFunction(()=>performance.getEntriesByName('viewer-interactive').length);await p.waitForTimeout(1200);
  await cutTree.waitFor({state:'visible'});

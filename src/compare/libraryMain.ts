@@ -31,10 +31,10 @@ function trainers(L: Loaded, term: string): string[] {
     if (!name && !t.party.length) continue;
     if (term && !`${cls} ${name} ${t.party.map((p: any) => g.speciesName(p.species)).join(" ")}`.toLowerCase().includes(term)) continue;
     const party = (t.party as any[])
-      .map((p) => `<div class="mon" title="${esc(g.speciesName(p.species))} Nv${p.level}"><div class="ic" style="background-image:url(${L.root}/gfx/pokemon/icon/${p.species}.png)"></div>Nv${p.level}</div>`)
+      .map((p) => `<div class="mon" title="${esc(g.speciesName(p.species))} Lv${p.level}"><div class="ic" style="background-image:url(${L.root}/gfx/pokemon/icon/${p.species}.png)"></div>Nv${p.level}</div>`)
       .join("");
     cards.push(`<div class="card"><div class="pic"><img loading="lazy" src="${L.root}/gfx/trainers/front/${t.pic}.png" alt="" onerror="this.style.display='none'" /></div>
-      <h4>${esc(cls)} ${esc(name)}</h4><small>#${id}${t.double ? " · doble" : ""} · IA ${t.ai}</small><div class="party">${party}</div></div>`);
+      <h4>${esc(cls)} ${esc(name)}</h4><small>#${id}${t.double ? " · double" : ""} · AI ${t.ai}</small><div class="party">${party}</div></div>`);
   }
   return cards;
 }
@@ -61,7 +61,7 @@ function npcs(L: Loaded, term: string): string[] {
     const [file, frame] = g.frames[0]!;
     const zoom = g.height > 32 ? 1.5 : 3;
     cards.push(`<div class="card"><div class="npc"><div style="width:${g.width * zoom}px;height:${g.height * zoom}px;background-image:url(${L.root}/${file});background-size:auto 100%;background-position:-${frame * g.width * zoom}px 0"></div></div>
-      <h4>${esc(g.name.replace("OBJ_EVENT_GFX_", ""))}</h4><small>${g.width}×${g.height} · ${g.frames.length} fotogramas</small></div>`);
+      <h4>${esc(g.name.replace("OBJ_EVENT_GFX_", ""))}</h4><small>${g.width}×${g.height} · ${g.frames.length} frames</small></div>`);
   }
   return cards;
 }
@@ -71,8 +71,8 @@ function render(): void {
   if (!L) return;
   const term = q.value.trim().toLowerCase();
   const cards = tab === "trainers" ? trainers(L, term) : tab === "items" ? items(L, term) : npcs(L, term);
-  const label = { trainers: "Entrenadores", items: "Objetos", npcs: "Gráficos de objetos de mapa" }[tab]!;
-  summary.textContent = `${label} de ${root === "/fr" ? "FireRed" : "Emerald"}: ${cards.length}.`;
+  const label = { trainers: "Trainers", items: "Items", npcs: "Map object graphics" }[tab]!;
+  summary.textContent = `${label} of ${root === "/fr" ? "FireRed" : "Emerald"}: ${cards.length}.`;
   out.innerHTML = cards.join("");
   (window as unknown as { frLibrary: unknown }).frLibrary = { tab, root, shown: cards.length };
 }
@@ -96,4 +96,4 @@ q.addEventListener("input", render);
 (async () => {
   for (const r of ["/fr", "/emerald"]) data.set(r, await load(r));
   render();
-})().catch((e) => { summary.textContent = `Error: ${String(e)}. ¿Están exportados public/fr y public/emerald?`; });
+})().catch((e) => { summary.textContent = `Error: ${String(e)}. Have public/fr and public/emerald been exported?`; });

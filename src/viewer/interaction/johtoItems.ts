@@ -12,42 +12,42 @@ export interface JohtoInspectionInfo {
 }
 
 const ITEM_NAME_MAP: Record<string, { name: string; itemId: number }> = {
-  Potion: { name: "Poción", itemId: C.ITEM_POTION },
-  SuperPotion: { name: "Superpoción", itemId: C.ITEM_SUPER_POTION },
-  HyperPotion: { name: "Hiperpoción", itemId: C.ITEM_HYPER_POTION },
-  MaxPotion: { name: "Poción Máxima", itemId: C.ITEM_MAX_POTION },
-  FullRestore: { name: "Restaura Todo", itemId: C.ITEM_FULL_RESTORE },
-  Revive: { name: "Revivir", itemId: C.ITEM_REVIVE },
-  MaxRevive: { name: "Revivir Máximo", itemId: C.ITEM_MAX_REVIVE },
-  Ether: { name: "Éter", itemId: C.ITEM_ETHER },
-  MaxEther: { name: "Éter Máximo", itemId: C.ITEM_MAX_ETHER },
+  Potion: { name: "Potion", itemId: C.ITEM_POTION },
+  SuperPotion: { name: "Super Potion", itemId: C.ITEM_SUPER_POTION },
+  HyperPotion: { name: "Hyper Potion", itemId: C.ITEM_HYPER_POTION },
+  MaxPotion: { name: "Max Potion", itemId: C.ITEM_MAX_POTION },
+  FullRestore: { name: "Full Restore", itemId: C.ITEM_FULL_RESTORE },
+  Revive: { name: "Revive", itemId: C.ITEM_REVIVE },
+  MaxRevive: { name: "Max Revive", itemId: C.ITEM_MAX_REVIVE },
+  Ether: { name: "Ether", itemId: C.ITEM_ETHER },
+  MaxEther: { name: "Max Ether", itemId: C.ITEM_MAX_ETHER },
   Elixir: { name: "Elixir", itemId: C.ITEM_ELIXIR },
-  MaxElixir: { name: "Elixir Máximo", itemId: C.ITEM_MAX_ELIXIR },
-  Antidote: { name: "Antídoto", itemId: C.ITEM_ANTIDOTE },
-  ParlyzHeal: { name: "Antiparalizador", itemId: C.ITEM_PARALYZE_HEAL },
-  Awakening: { name: "Despertar", itemId: C.ITEM_AWAKENING },
-  BurnHeal: { name: "Antiquemar", itemId: C.ITEM_BURN_HEAL },
-  IceHeal: { name: "Antihielo", itemId: C.ITEM_ICE_HEAL },
-  FullHeal: { name: "Cura Total", itemId: C.ITEM_FULL_HEAL },
+  MaxElixir: { name: "Max Elixir", itemId: C.ITEM_MAX_ELIXIR },
+  Antidote: { name: "Antidote", itemId: C.ITEM_ANTIDOTE },
+  ParlyzHeal: { name: "Parlyz Heal", itemId: C.ITEM_PARALYZE_HEAL },
+  Awakening: { name: "Awakening", itemId: C.ITEM_AWAKENING },
+  BurnHeal: { name: "Burn Heal", itemId: C.ITEM_BURN_HEAL },
+  IceHeal: { name: "Ice Heal", itemId: C.ITEM_ICE_HEAL },
+  FullHeal: { name: "Full Heal", itemId: C.ITEM_FULL_HEAL },
   PokeBall: { name: "Poké Ball", itemId: C.ITEM_POKE_BALL },
-  GreatBall: { name: "Super Ball", itemId: C.ITEM_GREAT_BALL },
+  GreatBall: { name: "Great Ball", itemId: C.ITEM_GREAT_BALL },
   UltraBall: { name: "Ultra Ball", itemId: C.ITEM_ULTRA_BALL },
   MasterBall: { name: "Master Ball", itemId: C.ITEM_MASTER_BALL },
-  Repel: { name: "Repelente", itemId: C.ITEM_REPEL },
-  SuperRepel: { name: "Superrepelente", itemId: C.ITEM_SUPER_REPEL },
-  MaxRepel: { name: "Repelente Máximo", itemId: C.ITEM_MAX_REPEL },
-  EscapeRope: { name: "Cuerda Huida", itemId: C.ITEM_ESCAPE_ROPE },
-  RareCandy: { name: "Caramelo Raro", itemId: C.ITEM_RARE_CANDY },
-  Nugget: { name: "Pepita", itemId: C.ITEM_NUGGET },
-  StarPiece: { name: "Trozo Estrella", itemId: C.ITEM_STAR_PIECE },
-  Stardust: { name: "Polvoestelar", itemId: C.ITEM_STARDUST },
-  PPUp: { name: "Más PP", itemId: C.ITEM_PP_UP },
-  HpUp: { name: "Más PS", itemId: C.ITEM_HP_UP },
-  Carbos: { name: "Carburante", itemId: C.ITEM_CARBOS },
-  Calcium: { name: "Calcio", itemId: C.ITEM_CALCIUM },
-  Iron: { name: "Hierro", itemId: C.ITEM_IRON },
-  Protein: { name: "Proteína", itemId: C.ITEM_PROTEIN },
-  Zinc: { name: "Cinc", itemId: C.ITEM_ZINC },
+  Repel: { name: "Repel", itemId: C.ITEM_REPEL },
+  SuperRepel: { name: "Super Repel", itemId: C.ITEM_SUPER_REPEL },
+  MaxRepel: { name: "Max Repel", itemId: C.ITEM_MAX_REPEL },
+  EscapeRope: { name: "Escape Rope", itemId: C.ITEM_ESCAPE_ROPE },
+  RareCandy: { name: "Rare Candy", itemId: C.ITEM_RARE_CANDY },
+  Nugget: { name: "Nugget", itemId: C.ITEM_NUGGET },
+  StarPiece: { name: "Star Piece", itemId: C.ITEM_STAR_PIECE },
+  Stardust: { name: "Stardust", itemId: C.ITEM_STARDUST },
+  PPUp: { name: "PP Up", itemId: C.ITEM_PP_UP },
+  HpUp: { name: "HP Up", itemId: C.ITEM_HP_UP },
+  Carbos: { name: "Carbos", itemId: C.ITEM_CARBOS },
+  Calcium: { name: "Calcium", itemId: C.ITEM_CALCIUM },
+  Iron: { name: "Iron", itemId: C.ITEM_IRON },
+  Protein: { name: "Protein", itemId: C.ITEM_PROTEIN },
+  Zinc: { name: "Zinc", itemId: C.ITEM_ZINC },
 };
 
 /** Resuelve el nombre e identificador de un objeto del suelo a partir de su script de evento. */
@@ -60,7 +60,7 @@ export function getJohtoItemInfo(scriptName?: string): JohtoItemInfo | undefined
 
   // Casos especiales de MTs
   if (key.startsWith("TM")) {
-    return { name: `MT (${key.replace("TM", "")})`, itemId: C.ITEM_TM01 };
+    return { name: `TM (${key.replace("TM", "")})`, itemId: C.ITEM_TM01 };
   }
 
   // Traducción y formateo genérico
@@ -68,7 +68,7 @@ export function getJohtoItemInfo(scriptName?: string): JohtoItemInfo | undefined
   return { name: formatted, itemId: C.ITEM_POKE_BALL };
 }
 
-/** Textos auténticos de inspección de objetos interactivos en casas y edificios (PC, NES, estanterías, etc.). */
+/** Adapted inspection text; official-source review remains pending. */
 export function getJohtoInspection(
   mapId: string,
   x: number,
@@ -79,84 +79,84 @@ export function getJohtoInspection(
 
   if (scriptName.includes("EventScript_NES")) {
     return {
-      title: "Consola NES",
-      text: "¡Has jugado una divertida partida en la consola NES de 8 bits!\n\n...¡Qué recuerdos! Pero ya es hora de partir a explorar la región de Johto.",
+      title: "NES console",
+      text: "You played a fun game on the 8-bit NES!\n\n...What memories! But it is time to explore Johto.",
     };
   }
 
   if (scriptName.includes("EventScript_WallClock") || scriptName.includes("Clock")) {
     return {
-      title: "Reloj de pared",
-      text: "Es un elegante reloj de pared con la hora de Johto perfectamente sincronizada.",
+      title: "Wall clock",
+      text: "An elegant wall clock synchronized with Johto's local time.",
     };
   }
 
   if (scriptName.includes("EventScript_PC") || scriptName.includes("BirchsLab_EventScript_PC")) {
     if (mapId.includes("LAB")) {
       return {
-        title: "Ordenador del Laboratorio",
-        text: "En la pantalla del ordenador se detallan las investigaciones del Profesor Elm sobre los orígenes y la evolución de los Pokémon.",
+        title: "Lab computer",
+        text: "The computer displays Professor Elm's research into Pokémon origins and evolution.",
       };
     }
     return {
-      title: "PC de Almacenamiento",
-      text: "El PC está encendido. Muestra el sistema de almacenamiento de Pokémon desarrollado por Bill para entrenadores.",
+      title: "Storage PC",
+      text: "The PC is on. It displays Bill's Pokémon Storage System for Trainers.",
     };
   }
 
   if (scriptName.includes("HealingMachine")) {
     return {
-      title: "Máquina Regeneradora de Elm",
-      text: "¡Colocas a tus Pokémon en los compartimentos de la máquina del Profesor!\n\nUn suave destello reparador envuelve las Poké Balls... ¡Tu equipo ha recuperado toda su energía y salud!",
+      title: "Elm's Healing Machine",
+      text: "You place your Pokémon in the professor's machine!\n\nA soft healing light surrounds the Poké Balls... Your party has recovered its energy and health!",
       heal: true,
     };
   }
 
   if (scriptName.includes("BookShelf") || scriptName.includes("Bookshelf")) {
     return {
-      title: "Estantería",
-      text: "¡Las estanterías están repletas de interesantes libros y enciclopedias sobre Pokémon, rutas y leyendas antiguas!",
+      title: "Bookshelf",
+      text: "The shelves are full of books and encyclopedias about Pokémon, routes and ancient legends!",
     };
   }
 
   if (scriptName.includes("StatueDescription") || scriptName.includes("SproutTower_2F_EventScript_Statue")) {
     if (mapId.includes("SPROUT")) {
       return {
-        title: "Estatua Sagrada",
-        text: "Una venerada estatua de Bellsprout esculpida a mano en madera milenaria que protege la Torre.",
+        title: "Sacred statue",
+        text: "A revered Bellsprout statue carved from ancient wood watches over the tower.",
       };
     }
     return {
-      title: "Estatua de las Ruinas Alfa",
-      text: "Una antiquísima estatua de piedra con extrañas inscripciones en relieve que recuerdan a los misteriosos Unown.",
+      title: "Ruins of Alph statue",
+      text: "An ancient stone statue with strange inscriptions resembling the mysterious Unown.",
     };
   }
 
   if (scriptName.includes("EmptyTrashCan") || scriptName.includes("Trash")) {
     return {
-      title: "Papelera",
-      text: "Miras dentro de la papelera... pero no hay nada.",
+      title: "Trash can",
+      text: "You look in the trash can... It is empty.",
     };
   }
 
   if (scriptName.includes("PlayersHouseMailbox")) {
     return {
-      title: "Buzón de correo",
-      text: "Buzón de la Casa del Jugador.",
+      title: "Mailbox",
+      text: "The player's mailbox.",
     };
   }
 
   if (scriptName.includes("ElmsHouseMailbox") || scriptName.includes("LabSign")) {
     return {
-      title: "Laboratorio del Prof. Elm",
-      text: "Laboratorio de Investigación Pokémon del Profesor Elm.",
+      title: "Professor Elm's Lab",
+      text: "Professor Elm's Pokémon Research Lab.",
     };
   }
 
   if (scriptName.includes("TownSign")) {
     return {
-      title: "Pueblo Primavera",
-      text: "Pueblo Primavera: Donde sopla el viento del comienzo.",
+      title: "New Bark Town",
+      text: "New Bark Town: Where Winds of a New Beginning Blow!",
     };
   }
 

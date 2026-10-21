@@ -83,7 +83,7 @@ export async function initializeViewerSession(
     save.rivalName = Array.from(encode('GREEN'));
     const candidates = [C.SPECIES_BULBASAUR, C.SPECIES_CHARMANDER, C.SPECIES_SQUIRTLE, C.SPECIES_PIKACHU];
     save.party.push(createMon(candidates[Math.floor(Math.random() * candidates.length)]!, 5));
-    if (!addBagItem(C.ITEM_POKE_BALL, 5)) throw Error('No se pudo preparar la mochila inicial');
+    if (!addBagItem(C.ITEM_POKE_BALL, 5)) throw Error('Unable to prepare the initial Bag');
     (save as ViewerSave).viewerStart = 'temporary-kanto-v1';
     grantTemporaryPokedex();
   } else {

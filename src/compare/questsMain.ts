@@ -8,6 +8,15 @@ type VarInfo = { setBy: [string, string][]; checkedBy: string[]; gates: { map: s
 type Quest = { id: string; kind: string; start: string; map: string; maps: string[]; requiresFlags: string[]; requiresVars: string[]; effects: string[]; items: string[]; mons: string[]; trainers: string[]; warps: string[]; suggested: string; tagged: boolean; confidence?: string | null };
 type Data = { scripts: Record<string, Script>; flags: Record<string, FlagInfo>; vars: Record<string, VarInfo>; quests: Quest[] };
 
+// Keep source classification IDs and CSS classes; only their displayed names change.
+const sourceLabels: Record<string, string> = {
+  obligatoria: "required", opcional: "optional", evento: "event", desconocido: "unknown",
+  media: "medium", baja: "low", alta: "high", "objeto-suelo": "ground item", entrenador: "trainer",
+  medalla: "badge", regalo: "gift", combate: "battle",
+  aparicion: "appearance", sistema: "system", visita: "visit", temporal: "temporary", otro: "other",
+};
+const displayLabel = (value: string) => sourceLabels[value] ?? value;
+
 const esc = (s: string) => s.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" })[c]!);
 const listEl = document.getElementById("list")!;
 const detailEl = document.getElementById("detail")!;
@@ -51,38 +60,38 @@ const scriptRef = (d: Data, label: string) => {
 function detailQuest(d: Data, qu: Quest): string {
   const s = d.scripts[qu.start];
   return `<h2>${esc(qu.id)}</h2>
-    <span class="chip ${qu.suggested}">${qu.suggested}${qu.tagged ? ` · etiqueta (confianza ${qu.confidence ?? "—"})` : " · sin etiqueta (sugerencia por nombre)"}</span> <span class="chip">${qu.kind}</span>
-    <h3>Dónde empieza</h3>${ul([`${scriptRef(d, qu.start)}${s ? ` · línea ${s.line}` : ""}`])}
-    <h3>Mapas implicados</h3>${ul(qu.maps.map(mapLink))}
-    <h3>Requisitos (flags que comprueba el script)</h3>${ul(qu.requiresFlags.map(flagLink), "ninguno detectado")}
-    <h3>Requisitos (variables)</h3>${ul(qu.requiresVars.map((v) => `<a href="#" data-go="vars:${esc(v)}">${esc(v)}</a>`), "ninguno detectado")}
-    <h3>Efectos (flags que pone o limpia el mismo script)</h3>${ul(qu.effects.map(flagLink), "ninguno")}
-    <h3>Recompensas</h3>${ul([...qu.items, ...qu.mons].map(esc), "ninguna detectada")}
-    <h3>Entrenadores</h3>${ul(qu.trainers.map(esc), "ninguno")}
-    <h3>Warps del script</h3>${ul(qu.warps.map(esc), "ninguno")}
-    <h3>Todos los scripts que la activan</h3>${ul((d.flags[qu.id]?.setBy ?? []).map((l) => scriptRef(d, l)))}`;
+    <span class="chip ${qu.suggested}">${displayLabel(qu.suggested)}${qu.tagged ? ` · tagged (confidence ${displayLabel(qu.confidence ?? "—")})` : " · no tag (name-based suggestion)"}</span> <span class="chip">${displayLabel(qu.kind)}</span>
+    <h3>Where it starts</h3>${ul([`${scriptRef(d, qu.start)}${s ? ` · line ${s.line}` : ""}`])}
+    <h3>Related maps</h3>${ul(qu.maps.map(mapLink))}
+    <h3>Requirements (flags checked by the script)</h3>${ul(qu.requiresFlags.map(flagLink), "none detected")}
+    <h3>Requirements (variables)</h3>${ul(qu.requiresVars.map((v) => `<a href="#" data-go="vars:${esc(v)}">${esc(v)}</a>`), "none detected")}
+    <h3>Effects (flags set or cleared by the same script)</h3>${ul(qu.effects.map(flagLink), "none")}
+    <h3>Rewards</h3>${ul([...qu.items, ...qu.mons].map(esc), "none detected")}
+    <h3>Trainers</h3>${ul(qu.trainers.map(esc), "none")}
+    <h3>Script warps</h3>${ul(qu.warps.map(esc), "none")}
+    <h3>All scripts that activate it</h3>${ul((d.flags[qu.id]?.setBy ?? []).map((l) => scriptRef(d, l)))}`;
 }
 
 function detailFlag(d: Data, name: string): string {
   const f = d.flags[name];
-  if (!f) return `<p class="none">Sin información de ${esc(name)}.</p>`;
+  if (!f) return `<p class="none">No information for ${esc(name)}.</p>`;
   const hid = f.hides.map((h) => `${mapLink(h.map)} · #${h.localId} ${esc(h.graphics.replace("OBJ_EVENT_GFX_", ""))}${h.script ? ` · ${esc(h.script)}` : ""}`);
-  return `<h2>${esc(name)}</h2><span class="chip">${f.kind}</span>
-    <h3>Lo pone (setflag)</h3>${ul(f.setBy.map((l) => scriptRef(d, l)), "ningún script")}
-    <h3>Lo limpia (clearflag)</h3>${ul(f.clearedBy.map((l) => scriptRef(d, l)), "ningún script")}
-    <h3>Lo comprueban</h3>${ul(f.checkedBy.map((l) => scriptRef(d, l)), "ningún script")}
-    <h3>Objetos de mapa que dependen de él (aparecen u ocultan)</h3>${ul(hid, "ninguno")}`;
+  return `<h2>${esc(name)}</h2><span class="chip">${displayLabel(f.kind)}</span>
+    <h3>Set by (setflag)</h3>${ul(f.setBy.map((l) => scriptRef(d, l)), "no script")}
+    <h3>Cleared by (clearflag)</h3>${ul(f.clearedBy.map((l) => scriptRef(d, l)), "no script")}
+    <h3>Checked by</h3>${ul(f.checkedBy.map((l) => scriptRef(d, l)), "no script")}
+    <h3>Map items that depend on it (appear or disappear)</h3>${ul(hid, "none")}`;
 }
 
 function detailVar(d: Data, name: string): string {
   const v = d.vars[name];
-  if (!v) return `<p class="none">Sin información de ${esc(name)}.</p>`;
+  if (!v) return `<p class="none">No information for ${esc(name)}.</p>`;
   const sets = v.setBy.map(([l, val]) => `${esc(val)} ← ${scriptRef(d, l)}`);
-  const gates = v.gates.map((g) => `${mapLink(g.map)} (${g.x},${g.y}) con valor ${g.value}${g.script ? ` → ${esc(g.script)}` : ""}`);
+  const gates = v.gates.map((g) => `${mapLink(g.map)} (${g.x},${g.y}) with value ${g.value}${g.script ? ` → ${esc(g.script)}` : ""}`);
   return `<h2>${esc(name)}</h2>
-    <h3>Valores que se asignan</h3>${ul(sets, "ningún setvar")}
-    <h3>Lo comprueban</h3>${ul(v.checkedBy.map((l) => scriptRef(d, l)), "ningún script")}
-    <h3>Eventos de coordenada que esperan un valor</h3>${ul(gates, "ninguno")}`;
+    <h3>Assigned values</h3>${ul(sets, "no setvar")}
+    <h3>Checked by</h3>${ul(v.checkedBy.map((l) => scriptRef(d, l)), "no script")}
+    <h3>Coordinate events that wait for a value</h3>${ul(gates, "none")}`;
 }
 
 async function render(): Promise<void> {
@@ -95,14 +104,14 @@ async function render(): Promise<void> {
       .map((x) => ({ id: x.id, right: x.map, chip: x.suggested }));
   } else if (tab === "flags") {
     rows = Object.entries(d.flags).filter(([n, f]) => (!kind || f.kind === kind) && (!term || n.toLowerCase().includes(term)))
-      .map(([n, f]) => ({ id: n, right: `${f.kind} · ${f.setBy.length} pon. · ${f.checkedBy.length} comp.` }));
+      .map(([n, f]) => ({ id: n, right: `${displayLabel(f.kind)} · ${f.setBy.length} sets · ${f.checkedBy.length} checks` }));
   } else {
     rows = Object.entries(d.vars).filter(([n]) => !term || n.toLowerCase().includes(term))
-      .map(([n, v]) => ({ id: n, right: `${v.setBy.length} asig. · ${v.gates.length} eventos` }));
+      .map(([n, v]) => ({ id: n, right: `${v.setBy.length} assignments · ${v.gates.length} events` }));
   }
-  summaryEl.textContent = `${{ quests: "Quests", flags: "Flags", vars: "Variables" }[tab]} de ${game === "emerald" ? "Emerald" : "FireRed"}: ${rows.length}`
-    + (tab === "quests" ? ` (${d.quests.length} candidatas; clasificación = sugerencia por nombre)` : "");
-  listEl.innerHTML = rows.map((r) => `<div class="row${r.id === selected ? " sel" : ""}" data-id="${esc(r.id)}">${r.chip ? `<span class="chip ${r.chip}">${r.chip}</span>` : ""}<span>${esc(r.id)}</span><small>${esc(r.right)}</small></div>`).join("");
+  summaryEl.textContent = `${{ quests: "Quests", flags: "Flags", vars: "Variables" }[tab]} of ${game === "emerald" ? "Emerald" : "FireRed"}: ${rows.length}`
+    + (tab === "quests" ? ` (${d.quests.length} candidates; classification = name-based suggestion)` : "");
+  listEl.innerHTML = rows.map((r) => `<div class="row${r.id === selected ? " sel" : ""}" data-id="${esc(r.id)}">${r.chip ? `<span class="chip ${r.chip}">${displayLabel(r.chip)}</span>` : ""}<span>${esc(r.id)}</span><small>${esc(r.right)}</small></div>`).join("");
   (window as unknown as { frQuests: unknown }).frQuests = { game, tab, shown: rows.length, total: tab === "quests" ? d.quests.length : tab === "flags" ? Object.keys(d.flags).length : Object.keys(d.vars).length };
 }
 
@@ -131,7 +140,7 @@ for (const b of document.querySelectorAll<HTMLButtonElement>("button[data-tab]")
     tab = b.dataset.tab as typeof tab;
     document.querySelectorAll("button[data-tab]").forEach((x) => x.classList.toggle("on", x === b));
     selected = "";
-    detailEl.innerHTML = `<p class="none">Elige una entrada.</p>`;
+    detailEl.innerHTML = `<p class="none">Select an entry.</p>`;
     void render();
   });
 }
@@ -140,18 +149,18 @@ for (const b of document.querySelectorAll<HTMLButtonElement>("button[data-game]"
     game = b.dataset.game as typeof game;
     document.querySelectorAll("button[data-game]").forEach((x) => x.classList.toggle("on", x === b));
     selected = "";
-    detailEl.innerHTML = `<p class="none">Elige una entrada.</p>`;
+    detailEl.innerHTML = `<p class="none">Select an entry.</p>`;
     void render();
   });
 }
 for (const k of ["obligatoria", "opcional", "sidequest", "postgame", "evento", "desconocido", "badge", "regalo", "combate", "aparicion", "sistema", "visita", "temporal", "objeto-suelo", "entrenador", "otro"]) {
   const o = document.createElement("option");
   o.value = k;
-  o.textContent = k;
+  o.textContent = displayLabel(k);
   kindSel.appendChild(o);
 }
 q.addEventListener("input", () => void render());
 kindSel.addEventListener("change", () => void render());
-void render().catch((e) => { summaryEl.textContent = `Error: ${String(e)}. ¿Ejecutaste tools/viewer/quest_index.py?`; });
+void render().catch((e) => { summaryEl.textContent = `Error: ${String(e)}. Have you run tools/viewer/quest_index.py?`; });
 
 export {};

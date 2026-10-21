@@ -75,14 +75,14 @@ export class EngineInteraction {
   get busy(): boolean { return this.open || this.testingWild; }
   constructor(private readonly hooks: Hooks) {
     this.root.id = 'engine-interaction'; this.root.hidden = true;
-    this.root.setAttribute('aria-label', 'Diálogo y compras');
+    this.root.setAttribute('aria-label', 'Dialog and shopping');
     this.field.id = 'interaction-sprites'; this.field.setAttribute('aria-hidden','true');
     this.ui.width = this.engineCanvas.width = this.field.width = 240;
     this.ui.height = this.engineCanvas.height = this.field.height = 160;
-    this.ui.setAttribute('aria-label', 'Z: aceptar; X: volver; flechas: elegir');
+    this.ui.setAttribute('aria-label', 'Z: confirm; X: back; arrow keys: choose');
     this.ui.tabIndex = 0;
     const help = document.createElement('p');
-    help.textContent = 'Z · aceptar     X · volver     ↑ ↓ · elegir';
+    help.textContent = 'Z · confirm     X · back     ↑ ↓ · choose';
     this.root.append(this.ui, help); document.body.append(this.root);
   }
   private async initialize(): Promise<void> {
@@ -337,7 +337,7 @@ export class EngineInteraction {
       const object = ow.objects.byLocalIdAndMap(localId, num & 255, num >>> 8);
       const objectEventId = object ? ow.objects.indexOf(object) : C.OBJECT_EVENTS_COUNT;
       const script = objectEventId < C.OBJECT_EVENTS_COUNT ? ow.objects.GetObjectEventScriptPointerByObjectEventId(objectEventId) : 0;
-      if (!object || !script) throw Error('NPC sin script fuente');
+      if (!object || !script) throw Error('NPC has no source script');
       this.hooks.hideObjects(true, objectMapId, localId);
       ow.selectedObject = objectEventId;
       varSet(SV.LAST_TALKED, object.localId); varSet(SV.FACING, save.facing);

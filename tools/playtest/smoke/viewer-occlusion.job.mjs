@@ -84,7 +84,7 @@ export default async function run(ctx) {
   ],results=[];
   for(const fixture of cases){
     await p.goto('about:blank');await p.goto(new URL(`viewer.html#modo=explore&mapa=${fixture.map}`,process.env.PW_BASE).href);await idle();
-    if(await p.locator('#player-char').inputValue()!==character){await p.getByRole('button',{name:'Menú · Esc'}).click();await p.locator('#explore-character').selectOption(character);await p.keyboard.press('Escape');await idle();}
+    if(await p.locator('#player-char').inputValue()!==character){await p.getByRole('button',{name:"Menu · Esc"}).click();await p.locator('#explore-character').selectOption(character);await p.keyboard.press('Escape');await idle();}
     const route=await p.evaluate(async goal=>{
       const {Rom}=await import('/src/core/rom.ts'),{planStep}=await import('/src/viewer/movement.ts');
       const header=await new Rom().loadMap(goal.map),g=window.occlusion.grid,start=window.occlusion.positions.at(-1);

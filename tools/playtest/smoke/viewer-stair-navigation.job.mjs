@@ -15,7 +15,7 @@ export default async function run(ctx){
  const idle=()=>p.waitForFunction(()=>document.body.classList.contains('exploring')&&document.querySelector('#content')?.getAttribute('aria-busy')!=='true'&&document.querySelector('#player-sprite')?.dataset.animation&&!JSON.parse(document.querySelector('#player-sprite').dataset.animation).moving);
  await p.waitForFunction(()=>window.stairNavigation.length);await idle();
  const character=process.env.PW_CHARACTER??'red';
- if(await p.locator('#player-char').inputValue()!==character){await p.getByRole('button',{name:'Menú · Esc'}).click();await p.locator('#explore-character').selectOption(character);await p.keyboard.press('Escape');await idle();}
+ if(await p.locator('#player-char').inputValue()!==character){await p.getByRole('button',{name:"Menu · Esc"}).click();await p.locator('#explore-character').selectOption(character);await p.keyboard.press('Escape');await idle();}
  const press=async key=>{await p.keyboard.press(key);await p.waitForTimeout(40);await idle();};
  await press('ArrowRight');await press('ArrowRight');await press('ArrowRight');
  await p.waitForFunction(()=>window.stairNavigation.at(-1)?.map==='MAP_PALLET_TOWN_PLAYERS_HOUSE_2F');await idle();

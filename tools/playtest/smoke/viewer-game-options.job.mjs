@@ -36,7 +36,7 @@ export default async function run(ctx){
  if(!same(changed.options,EXPECTED))throw Error('Options not saved as chosen '+JSON.stringify({initial,changed}));
  if(changed.textSpeed!==2||changed.buttonMode!==2)throw Error('Live option copies not updated '+JSON.stringify(changed));
 
- await p.getByRole('button',{name:'Menú · Esc'}).click();await p.locator('#explore-save').click();await p.keyboard.press('Escape');
+ await p.getByRole('button',{name:"Menu · Esc"}).click();await p.locator('#explore-save').click();await p.keyboard.press('Escape');
  await open();
  // The live copies follow the save once the engine runs a frame (Game.frame).
  await p.locator('#viewport').focus();await press('Enter');

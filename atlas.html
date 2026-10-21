@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="es">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -29,101 +29,60 @@
   <body>
     <main>
       <nav data-site-navigation="tools"></nav>
-      <h1>Atlas <span class="a">Pokémon</span></h1>
-      <p class="sub">Índice de las herramientas de consulta y validación. Todas leen los datos exportados de los decomps; ninguna ejecuta el motor del juego.</p>
-
-      <h2>Mundo y mapas</h2>
-      <div class="grid">
-        <div class="card"><h3>Visor del mundo</h3><p>Atlas principal con Kanto y Sevii FireRed, Johto Heart &amp; Soul y Hoenn Emerald. Cámara, búsqueda y puertas en un visor; variantes disponibles por separado.</p>
-          <div class="links"><a class="btn" href="/maps.html?game=world">Mundo principal</a><a class="btn ga" href="/maps.html?game=world#region=kanto">Kanto</a><a class="btn gb" href="/maps.html?game=world#region=hoenn">Hoenn</a><a class="btn" href="/maps.html?game=world#region=johto">Johto GBA</a><a class="btn" href="/maps.html?game=world#region=sevii">Islas Sevii</a><a class="btn" href="/maps.html?game=crystal">Crystal</a></div></div>
-        <div class="card"><h3>Explorar a pie</h3><p>Camina por el mundo con tu avatar (Rojo/Hoja en Kanto, Bruno/Aura en Hoenn). Pisar una puerta abre su interior.</p>
-          <div class="links"><a class="btn ga" href="/viewer.html#modo=explore">Kanto</a><a class="btn gb" href="/viewer.html?game=emerald#modo=explore">Hoenn</a></div></div>
-        <div class="card"><h3>Interiores</h3><p>425 mapas de FireRed y 518 de Emerald con warps, objetos con sprite, eventos y carteles. Desde el buscador, o con <code>#mapa=MAP_ID</code>.</p>
-          <div class="links">
-            <a class="btn ga" href="/viewer.html#mapa=MAP_PALLET_TOWN_PROFESSOR_OAKS_LAB">Ej. Laboratorio de Oak</a>
-            <a class="btn gb" href="/viewer.html?game=emerald#mapa=MAP_LITTLEROOT_TOWN_BRENDANS_HOUSE_1F">Ej. Casa de Bruno</a></div></div>
+      <h1>Pokémon reference atlas</h1>
+      <p class="sub">Source-data inspectors and export status. These pages inspect exported data; they do not run the game engine.</p>
+      <h2>Maps and exploration</h2><div class="grid">
+        <div class="card"><h3>World map browser</h3><p>FireRed Kanto and Sevii, Heart &amp; Soul Johto, and Emerald Hoenn. Interregional layout is project-defined.</p><div class="links"><a class="btn" href="/maps.html?game=world">World</a><a class="btn" href="/maps.html?game=world#region=kanto">Kanto</a><a class="btn" href="/maps.html?game=world#region=hoenn">Hoenn</a><a class="btn" href="/maps.html?game=world#region=johto">Johto GBA</a><a class="btn" href="/maps.html?game=world#region=sevii">Sevii Islands</a></div></div>
+        <div class="card"><h3>Explore on foot</h3><p>Walk through regional maps with an avatar. Gameplay integration varies by region.</p><div class="links"><a class="btn" href="/viewer.html#modo=explore">Kanto</a><a class="btn" href="/viewer.html?game=emerald#modo=explore">Hoenn</a></div></div>
+        <div class="card"><h3>Interiors</h3><p>Inspect warps, object sprites, events and signs. Use search or a #mapa=MAP_ID link.</p><div class="links"><a class="btn" href="/viewer.html#mapa=MAP_PALLET_TOWN_PROFESSOR_OAKS_LAB">Oak's Lab</a><a class="btn" href="/viewer.html?game=emerald#mapa=MAP_LITTLEROOT_TOWN_BRENDANS_HOUSE_1F">Brendan's House</a></div></div>
       </div>
-
-      <h2>Pokémon, objetos y entrenadores</h2>
-      <div class="grid">
-        <div class="card"><h3>Pokédex comparada</h3><p>Por especie: sprites de los dos juegos (frontal, variocolor, espalda, icono, huella), datos en común, y lo exclusivo de cada juego con sus encuentros.</p>
-          <div class="links"><a class="btn" href="/dex.html">Abrir</a><a class="btn" href="/dex.html#25">Ej. Pikachu</a><a class="btn" href="/dex.html#277">Ej. Treecko</a></div></div>
-        <div class="card"><h3>Biblioteca visual</h3><p>Entrenadores con retrato y equipo, objetos con icono y descripción, gráficos de objetos de mapa y NPC.</p>
-          <div class="links"><a class="btn" href="/library.html">Abrir</a></div></div>
-        <div class="card"><h3>Comparador de diferencias</h3><p>Campo a campo entre FireRed y Emerald: especies, movimientos, objetos y entrenadores.</p>
-          <div class="links"><a class="btn" href="/compare.html">Abrir</a></div></div>
+      <h2>Pokémon and source assets</h2><div class="grid">
+        <div class="card"><h3>Pokédex comparison</h3><p>Species, sprites, shared data, game-specific data and encounters.</p><div class="links"><a class="btn" href="/dex.html">Open</a><a class="btn" href="/dex.html#25">Pikachu</a><a class="btn" href="/dex.html#277">Treecko</a></div></div>
+        <div class="card"><h3>Visual library</h3><p>Trainer portraits and parties, item icons and descriptions, map objects and NPCs.</p><div class="links"><a class="btn" href="/library.html">Open</a></div></div>
+        <div class="card"><h3>Source comparison</h3><p>Compare species, moves, items and Trainers between FireRed and Emerald.</p><div class="links"><a class="btn" href="/compare.html">Open</a></div></div>
+        <div class="card"><h3>Expansion catalog</h3><p>Community species, forms, moves, Abilities and items. Values follow the expansion project's default configuration.</p><div class="links"><a class="btn" href="/expansion.html">Open</a></div></div>
       </div>
-
-      <h2>Catálogos de otras fuentes</h2>
-      <div class="grid">
-        <div class="card"><h3>Catálogo Gen 1-9 (expansion)</h3><p>1573 especies y formas, 956 movimientos, 320 habilidades y 874 objetos de pokeemerald-expansion, con evoluciones, aprendizajes y sprites. Valores de su configuración por defecto.</p>
-          <div class="links"><a class="btn" href="/expansion.html">Abrir</a></div></div>
+      <h2>Johto references</h2><div class="grid">
+        <div class="card"><h3>Heart &amp; Soul</h3><p>Community GBA adaptation: static maps and object markers. The catalog distinguishes rendered maps from incompatible inherited data.</p><div class="links"><a class="btn" href="/maps.html?game=hns">Connected maps</a><a class="btn" href="/maps.html?game=hns#mapa=MAP_NEW_BARK_TOWN">New Bark Town</a></div></div>
+        <div class="card"><h3>Pokémon Crystal</h3><p>GBC maps rendered from source blocks, tiles and palettes, with warps, signs, objects and connections.</p><div class="links"><a class="btn" href="/maps.html?game=crystal">Map browser</a><a class="btn" href="/maps.html?game=crystal#world">Connected world</a></div></div>
       </div>
-
-      <h2>Johto con gráficos GBA</h2>
-      <div class="grid">
-        <div class="card"><h3>Heart &amp; Soul · Johto / Kanto</h3><p>Mapas 2D de la adaptación GBA: mundo conectado por bloques, buscador, interiores y puertas navegables. Tiles estáticos y objetos como marcadores; el catálogo distingue mapas renderizados y datos heredados incompatibles.</p>
-          <div class="links"><a class="btn" href="/maps.html?game=hns">Mundo conectado</a><a class="btn" href="/maps.html?game=hns#mapa=MAP_NEW_BARK_TOWN">New Bark</a></div></div>
+      <h2>Events and story</h2><div class="grid">
+        <div class="card"><h3>Quest library</h3><p>Candidate quests, classifications, flags, variables and their script references.</p><div class="links"><a class="btn" href="/quests.html">Open</a></div></div>
+        <div class="card"><h3>Story progression</h3><p>Progress scenes grouped into manually defined chapters, with source script assignments.</p><div class="links"><a class="btn" href="/story.html">Open</a></div></div>
+        <div class="card"><h3>FireRed</h3><p>Open the browser game. Emerald gameplay is not fully integrated.</p><div class="links"><a class="btn" href="/play.html">Play</a></div></div>
       </div>
-
-      <h2>Pokémon Crystal</h2>
-      <div class="grid">
-        <div class="card"><h3>Mapas de Crystal</h3><p>388 mapas de Johto y Kanto renderizados desde el decomp (bloques, tiles y paletas), con warps, carteles, objetos y conexiones.</p>
-          <div class="links"><a class="btn" href="/maps.html?game=crystal">Abrir</a></div></div>
-        <div class="card"><h3>Mundo de Crystal</h3><p>Johto y Kanto en un solo mapa, colocados con las conexiones del decomp; cada mapa enlaza a su ficha.</p>
-          <div class="links"><a class="btn" href="/maps.html?game=crystal#world">Abrir</a></div></div>
-      </div>
-
-      <h2>Historia y quests</h2>
-      <div class="grid">
-        <div class="card"><h3>Biblioteca de quests</h3><p>Quests candidatas (medallas, regalos, combates) con clase obligatoria / opcional / sidequest / postgame / evento, flags y variables con quién los pone y los comprueba.</p>
-          <div class="links"><a class="btn" href="/quests.html">Abrir</a></div></div>
-        <div class="card"><h3>Línea argumental</h3><p>Escenas de progreso agrupadas por capítulos en el orden oficial de rutas, con los pasos que asignan los scripts.</p>
-          <div class="links"><a class="btn" href="/story.html">Abrir</a></div></div>
-      </div>
-
-      <h2>El juego</h2>
-      <div class="grid">
-        <div class="card"><h3>FireRed (port)</h3><p>El port jugable en el navegador. Emerald no es jugable: solo existe como datos y en el visor.</p>
-          <div class="links"><a class="btn ga" href="/play.html">Play</a></div></div>
-      </div>
-
-      <h2>Estado de los datos</h2>
-      <p class="mut">Cada sección necesita ficheros generados. Aquí se comprueba si existen y cómo regenerarlos.</p>
-      <table id="status"><thead><tr><th>Dato</th><th>Estado</th><th>Necesario para</th><th>Cómo regenerarlo</th></tr></thead><tbody></tbody></table>
-
-      <h2>Documentos</h2>
-      <p class="mut">En el repositorio: <code>docs/ATLAS.md</code> (este índice y los comandos), <code>docs/EMERALD-BRECHA-NUCLEO.md</code> (qué falta para compilar el núcleo contra Emerald),
-        <code>docs/SEPARACION-MOTOR.md</code>, <code>docs/EMERALD-EXPORTADOR-DIAGNOSTICO.md</code> y <code>TAREAS-FINALES.md</code>.</p>
+      <h2>Export status</h2><p class="mut">Each inspector needs generated assets. Check availability and regeneration commands below.</p>
+      <table id="status"><thead><tr><th>Data</th><th>Status</th><th>Used by</th><th>Regenerate</th></tr></thead><tbody></tbody></table>
+      <h2>Documentation</h2><p class="mut">Repository references: <code>docs/ATLAS.md</code>, <code>docs/EMERALD-BRECHA-NUCLEO.md</code>, <code>docs/SEPARACION-MOTOR.md</code>, <code>docs/EMERALD-EXPORTADOR-DIAGNOSTICO.md</code> and <code>TAREAS-FINALES.md</code>.</p>
     </main>
     <script type="module">
       const checks = [
-        ["Mundo principal", "/map-viewer/principal/catalog.json", "Kanto, Johto y Hoenn en un atlas", "npm run maps:principal"],
-        ["Visor común: imágenes FireRed", "/map-viewer/firered/catalog.json", "Consulta ligera de Kanto", "npm run maps:images -- firered"],
-        ["Visor común: imágenes Emerald", "/map-viewer/emerald/catalog.json", "Consulta ligera de Hoenn", "npm run maps:images -- emerald"],
-        ["Visor común: vista reducida HnS", "/map-viewer/hns/world/overview.png", "Johto GBA al alejar el zoom", "npm run maps:images -- hns"],
-        ["Visor común: vista reducida Crystal", "/map-viewer/crystal/world/day/overview.png", "Johto / Kanto GBC al alejar el zoom", "npm run maps:images -- crystal"],
-        ["HnS: mapas 2D de Johto / Kanto", "/hns/maps.json", "Visor HnS", "npm run refs:fetch -- pokemon-hns && npm run hns:maps"],
-        ["FireRed: datos exportados", "/fr/data/species.json", "Pokédex, comparador, biblioteca", "python3 tools/decomp/export.py"],
-        ["Emerald: datos exportados", "/emerald/data/species.json", "Hoenn, Pokédex, comparador, biblioteca", "EXPORT_GAME=emerald python3 tools/decomp/export.py"],
-        ["FireRed: sprites de espalda, iconos y huellas", "/fr/gfx/pokemon/icon/25.png", "Pokédex, biblioteca (equipos)", "python3 tools/decomp/export.py graphics"],
-        ["Emerald: sprites de espalda, iconos y huellas", "/emerald/gfx/pokemon/icon/25.png", "Pokédex, biblioteca (equipos)", "EXPORT_GAME=emerald python3 tools/decomp/export.py graphics"],
-        ["FireRed: retratos de entrenadores e iconos de objetos", "/fr/gfx/items/14.png", "Biblioteca visual", "python3 tools/decomp/export.py graphics"],
-        ["Índice del mundo de Kanto", "/viewer/kanto.json", "Visor de Kanto", "python3 tools/viewer/world_index.py"],
-        ["Índice del mundo de Hoenn", "/viewer/hoenn.json", "Visor de Hoenn", "EXPORT_GAME=emerald python3 tools/viewer/world_index.py"],
-        ["Quests de FireRed", "/viewer/quests_firered.json", "Quests y línea argumental", "python3 tools/viewer/quest_index.py"],
-        ["Quests de Emerald", "/viewer/quests_emerald.json", "Quests y línea argumental", "EXPORT_GAME=emerald python3 tools/viewer/quest_index.py"],
-        ["Línea argumental", "/viewer/story_firered.json", "Línea argumental", "python3 tools/viewer/story_index.py"],
-        ["Mapas de Crystal", "/crystal/maps.json", "Mapas de Crystal", "npm run refs:fetch -- pokecrystal && npm run crystal:maps"],
-        ["Mundo de Crystal", "/crystal/world/world.json", "Mundo de Crystal", "npm run crystal:world"],
-        ["Catálogo de expansion", "/expansion/species.json", "Catálogo Gen 1-9", "npm run refs:fetch -- pokeemerald-expansion && npm run expansion:catalog"],
+        ["Main world", "/map-viewer/principal/catalog.json", "Kanto, Johto and Hoenn in one atlas", "npm run maps:principal"],
+        ["Map browser: FireRed images", "/map-viewer/firered/catalog.json", "Kanto map browser", "npm run maps:images -- firered"],
+        ["Map browser: Emerald images", "/map-viewer/emerald/catalog.json", "Hoenn map browser", "npm run maps:images -- emerald"],
+        ["Map browser: HnS overview", "/map-viewer/hns/world/overview.png", "Johto GBA overview", "npm run maps:images -- hns"],
+        ["Map browser: Crystal overview", "/map-viewer/crystal/world/day/overview.png", "Johto / Kanto GBC overview", "npm run maps:images -- crystal"],
+        ["HnS: Johto / Kanto 2D maps", "/hns/maps.json", "HnS browser", "npm run refs:fetch -- pokemon-hns && npm run hns:maps"],
+        ["FireRed: exported data", "/fr/data/species.json", "Pokédex, comparison, library", "python3 tools/decomp/export.py"],
+        ["Emerald: exported data", "/emerald/data/species.json", "Hoenn, Pokédex, comparison, library", "EXPORT_GAME=emerald python3 tools/decomp/export.py"],
+        ["FireRed: back sprites, icons and footprints", "/fr/gfx/pokemon/icon/25.png", "Pokédex, library (parties)", "python3 tools/decomp/export.py graphics"],
+        ["Emerald: back sprites, icons and footprints", "/emerald/gfx/pokemon/icon/25.png", "Pokédex, library (parties)", "EXPORT_GAME=emerald python3 tools/decomp/export.py graphics"],
+        ["FireRed: Trainer portraits and item icons", "/fr/gfx/items/14.png", "Visual library", "python3 tools/decomp/export.py graphics"],
+        ["Kanto world index", "/viewer/kanto.json", "Kanto browser", "python3 tools/viewer/world_index.py"],
+        ["Hoenn world index", "/viewer/hoenn.json", "Hoenn browser", "EXPORT_GAME=emerald python3 tools/viewer/world_index.py"],
+        ["FireRed quests", "/viewer/quests_firered.json", "Quests and story progression", "python3 tools/viewer/quest_index.py"],
+        ["Emerald quests", "/viewer/quests_emerald.json", "Quests and story progression", "EXPORT_GAME=emerald python3 tools/viewer/quest_index.py"],
+        ["Story progression", "/viewer/story_firered.json", "Story progression", "python3 tools/viewer/story_index.py"],
+        ["Crystal maps", "/crystal/maps.json", "Crystal maps", "npm run refs:fetch -- pokecrystal && npm run crystal:maps"],
+        ["Crystal world", "/crystal/world/world.json", "Crystal world", "npm run crystal:world"],
+        ["Catalog of expansion", "/expansion/species.json", "Gen 1–9 catalog", "npm run refs:fetch -- pokeemerald-expansion && npm run expansion:catalog"],
       ];
       const body = document.querySelector("#status tbody");
       for (const [label, url, usedBy, cmd] of checks) {
         let ok = false;
         try { const r = await fetch(url, { method: "HEAD" }); ok = r.ok && !(r.headers.get("content-type") || "").includes("text/html"); } catch { ok = false; }
         const tr = document.createElement("tr");
-        tr.innerHTML = `<td>${label}</td><td class="${ok ? "ok" : "bad"}">${ok ? "✓ disponible" : "✗ falta"}</td><td>${usedBy}</td><td><code>${cmd}</code></td>`;
+        tr.innerHTML = `<td>${label}</td><td class="${ok ? "ok" : "bad"}">${ok ? "✓ available" : "✗ missing"}</td><td>${usedBy}</td><td><code>${cmd}</code></td>`;
         body.appendChild(tr);
       }
     </script>

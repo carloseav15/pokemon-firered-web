@@ -47,9 +47,9 @@ export class InteriorViewer {
     this.root.id = "interior";
     this.root.style.display = "none";
     const bar = el("div", "interior-bar");
-    this.backBtn = el("button", "btn", "← Volver");
+    this.backBtn = el("button", "btn", "← Back");
     this.backBtn.addEventListener("click", () => this.back());
-    const close = el("button", "btn", "✕ Cerrar");
+    const close = el("button", "btn", "✕ Close");
     close.addEventListener("click", () => this.close());
     this.title = el("strong", "interior-title");
     this.meta = el("span", "interior-meta");
@@ -92,7 +92,7 @@ export class InteriorViewer {
     const token = ++this.token;
     this.root.style.display = "flex";
     this.title.textContent = entry.mapId.replace(/^MAP_/, "");
-    this.meta.textContent = "Cargando…";
+    this.meta.textContent = "Loading…";
     this.backBtn.disabled = this.history.length === 0;
     let map: MapHeader;
     let layout: Awaited<ReturnType<typeof rom.loadLayout>>;
@@ -104,7 +104,7 @@ export class InteriorViewer {
       primary = await rom.loadTileset(layout.primary);
       secondary = await rom.loadTileset(layout.secondary);
     } catch (error) {
-      this.meta.textContent = `No se pudo cargar ${entry.mapId}: ${String(error)}`;
+      this.meta.textContent = `Unable to load ${entry.mapId}: ${String(error)}`;
       return;
     }
     if (token !== this.token) return;
@@ -112,7 +112,7 @@ export class InteriorViewer {
     this.backBtn.disabled = this.history.length === 0;
 
     this.title.textContent = formatJohtoInteriorName(entry.mapId) ?? this.hooks.mapName(entry.mapId) ?? map.name;
-    this.meta.textContent = `${entry.mapId} · ${layout.width}×${layout.height} · música ${map.musicName} · ${layout.primary.replace("gTileset_", "")} + ${layout.secondary.replace("gTileset_", "")}`;
+    this.meta.textContent = `${entry.mapId} · ${layout.width}×${layout.height} · music ${map.musicName} · ${layout.primary.replace("gTileset_", "")} + ${layout.secondary.replace("gTileset_", "")}`;
 
     const renderer = new TileRenderer(primary, secondary);
     const w = layout.width;
@@ -162,14 +162,14 @@ export class InteriorViewer {
     // Objetos con su sprite (de pie, mirando al sur): clones y objetos sin hoja se marcan sin dibujo.
     for (const o of map.objects) {
       if (o.clone) {
-        place("obj", o.x, o.y, `clon de ${o.targetMap} #${o.targetLocalId}`);
+        place("obj", o.x, o.y, `clon of ${o.targetMap} #${o.targetLocalId}`);
         continue;
       }
       const obj = o as MapObjectTemplate;
       const dialogue = getJohtoDialogue(entry.mapId, obj.localId, obj.scriptName ?? undefined, obj.graphicsName);
       const label = dialogue
         ? `${dialogue.title}: ${dialogue.text}`
-        : `${obj.graphicsName} · ${obj.scriptName ?? "sin script"}${obj.trainerType ? ` · entrenador (rango ${obj.trainerRange})` : ""}`;
+        : `${obj.graphicsName} · ${obj.scriptName ?? "no script"}${obj.trainerType ? ` · trainer (range ${obj.trainerRange})` : ""}`;
       const m = place("obj", obj.x, obj.y, label, dialogue ? () => this.showDialogue(dialogue) : undefined);
       const g = gfxInfoOf(obj.graphicsName) ?? fallbackGfx();
       const frame = facingFrame(g, "south");
@@ -193,10 +193,10 @@ export class InteriorViewer {
       mark.textContent = String(i);
       if (entry.arriveWarp === i) mark.classList.add("arrive");
     });
-    for (const c of map.coords) place("coord", c.x, c.y, `evento de coordenada: var ${c.var} = ${c.value} → ${c.scriptName}`);
+    for (const c of map.coords) place("coord", c.x, c.y, `coordinate event: var ${c.var} = ${c.value} → ${c.scriptName}`);
     for (const b of map.bgs) {
-      if (b.type === "sign") place("sign", b.x, b.y, `cartel · ${b.scriptName}`);
-      else place("item", b.x, b.y, `objeto oculto · ${b.item} ×${b.quantity}${b.underfoot ? " (bajo los pies)" : ""}`);
+      if (b.type === "sign") place("sign", b.x, b.y, `sign · ${b.scriptName}`);
+      else place("item", b.x, b.y, `hidden item · ${b.item} ×${b.quantity}${b.underfoot ? " (underfoot)" : ""}`);
     }
 
     this.stage.replaceChildren(wrap);
@@ -256,26 +256,26 @@ export class InteriorViewer {
         () => this.followWarp(wp.destMap, wp.destWarpId));
     });
     if (map.connections.length > 0) {
-      const sc = section("Conexiones", map.connections.length);
+      const sc = section("Connections", map.connections.length);
       for (const c of map.connections) {
         row(sc, `${c.direction} · ${c.map.replace(/^MAP_/, "")} (desfase ${c.offset})`, () => this.followWarp(c.map, -1));
       }
     }
-    const so = section("Objetos", map.objects.length);
+    const so = section("Items", map.objects.length);
     for (const o of map.objects) {
       if (o.clone) { row(so, `clon · (${o.x},${o.y}) → ${o.targetMap}#${o.targetLocalId}`); continue; }
       const obj = o as MapObjectTemplate;
       const flag = obj.flag ? ` · flag ${obj.flag}` : "";
-      row(so, `#${obj.localId} (${obj.x},${obj.y}) ${obj.graphicsName.replace("OBJ_EVENT_GFX_", "")} · ${obj.scriptName ?? "—"}${obj.trainerType ? " · entrenador" : ""}${flag}`);
+      row(so, `#${obj.localId} (${obj.x},${obj.y}) ${obj.graphicsName.replace("OBJ_EVENT_GFX_", "")} · ${obj.scriptName ?? "—"}${obj.trainerType ? " · trainer" : ""}${flag}`);
     }
     if (map.coords.length > 0) {
-      const sk = section("Eventos de coordenada", map.coords.length);
+      const sk = section("Coordinate events", map.coords.length);
       for (const c of map.coords) row(sk, `(${c.x},${c.y}) var ${c.var} = ${c.value} → ${c.scriptName}`);
     }
     if (map.bgs.length > 0) {
-      const sb = section("Carteles y objetos ocultos", map.bgs.length);
+      const sb = section("Signs and hidden items", map.bgs.length);
       for (const b of map.bgs) {
-        row(sb, b.type === "sign" ? `(${b.x},${b.y}) cartel · ${b.scriptName}` : `(${b.x},${b.y}) objeto ${b.item} ×${b.quantity} · flag ${b.flag}`);
+        row(sb, b.type === "sign" ? `(${b.x},${b.y}) sign · ${b.scriptName}` : `(${b.x},${b.y}) item ${b.item} ×${b.quantity} · flag ${b.flag}`);
       }
     }
   }

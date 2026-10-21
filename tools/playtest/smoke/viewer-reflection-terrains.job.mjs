@@ -47,7 +47,7 @@ export default async function run(ctx){
   const probe=async point=>{
    await p.goto('about:blank');await p.goto(base+`#modo=explore&mapa=${c.map}&px=${point.x}&py=${point.y}`);
    await p.waitForFunction(()=>window.reflProbe?.spawns&&!document.body.hasAttribute('aria-busy'),null,{timeout:30000});
-   if(await p.locator('#player-char').inputValue()!==character){await p.getByRole('button',{name:'Menú · Esc'}).click();await p.locator('#explore-character').selectOption(character);await p.keyboard.press('Escape');}
+   if(await p.locator('#player-char').inputValue()!==character){await p.getByRole('button',{name:"Menu · Esc"}).click();await p.locator('#explore-character').selectOption(character);await p.keyboard.press('Escape');}
    await p.waitForTimeout(700);
    return p.evaluate(async()=>{
     const el=document.querySelector('.player-reflection'),player=document.querySelector('#player-sprite'),g=window.reflProbe.grid;
@@ -105,7 +105,7 @@ export default async function run(ctx){
   },{behavior:c.behavior,ox:origin.x,oy:origin.y,w:origin.width,h:origin.height,expectShown:c.shown});
   await p.goto('about:blank');await p.goto(base+`#modo=explore&mapa=${c.map}&px=${cell.x}&py=${cell.y}`);
   await p.waitForFunction(()=>window.reflProbe?.spawns&&!document.body.hasAttribute('aria-busy'),null,{timeout:30000});
-  if(await p.locator('#player-char').inputValue()!==character){await p.getByRole('button',{name:'Menú · Esc'}).click();await p.locator('#explore-character').selectOption(character);await p.keyboard.press('Escape');}
+  if(await p.locator('#player-char').inputValue()!==character){await p.getByRole('button',{name:"Menu · Esc"}).click();await p.locator('#explore-character').selectOption(character);await p.keyboard.press('Escape');}
   await p.waitForTimeout(900);
   const r=await p.evaluate(()=>{const el=document.querySelector('.player-reflection'),a=JSON.parse(document.querySelector('#player-sprite').dataset.animation);
    if(el.style.display==='none')return{shown:false,graphics:a.graphics};const x=JSON.parse(el.dataset.reflection);

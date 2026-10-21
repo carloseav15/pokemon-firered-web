@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="es">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Biblioteca de quests FireRed / Emerald</title>
+    <title>Quest library FireRed / Emerald</title>
     <style>
       :root { color-scheme: dark; --bg:#0b0f14; --panel:#111827; --line:#243040; --fg:#e5e7eb; --mut:#9ca3af; --a:#f59e0b; --b:#38bdf8; }
       * { box-sizing:border-box; }
@@ -32,23 +32,23 @@
   </head>
   <body>
     <header>
-      <h1>Biblioteca de quests</h1>
+      <h1>Quest library</h1>
       <a href="/atlas.html">☰ Atlas</a>
       <button data-game="firered" class="ga on">FireRed</button>
       <button data-game="emerald" class="gb">Emerald</button>
       <button data-tab="quests" class="on">Quests</button>
       <button data-tab="flags">Flags</button>
       <button data-tab="vars">Variables</button>
-      <select id="kind"><option value="">Todas las clases</option></select>
-      <input id="q" type="search" placeholder="Buscar flag, mapa, script…" />
-      <a href="/story.html" style="margin-left:auto">Línea argumental →</a>
-      <a href="/library.html">Biblioteca visual →</a>
+      <select id="kind"><option value="">All categories</option></select>
+      <input id="q" type="search" placeholder="Search flag, map, script…" />
+      <a href="/story.html" style="margin-left:auto">Story progression →</a>
+      <a href="/library.html">Visual library →</a>
       <a href="/dex.html">Pokédex →</a>
-      <a href="/viewer.html">Visor del mundo →</a>
+      <a href="/viewer.html">World Map →</a>
     </header>
     <div id="layout">
-      <div><div id="summary">Cargando…</div><div id="list"></div></div>
-      <div id="detail"><p class="none">Elige una entrada.</p></div>
+      <div><div id="summary">Loading…</div><div id="list"></div></div>
+      <div id="detail"><p class="none">Select an entry.</p></div>
     </div>
     <script type="module" src="/src/compare/questsMain.ts"></script>
   </body>
