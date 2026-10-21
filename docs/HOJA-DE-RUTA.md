@@ -54,6 +54,13 @@ No borrar código útil ni desactivar funciones existentes sin estudiar consumid
 6. [ ] Contrato regional común: IDs de mapas/especies/entrenadores, flags y variables
    con región, progreso regional/global, guardado versionado y migración. Probar
    que visitar una región no modifica por colisión el estado de otra.
+   **Avance `6e2d62a9`:** guardado mundial versión 2 (`src/viewer/regionSave.ts`):
+   top-level = SaveBlock FireRed (globales + progreso Kanto); banco Hoenn con flags/
+   vars/navegación por IDs Emerald; migración v1 de `firered-save-v1` y
+   `firered-viewer-game-v1`. `npm run check:region-save` (PREPARED) prueba aislamiento
+   en ambos sentidos, dinero compartido y migración/continuar. Pendiente: IDs de
+   especies/entrenadores por región, banco Johto (guardar en Johto se rechaza) y
+   validación en navegador.
 7. [ ] Integrar un circuito pequeño original por región: llegar → hablar → combatir
    → comprar/curar → guardar → continuar. Kanto como referencia; Johto con fuente
    fijada; Hoenn necesita conectar su contenido al motor, no solo mostrar mapas.
@@ -202,9 +209,9 @@ No se realizó recorrido de navegador ni prueba de continuidad regional en esta 
 | Encuentros/combates | Tras un paso, la ruta de encuentros del motor exige `!HOENN && !JOHTO`; la otra ruta de batalla salvaje es exclusiva de Johto | Hoenn no tiene encuentros Emerald integrados por ese camino. La detección de mirada de entrenador puede mostrar interacción sin iniciar combate fuente |
 | NPC/objetos/servicios | Sin puente, aparecen respuestas genéricas; con `scriptName`, enfermeras y dependientes usan curación manual y `openJohtoMart` antes de la rama específica Johto | Hay servicios adaptados compartidos, no ejecución de sus scripts Emerald. Objetos visibles no prueban entrega, retirada persistente o scripts de historia |
 | Cinemáticas | `hoennCinematics.ts` usa DOM, CSS y `setTimeout`; disparadores por mapa/posición en `main.ts` | Adaptaciones propias, no ejecución de eventos originales. Títulos residuales «Pilar Celeste», «Cueva Origen», «Arrecife of Sootopolis» contradicen el requisito de inglés; pendiente corregir |
-| Progreso | `initializeHoennSessionFlags()` escribe IDs Emerald mediante `flagSet` del save compilado; `state.eventFlags` es un Set de sesión | No hay aislamiento regional demostrado ni serialización de ese Set en `StoredSettings` |
-| Guardado/continuar | Menú llama `saveViewerSession`; `session.ts` escribe `firered-save-v1` y `firered-viewer-game-v1`; navegación no contiene región. Arranque Hoenn omite `initializeViewerSession` | Guardar posición no acredita partida Emerald recuperable. Riesgo concreto de escribir navegación Hoenn en el save compartido; falta prueba de no contaminación |
-| Viaje regional | Ferry cambia `location.href` entre Kanto/Hoenn | Enlace existente; no contrato de viaje con transferencia y restauración comprobadas |
+| Progreso | Desde `6e2d62a9`, `initializeRegionalSession("hoenn")` instala un banco Emerald (flags/vars) en el save vivo; los flags iniciales solo al crear el banco. `state.eventFlags` se guarda por región en `world.sessionFlags`, no en `StoredSettings` | Aislamiento Kanto↔Hoenn probado en almacenamiento (`check:region-save`); sin recorrido en navegador |
+| Guardado/continuar | `saveViewerSession` despacha por región: Kanto sincroniza ubicación FireRed; Hoenn guarda navegación etiquetada en su banco, solo sobre un entrenador Kanto guardado. Continuar Hoenn usa `continueRegionalSession`. Saves v1 migran; navegación Hoenn residual pasa al banco Hoenn | Hoenn guarda posición y flags propios, no una partida Emerald fuente (sin puente). Guardar en Johto se rechaza hasta tener banco |
+| Viaje regional | Ferry cambia `location.href` entre Kanto/Hoenn; equipo/dinero/bolsa globales en el mismo save | Sin guardado automático al viajar ni continuar hacia `world.activeRegion`; ida/vuelta y continuidad de equipo en navegador no validadas |
 
 Comprobaciones de esta revisión:
 
@@ -225,9 +232,10 @@ la diferencia GBC/DS de Johto.
 
 Siguiente orden concreto (descompone puntos 4, 6 y 7 sin borrar sus pendientes):
 
-1. Diseñar IDs regionales y persistencia: equipo/dinero globales, progreso y navegación
-   con juego/región, compatibilidad del save existente. Antes de habilitar viajes,
-   comprobar ida/vuelta, guardar/continuar y ausencia de colisiones de flags/variables.
+1. [x] Diseñar IDs regionales y persistencia: equipo/dinero globales, progreso y navegación
+   con juego/región, compatibilidad del save existente. Hecho en `6e2d62a9` para
+   flags/vars/navegación Kanto–Hoenn (prueba de almacenamiento PREPARED). Antes de
+   habilitar viajes falta comprobar ida/vuelta y guardar/continuar en navegador.
 2. Cerrar los módulos mínimos del contrato Emerald detectados por el núcleo, empezando
    por save y entrada de mapa; no activar `EngineInteraction` quitando solo `!HOENN`.
 3. Integrar un circuito Emerald fuente: un mapa/NPC, encuentro y combate, curación/

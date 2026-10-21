@@ -29,7 +29,9 @@ menús y guardado sobre la navegación existente.
   generadores. Kanto/Hoenn, controles táctiles/390 px y ocho inspectores comprobados
   en Vite/build servido; nombres/IDs, geometría y datos de escenas conservados.
   Johto en ejecución no aprobado por el bloqueo de recursos descrito abajo.
-- [ ] **Hoenn antes de elegir Johto**: cerrar contrato regional de IDs/guardado y puente mínimo Emerald; ver auditoría en `docs/HOJA-DE-RUTA.md`. Hoenn no instancia `EngineInteraction`; guardado llama claves FireRed, flags regionales sin aislamiento demostrado y cinemáticas con títulos residuales en español. No habilitar el puente quitando solo la condición ni presentar helpers como campaña validada.
+- [ ] **Hoenn antes de elegir Johto**: puente mínimo Emerald pendiente; ver auditoría en `docs/HOJA-DE-RUTA.md`. Hoenn no instancia `EngineInteraction` y sus cinemáticas conservan títulos residuales en español. No habilitar el puente quitando solo la condición ni presentar helpers como campaña validada.
+  Contrato regional de guardado hecho — `6e2d62a9`: save mundial v2, banco Hoenn por IDs Emerald, migración v1 y `check:region-save` PASS (PREPARED, almacenamiento).
+  **Sin validar:** viaje ferry ida/vuelta y guardar/continuar en navegador; continuidad de equipo entre regiones en juego; continuar hacia `world.activeRegion`; un save v1 ya contaminado con flags Emerald conserva esos bits en Kanto si tenía inicio Kanto (no separables; se anota en `world.migration`). Johto: guardar se rechaza hasta tener banco propio.
 - [ ] **Recurso de exploración Johto**: `world.html?region=johto#modo=explore`
   solicita `/hns/fieldfx.json`, ausente del exportador actual de mapas HnS. Vite
   devuelve HTML y falla la lectura JSON; cargador no modificado en `fd61199e`.
