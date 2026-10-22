@@ -6,11 +6,11 @@
 import * as C from "@game/generated/constants";
 import { FacilityClassToPicIndex } from "@game/generated/cdataTableAccessors";
 import { cdata } from "./hw/assets";
-import { animsFrom } from "./hw/cdataSprite";
+import { affineAnimsFrom, animsFrom } from "./hw/cdataSprite";
 import { BG_PLTT_ID, LoadPalette, OBJ_PLTT_ID, PLTT_SIZE_4BPP } from "./hw/palette";
 import {
   CreateSprite, DestroySprite, FreeSpritePaletteByTag, gDummySpriteAffineAnimTable, GetSpritePaletteTagByPaletteNum, gSprites,
-  LoadSpritePalette, oamData, SPRITE_SHAPE, SPRITE_SIZE, TAG_NONE, type AnimCmd, type Sprite, type SpriteFrameImage, type SpriteTemplate,
+  LoadSpritePalette, oamData, SPRITE_SHAPE, ST_OAM_AFFINE_NORMAL, SPRITE_SIZE, TAG_NONE, type AnimCmd, type Sprite, type SpriteFrameImage, type SpriteTemplate,
 } from "./hw/sprite";
 import { BlitBitmapRectToWindow, gWindows } from "./hw/window";
 import {
@@ -58,6 +58,12 @@ function DecompressPic(species: number, personality: number, isFrontPic: boolean
   }
   return false;
 }
+
+/** include/trainer_pokemon_sprites.h flags of CreateMonPicSprite_Affine (pokeemerald) */
+export const MON_PIC_AFFINE_BACK = 0;
+export const MON_PIC_AFFINE_FRONT = 1;
+export const MON_PIC_AFFINE_NONE = 3;
+export const F_MON_PIC_NO_AFFINE = 1 << 7;
 
 function DecompressPic_HandleDeoxys(species: number, personality: number, isFrontPic: boolean, dest: Uint8Array, isTrainer: boolean): boolean {
   return DecompressPic(species, personality, isFrontPic, dest, isTrainer, false);
@@ -173,6 +179,48 @@ export function CreateMonPicSprite(species: number, otId: number, personality: n
 
 export function CreateMonPicSprite_HandleDeoxys(species: number, otId: number, personality: number, isFrontPic: boolean, x: number, y: number, paletteSlot: number, paletteTag: number): number {
   return CreateMonPicSprite(species, otId, personality, isFrontPic, x, y, paletteSlot, paletteTag, false);
+}
+
+/** pokeemerald trainer_pokemon_sprites.c CreateMonPicSprite_Affine: a Pokémon picture with the battle sprite's
+ * affine animations (the front/back battle tables of data.c). The species animation table of the C source
+ * (gMonFrontAnimsPtrTable[species]) is replaced by gAnims_MonPic, the single-frame table the other picture
+ * sprites use: no animation is started on these sprites. */
+export function CreateMonPicSprite_Affine(species: number, otId: number, personality: number, flags: number, x: number, y: number, paletteSlot: number, paletteTag: number): number {
+  let i: number;
+  for (i = 0; i < PICS_COUNT; i++) {
+    if (!sSpritePics[i].active) break;
+  }
+  if (i === PICS_COUNT) return 0xffff;
+
+  const framePics = new Uint8Array(4 * 0x800);
+  let type: number;
+  if (flags & F_MON_PIC_NO_AFFINE) {
+    flags &= ~F_MON_PIC_NO_AFFINE;
+    type = MON_PIC_AFFINE_NONE;
+  } else {
+    type = flags;
+  }
+  const images: SpriteFrameImage[] = [];
+  // DecompressPic(species, personality, flags, framePics, FALSE, FALSE): the flag is the isFrontPic argument
+  if (DecompressPic(species, personality, flags !== 0, framePics, false, false)) return 0xffff;
+  for (let j = 0; j < 4; j++) images.push({ data: framePics.subarray(0x800 * j, 0x800 * (j + 1)), size: 0x800 });
+  sCreatingSpriteTemplate = { ...sCreatingSpriteTemplate, tileTag: TAG_NONE, anims: (gAnims_MonPic ??= animsFrom({ $sym: "gAnims_MonPic" })), images };
+  if (type === MON_PIC_AFFINE_FRONT) {
+    sCreatingSpriteTemplate.affineAnims = affineAnimsFrom({ $sym: "gAffineAnims_BattleSpriteOpponentSide" });
+    sCreatingSpriteTemplate.oam = oamData({ affineMode: ST_OAM_AFFINE_NORMAL, shape: SPRITE_SHAPE("64x64"), size: SPRITE_SIZE("64x64") });
+  } else if (type === MON_PIC_AFFINE_BACK) {
+    sCreatingSpriteTemplate.affineAnims = affineAnimsFrom({ $sym: "gAffineAnims_BattleSpritePlayerSide" });
+    sCreatingSpriteTemplate.oam = oamData({ affineMode: ST_OAM_AFFINE_NORMAL, shape: SPRITE_SHAPE("64x64"), size: SPRITE_SIZE("64x64") });
+  } else { // MON_PIC_AFFINE_NONE
+    sCreatingSpriteTemplate.oam = sOamData_Normal();
+    sCreatingSpriteTemplate.affineAnims = gDummySpriteAffineAnimTable;
+  }
+  sCreatingSpriteTemplate.callback = DummyPicSpriteCallback;
+  LoadPicPaletteByTagOrSlot(species, otId, personality, paletteSlot, paletteTag, false);
+  const spriteId = CreateSprite(sCreatingSpriteTemplate, x, y, 0);
+  if (paletteTag === TAG_NONE) gSprites[spriteId].oam.paletteNum = paletteSlot;
+  sSpritePics[i] = { frames: framePics, images, paletteTag, spriteId, active: true };
+  return spriteId;
 }
 
 export function FreeAndDestroyMonPicSprite(spriteId: number): number {

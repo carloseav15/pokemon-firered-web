@@ -27,6 +27,7 @@ import { gLocalTime } from "./clock";
 import { PlayerFaceTrainerAfterBattle } from "./trainerSee";
 import * as Berry from "./berry";
 import * as BerryPowder from "./berryPowder";
+import { ChooseStarter, GetStarterPokemon } from "./starterChoose";
 import { ScriptGetPokedexInfo, ShowPokedexRatingMessage } from "./birchPc";
 
 /** pokedex.c HasAllHoennMons: -2 excludes Jirachi and Deoxys. HoennToNationalOrder is the core port of
@@ -466,15 +467,6 @@ function GetWeekCount(): number {
   return weekCount;
 }
 
-/** starter_choose.c STARTER_MON_COUNT */
-const STARTER_MON_COUNT = 3;
-
-/** starter_choose.c GetStarterPokemon (sStarterMon from the em: cdata). */
-function GetStarterPokemon(chosenStarterId: number): number {
-  if (chosenStarterId > STARTER_MON_COUNT) chosenStarterId = 0;
-  return cdata<number[]>("em:starter_choose", "sStarterMon")[chosenStarterId]!;
-}
-
 /** field_specials.c IsStarterInParty; CalculatePlayerPartyCount is the party length. */
 function IsStarterInParty(): number {
   const starter = GetStarterPokemon(varGet(EM.VAR_STARTER_MON));
@@ -576,6 +568,7 @@ export const EMERALD_SPECIALS = {
   CheckLeadMonTough: () => CheckLeadMonCondition(FR.MON_DATA_TOUGH),
   GetLeadMonFriendshipScore, Special_AreLeadMonEVsMaxedOut, IsBadEggInParty, MonOTNameNotPlayer,
   BufferVarsForIVRater, ShakeCamera,
+  ChooseStarter: (ctx: ScriptRunner) => ChooseStarter(ctx.ow.game),
   GetPlayerBigGuyGirlString, GetRivalSonDaughterString, GetWeekCount, IsStarterInParty, IsTrainerRegistered,
   ResetHealLocationFromDewford, InitBirchState, EnableNationalPokedex, SetUnlockedPokedexFlags, BufferMonNickname,
   PetalburgGymSlideOpenRoomDoors, PetalburgGymUnlockRoomDoors, TurnOffTVScreen, TurnOnTVScreen, LeadMonHasEffortRibbon,
