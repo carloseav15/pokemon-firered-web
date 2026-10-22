@@ -105,7 +105,7 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | `teachy_tv.c` | 1400 | 58/58 | `teachyTv.ts` |  |  |
 | `easy_chat_2.c` | 1363 | 73/73 | `easyChat2.ts`, `easyChat3.ts`, `partyMenu.ts` … |  |  |
 | `script_menu.c` | 1341 | 29/29 | `menus/scriptMenu.ts`, `script/specialsExtra.ts`, `seagallop.ts` |  |  |
-| `pokeball.c` | 1334 | 37/37 | `core/battle/pokeball.ts` |  |  |
+| `pokeball.c` | 1334 | 37/37 | `core/battle/pokeball.ts`, `core/hw/assets.ts` |  |  |
 | `vs_seeker.c` | 1326 | 41/41 | `battle/ext.ts`, `field/vsSeeker.ts` |  |  |
 | `title_screen.c` | 1315 | 39/39 | `introTitle.ts` |  |  |
 | `battle_anim_flying.c` | 1289 | 33/33 | `core/battle/anims/flying.ts` |  |  |
@@ -133,7 +133,7 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | `learn_move.c` | 932 | 23/23 | `game.ts`, `menus/hardwareChoice.ts`, `menus/moveRelearner.ts` |  |  |
 | `item_use.c` | 925 | 73/73 | `core/pokemon/items.ts`, `bagMenu.ts`, `battle/ext.ts` … |  |  |
 | `battle_anim_dark.c` | 923 | 25/25 | `core/battle/anims/dark.ts` |  |  |
-| `menu.c` | 872 | 49/49 | `core/gba/window.ts`, `core/hw/menu.ts`, `core/hw/menuHelpers.ts` … |  |  |
+| `menu.c` | 872 | 49/49 | `core/field/messageBox.ts`, `core/gba/window.ts`, `core/hw/menu.ts` … |  |  |
 | `help_system_util.c` | 848 | 41/41 | `helpSystemUtil.ts` |  |  |
 | `battle_anim_rock.c` | 822 | 22/22 | `core/battle/anims/rock.ts` |  |  |
 | `main_menu.c` | 788 | 29/29 | `mainMenu.ts` |  |  |

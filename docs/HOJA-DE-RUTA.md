@@ -27,6 +27,26 @@ Reglas modernas, escalado de líderes, misiones opcionales y otros diseños de
 MUNDO-UNIFICADO son propuestas diferidas, no requisitos de la primera versión.
 No borrar código útil ni desactivar funciones existentes sin estudiar consumidores.
 
+## Estado comprobado del circuito y viajes (2026-10-21)
+
+`76a49c81` conecta el circuito mínimo Emerald; `8aba7d5d` añade guardado antes y
+después del ferry, Continue por región activa y proyección de objetos exportados
+Hoenn (el atlas omitía NPC estáticos). La ruta de ferry es una adaptación del
+mundo unificado, con marineros fuente y casillas caminables; no es un viaje original.
+
+Chromium PASS: NPC Oldale, compra de Poción por su precio fuente, enfermera,
+encuentro al caminar en hierba de Ruta 101, batalla con experiencia, guardar y
+Home Continue; ida/vuelta Kanto–Hoenn conserva equipo/bolsa/dinero y aislamiento
+regional. Guardado fallido impide zarpar; llegada Hoenn y recarga/Continue pasan.
+Entrenador y posiciones de cada parada PREPARED: no acredita caminar todo el
+circuito ni campañas. `check:region-save`, `check:hoenn-map-entry` y
+`check:hoenn-circuit` PASS; tipos/honesty/build y navegación web existentes PASS.
+
+Quedan derrota/respawn regional, recorridos continuos, resto de comandos/specials,
+paridad audiovisual (ventanas y combate con respaldo FireRed), móvil y producción.
+La auditoría inicial de abajo describe el punto de partida; sus carencias resueltas
+por estas entregas se detallan en TAREAS-FINALES §0, sin cerrar cobertura general.
+
 ## Orden de trabajo, de fácil a difícil
 
 1. [x] Fijar objetivo, idioma, límites y diagnóstico por región (esta entrega).
@@ -60,12 +80,12 @@ No borrar código útil ni desactivar funciones existentes sin estudiar consumid
    `firered-viewer-game-v1`. `npm run check:region-save` (PREPARED) prueba aislamiento
    en ambos sentidos, dinero compartido y migración/continuar. Pendiente: IDs de
    especies/entrenadores por región, banco Johto (guardar en Johto se rechaza) y
-   validación en navegador.
-7. [ ] Integrar un circuito pequeño original por región: llegar → hablar → combatir
+   validación regional extensa (circuito mínimo y ferry Chromium: `8aba7d5d`).
+7. [~] Integrar un circuito pequeño original por región: llegar → hablar → combatir
    → comprar/curar → guardar → continuar. Kanto como referencia; Johto con fuente
-   fijada; Hoenn necesita conectar su contenido al motor, no solo mostrar mapas.
-8. [ ] Unir viajes regionales con una sola sesión: ida, vuelta, derrota y continuar
-   conservan posición, equipo, dinero y progreso; sin reinicios ni estados ficticios.
+   fijada; Hoenn tiene circuito mínimo conectado y probado (`76a49c81`, `8aba7d5d`), con combate FireRed y recursos de respaldo identificados.
+8. [~] Unir viajes regionales con una sola sesión: ida, vuelta, derrota y continuar
+   conservan posición, equipo, dinero y progreso; sin reinicios ni estados ficticios. Ferry ida/vuelta, guardar/Continue y recarga Kanto–Hoenn pasan en Chromium (`8aba7d5d`, PREPARED); derrota y Johto pendientes.
 9. [ ] Completar sistemas regionales, historia y gimnasios sobre ese contrato.
    Sustituir cinemáticas adaptadas por eventos fuente y revisar gráficos/audio con
    comparación focalizada. Resolver divergencias de combate antes de depender de él.
@@ -93,7 +113,7 @@ diálogos adaptados, paneles e inspectores ya usan inglés
 estructura de URLs no obliga a mover archivos físicos ahora. `/play` y `/world` solo tienen reescritura explícita de desarrollo;
 no prometer esos accesos en producción sin configurar y probar el hosting.
 
-## Diagnóstico por región (lectura de código, 2026-10-21)
+## Diagnóstico inicial por región (lectura de código, 2026-10-21)
 
 La matriz resume una lectura de código, sin certificar fidelidad visual o de
 historia. La entrega `fd61199e` añade comprobación de presentación en inglés en
@@ -193,10 +213,10 @@ Orden del siguiente trabajo después de elegir versión:
 5. Repetir el smoke inglés y un circuito pequeño hablar/combatir/comprar/curar/
    guardar/continuar, con aislamiento regional. Mantener el recorrido extenso diferido.
 
-## Hoenn: auditoría de integración antes de elegir Johto
+## Hoenn: auditoría inicial de integración antes de elegir Johto
 
-Revisión de código y comprobaciones locales, 2026-10-21. Esta revisión precede la
-selección de Johto: la recomendación anterior de Crystal sigue siendo provisional.
+Revisión de código y comprobaciones locales, 2026-10-21. Esta revisión es anterior a `76a49c81` y `8aba7d5d`; consultar primero el estado
+comprobado de arriba. Precede la selección de Johto: la recomendación anterior de Crystal sigue siendo provisional.
 No se realizó recorrido de navegador ni prueba de continuidad regional en esta tanda.
 
 | Área | Evidencia en la ruta activa | Estado y límite |
@@ -230,22 +250,23 @@ resolver el contrato compartido con Emerald antes de elegir Johto. Kanto y Hoenn
 ofrecen dos juegos GBA originales para descubrir ese contrato sin introducir todavía
 la diferencia GBC/DS de Johto.
 
-Siguiente orden concreto (descompone puntos 4, 6 y 7 sin borrar sus pendientes):
+Orden concreto actualizado (descompone puntos 4, 6 y 7 sin borrar sus pendientes):
 
 1. [x] Diseñar IDs regionales y persistencia: equipo/dinero globales, progreso y navegación
    con juego/región, compatibilidad del save existente. Hecho en `6e2d62a9` para
-   flags/vars/navegación Kanto–Hoenn (prueba de almacenamiento PREPARED). Antes de
-   habilitar viajes falta comprobar ida/vuelta y guardar/continuar en navegador.
-2. [~] Cerrar los módulos mínimos del contrato Emerald detectados por el núcleo, empezando
-   por save y entrada de mapa; no activar `EngineInteraction` quitando solo `!HOENN`.
-   Hecho en `67d14da8`: `@game/save` Emerald (event_data.c; brecha 903→834) y entrada de
-   mapa Hoenn con los map scripts originales (ON_TRANSITION/ON_LOAD) en el banco Hoenn,
-   probada con Littleroot (PREPARED, sin navegador). Falta para el paso 3: ventanas de
-   texto desde la exportación Emerald, objetos generados (ON_WARP_INTO/ON_FRAME, NPC), los
-   17 comandos y specials Emerald ausentes; detalle en TAREAS-FINALES.
-3. Integrar un circuito Emerald fuente: un mapa/NPC, encuentro y combate, curación/
+   flags/vars/navegación Kanto–Hoenn (prueba de almacenamiento PREPARED). Ferry ida/vuelta y guardar/Continue en navegador comprobados en `8aba7d5d`
+   (entrenador PREPARED; derrota/respawn y recorrido extenso pendientes).
+2. [~] Cerrar los módulos del contrato Emerald detectados por el núcleo.
+   `67d14da8` conecta save y entrada de mapa; `76a49c81` conecta objetos, textos,
+   ON_WARP_INTO/ON_FRAME y dependencias del circuito mínimo en EngineInteraction.
+   `8aba7d5d` proyecta los NPC exportados en exploración y comprueba ese circuito
+   en Chromium. Fuera del circuito persisten comandos/specials ausentes, pasos de
+   entrada omitidos y respaldo visual FireRed; detalle en TAREAS-FINALES.
+3. [~] Integrar un circuito Emerald fuente: un mapa/NPC, encuentro y combate, curación/
    tienda, guardado y continuar. Cada subsistema debe usar sus datos y condiciones
    originales; retirar la adaptación sustituida cuando el camino fuente esté activo.
+   Circuito mínimo Oldale/Ruta 101 hecho en `76a49c81` y comprobado en Chromium
+   en `8aba7d5d` con posiciones PREPARED. Falta recorrido continuo y cotejo audiovisual.
 4. Con el coste y contrato comunes ya comprobados, decidir Crystal o HeartGold y
    continuar sus extracciones. Mantener HnS y cinemáticas adaptadas identificados.
 
