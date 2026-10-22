@@ -88,9 +88,11 @@ export async function runEmeraldMapEntry(game: Game, nav: NavigationSave, hooks:
   }
   // InitMap: InitMapLayoutData, then RunOnLoadMapScript (metatile changes go to the viewer).
   ow.map.InitMapLayoutData(ow.loaded);
+  // The engine's own handler (EngineInteraction.initialize) reports later setmetatile calls: restore it.
+  const engineOnChange = ow.map.onChange;
   ow.map.onChange = (x, y) => hooks.onSetMetatile?.(header.id, x - MAP_OFFSET, y - MAP_OFFSET, ow.map.metatileIdAt(x, y));
   const load = scriptLabel(ow.MapHeaderGetScriptTable(MAP_SCRIPT_ON_LOAD));
-  try { ow.RunOnLoadMapScript(); } finally { ow.map.onChange = undefined; }
+  try { ow.RunOnLoadMapScript(); } finally { ow.map.onChange = engineOnChange; }
   // ResumeMap: ON_RESUME (Route 110's UpdateCyclingRoadState). ADAPTATION: CableClub_OnResume only runs
   // `special InitUnionRoom`, the wireless Union Room task, which belongs to the link scope excluded
   // from the single-player goal (AGENTS.md, 2026-09-27); Pokémon Centers must still be enterable.

@@ -5,6 +5,7 @@ import { GetSetPokedexFlag } from "@core/pokemon/mon_extra";
 import { GetMonData, GetMonEVCount } from "@core/pokemon/mon";
 import { GetLeadMonIndex, HoennToNationalOrder } from "@core/pokemon/pokemon";
 import { EOS } from "@core/gba/charmap";
+import { stringVars } from "@core/gba/stringBuffers";
 import { sound } from "@core/audio/sound";
 import { tasks } from "@core/gba/tasks";
 import { random } from "@core/random";
@@ -201,10 +202,50 @@ function Task_ShakeCamera(ctx: ScriptRunner, taskId: number): void {
   }
 }
 
+/** field_camera.c DrawWholeMapView: ADAPTATION (equivalence), the canvas renderer composes the visible map
+ * from the map grid, so redrawing is invalidating the cached tiles after setmetatile. */
+function DrawWholeMapView(ctx: ScriptRunner): void { ctx.ow.renderer?.invalidate(); }
+
+/** pokemon.c CheckPartyPokerus: the selection bits that hold a mon with an active or cured strain (low nibble). */
+function CheckPartyPokerus(selection: number): number {
+  let retVal = 0, partyIndex = 0, curBit = 1;
+  const infected = (index: number) => { const mon = save.party[index]; return !!mon && (GetMonData(mon, FR.MON_DATA_POKERUS) & 0xf) !== 0; };
+  if (selection) {
+    do {
+      if ((selection & 1) && infected(partyIndex)) retVal |= curBit;
+      partyIndex++;
+      curBit <<= 1;
+      selection >>= 1;
+    } while (selection);
+  } else if (infected(0)) {
+    retVal = 1;
+  }
+  return retVal;
+}
+
+/** field_specials.c IsPokerusInParty; gPlayerParty has PARTY_SIZE slots, the empty ones have no strain. */
+function IsPokerusInParty(): number {
+  return CheckPartyPokerus((1 << EM.PARTY_SIZE) - 1) ? 1 : 0;
+}
+
+/** union_room.c sUnionRoomPlayerName: only the wireless Union Room task (Task_InitUnionRoom, link scope)
+ * writes it, so it stays empty here and BufferUnionRoomPlayerName returns FALSE. */
+const sUnionRoomPlayerName = new Uint8Array([EOS]);
+
+/** union_room.c BufferUnionRoomPlayerName */
+function BufferUnionRoomPlayerName(): number {
+  if (sUnionRoomPlayerName[0] !== EOS) {
+    stringVars.var1 = Uint8Array.from(sUnionRoomPlayerName);
+    sUnionRoomPlayerName[0] = EOS;
+    return 1;
+  }
+  return 0;
+}
+
 export const EMERALD_SPECIALS = {
   CountPlayerTrainerStars, PlayerNotAtTrainerHillEntrance, UpdateCyclingRoadState,
   Special_BeginCyclingRoadChallenge, FinishCyclingRoadChallenge, GetRecordedCyclingRoadResults, GetPlayerAvatarBike,
-  ShouldTryRematchBattle, PlayerFaceTrainerAfterBattle,
+  ShouldTryRematchBattle, PlayerFaceTrainerAfterBattle, DrawWholeMapView, IsPokerusInParty, BufferUnionRoomPlayerName,
   FoundBlackGlasses, ScriptGetPartyMonSpecies, ResetSSTidalFlag, SetSSTidalFlag, StorePlayerCoordsInVars,
   ResetTrickHouseNuggetFlag, SetTrickHouseNuggetFlag,
   FoundAbandonedShipRoom1Key: () => FoundAbandonedShipRoomKey(EM.FLAG_HIDDEN_ITEM_ABANDONED_SHIP_RM_1_KEY),

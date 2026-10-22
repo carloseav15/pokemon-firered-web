@@ -9,6 +9,7 @@ import { rom, type MapHeader } from "@core/rom";
 import { MAP_OFFSET } from "@core/field/fieldmap";
 import { flagGet, SV, varGet, varSet } from "@game/save";
 import * as EM from "./generated/constants";
+import * as EMB from "./generated/metatileBehavior";
 import { StandardWildEncounter } from "./wildEncounter";
 
 type MapPosition = { x: number; y: number; elevation: number };
@@ -37,6 +38,49 @@ export function GetInteractedBackgroundEventScript(header: MapHeader, position: 
     case EM.BG_EVENT_PLAYER_FACING_WEST: if (direction !== EM.DIR_WEST) return 0; break;
   }
   return bgEvent.script;
+}
+
+/**
+ * GetInteractedMetatileScript (field_control_avatar.c). `mapGridElevation` is MapGridGetElevationAt of the
+ * faced tile. The secret base furniture checks (CheckInteractedWithFriends*) belong to the secret base
+ * system, which is not ported: those metatile behaviors only occur in secret base layouts, so reaching
+ * them stops with an error instead of returning no script.
+ */
+export function GetInteractedMetatileScript(position: MapPosition, metatileBehavior: number, direction: number, mapGridElevation: number): number {
+  const label = (name: string) => rom.label(name);
+  if (EMB.MetatileBehavior_IsPlayerFacingTVScreen(metatileBehavior, direction)) return label("EventScript_TV");
+  if (EMB.MetatileBehavior_IsPC(metatileBehavior)) return label("EventScript_PC");
+  if (EMB.MetatileBehavior_IsClosedSootopolisDoor(metatileBehavior)) return label("EventScript_ClosedSootopolisDoor");
+  if (EMB.MetatileBehavior_IsSkyPillarClosedDoor(metatileBehavior)) return label("SkyPillar_Outside_EventScript_ClosedDoor");
+  if (EMB.MetatileBehavior_IsCableBoxResults1(metatileBehavior)) return label("EventScript_CableBoxResults");
+  if (EMB.MetatileBehavior_IsPokeblockFeeder(metatileBehavior)) return label("EventScript_PokeBlockFeeder");
+  if (EMB.MetatileBehavior_IsTrickHousePuzzleDoor(metatileBehavior)) return label("Route110_TrickHousePuzzle_EventScript_Door");
+  if (EMB.MetatileBehavior_IsRegionMap(metatileBehavior)) return label("EventScript_RegionMap");
+  if (EMB.MetatileBehavior_IsRunningShoesManual(metatileBehavior)) return label("EventScript_RunningShoesManual");
+  if (EMB.MetatileBehavior_IsPictureBookShelf(metatileBehavior)) return label("EventScript_PictureBookShelf");
+  if (EMB.MetatileBehavior_IsBookShelf(metatileBehavior)) return label("EventScript_BookShelf");
+  if (EMB.MetatileBehavior_IsPokeCenterBookShelf(metatileBehavior)) return label("EventScript_PokemonCenterBookShelf");
+  if (EMB.MetatileBehavior_IsVase(metatileBehavior)) return label("EventScript_Vase");
+  if (EMB.MetatileBehavior_IsTrashCan(metatileBehavior)) return label("EventScript_EmptyTrashCan");
+  if (EMB.MetatileBehavior_IsShopShelf(metatileBehavior)) return label("EventScript_ShopShelf");
+  if (EMB.MetatileBehavior_IsBlueprint(metatileBehavior)) return label("EventScript_Blueprint");
+  if (EMB.MetatileBehavior_IsPlayerFacingWirelessBoxResults(metatileBehavior, direction)) return label("EventScript_WirelessBoxResults");
+  if (EMB.MetatileBehavior_IsCableBoxResults2(metatileBehavior, direction)) return label("EventScript_CableBoxResults");
+  if (EMB.MetatileBehavior_IsQuestionnaire(metatileBehavior)) return label("EventScript_Questionnaire");
+  if (EMB.MetatileBehavior_IsTrainerHillTimer(metatileBehavior)) return label("EventScript_TrainerHillTimer");
+
+  if (position.elevation === mapGridElevation) {
+    if (EMB.MetatileBehavior_IsSecretBasePC(metatileBehavior)) return label("SecretBase_EventScript_PC");
+    if (EMB.MetatileBehavior_IsRecordMixingSecretBasePC(metatileBehavior)) return label("SecretBase_EventScript_RecordMixingPC");
+    if (EMB.MetatileBehavior_IsSecretBaseSandOrnament(metatileBehavior)) return label("SecretBase_EventScript_SandOrnament");
+    if (EMB.MetatileBehavior_IsSecretBaseShieldOrToyTV(metatileBehavior)) return label("SecretBase_EventScript_ShieldOrToyTV");
+    if (EMB.MetatileBehavior_IsSecretBaseDecorationBase(metatileBehavior)
+      || EMB.MetatileBehavior_HoldsLargeDecoration(metatileBehavior)
+      || EMB.MetatileBehavior_HoldsSmallDecoration(metatileBehavior)) throw Error("Secret base furniture interaction is not ported");
+  } else if (EMB.MetatileBehavior_IsSecretBasePoster(metatileBehavior)) {
+    throw Error("Secret base poster interaction is not ported");
+  }
+  return 0;
 }
 
 /** TryRunCoordEventScript; `runImmediately` is RunScriptImmediately for trigger 0 events. */

@@ -3,6 +3,7 @@
 /* eslint-disable */
 // @ts-nocheck
 
+export const CONNECTION_NORTH = 2;
 export const DIR_NORTH = 2;
 export const MB_ANIMATED_DOOR = 105;
 export const MB_AQUA_HIDEOUT_WARP = 103;

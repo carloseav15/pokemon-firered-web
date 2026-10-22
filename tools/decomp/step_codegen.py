@@ -77,7 +77,7 @@ def generate_metatile_behavior(constants: dict[str, int]) -> None:
     source = re.sub(r"(static )?const (bool8|u8) (\w+)\[[^\]]*\]\s*=\s*\{(.*?)\};",
                     lambda m: convert_designated_array(m.group(3), m.group(4)), source, flags=re.S)
     source = convert_function(source)
-    used = sorted(set(re.findall(r"\b((?:MB|DIR|NUM)_[A-Z0-9_]+)\b", source)))
+    used = sorted(set(re.findall(r"\b((?:MB|DIR|NUM|CONNECTION)_[A-Z0-9_]+)\b", source)))
     header = [f"// Generated from {'pokefirered' if GAME == 'firered' else 'pokeemerald'} src/metatile_behavior.c by tools/decomp/step_codegen.py.", "// Do not edit by hand.", "/* eslint-disable */", "// @ts-nocheck", ""]
     for name in used:
         if name in constants:

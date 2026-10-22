@@ -34,7 +34,7 @@ import { objectStateKey, readViewerObjectState, readViewerTemplateState, objectD
 import { syncViewerLocation, type NavigationSave } from './session';
 import { DoWhiteOut as DoEmeraldWhiteOut } from '../games/emerald/whiteOut';
 import { runEmeraldMapEntry, type HoennMapEntryReport } from './hoennMapEntry';
-import { CheckStandardWildEncounter, GetCoordEventScriptAtPosition, GetInteractedBackgroundEventScript, RestartWildEncounterImmunitySteps } from '../games/emerald/fieldControlAvatar';
+import { CheckStandardWildEncounter, GetCoordEventScriptAtPosition, GetInteractedBackgroundEventScript, GetInteractedMetatileScript as GetEmeraldInteractedMetatileScript, RestartWildEncounterImmunitySteps } from '../games/emerald/fieldControlAvatar';
 import { setEmeraldWildEncounterGame, UpdateRepelCounter } from '../games/emerald/wildEncounter';
 import { EMERALD_SPECIALS, FIRERED_SPECIALS_SHARED_WITH_EMERALD } from '../games/emerald/specials';
 import { setGameSpecials } from '@game/script/specials';
@@ -112,12 +112,7 @@ export class EngineInteraction {
     // Wild encounters and trainer battles run the source battle scene.
     await Promise.all([preloadBattleAssets(), sound.loadCryData(), preloadEggHatch()]);
     this.game = new Game(this.engineCanvas);
-    this.game.overworld.map.onChange = (x, y) => {
-      if (!this.game) return;
-      const id = this.game.overworld.map.metatileIdAt(x, y);
-      const header = this.game.overworld.header;
-      this.hooks.onSetMetatile?.(header.id, x - MAP_OFFSET, y - MAP_OFFSET, id);
-    };
+    this.bindMapChange();
     this.game.overworld.objects.onScriptObjectRemoved = object => {
       if (!this.open || object.isPlayer) return;
       const state = this.objectState(object,true);
@@ -156,6 +151,16 @@ export class EngineInteraction {
       specialVarAliases.clear();
     }
     joy.attach(); joy.setExternalInputEnabled(false);
+  }
+  /** Report script metatile changes to the viewer. The overworld replaces its FieldMap on map entry
+   * (InitMapLayoutData), so this is bound again before field scripts run (not before battles: a rebound
+   * handler there repaints the viewer while the battle loads its own map data). */
+  private bindMapChange(): void {
+    const ow = this.game!.overworld;
+    ow.map.onChange = (x, y) => {
+      if (!this.game) return;
+      this.hooks.onSetMetatile?.(ow.header.id, x - MAP_OFFSET, y - MAP_OFFSET, ow.map.metatileIdAt(x, y));
+    };
   }
   private objectState(object: Parameters<typeof readViewerObjectState>[0], removed=false): ViewerObjectState | undefined {
     const mapId=rom.mapIdByNum((object.mapGroup<<8)|object.mapNum);
@@ -273,6 +278,8 @@ export class EngineInteraction {
     }
   }
   private close(): void {
+    // Hoenn rebinds the metatile reporter before each field script; a battle must not inherit it.
+    if (this.game && isEmeraldData()) this.game.overworld.map.onChange = undefined;
     cancelAnimationFrame(this.frame); this.root.hidden = true; this.field.remove();
     joy.initKeys(); joy.setExternalInputEnabled(false);
     paletteFade.clear();
@@ -386,6 +393,7 @@ export class EngineInteraction {
     const objectMapId = (typeof target === 'number' ? undefined : target.mapId) ?? nav.mapId;
     await this.run(nav, localId, false, (game) => {
       const ow = game.overworld, num = rom.mapNum(objectMapId);
+      this.bindMapChange();
       const object = ow.objects.byLocalIdAndMap(localId, num & 255, num >>> 8);
       const objectEventId = object ? ow.objects.indexOf(object) : C.OBJECT_EVENTS_COUNT;
       const script = objectEventId < C.OBJECT_EVENTS_COUNT ? ow.objects.GetObjectEventScriptPointerByObjectEventId(objectEventId) : 0;
@@ -631,6 +639,7 @@ export class EngineInteraction {
       if (!continuing) ow.tryRunOnWarpIntoMapScript();
       if (ow.tryRunOnFrameMapScript()) {
         started = true;
+        this.bindMapChange();
         await this.run(nav, 0, true, () => {}, true);
       }
       return report;
@@ -682,15 +691,17 @@ export class EngineInteraction {
       const behavior = ow.map.behaviorAt(front.x, front.y);
       // Object events at the tile are the viewer's own entities; only the other lookups run.
       const direction = player.facingDirection;
-      // pokeemerald: background events only; its metatile and water interaction scripts test
-      // pokeemerald metatile behaviors and are not bridged (the engine's lists are FireRed's).
+      // pokeemerald: background events, then its metatile scripts (its own behaviors, not the engine's
+      // FireRed lists). GetInteractedWaterScript is not bridged: the viewer surfs and climbs waterfalls itself.
       const script = isEmeraldData() ? GetInteractedBackgroundEventScript(ow.header, { ...front }, behavior, direction)
+        || GetEmeraldInteractedMetatileScript({ ...front }, behavior, direction, ow.map.elevationAt(front.x, front.y))
         : ow.control.getInteractedBackgroundEventScript({ ...front }, behavior, direction)
         || ow.control.getInteractedMetatileScript({ ...front }, behavior, direction)
         || ow.control.getInteractedWaterScript({ ...front }, behavior, direction);
       if (!script) return false;
       started = true;
       ow.script.ScriptContext_SetupScript(script);
+      this.bindMapChange();
       await this.run(nav, 0, true, () => {}, true);
       return true;
     } finally {
@@ -708,6 +719,7 @@ export class EngineInteraction {
       if (!script) return false;
       started = true;
       await this.run(nav, 0, false, (game) => {
+        this.bindMapChange();
         game.overworld.script.ScriptContext_SetupScript(script);
       }, false);
       return true;
