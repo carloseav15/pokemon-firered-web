@@ -103,6 +103,11 @@ export function TrainerSeeFunc_WaitRemoveDisguise(objects: ObjectEvents, trainer
 
 export class TrainerSee {
   private approaching: {trainer: ObjectEvent; steps: number} | null = null;
+  /** gApproachingTrainers[].objectEventId / gNoOfApproachingTrainers / gApproachingTrainerId
+   * (pokeemerald trainer_see.c). Only the single-trainer approach of this port fills them. */
+  gApproachingTrainerObjectEventIds: number[] = [];
+  gNoOfApproachingTrainers = 0;
+  gApproachingTrainerId = 0;
   private approachTaskSteps = new Map<number, (taskId: number) => void>();
   private revealTrainerTaskByObject = new WeakMap<ObjectEvent, number>();
   private revealTrainerTasks = new Map<number, {trainer: ObjectEvent; ashPuffId?: number}>();
@@ -124,6 +129,8 @@ export class TrainerSee {
     if (rom.u8(script + 1) === C.TRAINER_BATTLE_DOUBLE && countAliveNonEggMons() < 2) return false;
 
     this.game.battleSetup.ConfigureAndSetUpOneTrainerBattle(ow.objects.indexOf(trainer), script);
+    this.gApproachingTrainerObjectEventIds[this.gNoOfApproachingTrainers] = ow.objects.indexOf(trainer);
+    this.gNoOfApproachingTrainers++;
     this.TrainerApproachPlayer(trainer, approachDistance - 1);
     return true;
   }
@@ -353,12 +360,26 @@ export class TrainerSee {
   checkForTrainersWantingBattle(): boolean {
     if (QL_IsTrainerSightDisabled() || this.approaching) return false;
     const ow = this.game.overworld;
+    this.gNoOfApproachingTrainers = 0;
+    this.gApproachingTrainerId = 0;
     for (const trainer of ow.objects.list) {
       if (trainer.trainerType !== C.TRAINER_TYPE_NORMAL && trainer.trainerType !== C.TRAINER_TYPE_BURIED) continue;
       if (this.CheckTrainer(trainer, ow.player.object.currentCoords.x, ow.player.object.currentCoords.y)) return true;
     }
     return false;
   }
+  /** GetCurrentApproachingTrainerObjectEventId (pokeemerald trainer_see.c). */
+  GetCurrentApproachingTrainerObjectEventId(): number {
+    return this.gApproachingTrainerObjectEventIds[this.gApproachingTrainerId === 0 ? 0 : 1] ?? 0;
+  }
+
+  /** GetChosenApproachingTrainerObjectEventId (pokeemerald trainer_see.c). */
+  GetChosenApproachingTrainerObjectEventId(arrayId: number): number {
+    arrayId &= 0xff;
+    if (arrayId >= 2) return 0;
+    return this.gApproachingTrainerObjectEventIds[arrayId === 0 ? 0 : 1] ?? 0;
+  }
+
   /** TrainerSeeFunc_Dummy (trainer_see.c): no-op placeholder at index 0. */
   private TrainerSeeFunc_Dummy(): boolean {
     return TrainerSeeFunc_Dummy();

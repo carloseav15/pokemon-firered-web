@@ -24,7 +24,7 @@ import { getBoxName } from "../pokemon/storage";
 import { knowsMove, leadMonIndex, nickname, setMoveSlot, speciesName } from "../pokemon/pokemon";
 import { runSpecial } from "@game/script/specials";
 import { gQuestLogState, QL_GetPlaybackState, QuestLog_RecordEnteredMap } from "@game/questLogEvents";
-import { ClearPlayerHeldMovementAndUnfreezeObjectEvents, FreezeObjects_WaitForPlayer, FreezeObjects_WaitForPlayerAndSelected } from "./eventObjectLock";
+import { ClearPlayerHeldMovementAndUnfreezeObjectEvents, FreezeForApproachingTrainers, FreezeObjects_WaitForPlayer, FreezeObjects_WaitForPlayerAndSelected, IsFreezeObjectAndPlayerFinished } from "./eventObjectLock";
 import { MapPreview_SetFlag } from "@game/mapPreviewScreen";
 import { DestroyHelpMessageWindow, DrawHelpMessageWindowWithText } from "../menus/helpMessage";
 import type { ScriptCommand, ScriptRunner } from "./context";
@@ -283,6 +283,8 @@ function ScrCmd_warphole(ctx: ScriptRunner): boolean {
   ctx.ow.resetInitialPlayerAvatarState();
   return true;
 }
+/** ScrCmd_warpwhitefade (pokeemerald scrcmd.c). */
+function ScrCmd_warpwhitefade(ctx: ScriptRunner): boolean { readWarp(ctx); ctx.ow.DoWhiteFadeWarp(); ctx.ow.resetInitialPlayerAvatarState(); return true; }
 function ScrCmd_warpteleport(ctx: ScriptRunner): boolean { readWarp(ctx); ctx.ow.DoTeleportWarp(); ctx.ow.resetInitialPlayerAvatarState(); return true; }
 function ScrCmd_warpspinenter(ctx: ScriptRunner): boolean { readWarp(ctx); ctx.ow.setInitialPlayerAvatarStateWithDirection(ctx.ow.player.object.facingDirection); ctx.ow.DoTeleport2Warp(); ctx.ow.resetInitialPlayerAvatarState(); return true; }
 function ScrCmd_setwarp(ctx: ScriptRunner): boolean { readWarp(ctx); return false; }
@@ -478,6 +480,19 @@ function ScrCmd_releaseall(ctx: ScriptRunner): boolean {
   ClearPlayerHeldMovementAndUnfreezeObjectEvents(ctx);
   return false;
 }
+/** ScrCmd_selectapproachingtrainer (pokeemerald scrcmd.c). */
+function ScrCmd_selectapproachingtrainer(ctx: ScriptRunner): boolean {
+  ctx.ow.selectedObject = ctx.ow.game.trainerSee.GetCurrentApproachingTrainerObjectEventId();
+  return false;
+}
+/** ScrCmd_lockfortrainer (pokeemerald scrcmd.c); IsOverworldLinkActive is false outside link play. */
+function ScrCmd_lockfortrainer(ctx: ScriptRunner): boolean {
+  if (ctx.ow.objects.objects[ctx.ow.selectedObject]?.active) {
+    FreezeForApproachingTrainers(ctx);
+    ctx.SetupNativeScript(() => IsFreezeObjectAndPlayerFinished(ctx));
+  }
+  return true;
+}
 function ScrCmd_release(ctx: ScriptRunner): boolean {
   ctx.ow.messageBox.hide();
   const o = selected(ctx);
@@ -487,6 +502,8 @@ function ScrCmd_release(ctx: ScriptRunner): boolean {
 }
 function ScrCmd_textcolor(ctx: ScriptRunner): boolean { varSet(SV.PREV_TEXT_COLOR, varGet(SV.TEXT_COLOR)); varSet(SV.TEXT_COLOR, ctx.readByte()); return false; }
 function ScrCmd_message(ctx: ScriptRunner): boolean { ctx.ow.messageBox.show(rom.stringAt(textPtr(ctx))); return false; }
+/** ScrCmd_messageinstant (scrcmd.c): prints all at once without waiting for input; only link contests use it. */
+function ScrCmd_messageinstant(ctx: ScriptRunner): boolean { ctx.ow.messageBox.showInstant(rom.stringAt(textPtr(ctx))); return false; }
 function ScrCmd_messageautoscroll(ctx: ScriptRunner): boolean { ctx.ow.messageBox.show(rom.stringAt(textPtr(ctx)), true); return false; }
 function ScrCmd_vmessage(ctx: ScriptRunner): boolean { ctx.ow.messageBox.show(rom.stringAt(ctx.ScriptReadWord() - addressOffset)); return false; }
 function ScrCmd_loadhelp(ctx: ScriptRunner): boolean { DrawHelpMessageWindowWithText(ctx.ow.windows, rom.stringAt(textPtr(ctx))); return false; }
@@ -787,6 +804,7 @@ export const COMMANDS: Record<string, ScriptCommand> = {
   ScrCmd_vgoto_if, ScrCmd_vcall_if, ScrCmd_incrementgamestat, ScrCmd_comparestat, ScrCmd_signmsg, ScrCmd_normalmsg,
   ScrCmd_setmonmodernfatefulencounter, ScrCmd_checkmonmodernfatefulencounter, ScrCmd_setworldmapflag,
   ScrCmd_setmonmetlocation,
+  ScrCmd_messageinstant, ScrCmd_warpwhitefade, ScrCmd_selectapproachingtrainer, ScrCmd_lockfortrainer,
   ScrCmd_initrotatingtilepuzzle, ScrCmd_moverotatingtileobjects, ScrCmd_turnrotatingtileobjects, ScrCmd_freerotatingtilepuzzle,
   // Emerald scrcmd.c has identical bodies under these two names (checked against
   // both decomps); keep one implementation rather than duplicating party mutation.

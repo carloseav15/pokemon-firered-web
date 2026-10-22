@@ -1890,6 +1890,16 @@ export class ObjectEvents {
     for (let i = 0; i < OBJECT_EVENTS_COUNT; i++) {
       const object = this.objects[i];
       if (object?.active) this.UnfreezeObjectEvent(object);
+  /** FreezeObjectEventsExceptTwo (pokeemerald event_object_movement.c): both are u8 object slots. */
+  FreezeObjectEventsExceptTwo(objectEventId1: number, objectEventId2: number): void {
+    objectEventId1 &= 0xff;
+    objectEventId2 &= 0xff;
+    for (let i = 0; i < OBJECT_EVENTS_COUNT; i++) {
+      const object = this.objects[i];
+      if (i !== objectEventId1 && i !== objectEventId2 && object?.active && !object.isPlayer) this.FreezeObjectEvent(object);
+    }
+  }
+
     }
   }
 

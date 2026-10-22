@@ -1599,6 +1599,13 @@ export class Overworld {
     this.controlsLocked = true;
   }
 
+  /** FieldCB_WarpExitFadeFromWhite (pokeemerald field_screen_effect.c). */
+  FieldCB_WarpExitFadeFromWhite(): void {
+    this.playSpecialMapMusic();
+    this.setUpWarpExitTask(false, true);
+    this.controlsLocked = true;
+  }
+
   /** FieldCB_ShowMapNameOnContinue (overworld.c). */
   FieldCB_ShowMapNameOnContinue(): void {
     if (this.header.showMapName) this.mapName.ShowMapNamePopup(false);
@@ -1630,6 +1637,12 @@ export class Overworld {
     }
   }
 
+  /** FadeInFromWhite (pokeemerald field_screen_effect.c). */
+  FadeInFromWhite(): void {
+    palette_bg_faded_fill_white();
+    paletteFade.fadeScreen(FADE_FROM_WHITE, 8);
+  }
+
   fadeInFromBlack(): void {
     palette_bg_faded_fill_black();
     paletteFade.fadeScreen(FADE_FROM_BLACK, 0);
@@ -1650,8 +1663,9 @@ export class Overworld {
   }
 
   /** ExitWarpFadeInScreen (field_fadetransition.c). */
-  private ExitWarpFadeInScreen(playerNotMoving: boolean): void {
-    if (!playerNotMoving) this.WarpFadeInScreen();
+  private ExitWarpFadeInScreen(playerNotMoving: boolean, fromWhite = false): void {
+    if (fromWhite) this.FadeInFromWhite();
+    else if (!playerNotMoving) this.WarpFadeInScreen();
     else this.fadeInFromBlack();
   }
 
@@ -1689,7 +1703,7 @@ export class Overworld {
   }
 
   /** SetUpWarpExitTask */
-  private setUpWarpExitTask(playerNotMoving: boolean): void {
+  private setUpWarpExitTask(playerNotMoving: boolean, fromWhite = false): void {
     if (this.mapPreview.isActive() || !this.mapPreview.ForestMapPreviewScreenIsRunning()) return;
     const p = this.player.object;
     const behavior = this.map.behaviorAt(p.currentCoords.x, p.currentCoords.y);
@@ -1699,7 +1713,7 @@ export class Overworld {
       this.gExitStairsMovementDisabled = false;
       return;
     }
-    this.ExitWarpFadeInScreen(playerNotMoving);
+    this.ExitWarpFadeInScreen(playerNotMoving, fromWhite);
     if (MB.MetatileBehavior_IsNonAnimDoor(behavior)) this.startExitNonAnimDoorTask();
     else if (MB.MetatileBehavior_IsDirectionalStairWarp(behavior) && !this.gExitStairsMovementDisabled) this.startExitStairsTask();
     else this.startExitNonDoorTask();
@@ -1906,6 +1920,16 @@ export class Overworld {
     PlayRainStoppingSoundEffect();
     sound.playSE(sound.c("SE_EXIT"));
     this.fieldCallback = () => this.FieldCB_DefaultWarpExit();
+    this.startTeleport2WarpTask();
+  }
+
+  /** DoWhiteFadeWarp (pokeemerald field_screen_effect.c). */
+  DoWhiteFadeWarp(): void {
+    this.controlsLocked = true;
+    this.tryFadeOutOldMapMusic();
+    paletteFade.fadeScreen(FADE_TO_WHITE, 8);
+    PlayRainStoppingSoundEffect();
+    this.fieldCallback = () => this.FieldCB_WarpExitFadeFromWhite();
     this.startTeleport2WarpTask();
   }
 

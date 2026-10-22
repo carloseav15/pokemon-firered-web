@@ -143,6 +143,18 @@ export class FieldMessageBox {
     new TextPrinter(window, FONT_BRAILLE, str, { x: 0, y: 1, speed: 0 });
   }
 
+  /**
+   * scrcmd.c ScrCmd_messageinstant: LoadMessageBoxAndBorderGfx, DrawDialogueFrame(0, TRUE) and
+   * an instant FONT_NORMAL printer on window 0. The message box mode is left untouched.
+   */
+  showInstant(str: ArrayLike<number>): void {
+    const window = this.ensureWindow();
+    window.frame = "dialogue";
+    window.fill(TEXT_COLOR_WHITE);
+    window.visible = true;
+    new TextPrinter(window, FONT_NORMAL, str, { x: 0, y: 1, speed: 0 });
+  }
+
   /** Runs the printer and the draw task every frame. */
   Task_DrawFieldMessageBox(): void {
     if (this.drawState < 0) return;

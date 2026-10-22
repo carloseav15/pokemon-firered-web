@@ -4,6 +4,7 @@
 // single movement.
 
 import { T_TILE_TRANSITION } from "../field/playerAvatar";
+import { tasks, type TaskFunc } from "../gba/tasks";
 import type { ScriptRunner } from "./context";
 
 /** walkrun_is_standing_still */
@@ -65,6 +66,68 @@ function Task_WaitPlayerAndTargetNPCStopMoving(ctx: ScriptRunner, object: typeof
     state.targetDone = true;
   }
   return state.playerDone && state.targetDone;
+}
+
+// Task_FreezeObjectAndPlayer data (pokeemerald event_object_lock.c).
+const tPlayerFrozen = 0, tObjectFrozen = 1, tObjectId = 2;
+/** Task functions standing in for the C function pointer Task_FreezeObjectAndPlayer (FuncIsActiveTask). */
+const freezeObjectAndPlayerFuncs = new WeakSet<TaskFunc>();
+
+/** Task_FreezeObjectAndPlayer: freeze the designated object and the player once their movement is finished. */
+function Task_FreezeObjectAndPlayer(ctx: ScriptRunner, taskId: number): void {
+  const data = tasks.tasks[taskId].data;
+  const object = ctx.ow.objects.objects[data[tObjectId]!];
+
+  if (!data[tPlayerFrozen] && ctx.ow.player.isStandingStill()) {
+    // PlayerFreeze has the same body as HandleEnforcedLookDirectionOnPlayerStopMoving.
+    ctx.ow.player.HandleEnforcedLookDirectionOnPlayerStopMoving();
+    data[tPlayerFrozen] = 1;
+  }
+  if (!data[tObjectFrozen] && object && !object.singleMovementActive) {
+    ctx.ow.objects.FreezeObjectEvent(object);
+    data[tObjectFrozen] = 1;
+  }
+  if (data[tPlayerFrozen] && data[tObjectFrozen]) tasks.destroy(taskId);
+}
+
+/** Starts one Task_FreezeObjectAndPlayer, freezing the object now when it is not mid-movement. */
+function StartFreezeObjectAndPlayerTask(ctx: ScriptRunner, objectEventId: number, priority: number): void {
+  const func = (id: number): void => Task_FreezeObjectAndPlayer(ctx, id);
+  freezeObjectAndPlayerFuncs.add(func);
+  const taskId = tasks.create(func, priority);
+  const data = tasks.tasks[taskId].data;
+  const object = ctx.ow.objects.objects[objectEventId];
+  data[tObjectId] = objectEventId;
+  if (object && !object.singleMovementActive) {
+    ctx.ow.objects.FreezeObjectEvent(object);
+    data[tObjectFrozen] = 1;
+  }
+}
+
+/**
+ * FreezeForApproachingTrainers: freeze all objects at once except the player and the
+ * approaching trainers, which freeze (with the player) once their movement is finished.
+ */
+export function FreezeForApproachingTrainers(ctx: ScriptRunner): void {
+  const trainerSee = ctx.ow.game.trainerSee;
+  const trainerObjectId1 = trainerSee.GetChosenApproachingTrainerObjectEventId(0);
+
+  if (trainerSee.gNoOfApproachingTrainers === 2) {
+    const trainerObjectId2 = trainerSee.GetChosenApproachingTrainerObjectEventId(1);
+    ctx.ow.objects.FreezeObjectEventsExceptTwo(trainerObjectId1, trainerObjectId2);
+    StartFreezeObjectAndPlayerTask(ctx, trainerObjectId1, 80);
+    StartFreezeObjectAndPlayerTask(ctx, trainerObjectId2, 81);
+  } else {
+    ctx.ow.objects.FreezeObjectEventsExceptOne(trainerObjectId1);
+    StartFreezeObjectAndPlayerTask(ctx, trainerObjectId1, 80);
+  }
+}
+
+/** IsFreezeObjectAndPlayerFinished */
+export function IsFreezeObjectAndPlayerFinished(ctx: ScriptRunner): boolean {
+  if (tasks.tasks.some(t => t.isActive && freezeObjectAndPlayerFuncs.has(t.func))) return false;
+  StopPlayerAvatar(ctx);
+  return true;
 }
 
 /**
