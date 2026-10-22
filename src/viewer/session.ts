@@ -12,6 +12,7 @@ import { newSaveData, save, setSave, flagGet, flagSet, PlayTimeCounter_Start } f
 import { HandleSetPokedexFlag } from '@core/pokemon/mon_extra';
 import { GetHealLocationIndexFromMapGroupAndNum, GetHealLocation } from '@core/field/overworld';
 import * as C from '@game/generated/constants';
+import { HEAL_LOCATION_SLATEPORT_CITY } from '../games/emerald/generated/constants';
 import type { WarpAddress } from './navigation';
 import type { Direction } from './render/sprites';
 import { enterBankedRegion, enterKanto, liveWorldRegion, loadWorldSave, reloadWorldSave, resetWorldRegion,
@@ -161,6 +162,7 @@ export function initializeRegionalSession(region: BankedRegionId, initializeNewB
   resetWorldRegion();
   setSave(loadWorldSave() ?? newSaveData());
   if (enterBankedRegion(region)) initializeNewBank();
+  seedRegionalArrivalRespawn(region);
   initialized = true;
 }
 
@@ -169,8 +171,26 @@ export function continueRegionalSession(region: BankedRegionId, initializeNewBan
   const stored = reloadWorldSave();
   if (!stored || !stored.world!.started.kanto) throw Error('No saved game yet');
   if (enterBankedRegion(region)) initializeNewBank();
+  seedRegionalArrivalRespawn(region);
   initialized = true;
   const nav = (save as ViewerSave).viewerNavigation;
   if (!nav) throw Error(`No saved position in ${region === 'hoenn' ? 'Hoenn' : region}`);
   return { ...nav, region };
+}
+
+/** ADAPTATION: the Kanto ferry first lands at Slateport, rather than Emerald's truck intro.
+ * InsideOfTruck/scripts.inc selects the player's Littleroot bedroom in the original opening;
+ * SSTidalCorridor_EventScript_ExitSlateport sets HEAL_LOCATION_SLATEPORT_CITY on disembarking.
+ * Use that source heal location for a new regional traveler, also repairing older banks that
+ * retained FireRed's dummy warp. Never replace a registered respawn on later visits/Continue.
+ * This supplies no Emerald story progress and does not run the S.S. Tidal story script.
+ */
+function seedRegionalArrivalRespawn(region: BankedRegionId): void {
+  if (region !== 'hoenn') return;
+  const last = save.lastHealLocation;
+  const dummy = newSaveData().lastHealLocation;
+  if (!Object.keys(dummy).every(key => last[key as keyof typeof last] === dummy[key as keyof typeof dummy])) return;
+  const heal = GetHealLocation(HEAL_LOCATION_SLATEPORT_CITY);
+  if (!heal) throw Error('Missing Emerald arrival heal location');
+  save.lastHealLocation = { ...heal, warpId: -1 };
 }

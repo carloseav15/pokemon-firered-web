@@ -19,6 +19,8 @@ rom.charmap = JSON.parse(readFileSync("public/fr/charmap.json", "utf8"));
 // PREPARED harness data: a Hoenn save writes its banked location in Emerald map numbering (maps.json of the
 // Emerald export); Kanto map IDs are absent there and resolve through the FireRed constants.
 (rom as unknown as { mapIndex: unknown }).mapIndex = JSON.parse(readFileSync("public/emerald/maps.json", "utf8"));
+rom.healLocations = JSON.parse(readFileSync("public/emerald/data/heal_locations.json", "utf8"));
+rom.constants = EM;
 const storage = new Map<string, string>();
 (globalThis as unknown as { localStorage: Pick<Storage, "getItem" | "setItem" | "removeItem"> }).localStorage = {
   getItem: k => storage.get(k) ?? null,
@@ -46,6 +48,10 @@ function prepareKantoGame(): void {
   flagSet(KANTO_FLAG); // PREPARED Kanto progress
   varSet(KANTO_VAR, 3); // PREPARED Kanto progress
   save.money = 5000;
+  // PREPARED registered Kanto respawn from its exported heal table.
+  const h = JSON.parse(readFileSync("public/fr/data/heal_locations.json", "utf8")).heal_locations[0];
+  const num = (C as unknown as Record<string, number>)[h.map];
+  save.lastHealLocation = { mapGroup: num >> 8, mapNum: num & 255, warpId: -1, x: h.x, y: h.y };
 }
 const kantoNav = { mapId: "MAP_PALLET_TOWN", x: 5, y: 6, direction: "south" as const, dynamic: null };
 const hoennNav = { mapId: "MAP_LITTLEROOT_TOWN", x: 8, y: 8, direction: "north" as const, dynamic: null };
@@ -58,6 +64,7 @@ prepareKantoGame();
 assert.equal(writeWorldSave(), true);
 const kantoFlagsBefore = stored().flags.slice();
 const kantoVarsBefore = stored().vars.slice();
+const kantoHealBefore = structuredClone(stored().lastHealLocation);
 assert.equal(stored().world!.version, WORLD_SAVE_VERSION);
 assert.equal(stored(VIEWER_SAVE_KEY).world!.activeRegion, "kanto");
 
@@ -66,6 +73,10 @@ initializeRegionalSession("hoenn", initHoennBank);
 assert.equal(flagGet(KANTO_FLAG), KANTO_FLAG === hoennInitialFlag, "Hoenn bank does not see Kanto flags");
 assert.equal(flagGet(hoennInitialFlag), true, "a new Hoenn bank runs its initial flags");
 assert.equal(save.money, 5000, "money is global");
+const arrivalHeal = structuredClone(save.lastHealLocation);
+const slateport = rom.mapNum("MAP_SLATEPORT_CITY");
+const sourceHeal = rom.healLocations.heal_locations.find(h => h.id === "HEAL_LOCATION_SLATEPORT_CITY")!;
+assert.deepEqual(arrivalHeal, { mapGroup: slateport >> 8, mapNum: slateport & 255, warpId: -1, x: sourceHeal.x, y: sourceHeal.y }, "new traveler uses exported Slateport heal warp");
 flagSet(HOENN_FLAG); // PREPARED Hoenn progress
 varSet(HOENN_VAR, 2); // PREPARED Hoenn progress
 save.money = 4200;
@@ -108,6 +119,24 @@ assert.equal(flagGet(HOENN_FLAG), true);
 assert.equal(varGet(HOENN_VAR), 2);
 assert.equal(flagGet(C.FLAG_BADGE02_GET), C.FLAG_BADGE02_GET === HOENN_FLAG || C.FLAG_BADGE02_GET === hoennInitialFlag, "Kanto flag not visible in Hoenn");
 assert.equal(save.money, 4200);
+assert.deepEqual(save.lastHealLocation, arrivalHeal, "Continue preserves initial Hoenn respawn");
+// PREPARED legacy defect: already-created bank with FireRed dummy warp, not a new bank.
+const legacy = stored();
+legacy.world!.regions.hoenn!.field!.lastHealLocation = newSaveData().lastHealLocation;
+storage.set(WORLD_SAVE_KEY, JSON.stringify(legacy));
+resetViewerSessionInitialized();
+continueRegionalSession("hoenn", () => assert.fail("repair must not reset flags"));
+assert.deepEqual(save.lastHealLocation, arrivalHeal, "Continue repairs legacy dummy respawn");
+assert.equal(flagGet(HOENN_FLAG), true);
+// PREPARED registered source respawn: entry must preserve it rather than assign Slateport again.
+const registered = stored();
+const otherHeal = { ...arrivalHeal, x: 6, y: 17, mapNum: rom.mapNum("MAP_OLDALE_TOWN") & 255 };
+registered.world!.regions.hoenn!.field!.lastHealLocation = otherHeal;
+storage.set(WORLD_SAVE_KEY, JSON.stringify(registered));
+resetViewerSessionInitialized();
+continueRegionalSession("hoenn", () => assert.fail("existing bank"));
+assert.deepEqual(save.lastHealLocation, otherHeal, "Continue does not overwrite registered respawn");
+assert.deepEqual(stored().lastHealLocation, kantoHealBefore, "Kanto respawn is isolated");
 
 // Hoenn without a stored Kanto trainer explores unsaved and refuses to write.
 storage.clear();

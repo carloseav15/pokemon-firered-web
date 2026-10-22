@@ -1382,7 +1382,9 @@ function exploreAutoZoom(): number {
 }
 
 /** Hoenn runs on the shared trainer with its own Emerald-ID progress bank (regionSave.ts). */
-function initializeHoennRegion(): void {
+async function initializeHoennRegion(): Promise<void> {
+  // Regional arrival respawn resolves the exported Emerald heal table before play or saving.
+  await rom.load();
   initializeRegionalSession("hoenn", () => initializeHoennSessionFlags(index.initialFlags));
   loadRegionSessionFlags();
 }
@@ -1391,6 +1393,7 @@ function loadRegionSessionFlags(): void {
   for (const name of regionSessionFlags(HOENN ? "hoenn" : "kanto")) state.eventFlags.add(name);
 }
 async function continueHoennSession(): Promise<void> {
+  await rom.load();
   const nav = continueRegionalSession("hoenn", () => initializeHoennSessionFlags(index.initialFlags));
   loadRegionSessionFlags();
   await changeNavigationWorld(nav.mapId);
@@ -1433,7 +1436,7 @@ async function startExploration(targetGx?: number, targetGy?: number): Promise<v
     });
     gameSave.playerGender = state.playerChar === "leaf" ? C.FEMALE : C.MALE;
   } else if (HOENN) {
-    initializeHoennRegion();
+    await initializeHoennRegion();
   } else {
     initializeHoennSessionFlags(index.initialFlags);
   }
@@ -3014,7 +3017,7 @@ async function build(): Promise<void> {
       gender: state.playerChar === "leaf" ? C.FEMALE : C.MALE,
     });
   } else if (HOENN && startExplore) {
-    initializeHoennRegion();
+    await initializeHoennRegion();
   } else if (JOHTO && startExplore) {
     initializeHoennSessionFlags(index.initialFlags);
   }
