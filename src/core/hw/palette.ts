@@ -64,6 +64,8 @@ export const FAST_FADE_OUT_TO_BLACK = 3;
 
 export const gPlttBufferUnfaded = new Uint16Array(PLTT_BUFFER_SIZE);
 export const gPlttBufferFaded = new Uint16Array(PLTT_BUFFER_SIZE);
+/** palette.c gPaletteDecompressionBuffer (PLTT_SIZE bytes; pokeemerald scrcmd.c also uses it to park the unfaded palette). */
+export const gPaletteDecompressionBuffer = new Uint8Array(PLTT_BUFFER_SIZE * 2);
 
 export const gPaletteFade = {
   multipurpose1: 0, // selectedPalettes (normal/fast) or blendCnt (hardware)

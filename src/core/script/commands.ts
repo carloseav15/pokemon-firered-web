@@ -11,7 +11,8 @@ import { FONT_BRAILLE, GetStringWidth } from "../gba/font";
 import * as C from "@game/generated/constants";
 import { sound } from "../audio/sound";
 import { concat, copy, countDigits, encode, expandPlaceholders, intToDecimal, length, stringVars, STR_CONV_MODE_LEFT_ALIGN, EOS } from "../gba/charmap";
-import { paletteFade } from "../gba/fade";
+import { FADE_FROM_BLACK, FADE_FROM_WHITE, FADE_TO_BLACK, FADE_TO_WHITE, paletteFade } from "../gba/fade";
+import { gPaletteDecompressionBuffer, gPlttBufferUnfaded } from "../hw/palette";
 import { A_BUTTON, B_BUTTON, DPAD_DOWN, DPAD_LEFT, DPAD_RIGHT, DPAD_UP, JOY_HELD, JOY_NEW, L_BUTTON, R_BUTTON, SELECT_BUTTON, START_BUTTON } from "../gba/input";
 import { tasks } from "../gba/tasks";
 import { b64, isEmeraldData, RAM_SCRIPT_BASE, rom, type MapHeader } from "../rom";
@@ -688,6 +689,31 @@ function ScrCmd_fadescreen(ctx: ScriptRunner): boolean {
   ctx.SetupNativeScript(IsPaletteNotActive);
   return true;
 }
+/**
+ * ScrCmd_fadescreenswapbuffers (pokeemerald scrcmd.c). The CpuCopy32 of gPlttBufferUnfaded to and from
+ * gPaletteDecompressionBuffer is ported on the hw palette buffers.
+ * ADAPTATION: FadeScreen is the overlay fade of ScrCmd_fadescreen, because the field renderer does not
+ * draw from gPlttBufferUnfaded/Faded; the parked palette therefore has no visible effect here.
+ */
+function ScrCmd_fadescreenswapbuffers(ctx: ScriptRunner): boolean {
+  const mode = ctx.readByte();
+  const unfaded = new Uint8Array(gPlttBufferUnfaded.buffer, gPlttBufferUnfaded.byteOffset, gPlttBufferUnfaded.byteLength);
+  switch (mode) {
+    case FADE_FROM_BLACK:
+    case FADE_FROM_WHITE:
+      unfaded.set(gPaletteDecompressionBuffer);
+      paletteFade.fadeScreen(mode, 0);
+      break;
+    case FADE_TO_BLACK:
+    case FADE_TO_WHITE:
+    default:
+      gPaletteDecompressionBuffer.set(unfaded);
+      paletteFade.fadeScreen(mode, 0);
+      break;
+  }
+  ctx.SetupNativeScript(IsPaletteNotActive);
+  return true;
+}
 function ScrCmd_fadescreenspeed(ctx: ScriptRunner): boolean {
   const mode = ctx.readByte();
   const speed = ctx.readByte();
@@ -804,7 +830,7 @@ export const COMMANDS: Record<string, ScriptCommand> = {
   ScrCmd_vgoto_if, ScrCmd_vcall_if, ScrCmd_incrementgamestat, ScrCmd_comparestat, ScrCmd_signmsg, ScrCmd_normalmsg,
   ScrCmd_setmonmodernfatefulencounter, ScrCmd_checkmonmodernfatefulencounter, ScrCmd_setworldmapflag,
   ScrCmd_setmonmetlocation,
-  ScrCmd_messageinstant, ScrCmd_warpwhitefade, ScrCmd_selectapproachingtrainer, ScrCmd_lockfortrainer,
+  ScrCmd_messageinstant, ScrCmd_fadescreenswapbuffers, ScrCmd_warpwhitefade, ScrCmd_selectapproachingtrainer, ScrCmd_lockfortrainer,
   ScrCmd_initrotatingtilepuzzle, ScrCmd_moverotatingtileobjects, ScrCmd_turnrotatingtileobjects, ScrCmd_freerotatingtilepuzzle,
   // Emerald scrcmd.c has identical bodies under these two names (checked against
   // both decomps); keep one implementation rather than duplicating party mutation.

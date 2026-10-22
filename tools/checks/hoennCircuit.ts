@@ -435,6 +435,29 @@ console.log("save/continue: Hoenn bank (field, flags, vars) restored; Kanto flag
   assert.equal(G.gTrainerBattleOpponent_A, EM.TRAINER_NORMAN_1);
 }
 
+// scrcmd.c ScrCmd_fadescreenswapbuffers: FADE_TO_* parks gPlttBufferUnfaded in gPaletteDecompressionBuffer,
+// FADE_FROM_* restores it; both start the fade and wait for IsPaletteNotActive (PREPARED palette contents).
+{
+  const { COMMANDS } = await import("../../src/core/script/commands.ts");
+  const { gPlttBufferUnfaded, gPaletteDecompressionBuffer } = await import("../../src/core/hw/palette.ts");
+  const { paletteFade } = await import("../../src/core/gba/fade.ts");
+  const run = (mode: number) => {
+    const waits: unknown[] = [];
+    paletteFade.clear();
+    assert.equal(COMMANDS.ScrCmd_fadescreenswapbuffers!({ readByte: () => mode, SetupNativeScript: (f: unknown) => waits.push(f) } as never), true);
+    assert.equal(waits.length, 1);
+    assert.equal(paletteFade.active, true);
+  };
+  gPlttBufferUnfaded[5] = 0x1234; gPlttBufferUnfaded[511] = 0x4321;
+  run(1); // FADE_TO_BLACK
+  assert.equal(gPaletteDecompressionBuffer[10], 0x34); assert.equal(gPaletteDecompressionBuffer[11], 0x12);
+  assert.equal(gPaletteDecompressionBuffer[1022], 0x21); assert.equal(gPaletteDecompressionBuffer[1023], 0x43);
+  gPlttBufferUnfaded[5] = 0; gPlttBufferUnfaded[511] = 0;
+  run(0); // FADE_FROM_BLACK
+  assert.equal(gPlttBufferUnfaded[5], 0x1234); assert.equal(gPlttBufferUnfaded[511], 0x4321);
+  paletteFade.clear();
+}
+
 console.log("incbin fallbacks:", [...incbinFallbacks].sort().join(", "));
 console.log("cdata fallbacks:", [...cdataFallbacks].sort().join(", "));
 console.log("text fallbacks:", [...textFallbacks].sort().join(", "));
