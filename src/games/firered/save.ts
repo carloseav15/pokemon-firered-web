@@ -201,6 +201,8 @@ export type SaveData = {
   trainerRematchStepCounter?: number;
   /** berry.h BerryTree[BERRY_TREES_COUNT] of pokeemerald's SaveBlock1 (the Hoenn bank only). */
   berryTrees?: BerryTree[];
+  /** load_save.c SaveBlock1.playerPartyCount / playerParty, filled by SavePlayerParty (Emerald scripts, global trainer data). */
+  playerPartySave?: { count: number; party: Pokemon[] };
   /** SaveBlock2.lastBerryTreeUpdate (struct Time). */
   lastBerryTreeUpdate?: { days: number; hours: number; minutes: number; seconds: number };
   trainerRematches?: number[];

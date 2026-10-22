@@ -719,13 +719,14 @@ export class Game {
   }
 
   /** ChoosePartyMon / ChooseMonForMoveTutor / ChooseMonForMoveRelearner / ChooseSendDaycareMon → CB2_ReturnToFieldContinueScriptPlayMapMusic */
-  choosePartyMon(mode: string): void {
+  choosePartyMon(mode: string, bufferSelection?: () => void): void {
     this.overworld.script.ScriptContext_Stop();
     const scene = new HwScene();
     scene.enter();
     this.scene = scene;
     this.setCallbacks(null, () => scene.update());
     const exit = (): void => {
+      bufferSelection?.();
       const selected = varGet(SV.x8004);
       if (selected < save.party.length) stringVars.var1 = Uint8Array.from(save.party[selected].nickname);
       scene.leave();

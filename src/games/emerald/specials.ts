@@ -2,22 +2,32 @@
 // Installed on the engine with setGameSpecials while Emerald content runs (EngineInteraction).
 // Each function keeps its C source file and name.
 import { GetSetPokedexFlag } from "@core/pokemon/mon_extra";
-import { GetMonData, GetMonEVCount } from "@core/pokemon/mon";
+import { GetMonData, GetMonEVCount, SetMonData } from "@core/pokemon/mon";
+import { cdata } from "@core/hw/assets";
+import { rom } from "@core/rom";
+import { GetPlayerTrainerId } from "@core/pokemon/pokemon";
 import { GetLeadMonIndex, HoennToNationalOrder } from "@core/pokemon/pokemon";
+import { StringGet_Nickname } from "@core/gba/charmap";
 import { EOS } from "@core/gba/charmap";
 import { stringVars } from "@core/gba/stringBuffers";
 import { sound } from "@core/audio/sound";
 import { tasks } from "@core/gba/tasks";
+import { MAP_OFFSET, MapGridSetMetatileIdAt } from "@core/field/fieldmap";
+import { GetPlayerFacingDirection } from "@core/field/playerAvatar";
 import { random } from "@core/random";
 import type { ScriptRunner } from "@core/script/context";
+import type { Pokemon } from "@core/pokemon/pokemon";
 import * as FR from "@game/generated/constants";
-import { flagClear, flagGet, flagSet, GetGameStat, save, SV, varGet, varSet } from "@game/save";
+import { flagClear, flagGet, flagSet, GetGameStat, incrementGameStat, save, SV, varGet, varSet } from "@game/save";
 import * as EM from "./generated/constants";
 import { save as emSave } from "./save";
 import { FinishCyclingRoadChallenge, GetPlayerAvatarBike, GetRecordedCyclingRoadResults, Special_BeginCyclingRoadChallenge, UpdateCyclingRoadState } from "./cyclingRoad";
-import { ShouldTryRematchBattle } from "./battleSetup";
+import { GetRematchIdxByTrainerIdx, IsTrainerReadyForRematch, ShouldTryRematchBattle } from "./battleSetup";
+import { gLocalTime } from "./clock";
 import { PlayerFaceTrainerAfterBattle } from "./trainerSee";
 import * as Berry from "./berry";
+import * as BerryPowder from "./berryPowder";
+import { ScriptGetPokedexInfo, ShowPokedexRatingMessage } from "./birchPc";
 
 /** pokedex.c HasAllHoennMons: -2 excludes Jirachi and Deoxys. HoennToNationalOrder is the core port of
  * pokemon.c (sHoennToNationalOrder has the same values in pokeemerald and pokefirered). */
@@ -243,6 +253,301 @@ function BufferUnionRoomPlayerName(): number {
   return 0;
 }
 
+/** field_specials.c Task_PCTurnOnEffect task data (tPaused is never set). */
+const tPaused = 0, tTaskId = 1, tFlickerCount = 2, tTimer = 3, tIsScreenOn = 4;
+/** DrawWholeMapView needs the script's overworld; the task runs for 30 frames after the special. */
+let sPCEffectCtx: ScriptRunner | null = null;
+
+/** field_specials.c PCTurnOnEffect_SetMetatile / PCTurnOffEffect: gSpecialVar_0x8004 is a PC_LOCATION_* value. */
+function PCEffect_SetMetatile(ctx: ScriptRunner, screenOn: boolean, dx: number, dy: number): void {
+  const k = rom.constants;
+  let metatileId = 0;
+  const location = varGet(SV.x8004);
+  if (screenOn) {
+    // Screen is on, set it off
+    if (location === EM.PC_LOCATION_OTHER) metatileId = k.METATILE_Building_PC_Off!;
+    else if (location === EM.PC_LOCATION_BRENDANS_HOUSE) metatileId = k.METATILE_BrendansMaysHouse_BrendanPC_Off!;
+    else if (location === EM.PC_LOCATION_MAYS_HOUSE) metatileId = k.METATILE_BrendansMaysHouse_MayPC_Off!;
+  } else {
+    // Screen is off, set it on
+    if (location === EM.PC_LOCATION_OTHER) metatileId = k.METATILE_Building_PC_On!;
+    else if (location === EM.PC_LOCATION_BRENDANS_HOUSE) metatileId = k.METATILE_BrendansMaysHouse_BrendanPC_On!;
+    else if (location === EM.PC_LOCATION_MAYS_HOUSE) metatileId = k.METATILE_BrendansMaysHouse_MayPC_On!;
+  }
+  MapGridSetMetatileIdAt(save.pos.x + dx + MAP_OFFSET, save.pos.y + dy + MAP_OFFSET, metatileId | EM.MAPGRID_COLLISION_MASK, ctx.ow.map);
+}
+
+/** The PC is in front of the player, one tile up and to the side when the player faces west/east. */
+function PCEffect_Offset(): [number, number] {
+  switch (GetPlayerFacingDirection()) {
+    case EM.DIR_NORTH: return [0, -1];
+    case EM.DIR_WEST: return [-1, -1];
+    case EM.DIR_EAST: return [1, -1];
+  }
+  return [0, 0];
+}
+
+/** field_specials.c DoPCTurnOnEffect */
+function DoPCTurnOnEffect(ctx: ScriptRunner): void {
+  if (!tasks.isActive(Task_PCTurnOnEffect)) {
+    sPCEffectCtx = ctx;
+    const taskId = tasks.create(Task_PCTurnOnEffect, 8);
+    const data = tasks.tasks[taskId].data;
+    data[tPaused] = 0;
+    data[tTaskId] = taskId;
+    data[tFlickerCount] = 0;
+    data[tTimer] = 0;
+    data[tIsScreenOn] = 0;
+  }
+}
+
+/** field_specials.c Task_PCTurnOnEffect / PCTurnOnEffect */
+function Task_PCTurnOnEffect(taskId: number): void {
+  const data = tasks.tasks[taskId].data;
+  if (data[tPaused]) return;
+  if (data[tTimer] === 6) {
+    data[tTimer] = 0;
+    const [dx, dy] = PCEffect_Offset();
+    PCEffect_SetMetatile(sPCEffectCtx!, !!data[tIsScreenOn], dx, dy);
+    DrawWholeMapView(sPCEffectCtx!);
+    // Screen flickers 5 times. Odd number and starting with the screen off means the animation ends with the screen on.
+    data[tIsScreenOn] = data[tIsScreenOn]! ^ 1;
+    data[tFlickerCount] = data[tFlickerCount]! + 1;
+    if (data[tFlickerCount] === 5) tasks.destroy(data[tTaskId]!);
+  }
+  data[tTimer] = data[tTimer]! + 1;
+}
+
+/** field_specials.c DoPCTurnOffEffect / PCTurnOffEffect */
+function DoPCTurnOffEffect(ctx: ScriptRunner): void {
+  const [dx, dy] = PCEffect_Offset();
+  const k = rom.constants;
+  const location = varGet(SV.x8004);
+  let metatileId = 0;
+  if (location === EM.PC_LOCATION_OTHER) metatileId = k.METATILE_Building_PC_Off!;
+  else if (location === EM.PC_LOCATION_BRENDANS_HOUSE) metatileId = k.METATILE_BrendansMaysHouse_BrendanPC_Off!;
+  else if (location === EM.PC_LOCATION_MAYS_HOUSE) metatileId = k.METATILE_BrendansMaysHouse_MayPC_Off!;
+  MapGridSetMetatileIdAt(save.pos.x + dx + MAP_OFFSET, save.pos.y + dy + MAP_OFFSET, metatileId | EM.MAPGRID_COLLISION_MASK, ctx.ow.map);
+  DrawWholeMapView(ctx);
+}
+
+/** script_menu.c ScriptMenu_CreatePCMultichoice (waitstate=1: the menu task re-enables the script) */
+function ScriptMenu_CreatePCMultichoice(ctx: ScriptRunner): number { return ctx.ow.game.scriptMenu.ScriptMenu_CreatePCMultichoice() ? 1 : 0; }
+
+/** player_pc.c PlayerPC (EQUIVALENCE/wrapper): the engine's player PC (Item Storage, Mailbox, Turn Off). */
+function PlayerPC(ctx: ScriptRunner): void { ctx.ow.game.openPlayerPC(false); }
+
+/** pokemon_storage_system.c ShowPokemonStorageSystemPC (EQUIVALENCE/wrapper): the engine's storage system. */
+function ShowPokemonStorageSystemPC(ctx: ScriptRunner): void { ctx.ow.game.openPokemonStorage(); }
+
+/** field_specials.c sPetalburgGymSlidingDoorMetatiles / sSlidingDoorNextFrameDelay and their static counters */
+const sSlidingDoorNextFrameDelay = [0, 1, 1, 1, 1];
+let sSlidingDoorNextFrameCounter = 0;
+let sSlidingDoorFrame = 0;
+let sPetalburgGymCtx: ScriptRunner | null = null;
+const sPetalburgGymSlidingDoorMetatiles = (): number[] => [0, 1, 2, 3, 4].map(i => rom.constants[`METATILE_PetalburgGym_SlidingDoor_Frame${i}`]!);
+
+/** field_specials.c PetalburgGymSlideOpenRoomDoors (waitstate=1: the task re-enables the script) */
+function PetalburgGymSlideOpenRoomDoors(ctx: ScriptRunner): void {
+  sPetalburgGymCtx = ctx;
+  sSlidingDoorNextFrameCounter = 0;
+  sSlidingDoorFrame = 0;
+  sound.playSE(sound.c("SE_UNLOCK"));
+  tasks.create(Task_PetalburgGymSlideOpenRoomDoors, 8);
+}
+
+function Task_PetalburgGymSlideOpenRoomDoors(taskId: number): void {
+  const metatiles = sPetalburgGymSlidingDoorMetatiles();
+  if (sSlidingDoorNextFrameDelay[sSlidingDoorFrame] === sSlidingDoorNextFrameCounter) {
+    PetalburgGymSetDoorMetatiles(sPetalburgGymCtx!, varGet(SV.x8004) & 0xff, metatiles[sSlidingDoorFrame]!);
+    sSlidingDoorNextFrameCounter = 0;
+    if (++sSlidingDoorFrame === metatiles.length) {
+      tasks.destroy(taskId);
+      sPetalburgGymCtx!.ow.script.ScriptContext_Enable();
+    }
+  } else {
+    sSlidingDoorNextFrameCounter++;
+  }
+}
+
+/** field_specials.c PetalburgGymSetDoorMetatiles: the door columns/rows of each gym room (1–8). */
+function PetalburgGymSetDoorMetatiles(ctx: ScriptRunner, roomNumber: number, metatileId: number): void {
+  const doorCoordsX: number[] = [], doorCoordsY: number[] = [];
+  let nDoors = 0;
+  switch (roomNumber) {
+    case 1: nDoors = 2; doorCoordsX.push(1, 7); doorCoordsY.push(104, 104); break;
+    case 2: nDoors = 2; doorCoordsX.push(1, 7); doorCoordsY.push(78, 78); break;
+    case 3: nDoors = 2; doorCoordsX.push(1, 7); doorCoordsY.push(91, 91); break;
+    case 4: nDoors = 1; doorCoordsX.push(7); doorCoordsY.push(39); break;
+    case 5: nDoors = 2; doorCoordsX.push(1, 7); doorCoordsY.push(52, 52); break;
+    case 6: nDoors = 1; doorCoordsX.push(1); doorCoordsY.push(65); break;
+    case 7: nDoors = 1; doorCoordsX.push(7); doorCoordsY.push(13); break;
+    case 8: nDoors = 1; doorCoordsX.push(1); doorCoordsY.push(26); break;
+  }
+  const METATILE_ROW_WIDTH = 8;
+  for (let i = 0; i < nDoors; i++) {
+    MapGridSetMetatileIdAt(doorCoordsX[i]! + MAP_OFFSET, doorCoordsY[i]! + MAP_OFFSET, metatileId | EM.MAPGRID_COLLISION_MASK, ctx.ow.map);
+    MapGridSetMetatileIdAt(doorCoordsX[i]! + MAP_OFFSET, doorCoordsY[i]! + MAP_OFFSET + 1, (metatileId + METATILE_ROW_WIDTH) | EM.MAPGRID_COLLISION_MASK, ctx.ow.map);
+  }
+  DrawWholeMapView(ctx);
+}
+
+/** field_specials.c PetalburgGymUnlockRoomDoors */
+function PetalburgGymUnlockRoomDoors(ctx: ScriptRunner): void {
+  PetalburgGymSetDoorMetatiles(ctx, varGet(SV.x8004) & 0xff, sPetalburgGymSlidingDoorMetatiles()[4]!);
+}
+
+/** tv.c SetTVMetatilesOnMap: every MB_TELEVISION tile of the map layout. */
+function SetTVMetatilesOnMap(ctx: ScriptRunner, width: number, height: number, metatileId: number): void {
+  for (let y = MAP_OFFSET; y < height + MAP_OFFSET; y++)
+    for (let x = MAP_OFFSET; x < width + MAP_OFFSET; x++)
+      if (ctx.ow.map.behaviorAt(x, y) === rom.constants.MB_TELEVISION)
+        MapGridSetMetatileIdAt(x, y, metatileId | EM.MAPGRID_COLLISION_MASK, ctx.ow.map);
+}
+
+/** tv.c TurnOffTVScreen / TurnOnTVScreen (gBackupMapLayout is the map's layout size) */
+function TurnOffTVScreen(ctx: ScriptRunner): void {
+  SetTVMetatilesOnMap(ctx, ctx.ow.map.xSize - 2 * MAP_OFFSET, ctx.ow.map.ySize - 2 * MAP_OFFSET, rom.constants.METATILE_Building_TV_Off!);
+  DrawWholeMapView(ctx);
+}
+function TurnOnTVScreen(ctx: ScriptRunner): void {
+  SetTVMetatilesOnMap(ctx, ctx.ow.map.xSize - 2 * MAP_OFFSET, ctx.ow.map.ySize - 2 * MAP_OFFSET, rom.constants.METATILE_Building_TV_On!);
+  DrawWholeMapView(ctx);
+}
+
+/** tv.c GetRibbonCount */
+function GetRibbonCount(mon: Pokemon): number {
+  let nRibbons = 0;
+  for (const field of [
+    FR.MON_DATA_COOL_RIBBON, FR.MON_DATA_BEAUTY_RIBBON, FR.MON_DATA_CUTE_RIBBON, FR.MON_DATA_SMART_RIBBON, FR.MON_DATA_TOUGH_RIBBON,
+    FR.MON_DATA_CHAMPION_RIBBON, FR.MON_DATA_WINNING_RIBBON, FR.MON_DATA_VICTORY_RIBBON, FR.MON_DATA_ARTIST_RIBBON,
+    FR.MON_DATA_EFFORT_RIBBON, FR.MON_DATA_MARINE_RIBBON, FR.MON_DATA_LAND_RIBBON, FR.MON_DATA_SKY_RIBBON,
+    FR.MON_DATA_COUNTRY_RIBBON, FR.MON_DATA_NATIONAL_RIBBON, FR.MON_DATA_EARTH_RIBBON, FR.MON_DATA_WORLD_RIBBON,
+  ]) nRibbons += GetMonData(mon, field);
+  return nRibbons;
+}
+
+/** field_specials.c LeadMonHasEffortRibbon */
+function LeadMonHasEffortRibbon(): number {
+  return GetMonData(save.party[GetLeadMonIndex()]!, FR.MON_DATA_EFFORT_RIBBON) ? 1 : 0;
+}
+
+/** field_specials.c GiveLeadMonEffortRibbon. GAP: with more than NUM_CUTIES_RIBBONS ribbons Emerald calls tv.c
+ * TryPutSpotTheCutiesOnAir (TV shows are not ported), so that branch stops instead of skipping the show. */
+function GiveLeadMonEffortRibbon(): void {
+  incrementGameStat(EM.GAME_STAT_RECEIVED_RIBBONS);
+  flagSet(EM.FLAG_SYS_RIBBON_GET);
+  const leadMon = save.party[GetLeadMonIndex()]!;
+  SetMonData(leadMon, FR.MON_DATA_EFFORT_RIBBON, 1);
+  if (GetRibbonCount(leadMon) > EM.NUM_CUTIES_RIBBONS)
+    throw Error("GiveLeadMonEffortRibbon: tv.c TryPutSpotTheCutiesOnAir is not ported");
+}
+
+/** field_specials.c ChangePokemonNickname and tv.c ChangeBoxPokemonNickname (EQUIVALENCE/wrappers): the engine's
+ * naming screen with the same return to the field. */
+function ChangePokemonNickname(ctx: ScriptRunner): void { ctx.ow.game.ChangePokemonNickname(); }
+function ChangeBoxPokemonNickname(ctx: ScriptRunner): void { ctx.ow.game.ChangeBoxPokemonNickname(); }
+
+
+/** field_specials.c GetPlayerBigGuyGirlString */
+function GetPlayerBigGuyGirlString(): void {
+  stringVars.var1 = rom.text(save.playerGender === EM.MALE ? "gText_BigGuy" : "gText_BigGirl");
+}
+
+/** field_specials.c GetRivalSonDaughterString */
+function GetRivalSonDaughterString(): void {
+  stringVars.var1 = rom.text(save.playerGender === EM.MALE ? "gText_Daughter" : "gText_Son");
+}
+
+/** field_specials.c GetWeekCount; gLocalTime is the value RtcCalcLocalTime last stored (clock.ts). */
+function GetWeekCount(): number {
+  let weekCount = Math.trunc(gLocalTime.days / 7);
+  if (weekCount > 9999) weekCount = 9999;
+  return weekCount;
+}
+
+/** starter_choose.c STARTER_MON_COUNT */
+const STARTER_MON_COUNT = 3;
+
+/** starter_choose.c GetStarterPokemon (sStarterMon from the em: cdata). */
+function GetStarterPokemon(chosenStarterId: number): number {
+  if (chosenStarterId > STARTER_MON_COUNT) chosenStarterId = 0;
+  return cdata<number[]>("em:starter_choose", "sStarterMon")[chosenStarterId]!;
+}
+
+/** field_specials.c IsStarterInParty; CalculatePlayerPartyCount is the party length. */
+function IsStarterInParty(): number {
+  const starter = GetStarterPokemon(varGet(EM.VAR_STARTER_MON));
+  for (let i = 0; i < save.party.length; i++)
+    if (GetMonData(save.party[i]!, FR.MON_DATA_SPECIES_OR_EGG) === starter) return 1;
+  return 0;
+}
+
+/** field_specials.c IsTrainerRegistered (GetRematchIdxByTrainerIdx is pokenav_match_call_data.c). */
+function IsTrainerRegistered(): number {
+  const index = GetRematchIdxByTrainerIdx(varGet(SV.x8004));
+  if (index >= 0 && flagGet(EM.TRAINER_REGISTERED_FLAGS_START + index)) return 1;
+  return 0;
+}
+
+/** field_specials.c ResetHealLocationFromDewford: avoids respawning at Dewford with no way off. */
+function ResetHealLocationFromDewford(ctx: ScriptRunner): void {
+  if (save.lastHealLocation.mapGroup === (EM.MAP_DEWFORD_TOWN >> 8) && save.lastHealLocation.mapNum === (EM.MAP_DEWFORD_TOWN & 0xff))
+    ctx.ow.SetLastHealLocationWarp(EM.HEAL_LOCATION_PETALBURG_CITY);
+}
+
+/** time_events.c InitBirchState */
+function InitBirchState(): void { varSet(EM.VAR_BIRCH_STATE, 0); }
+
+/** event_data.c EnableNationalPokedex. ResetPokedexScrollPositions (pokedex.c) clears the Pokédex screen's
+ * static cursor state, which the engine's own Pokédex does not keep; the mode/order fields do not exist in the
+ * live save, whose Pokédex screen derives them from the national flag. */
+function EnableNationalPokedex(): void {
+  save.nationalDexMagic = 0xda;
+  varSet(EM.VAR_NATIONAL_DEX, 0x302);
+  flagSet(EM.FLAG_SYS_NATIONAL_DEX);
+}
+
+/** save_location.c SetUnlockedPokedexFlags */
+function SetUnlockedPokedexFlags(): void {
+  const block = save as unknown as { gcnLinkFlags?: number };
+  block.gcnLinkFlags = (block.gcnLinkFlags ?? 0) | (1 << 15) | (1 << 0) | (1 << 1) | (1 << 2) | (1 << 4) | (1 << 5) | (1 << 3);
+}
+
+/** tv.c BufferMonNickname */
+function BufferMonNickname(): void {
+  const nickname: number[] = [];
+  GetMonData(save.party[varGet(SV.x8004)]!, FR.MON_DATA_NICKNAME, nickname);
+  const buffer = new Uint8Array(Math.max(nickname.length, FR.POKEMON_NAME_LENGTH) + 2).fill(EOS);
+  buffer.set(nickname);
+  StringGet_Nickname(buffer);
+  stringVars.var1 = buffer;
+}
+
+/** tv.c IsMonOTIDNotPlayers */
+function IsMonOTIDNotPlayers(): void {
+  const otId = GetMonData(save.party[varGet(SV.x8004)]!, FR.MON_DATA_OT_ID) >>> 0;
+  varSet(SV.RESULT, GetPlayerTrainerId() === otId ? 0 : 1);
+}
+
+/** load_save.c SavePlayerParty / LoadPlayerParty: SaveBlock1.playerPartyCount and playerParty. */
+function SavePlayerParty(): void {
+  save.playerPartySave = { count: save.party.length, party: structuredClone(save.party.slice(0, EM.PARTY_SIZE)) };
+}
+function LoadPlayerParty(): void {
+  const saved = save.playerPartySave;
+  if (!saved) throw Error("LoadPlayerParty: SaveBlock1.playerParty was never filled by SavePlayerParty");
+  save.party.splice(0, save.party.length, ...structuredClone(saved.party.slice(0, saved.count)));
+}
+
+/** party_menu.c ChoosePartyMon (EQUIVALENCE/wrapper): the engine's party menu with Task_HandleChooseMonInput and
+ * BufferMonSelection's mapping of a cancelled/invalid slot to PARTY_NOTHING_CHOSEN. */
+function ChoosePartyMon(ctx: ScriptRunner): void {
+  ctx.ow.game.choosePartyMon("choose", () => {
+    if (varGet(SV.x8004) >= EM.PARTY_SIZE) varSet(SV.x8004, EM.PARTY_NOTHING_CHOSEN);
+  });
+}
+
 export const EMERALD_SPECIALS = {
   CountPlayerTrainerStars, PlayerNotAtTrainerHillEntrance, UpdateCyclingRoadState,
   Special_BeginCyclingRoadChallenge, FinishCyclingRoadChallenge, GetRecordedCyclingRoadResults, GetPlayerAvatarBike,
@@ -271,6 +576,17 @@ export const EMERALD_SPECIALS = {
   CheckLeadMonTough: () => CheckLeadMonCondition(FR.MON_DATA_TOUGH),
   GetLeadMonFriendshipScore, Special_AreLeadMonEVsMaxedOut, IsBadEggInParty, MonOTNameNotPlayer,
   BufferVarsForIVRater, ShakeCamera,
+  GetPlayerBigGuyGirlString, GetRivalSonDaughterString, GetWeekCount, IsStarterInParty, IsTrainerRegistered,
+  ResetHealLocationFromDewford, InitBirchState, EnableNationalPokedex, SetUnlockedPokedexFlags, BufferMonNickname,
+  PetalburgGymSlideOpenRoomDoors, PetalburgGymUnlockRoomDoors, TurnOffTVScreen, TurnOnTVScreen, LeadMonHasEffortRibbon,
+  GiveLeadMonEffortRibbon, ChangePokemonNickname, ChangeBoxPokemonNickname, ScriptGetPokedexInfo, ShowPokedexRatingMessage,
+  HasEnoughBerryPowder: BerryPowder.HasEnoughBerryPowder, TakeBerryPowder: BerryPowder.TakeBerryPowder,
+  DisplayBerryPowderVendorMenu: BerryPowder.DisplayBerryPowderVendorMenu,
+  PrintPlayerBerryPowderAmount: BerryPowder.PrintPlayerBerryPowderAmount,
+  RemoveBerryPowderVendorMenu: BerryPowder.RemoveBerryPowderVendorMenu,
+  DoPCTurnOnEffect, DoPCTurnOffEffect, ScriptMenu_CreatePCMultichoice, PlayerPC, ShowPokemonStorageSystemPC,
+  IsMonOTIDNotPlayers, SavePlayerParty, LoadPlayerParty, ChoosePartyMon, IsTrainerReadyForRematch,
+  IsEnigmaBerryValid: () => (Berry.IsEnigmaBerryValid() ? 1 : 0),
 };
 
 /**

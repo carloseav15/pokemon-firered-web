@@ -66,6 +66,17 @@ function FirstBattleTrainerIdToRematchTableId(table: RematchTrainer[], trainerId
   return -1;
 }
 
+/** battle_setup.c TrainerIdToRematchTableId */
+function TrainerIdToRematchTableId(table: RematchTrainer[], trainerId: number): number {
+  for (let i = 0; i < EM.REMATCH_TABLE_ENTRIES; i++) {
+    for (let j = 0; j < EM.REMATCHES_COUNT; j++) {
+      if (table[i]!.trainerIds[j] === 0) break;
+      if (table[i]!.trainerIds[j] === trainerId) return i;
+    }
+  }
+  return -1;
+}
+
 /** battle_setup.c IsFirstTrainerIdReadyForRematch; trainerRematches is the Hoenn bank's SaveBlock1 array. */
 function IsFirstTrainerIdReadyForRematch(table: RematchTrainer[], firstBattleTrainerId: number): boolean {
   const tableId = FirstBattleTrainerIdToRematchTableId(table, firstBattleTrainerId);
@@ -88,4 +99,22 @@ export function ShouldTryRematchBattle(ctx: ScriptRunner): number {
   const opponentA = ctx.ow.game.battleSetup.opponentA;
   if (IsFirstTrainerIdReadyForRematch(gRematchTable(), opponentA)) return 1;
   return WasSecondRematchWon(gRematchTable(), opponentA) ? 1 : 0;
+}
+
+/** battle_setup.c IsTrainerReadyForRematch_ / IsTrainerReadyForRematch (gTrainerBattleOpponent_A). */
+export function IsTrainerReadyForRematch(ctx: ScriptRunner): number {
+  const table = gRematchTable();
+  const tableId = TrainerIdToRematchTableId(table, ctx.ow.game.battleSetup.opponentA);
+  if (tableId === -1) return 0;
+  if (tableId >= EM.MAX_REMATCH_ENTRIES) return 0;
+  if ((save.trainerRematches?.[tableId] ?? 0) === 0) return 0;
+  return 1;
+}
+
+/** pokenav_match_call_data.c GetRematchIdxByTrainerIdx */
+export function GetRematchIdxByTrainerIdx(trainerIdx: number): number {
+  const table = gRematchTable();
+  for (let rematchIdx = 0; rematchIdx < EM.REMATCH_TABLE_ENTRIES; rematchIdx++)
+    if (table[rematchIdx]!.trainerIds[0] === trainerIdx) return rematchIdx;
+  return -1;
 }

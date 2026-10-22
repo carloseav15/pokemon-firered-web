@@ -408,6 +408,45 @@ export function CreatePCMenuWindow(): void {
   });
 }
 
+/** pokeemerald script_menu.c MAX_MULTICHOICE_WIDTH / ConvertPixelWidthToTileWidth */
+const MAX_MULTICHOICE_WIDTH = 28;
+function ConvertPixelWidthToTileWidth(width: number): number {
+  return Math.trunc((width + 9) / 8) + 1 > MAX_MULTICHOICE_WIDTH ? MAX_MULTICHOICE_WIDTH : Math.trunc((width + 9) / 8) + 1;
+}
+
+/** pokeemerald script_menu.c ScriptMenu_CreatePCMultichoice / CreatePCMultichoice (Emerald PC main menu; MULTI_PC).
+ * The menu task is the shared Task_MultichoiceMenu_HandleInput (Task_HandleMultichoiceInput). */
+export function ScriptMenu_CreatePCMultichoice(): boolean {
+  if (tasks.isActive(Task_MultichoiceMenu_HandleInput)) return false;
+  varSet(SV.RESULT, SCR_MENU_UNSET);
+  const k = rom.constants;
+  const x = 8;
+  const clear = flagGet(k.FLAG_SYS_GAME_CLEAR);
+  const playersPC = expandPlaceholders(rom.text("gText_PlayersPC"));
+  // sPCNameStrings: gText_SomeonesPC, gText_LanettesPC, gText_PlayersPC, gText_LogOff
+  let pixelWidth = 0;
+  for (const text of [rom.text("gText_SomeonesPC"), rom.text("gText_LanettesPC"), playersPC, rom.text("gText_LogOff")])
+    pixelWidth = Math.max(pixelWidth, GetStringWidth(FONT_NORMAL, text, 0));
+  if (clear) pixelWidth = Math.max(pixelWidth, GetStringWidth(FONT_NORMAL, rom.text("gText_HallOfFame"), 0));
+  const width = ConvertPixelWidthToTileWidth(pixelWidth);
+  const numChoices = clear ? 4 : 3;
+  const windowId = CreateWindowFromRect(0, 0, width, clear ? 8 : 6);
+  const window = sWindows.get(windowId)!;
+  if (clear) {
+    printText(window, FONT_NORMAL, rom.text("gText_HallOfFame"), x, 33);
+    printText(window, FONT_NORMAL, rom.text("gText_LogOff"), x, 49);
+  } else {
+    printText(window, FONT_NORMAL, rom.text("gText_LogOff"), x, 33);
+  }
+  // Change PC name if player has met Lanette
+  printText(window, FONT_NORMAL, rom.text(flagGet(k.FLAG_SYS_PC_LANETTE) ? "gText_LanettesPC" : "gText_SomeonesPC"), x, 1);
+  printText(window, FONT_NORMAL, playersPC, x, 17);
+  const menu = new Menu(window, FONT_NORMAL, 0, 1, 16, numChoices, 0);
+  const taskId = tasks.create(Task_MultichoiceMenu_HandleInput, 80);
+  sMCState.set(taskId, { windowId, menu, ignoreB: false, wrap: numChoices > 3, mcId: MULTICHOICE_NONE });
+  return true;
+}
+
 export function ScriptMenu_DisplayPCStartupPrompt(): void {
   sActiveScriptMenu?.getOverworld().messageBox.show(rom.text("Text_AccessWhichPC"));
 }
@@ -932,6 +971,10 @@ export class ScriptMenu {
 
   CreatePCMenu(): boolean {
     return CreatePCMenu();
+  }
+
+  ScriptMenu_CreatePCMultichoice(): boolean {
+    return ScriptMenu_CreatePCMultichoice();
   }
 
   ScriptMenu_DisplayPCStartupPrompt(): void {
