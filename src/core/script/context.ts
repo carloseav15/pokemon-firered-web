@@ -127,25 +127,28 @@ export function GetSavedRamScriptIfValid(ctx?: ScriptRunner): number[] | null {
 
 export type ScriptCommand = (ctx: ScriptRunner) => boolean;
 
-let commandTable: ScriptCommand[] | undefined;
-const missing = new Set<string>();
+// A table belongs to one exported ROM metadata object. Regional data reloads may
+// assign different opcodes to the same command, even within the same JS session.
+let commandNames: string[] | undefined;
+let commandTable: Array<ScriptCommand | undefined> = [];
 
-function table(): ScriptCommand[] {
-  if (!commandTable) {
-    commandTable = rom.scriptMeta.commands.map((name) => {
-      const fn = COMMANDS[name];
-      if (fn) return fn;
-      return (ctx: ScriptRunner) => {
-        if (!missing.has(name)) {
-          missing.add(name);
-          console.warn(`script command not implemented: ${name}`);
-        }
-        void ctx;
-        return false;
-      };
-    });
+function table(): Array<ScriptCommand | undefined> {
+  if (commandNames !== rom.scriptMeta.commands) {
+    commandNames = rom.scriptMeta.commands;
+    commandTable = commandNames.map(name => COMMANDS[name]);
   }
   return commandTable;
+}
+
+/** An unsupported instruction has no safe implicit length. Stop before operands
+ * can be decoded as opcodes; preserve the command address in the diagnostic.
+ * This is a VM safety boundary, not an implementation of the missing command. */
+export class UnsupportedScriptCommandError extends Error {
+  constructor(readonly opcode: number, readonly command: string | undefined,
+    readonly address: number, readonly entry: string) {
+    super(`Unsupported script command ${command ?? `opcode ${opcode}`} at 0x${address.toString(16)} in ${entry}`);
+    this.name = 'UnsupportedScriptCommandError';
+  }
 }
 
 /** One struct ScriptContext. */
@@ -209,8 +212,9 @@ export class ScriptRunner {
           const op = rom.u8(this.scriptPtr++);
           const fn = commands[op];
           if (!fn) {
-            this.mode = SCRIPT_MODE_STOPPED;
-            return false;
+            const address = this.scriptPtr - 1;
+            this.StopScript();
+            throw new UnsupportedScriptCommandError(op, rom.scriptMeta.commands[op], address, this.entry);
           }
           if (fn(this)) return true;
           if (this.mode === SCRIPT_MODE_STOPPED) return false;
