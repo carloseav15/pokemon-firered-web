@@ -3,7 +3,8 @@
 // Each function keeps its C source file and name.
 import { GetSetPokedexFlag } from "@core/pokemon/mon_extra";
 import { HoennToNationalOrder } from "@core/pokemon/pokemon";
-import { flagGet, GetGameStat, save } from "@game/save";
+import type { ScriptRunner } from "@core/script/context";
+import { flagGet, GetGameStat, save, varGet, varSet } from "@game/save";
 import * as EM from "./generated/constants";
 import { save as emSave } from "./save";
 
@@ -46,4 +47,16 @@ export function PlayerNotAtTrainerHillEntrance(): number {
   return 1;
 }
 
-export const EMERALD_SPECIALS = { CountPlayerTrainerStars, PlayerNotAtTrainerHillEntrance };
+/** field_specials.c UpdateCyclingRoadState: ON_RESUME of Route 110. */
+export function UpdateCyclingRoadState(ctx: ScriptRunner): void {
+  const last = ctx.ow.lastUsedWarp;
+  if (last.mapNum === (EM.MAP_ROUTE110_SEASIDE_CYCLING_ROAD_NORTH_ENTRANCE & 0xff)
+    && last.mapGroup === (EM.MAP_ROUTE110_SEASIDE_CYCLING_ROAD_NORTH_ENTRANCE >>> 8)) return;
+  const state = varGet(EM.VAR_CYCLING_CHALLENGE_STATE);
+  if (state === 2 || state === 3) {
+    varSet(EM.VAR_CYCLING_CHALLENGE_STATE, 0);
+    ctx.ow.Overworld_SetSavedMusic(EM.MUS_DUMMY);
+  }
+}
+
+export const EMERALD_SPECIALS = { CountPlayerTrainerStars, PlayerNotAtTrainerHillEntrance, UpdateCyclingRoadState };

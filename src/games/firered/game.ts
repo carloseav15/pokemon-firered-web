@@ -140,6 +140,8 @@ export class Game {
   private differentSaveFile = false;
   private whiteOutFrames = 0;
   whitingOut = false;
+  /** Regional recovery after CB2_WhiteOut's 120-frame wait; unset uses FireRed. */
+  whiteOutRecovery?: () => void;
   private returnToFieldState = 0;
   readonly weather = new FieldWeather();
   readonly trades = {
@@ -1138,6 +1140,7 @@ export class Game {
   }
 
   private DoWhiteOut(): void {
+    if (this.whiteOutRecovery) { this.whiteOutRecovery(); return; }
     const ow = this.overworld;
     this.whitingOut = false;
     ow.whitingOut = true;

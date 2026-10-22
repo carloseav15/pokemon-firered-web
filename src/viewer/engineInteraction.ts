@@ -10,11 +10,11 @@ import { DATA_ROOT, isEmeraldData, rom } from '@core/rom';
 import { loadTrig } from '@core/hw/trig';
 import { gWindows } from '@core/hw/window';
 import { GetBgTilemapBuffer } from '@core/hw/bg';
-import { incrementGameStat, save, SV, varGet, varSet } from '@game/save';
+import { flagClear, incrementGameStat, save, SV, varGet, varSet } from '@game/save';
 import * as MB from '@game/generated/metatileBehavior';
 import * as C from '@game/generated/constants';
 import type { Sprite } from '@core/gba/sprite';
-import { paletteFade } from '@core/gba/fade';
+import { paletteFade, RGB_BLACK } from '@core/gba/fade';
 import { tasks } from '@core/gba/tasks';
 import { gMain } from '@core/hw/runtime';
 import { gBattlerControllerFuncs } from '@core/battle/globals';
@@ -27,6 +27,7 @@ import { MAP_OFFSET } from '@core/field/fieldmap';
 import { PLAYER_AVATAR_FLAG_ACRO_BIKE, PLAYER_AVATAR_FLAG_MACH_BIKE, PLAYER_AVATAR_FLAG_ON_FOOT, PLAYER_AVATAR_FLAG_SURFING } from '@core/field/playerAvatar';
 import { objectStateKey, readViewerObjectState, readViewerTemplateState, objectDirection, storeViewerObjects, translateViewerObjectCoords, type ViewerMapOrigin, type ViewerObjectState } from './objectState';
 import { syncViewerLocation, type NavigationSave } from './session';
+import { DoWhiteOut as DoEmeraldWhiteOut } from '../games/emerald/whiteOut';
 import { runEmeraldMapEntry, type HoennMapEntryReport } from './hoennMapEntry';
 import { CheckStandardWildEncounter, GetCoordEventScriptAtPosition, GetInteractedBackgroundEventScript, RestartWildEncounterImmunitySteps } from '../games/emerald/fieldControlAvatar';
 import { setEmeraldWildEncounterGame, UpdateRepelCounter } from '../games/emerald/wildEncounter';
@@ -77,6 +78,7 @@ export class EngineInteraction {
   // Map the engine overworld was last prepared for by the wild-encounter test.
   private wildMap = '';
   private testingWild = false;
+  private recoveredNavigation: NavigationSave | null = null;
   get open(): boolean { return !this.root.hidden; }
   /** True while a step is being tested for an encounter or a battle is running. */
   get busy(): boolean { return this.open || this.testingWild; }
@@ -119,6 +121,23 @@ export class EngineInteraction {
     installBattleHost(this.game);
     if (isEmeraldData()) {
       const game = this.game;
+      game.whiteOutRecovery = () => {
+        // CB2_WhiteOut: after 120 frames, stop music and dispatch Emerald recovery.
+        game.setCallbacks(null, null);
+        game.scene = null;
+        sound.stopMapMusic();
+        flagClear(rom.c('FLAG_SYS_SAFARI_MODE')); // overworld.c ResetSafariZoneFlag_
+        DoEmeraldWhiteOut({
+          runScript: name => game.overworld.script.RunScriptImmediately(rom.label(name)),
+          resetInitialPlayerAvatarState: () => game.overworld.resetInitialPlayerAvatarState(),
+          warpIntoMap: destination => {
+            void this.recoverEmeraldWhiteOut(destination).catch(error => {
+              console.error("Hoenn white-out", error);
+              // Preserve the failed recovery for diagnosis instead of continuing on the old field.
+            });
+          },
+        });
+      };
       setEmeraldWildEncounterGame(game);
       setGameSpecials(EMERALD_SPECIALS);
       battleHost.environmentId = () => BattleSetup_GetEnvironmentId(game);
@@ -378,6 +397,7 @@ export class EngineInteraction {
   private menuVehicle: 'walk' | 'bike' | 'surf' | null = null;
   private async run(nav: NavigationSave, localId: number, fullScreen: boolean, start: (game: Game) => void, prepared = false, objectMapId = nav.mapId): Promise<void> {
     if (this.open) return;
+    this.recoveredNavigation = null;
     this.interactionMapId=nav.mapId;this.observedObjects.clear();
     for(const state of this.hooks.readObjects(nav.mapId))this.observedObjects.set(objectStateKey(state),state);
     this.localId=localId; this.objectMapId=objectMapId; this.fullScreen=fullScreen; this.hooks.pause(true); this.root.hidden=false;
@@ -401,6 +421,11 @@ export class EngineInteraction {
         if(!this.open)return;
         this.accumulator+=Math.min(100,now-this.last);this.last=now;
         while(this.accumulator>=FRAME_MS){game.frame();this.accumulator-=FRAME_MS;}
+        if (this.recoveredNavigation) {
+          nav = this.recoveredNavigation;
+          this.recoveredNavigation = null;
+          whiteOutRelocated = true;
+        }
         const inWhiteOut=Boolean(game.whitingOut||ow.whitingOut);
         if(ow.whiteOutReady&&!whiteOutRelocated){
           const at=save.location;
@@ -491,6 +516,37 @@ export class EngineInteraction {
       if (!started) this.root.dataset.loading = 'false';
     }
   }
+  /** Viewer bridge for Emerald's WarpIntoMap + FieldCB_WarpExitFadeFromBlack.
+   * Its outdoor last-heal warp must never pass through FireRed's healer-selection script. */
+  private async recoverEmeraldWhiteOut(destination: typeof save.lastHealLocation): Promise<void> {
+    const game = this.game!, ow = game.overworld;
+    const mapId = rom.mapIdByNum((destination.mapGroup << 8) | destination.mapNum);
+    if (!mapId) throw Error(`Unknown Emerald heal map ${destination.mapGroup}.${destination.mapNum}`);
+    const nav: NavigationSave = { mapId, x: destination.x, y: destination.y, direction: 'south', dynamic: null };
+    this.observedObjects.clear();
+    ow.script.ScriptContext_Init();
+    ow.UnlockPlayerFieldControls();
+    // Both consumers use Emerald entry scripts and IDs; the renderer's asynchronous map load
+    // replaces the C's synchronous DoMapLoadLoop. Keep recovery locked until both are ready.
+    await this.hooks.relocate(nav);
+    await runEmeraldMapEntry(game, nav, { onSetMetatile: this.hooks.onSetMetatile });
+    await this.prepareObjects(nav, true);
+    this.interactionMapId = this.objectMapId = mapId;
+    this.localId = 0;
+    this.initialSprites = new Set(ow.sprites.sprites);
+    this.wildMap = mapId;
+    RestartWildEncounterImmunitySteps();
+    ow.tryRunOnWarpIntoMapScript();
+    ow.tryRunOnFrameMapScript();
+    // The source does a normal warp fade, without FireRed's rush-to-the-nurse recovery.
+    paletteFade.fill(RGB_BLACK);
+    game.fadeFromBlack();
+    ow.whitingOut = false;
+    ow.whiteOutReady = false;
+    this.recoveredNavigation = nav;
+    game.whitingOut = false;
+  }
+
   /**
    * Hoenn arrival (pokeemerald overworld.c LoadMapFromWarp / InitMap, then the warp-into and frame
    * map scripts once the object events exist): see hoennMapEntry.ts for the steps that run.

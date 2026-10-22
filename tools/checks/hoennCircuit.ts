@@ -130,8 +130,9 @@ function sourcePrice(itemConst: string): number {
 }
 
 // ---------------------------------------------------------------- engine driver
+const recoveryRelocations: NavigationSave[] = [];
 const engine = new EngineInteraction({
-  pause() {}, project() {}, hideObjects() {}, relocate() {}, readObjects: () => [],
+  pause() {}, project() {}, hideObjects() {}, relocate(nav) { recoveryRelocations.push(structuredClone(nav)); }, readObjects: () => [],
   mapOrigin: () => ({ x: 0, y: 0, width: 0, height: 0 }) as never, syncObjects() {}, setBike() {},
 });
 /** Run queued animation frames (one engine frame each) until `done` or the frame budget ends. */
@@ -355,6 +356,58 @@ assert.equal(JSON.stringify(live().party), partyBefore);
 // Continuing in Hoenn after the reload: the next entry runs the source scripts on the restored bank.
 const again = await engine.enterMap(resumed);
 assert.equal(again?.transition, "OldaleTown_OnTransition");
+
+// Route110 ON_RESUME special: compare all state branches, including the exact source-map guard.
+const { UpdateCyclingRoadState } = await import("../../src/games/emerald/specials.ts");
+const northEntrance = EM.MAP_ROUTE110_SEASIDE_CYCLING_ROAD_NORTH_ENTRANCE;
+for (const fromNorth of [false, true]) for (const challengeState of [0, 1, 2, 3, 4]) {
+  game.overworld.lastUsedWarp = { mapGroup: northEntrance >>> 8, mapNum: (northEntrance & 0xff) + (fromNorth ? 0 : 1), warpId: -1, x: 1, y: 1 }; // PREPARED origin
+  game.overworld.Overworld_SetSavedMusic(EM.MUS_CYCLING); // PREPARED saved music
+  varSet(EM.VAR_CYCLING_CHALLENGE_STATE, challengeState); // PREPARED cycling state
+  UpdateCyclingRoadState({ ow: game.overworld } as import("../../src/core/script/context.ts").ScriptRunner);
+  const reset = !fromNorth && (challengeState === 2 || challengeState === 3);
+  assert.equal(varGet(EM.VAR_CYCLING_CHALLENGE_STATE), reset ? 0 : challengeState);
+  assert.equal(game.overworld.savedMusic, reset ? EM.MUS_DUMMY : EM.MUS_CYCLING);
+}
+console.log("PREPARED cycling origins/states: UpdateCyclingRoadState guard and reset branches PASS");
+
+// ---------------------------------------------------------------- 6. Emerald white-out recovery (PREPARED scheduler preconditions)
+// The browser job covers a real defeat; here we isolate the 120-frame dispatch and source rules.
+const whiteOutSource = src("src/overworld.c");
+assert.match(whiteOutSource, /SetMoney\(&gSaveBlock1Ptr->money, GetMoney\(&gSaveBlock1Ptr->money\) \/ 2\)/);
+const resetBody = whiteOutSource.match(/static void Overworld_ResetStateAfterWhiteOut\(void\)\s*\{([\s\S]*?)\n\}/)![1]!;
+const resetFlags = [...resetBody.matchAll(/FlagClear\((FLAG_\w+)\)/g)].map(m => (EM as Record<string, number>)[m[1]!]!);
+for (const flag of resetFlags) flagSet(flag); // PREPARED active field modes before defeat
+varSet(EM.VAR_SHOULD_END_ABNORMAL_WEATHER, 1); // PREPARED reset-trigger condition
+varSet(EM.VAR_ABNORMAL_WEATHER_LOCATION, 7); // PREPARED active abnormal weather
+console.log("PREPARED: field modes, weather state (1, 7), odd money and a fainted party before white-out");
+live().money = 2701; // PREPARED odd amount to check C unsigned integer division
+live().party[0]!.hp = 0; // PREPARED fainted party; battle outcome is covered in the browser
+const savedHeal = structuredClone(live().lastHealLocation);
+await engine.show(saveNav, { mapId: "MAP_OLDALE_TOWN", localId: 1 });
+const relocationsBeforeWhiteOut = recoveryRelocations.length;
+game.whiteOut();
+for (let frame = 0; frame < 119; frame++) game.frame();
+assert.equal(live().money, 2701, "CB2_WhiteOut must wait 120 frames");
+game.frame();
+assert.equal(live().money, 1350, "Emerald halves money with unsigned integer division");
+await pump(1200, tap(A_BUTTON));
+assert.equal(engine.open, false, "Emerald recovery returned to the field");
+assert.equal(recoveryRelocations.length - relocationsBeforeWhiteOut, 1, "one recovery must relocate the viewer once");
+assert.deepEqual(live().location, savedHeal, "Emerald uses the exact saved outdoor heal warp");
+assert.equal(live().party[0]!.hp, live().party[0]!.stats[0]);
+for (const flag of resetFlags) assert.equal(flagGet(flag), false, `white-out cleared source flag ${flag}`);
+assert.equal(varGet(EM.VAR_SHOULD_END_ABNORMAL_WEATHER), 0);
+assert.equal(varGet(EM.VAR_ABNORMAL_WEATHER_LOCATION), EM.ABNORMAL_WEATHER_NONE);
+// A value other than 1 must not clear the weather pair.
+const { Overworld_ResetStateAfterWhiteOut } = await import("../../src/games/emerald/whiteOut.ts");
+varSet(EM.VAR_SHOULD_END_ABNORMAL_WEATHER, 2); // PREPARED non-trigger condition
+varSet(EM.VAR_ABNORMAL_WEATHER_LOCATION, 7); // PREPARED weather that must be preserved
+console.log("PREPARED: non-trigger weather state (2, 7), reset must preserve it");
+Overworld_ResetStateAfterWhiteOut({ resetInitialPlayerAvatarState() {} });
+assert.equal(varGet(EM.VAR_SHOULD_END_ABNORMAL_WEATHER), 2);
+assert.equal(varGet(EM.VAR_ABNORMAL_WEATHER_LOCATION), 7);
+console.log("white-out: 120-frame wait, source script/flags/weather, half money, healed party and exact Emerald outdoor respawn PASS (PREPARED)");
 
 resetViewerSessionInitialized();
 const kanto = reloadWorldSave()!;
