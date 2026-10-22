@@ -341,6 +341,10 @@ function ScriptMenu_CreatePCMultichoice(ctx: ScriptRunner): number { return ctx.
 /** player_pc.c PlayerPC (EQUIVALENCE/wrapper): the engine's player PC (Item Storage, Mailbox, Turn Off). */
 function PlayerPC(ctx: ScriptRunner): void { ctx.ow.game.openPlayerPC(false); }
 
+/** player_pc.c BedroomPC (EQUIVALENCE/wrapper, with a GAP): the engine's bedroom PC offers ITEM STORAGE, MAILBOX and TURN OFF; Emerald's
+ * list also has DECORATION (sBedroomPC_OptionOrder), which needs the decoration system (decoration.c, not ported). */
+function BedroomPC(ctx: ScriptRunner): void { ctx.ow.game.openPlayerPC(true); }
+
 /** pokemon_storage_system.c ShowPokemonStorageSystemPC (EQUIVALENCE/wrapper): the engine's storage system. */
 function ShowPokemonStorageSystemPC(ctx: ScriptRunner): void { ctx.ow.game.openPokemonStorage(); }
 
@@ -652,7 +656,7 @@ export const EMERALD_SPECIALS = {
   DisplayBerryPowderVendorMenu: BerryPowder.DisplayBerryPowderVendorMenu,
   PrintPlayerBerryPowderAmount: BerryPowder.PrintPlayerBerryPowderAmount,
   RemoveBerryPowderVendorMenu: BerryPowder.RemoveBerryPowderVendorMenu,
-  DoPCTurnOnEffect, DoPCTurnOffEffect, ScriptMenu_CreatePCMultichoice, PlayerPC, ShowPokemonStorageSystemPC,
+  DoPCTurnOnEffect, DoPCTurnOffEffect, ScriptMenu_CreatePCMultichoice, PlayerPC, BedroomPC, ShowPokemonStorageSystemPC,
   IsMonOTIDNotPlayers, SavePlayerParty, LoadPlayerParty, ChoosePartyMon, IsTrainerReadyForRematch,
   IsEnigmaBerryValid: () => (Berry.IsEnigmaBerryValid() ? 1 : 0),
 };
