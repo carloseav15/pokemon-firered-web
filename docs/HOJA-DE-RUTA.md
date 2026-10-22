@@ -62,6 +62,16 @@ Continue antes y después, y regreso Kanto aislado; solo entrenador `lab-done`
 nivel 5 con salud original colocado junto al ferry PREPARED, sin escrituras durante
 el recorrido. `check:region-save` cubre también reparación antigua y respawn Kanto.
 
+`9201e625` añade el puzzle giratorio fuente de Mossdeep/Trick House 7: archivo C
+completo, cuatro comandos y familia de bloqueo de animación, con traducción explícita
+de sus IDs de movimiento al núcleo. Retirado el contador de interruptores adaptado;
+teletransportes adaptados conservados. Comparación con C: 1.447 casos de puzzle y
+41 de bloqueo PREPARED PASS. Nueve scripts de coordenadas exportados (cinco/cuatro),
+35 desplazamientos de plantillas y esperas PASS sin render; RedButton de Trick House
+es Unused, no un décimo interruptor alcanzable. Guardar/Continue del puzzle,
+recorrido visual/colisiones y teletransportes fuente siguen pendientes. La traducción
+de movimientos cubre solo esta familia; quedan 13 comandos Emerald ausentes.
+
 Siguiente: contratos Emerald fuera del circuito y cotejo audiovisual. Quedan otros
 recorridos, reto Cycling Road completo (warp previo/música/reloj/colisiones), resto
 de comandos/specials, paridad audiovisual (respaldo FireRed), móvil y producción.
