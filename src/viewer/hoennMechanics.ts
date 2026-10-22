@@ -444,29 +444,7 @@ export class SootopolisGymIceTracker {
   }
 }
 
-/**
- * Mossdeep Gym (Algaria) Rotating Tile Puzzle & Warp Teleporters:
- * - Color switches rotate directional arrow metatiles counter-clockwise (rotating_tile_puzzle.c).
- * - Warp pads transport player between gym platform chambers.
- */
-export const METATILE_MossdeepGym_YellowArrow_Right = 592; // 0x250
-
-export interface MossdeepSwitchTrigger {
-  puzzleNumber: number;
-  color: "yellow" | "blue" | "green" | "purple" | "red";
-}
-
-export const MOSSDEEP_FLOOR_SWITCHES: Record<string, MossdeepSwitchTrigger> = {
-  "2,21": { puzzleNumber: 0, color: "yellow" },
-  "3,30": { puzzleNumber: 0, color: "yellow" },
-  "8,10": { puzzleNumber: 1, color: "blue" },
-  "6,7": { puzzleNumber: 1, color: "blue" },
-  "15,34": { puzzleNumber: 2, color: "green" },
-  "23,24": { puzzleNumber: 3, color: "purple" },
-  "23,21": { puzzleNumber: 3, color: "purple" },
-  "8,6": { puzzleNumber: 4, color: "red" },
-};
-
+/** Remaining Mossdeep teleporter adaptation. Rotating tiles now use the Emerald engine. */
 export const MOSSDEEP_GYM_WARPS: Record<string, { x: number; y: number }> = {
   "3,28": { x: 1, y: 23 },
   "1,23": { x: 3, y: 28 },
@@ -484,53 +462,12 @@ export const MOSSDEEP_GYM_WARPS: Record<string, { x: number; y: number }> = {
 };
 
 export class MossdeepGymTracker {
-  // Arrow rotation states for the 5 colors (0: yellow, 1: blue, 2: green, 3: purple, 4: red)
-  // 0 = Right, 1 = Down, 2 = Left, 3 = Up. Each switch rotates counter-clockwise:
-  // Right (0) -> Up (3) -> Left (2) -> Down (1) -> Right (0)
-  private puzzleRotations: number[] = [0, 0, 0, 0, 0];
-
-  onStep(x: number, y: number): {
-    isSwitch: boolean;
-    isWarp: boolean;
-    switchTrigger?: MossdeepSwitchTrigger;
-    warpDestination?: { x: number; y: number };
-    newRotation?: number;
-    sound?: number;
-  } {
-    const key = `${x},${y}`;
-    const warp = MOSSDEEP_GYM_WARPS[key];
-    if (warp) {
-      return {
-        isSwitch: false,
-        isWarp: true,
-        warpDestination: warp,
-        sound: EmeraldConstants.SE_WARP_IN,
-      };
-    }
-
-    const sw = MOSSDEEP_FLOOR_SWITCHES[key];
-    if (sw) {
-      // Counter-clockwise rotation: 0 -> 3 -> 2 -> 1 -> 0
-      const current = this.puzzleRotations[sw.puzzleNumber]!;
-      const next = (current + 3) % 4;
-      this.puzzleRotations[sw.puzzleNumber] = next;
-      return {
-        isSwitch: true,
-        isWarp: false,
-        switchTrigger: sw,
-        newRotation: next,
-        sound: EmeraldConstants.SE_SWITCH,
-      };
-    }
-
-    return { isSwitch: false, isWarp: false };
+  /** Remaining teleport adaptation only; floor switches run Emerald scripts in the engine. */
+  onWarpStep(x: number, y: number): { isWarp: boolean; warpDestination?: { x: number; y: number }; sound?: number } {
+    const warp = MOSSDEEP_GYM_WARPS[`${x},${y}`];
+    return warp ? { isWarp: true, warpDestination: warp, sound: EmeraldConstants.SE_WARP_IN } : { isWarp: false };
   }
 
-  getRotatedArrowMetatile(baseMetatile: number, puzzleNumber: number): number {
-    const rowOffset = puzzleNumber * 8;
-    const rot = this.puzzleRotations[puzzleNumber] || 0;
-    return METATILE_MossdeepGym_YellowArrow_Right + rowOffset + rot;
-  }
 }
 
 /**

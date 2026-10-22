@@ -22,7 +22,6 @@ import {
   METATILE_SootopolisGym_Ice_Cracked,
   METATILE_SootopolisGym_Stairs,
   MossdeepGymTracker,
-  METATILE_MossdeepGym_YellowArrow_Right,
   HoennAshTracker,
   METATILE_Fallarbor_AshGrass,
   METATILE_Fallarbor_NormalGrass,
@@ -253,31 +252,16 @@ assert.equal(METATILE_SootopolisGym_Stairs, 519);
 const mossdeepGym = new MossdeepGymTracker();
 
 // Teleporters (warps)
-const warp1 = mossdeepGym.onStep(3, 28);
+const warp1 = mossdeepGym.onWarpStep(3, 28);
 assert.equal(warp1.isWarp, true);
 assert.deepEqual(warp1.warpDestination, { x: 1, y: 23 });
 
-const warpReturn = mossdeepGym.onStep(21, 6);
+const warpReturn = mossdeepGym.onWarpStep(21, 6);
 assert.equal(warpReturn.isWarp, true);
 assert.deepEqual(warpReturn.warpDestination, { x: 6, y: 35 });
 
-// Switches rotate directional arrows counter-clockwise
-// Yellow switch at (2, 21)
-const yellowSw = mossdeepGym.onStep(2, 21);
-assert.equal(yellowSw.isSwitch, true);
-assert.equal(yellowSw.switchTrigger?.color, "yellow");
-assert.equal(yellowSw.switchTrigger?.puzzleNumber, 0);
-assert.equal(yellowSw.newRotation, 3, "Rotates 0 (right) -> 3 (up)");
-assert.equal(yellowSw.sound, EmeraldConstants.SE_SWITCH);
-
-// Second press rotates up (3) -> left (2)
-const yellowSw2 = mossdeepGym.onStep(3, 30);
-assert.equal(yellowSw2.isSwitch, true);
-assert.equal(yellowSw2.newRotation, 2);
-
-// Base metatile calculation
-const arrowMt = mossdeepGym.getRotatedArrowMetatile(METATILE_MossdeepGym_YellowArrow_Right, 0);
-assert.equal(arrowMt, 592 + 2, "Arrow metatile rotated to Left");
+// Floor switches belong to the source engine; no duplicate adaptation on those cells.
+assert.equal(mossdeepGym.onWarpStep(2, 21).isWarp, false);
 
 // 7. Volcanic Ash Grass (Route 113 & Lavaridge)
 const ashTracker = new HoennAshTracker();

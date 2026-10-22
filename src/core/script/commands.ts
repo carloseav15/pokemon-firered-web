@@ -3,6 +3,7 @@
 // the ScrCmd_ names so COMMANDS can be indexed directly by the ROM's
 // gScriptCmdTable symbol names (rom.scriptMeta.commands).
 
+import { RotatingTilePuzzle } from "../../games/emerald/rotatingTilePuzzle";
 import { FONT_BRAILLE, GetStringWidth } from "../gba/font";
 import * as C from "@game/generated/constants";
 import { sound } from "../audio/sound";
@@ -308,6 +309,25 @@ function ScrCmd_adddecoration(ctx: ScriptRunner): boolean { ctx.ScriptReadHalfwo
 function ScrCmd_removedecoration(ctx: ScriptRunner): boolean { ctx.ScriptReadHalfword(); return false; }
 function ScrCmd_checkdecor(ctx: ScriptRunner): boolean { ctx.ScriptReadHalfword(); return false; }
 function ScrCmd_checkdecorspace(ctx: ScriptRunner): boolean { ctx.ScriptReadHalfword(); return false; }
+// Emerald scrcmd.c: one allocation per live Overworld; no state leaks between games.
+const rotatingPuzzles = new WeakMap<ScriptRunner['ow'], RotatingTilePuzzle>();
+function rotatingPuzzle(ctx: ScriptRunner): RotatingTilePuzzle {
+  let puzzle = rotatingPuzzles.get(ctx.ow);
+  if (!puzzle) { puzzle = new RotatingTilePuzzle(ctx.ow); rotatingPuzzles.set(ctx.ow, puzzle); }
+  return puzzle;
+}
+function ScrCmd_initrotatingtilepuzzle(ctx: ScriptRunner): boolean {
+  rotatingPuzzle(ctx).InitRotatingTilePuzzle(varGet(ctx.ScriptReadHalfword())); return false;
+}
+function ScrCmd_moverotatingtileobjects(ctx: ScriptRunner): boolean {
+  movingNpcId = rotatingPuzzle(ctx).MoveRotatingTileObjects(varGet(ctx.ScriptReadHalfword())); return false;
+}
+function ScrCmd_turnrotatingtileobjects(ctx: ScriptRunner): boolean {
+  rotatingPuzzle(ctx).TurnRotatingTileObjects(); return false;
+}
+function ScrCmd_freerotatingtilepuzzle(ctx: ScriptRunner): boolean {
+  rotatingPuzzle(ctx).FreeRotatingTilePuzzle(); return false;
+}
 function ScrCmd_applymovement(ctx: ScriptRunner): boolean {
   const localId = varGet(ctx.ScriptReadHalfword());
   const ptr = ctx.ScriptReadWord();
@@ -737,6 +757,7 @@ export const COMMANDS: Record<string, ScriptCommand> = {
   ScrCmd_vgoto_if, ScrCmd_vcall_if, ScrCmd_incrementgamestat, ScrCmd_comparestat, ScrCmd_signmsg, ScrCmd_normalmsg,
   ScrCmd_setmonmodernfatefulencounter, ScrCmd_checkmonmodernfatefulencounter, ScrCmd_setworldmapflag,
   ScrCmd_setmonmetlocation,
+  ScrCmd_initrotatingtilepuzzle, ScrCmd_moverotatingtileobjects, ScrCmd_turnrotatingtileobjects, ScrCmd_freerotatingtilepuzzle,
 };
 
 function readWarpData(ctx: ScriptRunner) {

@@ -2989,8 +2989,14 @@ export class ObjectEvents {
    * (event_object_movement.c): sMovementActionFuncs[actionId][sprite->data[2]](...).
    * Runs one frame of the object's current movement action; true when finished.
    */
+  /** Internal actions supplied by another game's adapter use IDs above the byte range.
+   * Source ROM bytes remain interpreted by their own adapter before reaching this table. */
+  readonly externalMovementActions = new Map<number, (object: ObjectEvent) => boolean>();
+
   execAction(object: ObjectEvent): boolean {
     const id = object.movementActionId;
+    const external = id > 0xff ? this.externalMovementActions.get(id) : undefined;
+    if (external) return external(object);
     if (id === MOVEMENT_ACTION_NONE || id === MOVEMENT_ACTION_STEP_END) return true;
     const steps = MOVEMENT_ACTION_STEPS[id];
     if (!steps) return true;

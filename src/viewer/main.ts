@@ -2168,7 +2168,7 @@ function processPlayerStep(): void {
 
           // Mossdeep Gym Puzzle
           if (curMap === "MAP_MOSSDEEP_CITY_GYM") {
-            const mossResult = mossdeepGymTracker.onStep(locX, locY);
+            const mossResult = mossdeepGymTracker.onWarpStep(locX, locY);
             if (mossResult.isWarp && mossResult.warpDestination) {
               if (mossResult.sound) audioController.playSE(mossResult.sound);
               const destX = hit ? hit[1].x + mossResult.warpDestination.x : mossResult.warpDestination.x;
@@ -2178,9 +2178,6 @@ function processPlayerStep(): void {
               playerVisualX = (destX - minX) * TILE;
               playerVisualY = (destY - minY) * TILE;
               updatePlayerDisplay();
-            } else if (mossResult.isSwitch && mossResult.switchTrigger) {
-              if (mossResult.sound) audioController.playSE(mossResult.sound);
-              audioController.playSE(EmeraldConstants.SE_REPEL);
             }
           }
 

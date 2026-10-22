@@ -47,6 +47,7 @@ assert.equal(writeWorldSave(), true);
 const kantoBefore = stored();
 
 resetViewerSessionInitialized();
+await rom.load(); // Regional entry now resolves the Emerald arrival heal table.
 initializeRegionalSession("hoenn", () => {});
 assert.equal(save.flags.length, EM.NUM_FLAG_BYTES, "the Hoenn bank is live");
 // PREPARED: temporary data that Emerald's ClearTempFieldEventData must clear on entry.
@@ -58,7 +59,6 @@ assert.equal(flagGet(EM.FLAG_RESCUED_BIRCH), false);
 console.log("PREPARED: VAR_TEMP_1=7, FLAG_SYS_USE_STRENGTH and FLAG_SYS_ENC_UP_ITEM set before entry");
 
 const nav = { mapId: "MAP_LITTLEROOT_TOWN", x: 10, y: 10, direction: "south" as const, dynamic: null };
-await rom.load();
 const canvas = { width: 240, height: 160, getContext: () => ({}) } as unknown as HTMLCanvasElement;
 const report = await runEmeraldMapEntry(new Game(canvas), nav);
 console.log(JSON.stringify({ ...report, changedTemplates: report.changedTemplates.map(t => [t.localId, t.x, t.y, t.movementType]) }));
