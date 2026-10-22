@@ -27,7 +27,7 @@ type ViewerObjectsSnapshot = { version: 1 | 2; mapId: string; states: unknown[] 
 export const REGIONAL_FIELD_KEYS = [
   'location', 'pos', 'mapLayoutId', 'continueGameWarp', 'dynamicWarp', 'lastHealLocation', 'escapeWarp',
   'objectEventTemplates', 'objectEvents', 'objectEventsVersion', 'weather', 'weatherCycleStage', 'savedMusic',
-  'facing', 'playerAvatarFlags', 'mapView', 'trainerRematchStepCounter', 'trainerRematches',
+  'facing', 'playerAvatarFlags', 'mapView', 'trainerRematchStepCounter', 'trainerRematches', 'berryTrees', 'lastBerryTreeUpdate',
 ] as const satisfies readonly (keyof SaveData)[];
 export type RegionalField = Partial<Pick<SaveData, (typeof REGIONAL_FIELD_KEYS)[number]>>;
 

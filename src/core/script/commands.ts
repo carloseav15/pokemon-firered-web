@@ -7,6 +7,7 @@ import { mossdeepGymWarp } from '../../games/emerald/mossdeepGymWarp';
 import { ScrCmd_braillemessage as EmeraldBrailleMessage, ScrCmd_closebraillemessage } from '../../games/emerald/brailleMessage';
 import { BufferContestName, GetTrainerClassNameFromId, GetTrainerNameFromId, CopyItemNameHandlePlural } from "../../games/emerald/scriptText";
 import { RotatingTilePuzzle } from "../../games/emerald/rotatingTilePuzzle";
+import { SetBerryTreeEntry } from "../../games/emerald/berry";
 import { FONT_BRAILLE, GetStringWidth } from "../gba/font";
 import * as C from "@game/generated/constants";
 import { sound } from "../audio/sound";
@@ -680,7 +681,14 @@ function ScrCmd_pokemart(ctx: ScriptRunner): boolean { const ptr = ctx.ScriptRea
 function ScrCmd_pokemartdecoration(ctx: ScriptRunner): boolean { const ptr = ctx.ScriptReadWord(); ctx.ow.game.createPokemartMenu(ptr); ctx.ow.script.ScriptContext_Stop(); return true; }
 function ScrCmd_pokemartdecoration2(ctx: ScriptRunner): boolean { const ptr = ctx.ScriptReadWord(); ctx.ow.game.createPokemartMenu(ptr); ctx.ow.script.ScriptContext_Stop(); return true; }
 function ScrCmd_playslotmachine(ctx: ScriptRunner): boolean { const id = varGet(ctx.ScriptReadHalfword()); ctx.ow.game.playSlotMachine(id); ctx.ow.script.ScriptContext_Stop(); return true; }
-function ScrCmd_setberrytree(ctx: ScriptRunner): boolean { ctx.readByte(); ctx.readByte(); ctx.readByte(); return false; }
+/** ScrCmd_setberrytree (scrcmd.c; pokefirered and pokeemerald read the same three bytes). */
+function ScrCmd_setberrytree(ctx: ScriptRunner): boolean {
+  const treeId = ctx.readByte();
+  const berry = ctx.readByte();
+  const growthStage = ctx.readByte();
+  SetBerryTreeEntry(treeId, berry, growthStage);
+  return false;
+}
 function ScrCmd_choosecontestmon(ctx: ScriptRunner): boolean { ctx.ow.script.ScriptContext_Stop(); return true; }
 function ScrCmd_startcontest(ctx: ScriptRunner): boolean { return false; }
 function ScrCmd_showcontestresults(ctx: ScriptRunner): boolean { return false; }

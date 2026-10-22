@@ -17,6 +17,7 @@ import { save as emSave } from "./save";
 import { FinishCyclingRoadChallenge, GetPlayerAvatarBike, GetRecordedCyclingRoadResults, Special_BeginCyclingRoadChallenge, UpdateCyclingRoadState } from "./cyclingRoad";
 import { ShouldTryRematchBattle } from "./battleSetup";
 import { PlayerFaceTrainerAfterBattle } from "./trainerSee";
+import * as Berry from "./berry";
 
 /** pokedex.c HasAllHoennMons: -2 excludes Jirachi and Deoxys. HoennToNationalOrder is the core port of
  * pokemon.c (sHoennToNationalOrder has the same values in pokeemerald and pokefirered). */
@@ -246,6 +247,16 @@ export const EMERALD_SPECIALS = {
   CountPlayerTrainerStars, PlayerNotAtTrainerHillEntrance, UpdateCyclingRoadState,
   Special_BeginCyclingRoadChallenge, FinishCyclingRoadChallenge, GetRecordedCyclingRoadResults, GetPlayerAvatarBike,
   ShouldTryRematchBattle, PlayerFaceTrainerAfterBattle, DrawWholeMapView, IsPokerusInParty, BufferUnionRoomPlayerName,
+  ObjectEventInteractionGetBerryTreeData: Berry.ObjectEventInteractionGetBerryTreeData,
+  ObjectEventInteractionGetBerryName: Berry.ObjectEventInteractionGetBerryName,
+  ObjectEventInteractionGetBerryCountString: Berry.ObjectEventInteractionGetBerryCountString,
+  ObjectEventInteractionWaterBerryTree: Berry.ObjectEventInteractionWaterBerryTree,
+  ObjectEventInteractionPlantBerryTree: Berry.ObjectEventInteractionPlantBerryTree,
+  ObjectEventInteractionPickBerryTree: Berry.ObjectEventInteractionPickBerryTree,
+  ObjectEventInteractionRemoveBerryTree: Berry.ObjectEventInteractionRemoveBerryTree,
+  PlayerHasBerries: Berry.PlayerHasBerries,
+  IncrementDailyPickedBerries: Berry.IncrementDailyPickedBerries,
+  IncrementDailyPlantedBerries: Berry.IncrementDailyPlantedBerries,
   FoundBlackGlasses, ScriptGetPartyMonSpecies, ResetSSTidalFlag, SetSSTidalFlag, StorePlayerCoordsInVars,
   ResetTrickHouseNuggetFlag, SetTrickHouseNuggetFlag,
   FoundAbandonedShipRoom1Key: () => FoundAbandonedShipRoomKey(EM.FLAG_HIDDEN_ITEM_ABANDONED_SHIP_RM_1_KEY),

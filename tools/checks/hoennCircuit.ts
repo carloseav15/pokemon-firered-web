@@ -401,6 +401,27 @@ assert.equal(live().savedMusic, 0, "Overworld_ClearSavedMusic on map load");
 await engine.enterMap(facingNav("MAP_ROUTE110", 10, 10, "south"));
 assert.equal(varGet(EM.VAR_CYCLING_CHALLENGE_STATE), 0, "ON_RESUME from another map: UpdateCyclingRoadState resets state 2");
 console.log("Cycling Road: north-entrance restart, saved music, ON_FRAME begin, ON_RESUME reset PASS (PREPARED rider state 3, frame counter)");
+// Berry trees: the bank's first entry ran EventScript_ResetAllBerries; pick the Route 102 Oran tree through its source script.
+{
+  const berryModule = await import("../../src/games/emerald/berry.ts");
+  const tree = berryModule.GetBerryTreeInfo(EM.BERRY_TREE_ROUTE_102_ORAN);
+  assert.equal(tree.berry, EM.ITEM_ORAN_BERRY - EM.FIRST_BERRY_INDEX + 1, "setberrytree: Oran berry");
+  assert.equal(tree.stage, EM.BERRY_STAGE_BERRIES, "setberrytree: fully grown");
+  assert.equal(tree.stopGrowth, true, "setberrytree plants with allowGrowth FALSE");
+  const treeYield = tree.berryYield;
+  const treeObject = (await rom.loadMap("MAP_ROUTE102")).objects.find(o => !o.clone && o.scriptName === "BerryTreeScript" && o.trainerRange === EM.BERRY_TREE_ROUTE_102_ORAN)!;
+  const beside = facingNav("MAP_ROUTE102", treeObject.x, treeObject.y + 1, "north"); // PREPARED: the tile below the tree
+  await engine.enterMap(beside);
+  const berriesBefore = live().bag.berryPouch.find(slot => slot.item === EM.ITEM_ORAN_BERRY)?.quantity ?? 0;
+  const pickedBefore = varGet(EM.VAR_DAILY_PICKED_BERRIES);
+  await engine.show(beside, { mapId: "MAP_ROUTE102", localId: treeObject.localId });
+  await pump(1500, tap(A_BUTTON));
+  assert.equal(engine.open, false, "BerryTreeScript finished");
+  assert.equal(berryModule.GetStageByBerryTreeId(EM.BERRY_TREE_ROUTE_102_ORAN), EM.BERRY_STAGE_NO_BERRY, "ObjectEventInteractionRemoveBerryTree");
+  assert.equal(live().bag.berryPouch.find(slot => slot.item === EM.ITEM_ORAN_BERRY)?.quantity ?? 0, berriesBefore + treeYield, "ObjectEventInteractionPickBerryTree adds the yield");
+  assert.equal(varGet(EM.VAR_DAILY_PICKED_BERRIES), pickedBefore + treeYield, "IncrementDailyPickedBerries");
+  console.log(`berries: EventScript_ResetAllBerries state, BerryTreeScript pick (${treeYield} Oran) PASS`);
+}
 await engine.enterMap(saveNav); // back in Oldale for the white-out section
 
 // ---------------------------------------------------------------- 6. Emerald white-out recovery (PREPARED scheduler preconditions)

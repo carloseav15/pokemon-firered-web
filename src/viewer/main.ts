@@ -1426,9 +1426,10 @@ async function continueHoennSession(): Promise<void> {
 
 /**
  * ADAPTATION of NewGameInitData's RunScriptImmediately(EventScript_ResetAllMapFlags) for a new
- * Hoenn bank: sets the script's setflag list as extracted by world_index.py, but not its
- * `call EventScript_ResetAllBerries` (berry trees have no place in the bank yet). To be replaced
- * by running the script through HoennMapEntry's VM host once bank creation can await it.
+ * Hoenn bank: sets the script's setflag list as extracted by world_index.py (the viewer reads object
+ * presence from these flags before any map entry). Its `call EventScript_ResetAllBerries` runs in
+ * HoennMapEntry on the bank's first entry (the berry trees live in the bank). To be replaced by running the
+ * whole script through that VM host once bank creation can await it.
  */
 function initializeHoennSessionFlags(initialFlags?: Record<string, number>): void {
   if (!initialFlags) return;

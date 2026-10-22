@@ -120,6 +120,20 @@ export type LinkBattleRecordsSave = {
   languages: number[];
 };
 
+/** global.berry.h struct BerryTree (bit fields unpacked). */
+export interface BerryTree {
+  berry: number;
+  stage: number;
+  stopGrowth: boolean;
+  minutesUntilNextStage: number;
+  berryYield: number;
+  regrowthCount: number;
+  watered1: boolean;
+  watered2: boolean;
+  watered3: boolean;
+  watered4: boolean;
+}
+
 export type SaveData = {
   version: 2;
   playerName: number[];
@@ -185,6 +199,10 @@ export type SaveData = {
   daycare?: unknown;
   berryPowder?: number;
   trainerRematchStepCounter?: number;
+  /** berry.h BerryTree[BERRY_TREES_COUNT] of pokeemerald's SaveBlock1 (the Hoenn bank only). */
+  berryTrees?: BerryTree[];
+  /** SaveBlock2.lastBerryTreeUpdate (struct Time). */
+  lastBerryTreeUpdate?: { days: number; hours: number; minutes: number; seconds: number };
   trainerRematches?: number[];
   roamer?: unknown;
   ramScript?: RamScriptSave;

@@ -5,7 +5,7 @@
 // VM's flag/var writes and the location it reads are Hoenn's own.
 //
 // Not run here (viewer handles or not yet bridged): CheckLeftFriendsSecretBase, TrySetMapSaveWarpStatus,
-// TryUpdateRandomTrainerRematches, DoTimeBasedEvents,
+// TryUpdateRandomTrainerRematches, UpdatePerDay (the rest of DoTimeBasedEvents, see games/emerald/clock.ts),
 // SetSavedWeatherFromCurrMapHeader, ChooseAmbientCrySpecies, SetDefaultFlashLevel,
 // roamer updates, Battle Pyramid/Trainer Hill maps, TV screens and secret
 // bases. RestartWildEncounterImmunitySteps is the caller's (EngineInteraction.enterMap). The
@@ -14,9 +14,12 @@
 import type { Game } from '@game/game';
 import { save } from '@game/save';
 import { rom, type MapObjectTemplate } from '@core/rom';
+import { loadCData } from '@core/hw/assets';
 import { MAP_OFFSET } from '@core/field/fieldmap';
 import { dummyWarp, isMapTypeOutdoors, MAP_SCRIPT_ON_LOAD, MAP_SCRIPT_ON_RESUME, MAP_SCRIPT_ON_TRANSITION } from '@core/field/overworld';
 import { ResetCyclingRoadChallengeData } from '../games/emerald/cyclingRoad';
+import { ClearBerryTrees } from '../games/emerald/berry';
+import { DoTimeBasedEvents } from '../games/emerald/clock';
 import * as EmSave from '../games/emerald/save';
 import * as EM from '../games/emerald/generated/constants';
 import { liveWorldRegion } from './regionSave';
@@ -74,11 +77,19 @@ export async function runEmeraldMapEntry(game: Game, nav: NavigationSave, hooks:
   // LoadCurrentMapData + LoadObjEventTemplatesFromHeader
   await ow.prepareViewerMapScripts(nav.mapId, savedTemplates);
   const header = ow.header;
+  // A bank without berry trees is new: NewGameInitData's `call EventScript_ResetAllBerries` (the flag half of
+  // EventScript_ResetAllMapFlags is initializeHoennSessionFlags in main.ts).
+  if (!save.berryTrees) {
+    await loadCData('berry'); // gBerries: GetBerryInfo's table (the engine preloads it, headless callers do not)
+    ClearBerryTrees();
+    ow.script.RunScriptImmediately(rom.label('EventScript_ResetAllBerries'));
+  }
   // LoadMapFromWarp: ClearTempFieldEventData, FLAG_SYS_USE_FLASH, RunOnTransitionMapScript
   const transition = hooks.continuing ? null : scriptLabel(ow.MapHeaderGetScriptTable(MAP_SCRIPT_ON_TRANSITION));
   // UpdateMiscOverworldStates (Continue) / LoadMapFromWarp: ResetCyclingRoadChallengeData; the saved
   // music is cleared before ON_TRANSITION (savebgm) and restored from the save on Continue.
   ResetCyclingRoadChallengeData();
+  DoTimeBasedEvents();
   if (hooks.continuing) ow.savedMusic = save.savedMusic ?? 0;
   else {
     EmSave.ClearTempFieldEventData();
