@@ -3,6 +3,7 @@
 // the ScrCmd_ names so COMMANDS can be indexed directly by the ROM's
 // gScriptCmdTable symbol names (rom.scriptMeta.commands).
 
+import { ScrCmd_braillemessage as EmeraldBrailleMessage, ScrCmd_closebraillemessage } from '../../games/emerald/brailleMessage';
 import { BufferContestName, GetTrainerClassNameFromId, GetTrainerNameFromId, CopyItemNameHandlePlural } from "../../games/emerald/scriptText";
 import { RotatingTilePuzzle } from "../../games/emerald/rotatingTilePuzzle";
 import { FONT_BRAILLE, GetStringWidth } from "../gba/font";
@@ -535,7 +536,7 @@ function ScrCmd_hidemonpic(ctx: ScriptRunner): boolean {
   return true;
 }
 function ScrCmd_showcontestpainting(ctx: ScriptRunner): boolean { ctx.readByte(); return false; }
-function ScrCmd_braillemessage(ctx: ScriptRunner): boolean { ctx.ow.messageBox.showBraille(rom.stringAt(textPtr(ctx))); return false; }
+function ScrCmd_braillemessage(ctx: ScriptRunner): boolean { if (isEmeraldData()) return EmeraldBrailleMessage(ctx); ctx.ow.messageBox.showBraille(rom.stringAt(textPtr(ctx))); return false; }
 function ScrCmd_getbraillestringwidth(ctx: ScriptRunner): boolean { varSet(SV.x8004, GetStringWidth(FONT_BRAILLE, rom.stringAt(textPtr(ctx)), -1)); return false; }
 function ScrCmd_bufferspeciesname(ctx: ScriptRunner): boolean { const i = ctx.readByte(); stringVarSet(i, speciesName(varGet(ctx.ScriptReadHalfword()))); return false; }
 function ScrCmd_bufferleadmonspeciesname(ctx: ScriptRunner): boolean { const i = ctx.readByte(); const mon = save.party[leadMonIndex()]; stringVarSet(i, speciesName(mon?.species ?? 0)); return false; }
@@ -761,7 +762,7 @@ export const COMMANDS: Record<string, ScriptCommand> = {
   ScrCmd_messageautoscroll, ScrCmd_waitmessage, ScrCmd_closemessage, ScrCmd_waitbuttonpress, ScrCmd_yesnobox,
   ScrCmd_multichoice, ScrCmd_multichoicedefault, ScrCmd_drawbox, ScrCmd_multichoicegrid, ScrCmd_erasebox,
   ScrCmd_drawboxtext, ScrCmd_showmonpic, ScrCmd_hidemonpic, ScrCmd_showcontestpainting, ScrCmd_braillemessage,
-  ScrCmd_getbraillestringwidth, ScrCmd_vmessage, ScrCmd_bufferspeciesname, ScrCmd_bufferleadmonspeciesname,
+  ScrCmd_closebraillemessage, ScrCmd_getbraillestringwidth, ScrCmd_vmessage, ScrCmd_bufferspeciesname, ScrCmd_bufferleadmonspeciesname,
   ScrCmd_bufferpartymonnick, ScrCmd_bufferitemname, ScrCmd_bufferitemnameplural, ScrCmd_bufferdecorationname,
   ScrCmd_buffermovename, ScrCmd_buffernumberstring, ScrCmd_bufferstdstring, ScrCmd_bufferstring,
   ScrCmd_vbuffermessage, ScrCmd_vbufferstring, ScrCmd_bufferboxname,
@@ -783,6 +784,10 @@ export const COMMANDS: Record<string, ScriptCommand> = {
   ScrCmd_setmonmodernfatefulencounter, ScrCmd_checkmonmodernfatefulencounter, ScrCmd_setworldmapflag,
   ScrCmd_setmonmetlocation,
   ScrCmd_initrotatingtilepuzzle, ScrCmd_moverotatingtileobjects, ScrCmd_turnrotatingtileobjects, ScrCmd_freerotatingtilepuzzle,
+  // Emerald scrcmd.c has identical bodies under these two names (checked against
+  // both decomps); keep one implementation rather than duplicating party mutation.
+  ScrCmd_setmodernfatefulencounter: ScrCmd_setmonmodernfatefulencounter,
+  ScrCmd_checkmodernfatefulencounter: ScrCmd_checkmonmodernfatefulencounter,
 };
 
 function readWarpData(ctx: ScriptRunner) {

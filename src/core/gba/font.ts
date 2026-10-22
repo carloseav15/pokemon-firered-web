@@ -99,7 +99,7 @@ export function DecompressGlyphTile(src: Uint16Array, srcOffset: number, dest: U
 
 /** braille_text.c DecompressGlyph_Braille: four 8x8 tiles from sBrailleGlyphs, always 16x16. */
 function DecompressGlyph_Braille(code: number): Glyph {
-  const glyphs = incbin16("sBrailleGlyphs");
+  const glyphs = incbin16(isEmeraldData() ? "sFont_Braille" : "sBrailleGlyphs");
   const base = 0x100 * Math.trunc(code / 8) + 0x10 * (code % 8);
   glyphPixels.fill(0);
   DecompressGlyphTile(glyphs, base, glyphPixels, 0, 0);
