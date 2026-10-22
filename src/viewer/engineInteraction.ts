@@ -35,7 +35,7 @@ import { DoWhiteOut as DoEmeraldWhiteOut } from '../games/emerald/whiteOut';
 import { runEmeraldMapEntry, type HoennMapEntryReport } from './hoennMapEntry';
 import { CheckStandardWildEncounter, GetCoordEventScriptAtPosition, GetInteractedBackgroundEventScript, RestartWildEncounterImmunitySteps } from '../games/emerald/fieldControlAvatar';
 import { setEmeraldWildEncounterGame, UpdateRepelCounter } from '../games/emerald/wildEncounter';
-import { EMERALD_SPECIALS } from '../games/emerald/specials';
+import { EMERALD_SPECIALS, FIRERED_SPECIALS_SHARED_WITH_EMERALD } from '../games/emerald/specials';
 import { setGameSpecials } from '@game/script/specials';
 import { BattleSetup_GetEnvironmentId } from '../games/emerald/battleSetup';
 import { battleHost } from '@core/battle/host';
@@ -144,8 +144,10 @@ export class EngineInteraction {
         });
       };
       setEmeraldWildEncounterGame(game);
-      setGameSpecials(EMERALD_SPECIALS);
+      setGameSpecials(EMERALD_SPECIALS, FIRERED_SPECIALS_SHARED_WITH_EMERALD);
       battleHost.environmentId = () => BattleSetup_GetEnvironmentId(game);
+    } else {
+      setGameSpecials({});
     }
     joy.attach(); joy.setExternalInputEnabled(false);
   }

@@ -475,11 +475,30 @@ export function isNationalDexEnabled(): boolean {
 /** gSpecials entries of another game's content running on this engine (pokeemerald in Hoenn,
  * src/games/emerald/specials.ts); consulted before SPECIALS, so they also replace homonyms. */
 let gameSpecials: Record<string, Special> = {};
-export function setGameSpecials(table: Record<string, Special>): void { gameSpecials = table; }
+/** Names of this table's entries that the installed game's content may also call (same C body). */
+let inheritedSpecials: ReadonlySet<string> | undefined;
+/** `inherited` makes the install strict: every other FireRed entry is a homonym of unknown
+ * behavior for that game, and a name in neither list is unsupported rather than answered with 0. */
+export function setGameSpecials(table: Record<string, Special>, inherited?: ReadonlySet<string>): void {
+  gameSpecials = table;
+  inheritedSpecials = inherited;
+}
+
+/** Another game's special that has no port here; the script stops instead of continuing with an invented result. */
+export class UnsupportedScriptSpecialError extends Error {
+  constructor(readonly special: string, readonly entry: string) {
+    super(`Unsupported script special ${special} in ${entry}`);
+    this.name = 'UnsupportedScriptSpecialError';
+  }
+}
 
 export function runSpecial(ctx: ScriptRunner, name: string | undefined): number | undefined {
   if (!name) return undefined;
-  const fn = gameSpecials[name] ?? SPECIALS[name];
+  const fn = gameSpecials[name] ?? (inheritedSpecials && !inheritedSpecials.has(name) ? undefined : SPECIALS[name]);
+  if (!fn && inheritedSpecials) {
+    ctx.StopScript();
+    throw new UnsupportedScriptSpecialError(name, ctx.entry);
+  }
   if (!fn) {
     if (!warned.has(name)) {
       warned.add(name);
