@@ -136,6 +136,7 @@
     "check:emerald-starter-choose": "esbuild tools/checks/hoennCircuit.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/hoennCircuit.mjs && node .decomp-build/checks/hoennCircuit.mjs --starter",
     "check:emerald-pc-script": "esbuild tools/checks/hoennCircuit.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/hoennCircuit.mjs && node .decomp-build/checks/hoennCircuit.mjs --pc",
     "check:emerald-powder-vendor": "esbuild tools/checks/hoennCircuit.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/hoennCircuit.mjs && node .decomp-build/checks/hoennCircuit.mjs --powder",
+    "check:emerald-emotes": "esbuild tools/checks/hoennCircuit.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/hoennCircuit.mjs && node .decomp-build/checks/hoennCircuit.mjs --emotes",
     "check:emerald-mossdeep-warp": "esbuild tools/checks/hoennCircuit.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/hoennCircuit.mjs && node .decomp-build/checks/hoennCircuit.mjs --mossdeep"
   },
   "devDependencies": {

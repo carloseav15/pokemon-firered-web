@@ -183,6 +183,12 @@ resetViewerSessionInitialized();
 initializeRegionalSession("hoenn", () => {});
 console.log("PREPARED: Kanto trainer (Torchic Lv 7, ¥3000, FLAG_BADGE01_GET) saved, then a new Hoenn bank");
 
+if (process.argv.includes('--emotes')) {
+  const { runEmoteChecks } = await import('./emeraldEmotes.ts');
+  await runEmoteChecks(engine, pump);
+  process.exit(0);
+}
+
 if (process.argv.includes('--powder')) {
   const { runPowderChecks } = await import('./emeraldPowderVendor.ts');
   await runPowderChecks(engine, pump);

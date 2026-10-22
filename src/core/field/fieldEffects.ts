@@ -32,8 +32,10 @@ import {
 } from "../hw/ppu";
 
 type Template = { frames: Array<[string, number, number, number]>; anims: AnimCmd[][]; callback: string | null; size: [number, number] | null };
-// emoticons is null in the Emerald export, which has no FRLG emote sheet (gFieldEffectObjectPic_* differ).
-type FieldFxData = { templates: Record<string, Template>; emoticons: { file: string; width: number; height: number } | null };
+// emoticons is null in the Emerald export, which has no FRLG emote sheet: pokeemerald's trainer_see.c draws three separate
+// 16x16 pictures instead (`emotions`: exclamation, question, heart).
+type FxImage = { file: string; width: number; height: number };
+type FieldFxData = { templates: Record<string, Template>; emoticons: FxImage | null; emotions?: Record<"exclamation" | "question" | "heart", FxImage> };
 
 let fxData: FieldFxData | undefined;
 let fxPromise: Promise<FieldFxData> | undefined;
@@ -43,6 +45,7 @@ export function loadFieldFx(): Promise<FieldFxData> {
     fxData = d;
     for (const t of Object.values(d.templates)) for (const f of t.frames) void loadImage(`${DATA_ROOT}/${f[0]}`);
     if (d.emoticons) void loadImage(`${DATA_ROOT}/${d.emoticons.file}`);
+    for (const image of Object.values(d.emotions ?? {})) void loadImage(`${DATA_ROOT}/${image.file}`);
     return d;
   });
   return fxPromise;
@@ -1932,6 +1935,7 @@ export class FieldEffects {
     if (!fxData) return;
     const id = EMOTE_EFFECT_IDS[actionIndex];
     if (id === undefined) return;
+    if (!fxData.emoticons) { this.emoteEmerald(object, actionIndex, id); return; }
     const anim = EMOTE_FROM_ACTION[actionIndex] ?? 0;
     const sprite = new Sprite();
     sprite.frameImages = Array.from({ length: 15 }, (_, i) => ({ url: `${DATA_ROOT}/${fxData!.emoticons!.file}`, index: i, width: 16, height: 16 }));
@@ -1942,6 +1946,39 @@ export class FieldEffects {
     sprite.centerToCornerVecY = -8;
     this.SetIconSpriteData(sprite, object, id, anim);
     // The original active list can contain the same effect more than once.
+    this.emoteCounts.set(id, (this.emoteCounts.get(id) ?? 0) + 1);
+    this.active.add(id);
+    sprite.callback = (s) => this.SpriteCB_TrainerIcons(s, id);
+    this.ow.sprites.add(sprite);
+  }
+
+  /** trainer_see.c FldEff_ExclamationMarkIcon / FldEff_QuestionMarkIcon (pokeemerald): sSpriteImageTable_ExclamationQuestionMark holds
+   * the two pictures and sSpriteAnim_Icons1/2 show frame 0 / 1 for 60 frames; only these two of the FireRed emotes exist there. */
+  private emoteEmerald(object: ObjectEvent, actionIndex: number, id: number): void {
+    const emotions = fxData?.emotions;
+    if (!emotions || (actionIndex !== 0 && actionIndex !== 1)) return;
+    const sprite = new Sprite();
+    sprite.frameImages = [emotions.exclamation, emotions.question].map(image => ({ url: `${DATA_ROOT}/${image.file}`, index: 0, width: 16, height: 16 }));
+    sprite.anims = [[["F", 0, 60, 0, 0], ["E"]], [["F", 1, 60, 0, 0], ["E"]]]; // sSpriteAnimTable_Icons
+    this.startEmoteSprite(sprite, object, id, actionIndex);
+  }
+
+  /** trainer_see.c FldEff_HeartIcon (pokeemerald): one picture in the general palette; the caller passes Emerald's FLDEFF_HEART_ICON. */
+  emoteHeart(object: ObjectEvent, fldEffId: number): void {
+    const heart = fxData?.emotions?.heart;
+    if (!heart) return;
+    const sprite = new Sprite();
+    sprite.frameImages = [{ url: `${DATA_ROOT}/${heart.file}`, index: 0, width: 16, height: 16 }];
+    sprite.anims = [[["F", 0, 60, 0, 0], ["E"]]];
+    this.startEmoteSprite(sprite, object, fldEffId, 0);
+  }
+
+  private startEmoteSprite(sprite: Sprite, object: ObjectEvent, id: number, anim: number): void {
+    sprite.width = 16;
+    sprite.height = 16;
+    sprite.centerToCornerVecX = -8;
+    sprite.centerToCornerVecY = -8;
+    this.SetIconSpriteData(sprite, object, id, anim);
     this.emoteCounts.set(id, (this.emoteCounts.get(id) ?? 0) + 1);
     this.active.add(id);
     sprite.callback = (s) => this.SpriteCB_TrainerIcons(s, id);

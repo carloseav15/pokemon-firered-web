@@ -22,8 +22,7 @@ const source = readFileSync(resolve(decomp, 'src/event_object_movement.c'), 'utf
 
 // Every source regional action is implemented, or listed with the exact blocker.
 const BLOCKED = new Map<number, string>([
-  [C.MOVEMENT_ACTION_EMOTE_HEART, 'FLDEFF_HEART_ICON needs the Emerald field-effect sheet (fieldfx emoticons is null in the Emerald export)'],
-  [C.MOVEMENT_ACTION_REVEAL_TRAINER, 'trainer_see.c SetBuriedTrainerMovement/StartRevealDisguise bodies are Emerald-only'],
+  [C.MOVEMENT_ACTION_REVEAL_TRAINER, 'the Emerald body adds SetBuriedTrainerMovement and the buried-trainer tasks (trainer_see.c) to the disguise reveal'],
 ]);
 const lockUnlock = new Set([C.MOVEMENT_ACTION_LOCK_ANIM, C.MOVEMENT_ACTION_UNLOCK_ANIM]);
 for (const [id, reason] of EMERALD_REGIONAL_MOVEMENT_ACTIONS) {
@@ -213,6 +212,15 @@ for (const [action, direction, affine] of [[C.MOVEMENT_ACTION_WALK_LEFT_AFFINE, 
   const object = start(C.MOVEMENT_ACTION_HIDE_REFLECTION); runToEnd(object); assert.equal(object.hideReflection, true);
   const show = start(C.MOVEMENT_ACTION_SHOW_REFLECTION); show.hideReflection = true; runToEnd(show); assert.equal(show.hideReflection, false);
   const restore = start(C.MOVEMENT_ACTION_RESTORE_ANIMATION); restore.inanimate = true; restore.graphicsId = 0; runToEnd(restore); assert.equal(restore.inanimate, false);
+}
+
+// MovementAction_EmoteHeart: FieldEffectStart(FLDEFF_HEART_ICON) for the object, sActionFuncId = 1, then MovementAction_Finish.
+{
+  const calls: Array<[unknown, number]> = [];
+  (ow as unknown as { effects: unknown }).effects = { emoteHeart: (object: unknown, id: number) => { calls.push([object, id]); } };
+  const object = start(C.MOVEMENT_ACTION_EMOTE_HEART);
+  assert.equal(runToEnd(object), 1, 'step 0 returns TRUE and MovementAction_Finish ends the action in the same frame');
+  assert.deepEqual(calls, [[object, C.FLDEFF_HEART_ICON]]);
 }
 
 assert.equal(emeraldInternalActionId(C.MOVEMENT_ACTION_FIGURE_8), 0x100 + C.MOVEMENT_ACTION_FIGURE_8);

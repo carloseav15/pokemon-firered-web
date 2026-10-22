@@ -323,5 +323,18 @@ def export_field_effect_objects(constants: dict[str, int]) -> None:
     if emoticons_png.exists():
         emoticons = rgba_png(emoticons_png, image_dir / "emoticons.png",
                              read_jasc_palette(DECOMP / "graphics/object_events/palettes/player.pal"))
-    write_json(OUT / "fieldfx.json", {"templates": templates, "emoticons": {"file": "fieldfx/emoticons.png", "width": emoticons[0], "height": emoticons[1]} if emoticons else None})
+    # pokeemerald (trainer_see.c): three 16x16 emotion pictures instead of the sheet. Indices 14/15 are the white/black entries
+    # every object palette shares (the icons use OBJ palette slot 0: player.pal stands for it, as for FireRed's sheet); the heart
+    # uses FLDEFF_PAL_TAG_GENERAL_0 (gFieldEffectObjectPalette0) in slot 2.
+    emotions = None
+    pics_dir = DECOMP / "graphics/field_effects/pics"
+    if (pics_dir / "emotion_exclamation.png").exists():
+        emotions = {}
+        slot0 = read_jasc_palette(DECOMP / "graphics/object_events/palettes/brendan.pal")
+        general0 = read_jasc_palette(DECOMP / "graphics/field_effects/palettes/general_0.pal")
+        for name, palette in (("exclamation", slot0), ("question", slot0), ("heart", general0)):
+            w, h = rgba_png(pics_dir / f"emotion_{name}.png", image_dir / f"emotion_{name}.png", palette)
+            emotions[name] = {"file": f"fieldfx/emotion_{name}.png", "width": w, "height": h}
+    write_json(OUT / "fieldfx.json", {"templates": templates, "emoticons": {"file": "fieldfx/emoticons.png", "width": emoticons[0], "height": emoticons[1]} if emoticons else None,
+                                      **({"emotions": emotions} if emotions else {})})
     print(f"  {len(templates)} field effect templates")

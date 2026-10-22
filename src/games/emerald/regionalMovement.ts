@@ -3,8 +3,8 @@
 // their gMovementActionFuncs_* tables (data/object_events/movement_action_func_tables.h).
 // They run through the shared engine helpers whose bodies the contract compared
 // (InitNpcForMovement, UpdateMovementNormal, InitWalkSlower = Emerald InitWalkSlow...).
-// Not ported: MOVEMENT_ACTION_EMOTE_HEART (FLDEFF_HEART_ICON; the Emerald field-effect sheets
-// are not exported) and MOVEMENT_ACTION_REVEAL_TRAINER (trainer_see.c disguise/buried bodies).
+// Not ported: MOVEMENT_ACTION_REVEAL_TRAINER (its Emerald body adds the buried-trainer branch,
+// SetBuriedTrainerMovement and trainer_see.c's RevealBuriedTrainer tasks, on top of the disguise reveal FireRed has).
 import type { Overworld } from '@core/field/overworld';
 import { DIR_EAST, DIR_NORTH, DIR_NORTHEAST, DIR_NORTHWEST, DIR_SOUTH, DIR_SOUTHEAST, DIR_SOUTHWEST, DIR_WEST, MOVE_SPEED_FAST_1, MOVE_SPEED_NORMAL, type ObjectEvent } from '@core/field/objectEvents';
 import type { Sprite } from '@core/gba/sprite';
@@ -53,7 +53,7 @@ export const EMERALD_REGIONAL_IMPLEMENTED_ACTIONS: readonly number[] = [
   C.MOVEMENT_ACTION_WALK_LEFT_AFFINE, C.MOVEMENT_ACTION_WALK_RIGHT_AFFINE,
   C.MOVEMENT_ACTION_RESTORE_ANIMATION, C.MOVEMENT_ACTION_HIDE_REFLECTION, C.MOVEMENT_ACTION_SHOW_REFLECTION,
   C.MOVEMENT_ACTION_LEVITATE, C.MOVEMENT_ACTION_STOP_LEVITATE, C.MOVEMENT_ACTION_STOP_LEVITATE_AT_TOP,
-  C.MOVEMENT_ACTION_FIGURE_8,
+  C.MOVEMENT_ACTION_FIGURE_8, C.MOVEMENT_ACTION_EMOTE_HEART,
 ];
 
 export class EmeraldRegionalMovement {
@@ -98,6 +98,8 @@ export class EmeraldRegionalMovement {
     walkAffine(C.MOVEMENT_ACTION_WALK_RIGHT_AFFINE, DIR_EAST, 3);
 
     this.add(C.MOVEMENT_ACTION_RESTORE_ANIMATION, [(object, sprite) => this.RestoreAnimation_Step0(object, sprite), this.Finish]);
+    // MovementAction_EmoteHeart_Step0: FieldEffectStart(FLDEFF_HEART_ICON) for this object, then sActionFuncId = 1 (MovementAction_Finish).
+    this.add(C.MOVEMENT_ACTION_EMOTE_HEART, [(object, sprite) => { this.ow.effects.emoteHeart(object, C.FLDEFF_HEART_ICON); sprite.data[2] = 1; return true; }, this.Finish]);
     this.add(C.MOVEMENT_ACTION_HIDE_REFLECTION, [(object) => { object.hideReflection = true; return true; }, this.Finish]);
     this.add(C.MOVEMENT_ACTION_SHOW_REFLECTION, [(object) => { object.hideReflection = false; return true; }, this.Finish]);
     this.add(C.MOVEMENT_ACTION_LEVITATE, [(object, sprite) => { this.CreateLevitateMovementTask(object); sprite.data[2] = 1; return true; }, this.Finish]);
