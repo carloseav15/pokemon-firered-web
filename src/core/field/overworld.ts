@@ -394,11 +394,13 @@ export class Overworld {
 
   /** Viewer map-entry adapter for a region whose field graphics are not loaded (Hoenn):
    * LoadCurrentMapData and LoadObjEventTemplatesFromHeader only, without BGs, sprites,
-   * object events or scripts. The caller runs the source map-load sequence on top. */
-  async prepareViewerMapScripts(mapId: string): Promise<void> {
+   * object events or scripts. Continue supplies saved templates and refreshes their source
+   * script pointers instead. The caller runs the source map-load sequence on top. */
+  async prepareViewerMapScripts(mapId: string, savedTemplates?: MapObjectTemplate[]): Promise<void> {
     this.LoadCurrentMapData(await this.prepareMap(mapId));
     this.script.ScriptContext_Init();
-    this.loadObjEventTemplatesFromHeader();
+    this.loadObjEventTemplatesFromHeader(savedTemplates);
+    if (savedTemplates) this.LoadSaveblockObjEventScripts();
   }
 
   mapIdForWarp(w: WarpData): string {

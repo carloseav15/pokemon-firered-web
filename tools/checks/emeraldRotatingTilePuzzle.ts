@@ -104,6 +104,24 @@ function oracleRows(inputs:number[][]): number[][] {
  const result=spawnSync(`${dir}/oracle`,[],{input:inputs.map(c=>c.join(' ')).join('\n'),encoding:'utf8'});
  assert.equal(result.status,0,result.stderr);return result.stdout.trim().split('\n').map(l=>l.split(' ').map(Number));
 }
+// PREPARED storage and trainer only; puzzle outcomes come exclusively from source scripts.
+const storage = new Map<string,string>();
+Object.assign(globalThis, {localStorage:{getItem:(k:string)=>storage.get(k)??null,setItem:(k:string,v:string)=>{storage.set(k,v);},removeItem:(k:string)=>{storage.delete(k);}}});
+const regions = await import('../../src/viewer/regionSave.ts');
+const session = await import('../../src/viewer/session.ts');
+const projection = await import('../../src/viewer/objectState.ts');
+const mapEvents = await import('../../src/viewer/mapEvents.ts');
+const { EngineInteraction } = await import('../../src/viewer/engineInteraction.ts');
+const { createMon } = await import('../../src/core/pokemon/pokemon.ts');
+// Exercise the actual adapter methods without mounting a DOM dialog or starting a render loop.
+type Adapter = { game: InstanceType<typeof Game>; interactionMapId:string; observedObjects:Map<string,import('../../src/viewer/objectState.ts').ViewerObjectState>; hooks:unknown; observeObjects():void; prepareObjects(nav:import('../../src/viewer/session.ts').NavigationSave,prepared:boolean):Promise<void> };
+function adapter(game:InstanceType<typeof Game>,mapId:string):Adapter {
+ const bridge=Object.create(EngineInteraction.prototype) as Adapter;
+ Object.assign(bridge,{game,interactionMapId:mapId,observedObjects:new Map(),hooks:{mapOrigin:()=>({x:0,y:0}),readObjects:projection.savedViewerObjects}});
+ return bridge;
+}
+const templatePoses=(ow:Overworld)=>ow.objects.templates.map(t=>[t.localId,t.x,t.y,t.movementType,t.elevation]);
+const livePoses=(ow:Overworld)=>ow.objects.list.filter(o=>!o.isPlayer).map(o=>projection.readViewerObjectState(o,ow.header.id)).sort((a,b)=>a.localId-b.localId);
 let moved=0;
 for(const [mapId,prefix,trick] of [
  ['MAP_MOSSDEEP_CITY_GYM','MossdeepCity_Gym',0],
@@ -111,7 +129,11 @@ for(const [mapId,prefix,trick] of [
 ] as const)for(const [row,color] of ['Yellow','Blue','Green','Purple','Red'].entries()) {
  if(trick&&row===4)continue; // Source labels RedButton as unused; it has no coordinate caller.
  // PREPARED entry only: source map's own templates, no positions/tiles/results rewritten.
- resetWorldRegion();setSave(newSaveData());enterBankedRegion('hoenn');tasks.reset();
+ storage.clear();resetWorldRegion();setSave(newSaveData());
+ regions.worldOf().started.kanto=true;
+ saveModule.save.party.push(createMon(C.SPECIES_TREECKO,5));
+ saveModule.save.bag.items.push({item:C.ITEM_POTION,quantity:3});
+ enterBankedRegion('hoenn');tasks.reset();
  const game=new Game(canvas),ow=game.overworld;
  const nav={mapId,x:1,y:1,direction:'south' as const,dynamic:null};
  await runEmeraldMapEntry(game,nav);
@@ -162,6 +184,55 @@ for(const [mapId,prefix,trick] of [
  assert.equal(saveModule.save.objectEventTemplates,ow.objects.templates,'save templates remain the live templates');
  console.log(`${label}: PASS (${changed} source templates moved; ${frames} frames)`);
  game.scriptMovement.unfreezeAndStop();
+ const bridge=adapter(game,mapId);
+ bridge.observeObjects();
+ const savedTemplates=templatePoses(ow),savedLive=livePoses(ow);
+ const progress=structuredClone({flags:saveModule.save.flags,vars:saveModule.save.vars});
+ const globals=structuredClone({party:saveModule.save.party,bag:saveModule.save.bag,money:saveModule.save.money});
+ assert.ok(session.saveViewerSession(nav),`${label} saves through viewer session`);
+ // Storage Continue, then park Hoenn while Kanto saves, then Continue Hoenn again.
+ for(const roundTrip of [false,true]) {
+  const canonical=regions.reloadWorldSave()!;
+  assert.equal(canonical.world!.activeRegion,'hoenn');
+  assert.deepEqual(canonical.objectEventTemplates,[], 'Hoenn templates do not leak into Kanto');
+  if(roundTrip) {
+   assert.ok(regions.writeWorldSave(),'Kanto saves while Hoenn is parked');
+   assert.equal(regions.loadWorldSave()!.world!.activeRegion,'kanto');
+  }
+  const resumedNav=session.continueRegionalSession('hoenn',()=>{throw Error('existing Hoenn bank must not reinitialize');});
+  assert.equal(mapEvents.enterViewerEventMap(resumedNav.mapId),false,'first viewer display after Continue must not clear saved map state');
+  const resumedGame=new Game(canvas),resumedOw=resumedGame.overworld;
+  const report=await runEmeraldMapEntry(resumedGame,resumedNav,{continuing:true});
+  assert.equal(report.transition,null,'Continue skips ON_TRANSITION');
+  assert.deepEqual({flags:saveModule.save.flags,vars:saveModule.save.vars},progress,'Continue preserves regional progress and TEMP data');
+  const resumedBridge=adapter(resumedGame,mapId);
+  await resumedBridge.prepareObjects(resumedNav,true);
+  assert.deepEqual(templatePoses(resumedOw),savedTemplates,`${label} templates after ${roundTrip?'Kanto bank round trip':'Continue'}`);
+  assert.deepEqual(livePoses(resumedOw).filter(o=>savedLive.some(s=>s.localId===o.localId)),savedLive,`${label} live poses after ${roundTrip?'Kanto bank round trip':'Continue'}`);
+  assert.deepEqual({party:saveModule.save.party,bag:saveModule.save.bag,money:saveModule.save.money},globals,'shared trainer survives');
+  // A further press must use the restored templates, including their independent movementType.
+  const prior=structuredClone(resumedOw.objects.templates);
+  const objects=prior.map(t=>resumedOw.objects.byLocalIdAndMap(t.localId,resumedOw.objects.mapNum,resumedOw.objects.mapGroup));
+  const nextInputs=prior.map((t,i)=>[trick,row,resumedOw.map.metatileIdAt(t.x+MAP_OFFSET,t.y+MAP_OFFSET),0,objects[i]?1:0,t.movementType,objects[i]?.facingDirection??C.DIR_SOUTH]);
+  const deltas=oracleRows(nextInputs);
+  for(let i=0;i<prior.length;i++)nextInputs[i]![3]=resumedOw.map.metatileIdAt(prior[i]!.x+deltas[i]![1]!-20+MAP_OFFSET,prior[i]!.y+deltas[i]![2]!-20+MAP_OFFSET);
+  const nextExpected=oracleRows(nextInputs);
+  resumedOw.script.ScriptContext_SetupScript(ptr);
+  let ticks=0;
+  while(resumedOw.script.isActive()&&ticks++<1000){resumedOw.script.ScriptContext_RunScript();tasks.run();resumedOw.objects.update(0,0);sound.frame();}
+  assert.ok(ticks<1000,'next press completes');
+  for(let i=0;i<prior.length;i++) {
+   const a=prior[i]!,b=resumedOw.objects.templates[i]!,p=nextExpected[i]!;
+   assert.deepEqual([b.x-a.x,b.y-a.y,b.movementType],[p[1]!-20,p[2]!-20,p[3]],`${label} next press matches C after restore`);
+  }
+  resumedGame.scriptMovement.unfreezeAndStop();
+  // Unsaved second press must be discarded by the next reload, rather than preparing outcomes.
+ }
+ // A real departure/re-entry uses the source header again, not the parked puzzle snapshot.
+ const reentry=new Game(canvas);
+ await runEmeraldMapEntry(reentry,nav);
+ assert.deepEqual(templatePoses(reentry.overworld),before.map(t=>[t.localId,t.x,t.y,t.movementType,t.elevation]),'normal re-entry resets source puzzle templates');
+ console.log(`${label}: storage Continue + Kanto bank round trip + next source press PASS`);
 }
 assert.equal(warnings.filter(w=>/not implemented|script command/i.test(w)).length,0,warnings.join('\n'));
 console.log(`PASS: 9 exported coordinate scripts; ${moved} source object displacements; no browser/rendering validation`);

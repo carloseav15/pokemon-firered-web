@@ -808,14 +808,21 @@ function updatePlayerDisplay(): void {
 
 /** Hoenn arrival through the engine (pokeemerald map scripts): apply the object templates they moved. */
 async function enterHoennMap(nav: NavigationSave): Promise<void> {
-  const report: HoennMapEntryReport | undefined = await engineInteraction?.enterMap(nav);
+  const continuing = continuingHoennMap === nav.mapId;
+  continuingHoennMap = null;
+  const poses = continuing ? savedViewerObjects(nav.mapId) : [];
+  if (continuing) applyViewerObjects(poses);
+  const report: HoennMapEntryReport | undefined = await engineInteraction?.enterMap(nav, continuing);
   if (!report) return;
   // Graphics IDs are Emerald's: keep the viewer's own graphics name for each object.
   applyViewerObjects(report.changedTemplates.map(t => { const state = readViewerTemplateState(t, report.mapId); delete state.graphicsId; return state; }));
+  // Template facing is the next spawn's facing; a saved live object may face elsewhere.
+  if (continuing) applyViewerObjects(poses);
   updateEntitiesView();
 }
 
 let pendingMapEntry: Promise<void> = Promise.resolve();
+let continuingHoennMap: string | null = null;
 let enteredMapId = "";
 let lastOutdoorNav: NavigationSave | null = null;
 const objectSpawns=new ViewerObjectSpawns();
@@ -1396,11 +1403,17 @@ async function continueHoennSession(): Promise<void> {
   await rom.load();
   const nav = continueRegionalSession("hoenn", () => initializeHoennSessionFlags(index.initialFlags));
   loadRegionSessionFlags();
+  // Loading the indoor world calls updatePlayerDisplay too. Do not enter it at the old
+  // player coordinates before startExploration installs the saved position/Continue mode.
+  playerActive = false;
+  continuingHoennMap = nav.mapId;
+  enteredMapId = "";
   await changeNavigationWorld(nav.mapId);
   const info = index.maps[nav.mapId];
   if (!info) throw Error(`Saved map ${nav.mapId} is not in the Hoenn index`);
   navigationWarps.restore(nav.dynamic);
   await startExploration(info.x + nav.x, info.y + nav.y);
+  await pendingMapEntry;
   playerDir = nav.direction; updatePlayerDisplay(); writeHash();
 }
 

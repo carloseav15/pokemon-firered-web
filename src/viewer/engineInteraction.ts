@@ -494,9 +494,9 @@ export class EngineInteraction {
    * Arrival in a map: runs its OnTransition map script (e.g. setrespawn in Centers,
    * boulder resets in caves/Route 20, etc.) as in overworld.c RunOnTransitionMapScript.
    */
-  async enterMap(nav: NavigationSave): Promise<HoennMapEntryReport | undefined> {
+  async enterMap(nav: NavigationSave, continuing = false): Promise<HoennMapEntryReport | undefined> {
     if (this.busy) return;
-    if (isEmeraldData()) return this.enterEmeraldMap(nav);
+    if (isEmeraldData()) return this.enterEmeraldMap(nav, continuing);
     this.testingWild = true;
     let started = false;
     try {
@@ -551,17 +551,17 @@ export class EngineInteraction {
    * Hoenn arrival (pokeemerald overworld.c LoadMapFromWarp / InitMap, then the warp-into and frame
    * map scripts once the object events exist): see hoennMapEntry.ts for the steps that run.
    */
-  private async enterEmeraldMap(nav: NavigationSave): Promise<HoennMapEntryReport | undefined> {
+  private async enterEmeraldMap(nav: NavigationSave, continuing: boolean): Promise<HoennMapEntryReport | undefined> {
     this.testingWild = true;
     let started = false;
     try {
       await (this.loading ??= this.initialize());
       const ow = this.game!.overworld;
-      const report = await runEmeraldMapEntry(this.game!, nav, { onSetMetatile: this.hooks.onSetMetatile });
+      const report = await runEmeraldMapEntry(this.game!, nav, { onSetMetatile: this.hooks.onSetMetatile, continuing });
       RestartWildEncounterImmunitySteps();
       await this.prepareObjects(nav, true);
       this.wildMap = nav.mapId;
-      ow.tryRunOnWarpIntoMapScript();
+      if (!continuing) ow.tryRunOnWarpIntoMapScript();
       if (ow.tryRunOnFrameMapScript()) {
         started = true;
         await this.run(nav, 0, true, () => {}, true);

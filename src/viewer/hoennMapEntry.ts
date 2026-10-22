@@ -31,6 +31,8 @@ export type HoennMapEntryReport = {
 };
 
 export type HoennMapEntryHooks = {
+  /** CB2_ContinueSavedGame keeps saved templates and skips warp-only temp resets/ON_TRANSITION. */
+  continuing?: boolean;
   /** A map script changed a metatile of the entered map (map-local coordinates). */
   onSetMetatile?: (mapId: string, x: number, y: number, metatile: number) => void;
 };
@@ -48,21 +50,29 @@ export function bindEmeraldEventData(): void {
 export const scriptLabel = (ptr: number): string | null => ptr ? rom.labelAt(ptr) ?? `0x${ptr.toString(16)}` : null;
 
 /**
- * LoadMapFromWarp's event-data steps and InitMap's ON_LOAD for `nav.mapId` on `game`, which must
- * be running Emerald data. Leaves the map's object templates (with the scripts' changes) loaded.
+ * LoadMapFromWarp's event-data steps and InitMap's ON_LOAD for `nav.mapId` on Emerald data.
+ * Continue follows CB2_ContinueSavedGame instead: keep templates/TEMP data and run ON_LOAD,
+ * without warp-only ON_TRANSITION. Leaves the templates (with the scripts' changes) loaded.
  */
 export async function runEmeraldMapEntry(game: Game, nav: NavigationSave, hooks: HoennMapEntryHooks = {}): Promise<HoennMapEntryReport> {
   bindEmeraldEventData();
   const ow = game.overworld;
+  // Keep template movementType independent of the live object's movementType: the rotating
+  // puzzle changes the former while its held face action changes only the live facing.
+  const savedTemplates = hooks.continuing ? save.objectEventTemplates : undefined;
+  if (hooks.continuing && rom.mapNum(nav.mapId) !== ((save.location.mapGroup << 8) | save.location.mapNum))
+    throw Error('Continue map does not match the saved Hoenn location');
   syncViewerLocation(nav);
   // LoadCurrentMapData + LoadObjEventTemplatesFromHeader
-  await ow.prepareViewerMapScripts(nav.mapId);
+  await ow.prepareViewerMapScripts(nav.mapId, savedTemplates);
   const header = ow.header;
   // LoadMapFromWarp: ClearTempFieldEventData, FLAG_SYS_USE_FLASH, RunOnTransitionMapScript
-  EmSave.ClearTempFieldEventData();
-  if (isMapTypeOutdoors(header.mapType)) EmSave.FlagClear(EM.FLAG_SYS_USE_FLASH);
-  const transition = scriptLabel(ow.MapHeaderGetScriptTable(MAP_SCRIPT_ON_TRANSITION));
-  ow.RunOnTransitionMapScript();
+  const transition = hooks.continuing ? null : scriptLabel(ow.MapHeaderGetScriptTable(MAP_SCRIPT_ON_TRANSITION));
+  if (!hooks.continuing) {
+    EmSave.ClearTempFieldEventData();
+    if (isMapTypeOutdoors(header.mapType)) EmSave.FlagClear(EM.FLAG_SYS_USE_FLASH);
+    ow.RunOnTransitionMapScript();
+  }
   // InitMap: InitMapLayoutData, then RunOnLoadMapScript (metatile changes go to the viewer).
   ow.map.InitMapLayoutData(ow.loaded);
   ow.map.onChange = (x, y) => hooks.onSetMetatile?.(header.id, x - MAP_OFFSET, y - MAP_OFFSET, ow.map.metatileIdAt(x, y));

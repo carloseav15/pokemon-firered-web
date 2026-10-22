@@ -175,6 +175,9 @@ export function continueRegionalSession(region: BankedRegionId, initializeNewBan
   initialized = true;
   const nav = (save as ViewerSave).viewerNavigation;
   if (!nav) throw Error(`No saved position in ${region === 'hoenn' ? 'Hoenn' : region}`);
+  // Continue keeps the loaded map's TEMP state, saved templates and object projection.
+  // The viewer's first display update must not treat it as a camera transition.
+  restoreViewerEventMap(nav.mapId);
   return { ...nav, region };
 }
 
