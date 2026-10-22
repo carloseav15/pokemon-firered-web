@@ -10,13 +10,32 @@ import { flagGet, save, varGet, varSet } from '../../src/games/firered/save.ts';
 import { joy, A_BUTTON, DPAD_RIGHT } from '../../src/core/gba/input.ts';
 import { tasks } from '../../src/core/gba/tasks.ts';
 import { GetStarterPokemon } from '../../src/games/emerald/starterChoose.ts';
-import { gSprites } from '../../src/core/hw/sprite.ts';
 import type { EngineInteraction } from '../../src/viewer/engineInteraction.ts';
 import type { NavigationSave } from '../../src/viewer/session.ts';
 import * as EM from '../../src/games/emerald/generated/constants.ts';
-import { readFileSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { deflateSync, crc32 } from 'node:zlib';
+import { ppu } from '../../src/core/hw/ppu.ts';
 import { resolve } from 'node:path';
 type Pump = (frames: number, input?: (frame: number) => number, done?: () => boolean) => Promise<number>;
+
+/** Optional (STARTER_SHOT_DIR): PNG of the PPU frame, to look at the screen. */
+function shot(name: string): void {
+  const dir = process.env.STARTER_SHOT_DIR;
+  if (!dir) return;
+  mkdirSync(dir, { recursive: true });
+  const image = ppu.renderFrame();
+  const raw = Buffer.alloc((240 * 4 + 1) * 160);
+  for (let y = 0; y < 160; y++) { raw[y * 961] = 0; Buffer.from(image.data.buffer, image.data.byteOffset + y * 960, 960).copy(raw, y * 961 + 1); }
+  const chunk = (type: string, data: Buffer): Buffer => {
+    const length = Buffer.alloc(4); length.writeUInt32BE(data.length);
+    const body = Buffer.concat([Buffer.from(type), data]);
+    const crc = Buffer.alloc(4); crc.writeUInt32BE(crc32(body));
+    return Buffer.concat([length, body, crc]);
+  };
+  const header = Buffer.alloc(13); header.writeUInt32BE(240, 0); header.writeUInt32BE(160, 4); header[8] = 8; header[9] = 6;
+  writeFileSync(`${dir}/${name}.png`, Buffer.concat([Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]), chunk('IHDR', header), chunk('IDAT', deflateSync(raw)), chunk('IEND', Buffer.alloc(0))]));
+}
 
 export async function runStarterChecks(engine: EngineInteraction, pump: Pump): Promise<void> {
   const decomp = process.env.POKEEMERALD ?? '../refs-src/pokeemerald';
@@ -37,13 +56,15 @@ export async function runStarterChecks(engine: EngineInteraction, pump: Pump): P
   await engine.show(nav, { mapId: 'MAP_ROUTE101', localId: bag.localId });
   assert.equal(engine.open, true, 'the bag script started');
   // The selection starts on the middle Poké Ball (tStarterSelection = 1); RIGHT moves to the third (Mudkip).
-  let frameInScene = 0;
+  let frameInScene = 0, confirmFrames = 0, chooseFrames = 0;
   const frames = await pump(40000, () => {
     const names = tasks.tasks.filter(t => t.isActive).map(t => t.func.name);
     if (names.some(n => n === 'Task_StarterChoose' || n === 'Task_HandleStarterChooseInput')) starterScene = true;
     for (const n of names) if (!sceneSeen.includes(n) && /Starter/.test(n)) sceneSeen.push(n);
     if (!starterScene) return 0;
     frameInScene++;
+    if (names.includes('Task_HandleConfirmStarterInput') && ++confirmFrames === 4) shot('2-confirm');
+    if (names.includes('Task_HandleStarterChooseInput') && ++chooseFrames === 40) shot('1-choose');
     if (frameInScene === 6) return DPAD_RIGHT; // PREPARED input: move to the third ball
     return frameInScene % 24 === 12 ? A_BUTTON : 0;
   }, () => !engine.open);
@@ -51,7 +72,6 @@ export async function runStarterChecks(engine: EngineInteraction, pump: Pump): P
   assert.ok(starterScene, 'the starter choose screen ran');
   assert.deepEqual(sceneSeen.filter(n => /Task_(StarterChoose|HandleStarterChooseInput|WaitForStarterSprite|AskConfirmStarter|HandleConfirmStarterInput)/.test(n)).slice(0, 5),
     ['Task_StarterChoose', 'Task_HandleStarterChooseInput', 'Task_WaitForStarterSprite', 'Task_AskConfirmStarter', 'Task_HandleConfirmStarterInput'].filter(n => sceneSeen.includes(n)));
-  void gSprites;
   const chosen = varGet(EM.VAR_STARTER_MON);
   assert.equal(chosen, 2, 'VAR_STARTER_MON = the third ball');
   assert.equal(save.party.length, 1, 'ScriptGiveMon put one Pokémon in the party');

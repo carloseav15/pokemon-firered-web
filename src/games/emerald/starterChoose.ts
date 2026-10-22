@@ -12,7 +12,7 @@ import { cdata, incbin, incbin16, preloadIncbin } from "@core/hw/assets";
 import {
   type BgTemplate, ChangeBgX, ChangeBgY, InitBgsFromTemplates, LoadBgTiles, LoadBgTilemap, ResetBgsAndClearDma3BusyFlags, SetBgTilemapBuffer, ShowBg,
 } from "@core/hw/bg";
-import { templateFrom, affineAnimFrom, type CSpriteTemplate } from "@core/hw/cdataSprite";
+import { affineAnimFrom, animFrom, oamFrom, type CSpriteTemplate } from "@core/hw/cdataSprite";
 import { SetGpuReg } from "@core/hw/gpu";
 import { CreateYesNoMenu, DrawStdFrameWithCustomTileAndPalette, LoadUserWindowGfx, MENU_B_PRESSED, Menu_ProcessInputNoWrapClearOnChoose } from "@core/hw/menu";
 import { DoScheduledBgTilemapCopiesToVram, ScheduleBgCopyTilemapToVram } from "@core/hw/menuHelpers";
@@ -28,7 +28,7 @@ import { HwScene, SetMainCallback2, SetVBlankCallback } from "@core/hw/runtime";
 import { ScanlineEffect_Stop } from "@core/hw/scanline";
 import {
   AnimateSprites, BuildOamBuffer, CreateSprite, DestroySprite, FreeAllSpritePalettes, FreeSpriteOamMatrix, gSprites, LoadOam, LoadSpritePalettes,
-  LoadSpriteSheet, ProcessSpriteCopyRequests, ResetSpriteData, StartSpriteAnimIfDifferent, TAG_NONE, type Sprite,
+  LoadSpriteSheet, ProcessSpriteCopyRequests, ResetSpriteData, StartSpriteAnimIfDifferent, TAG_NONE, gDummySpriteAffineAnimTable, type Sprite, type SpriteCallback, type SpriteTemplate,
 } from "@core/hw/sprite";
 import { DeactivateAllTextPrinters, AddTextPrinterParameterized, AddTextPrinterParameterized3, RunTextPrinters } from "@core/hw/text";
 import { Sin } from "@core/hw/trig";
@@ -57,6 +57,22 @@ const tStarterSelection = 0, tPkmnSpriteId = 1, tCircleSpriteId = 2;
 const sTaskId = 0, sBallId = 1;
 
 const sc = <T>(name: string): T => cdata<T>("em:starter_choose", name);
+
+/** A SpriteTemplate of the file's own tables: the anim/affine/oam symbols are resolved inside em:starter_choose (a global symbol
+ * lookup would find same-named tables of the other loaded cdata files). */
+function templateOf(name: string, callback: SpriteCallback): SpriteTemplate {
+  const t = sc<CSpriteTemplate>(name);
+  const table = (ref: unknown, one: (n: string) => unknown[]): unknown[][] => (ref ? sc<Array<{ $sym: string }>>((ref as { $sym: string }).$sym).map(r => one(r.$sym)) : []);
+  return {
+    tileTag: t.tileTag, paletteTag: t.paletteTag,
+    oam: oamFrom(sc<object>((t.oam as { $sym: string }).$sym)),
+    anims: table(t.anims, n => animFrom(sc<unknown[]>(n))) as SpriteTemplate["anims"],
+    images: null,
+    affineAnims: (t.affineAnims && (t.affineAnims as { $sym: string }).$sym !== "gDummySpriteAffineAnimTable"
+      ? table(t.affineAnims, n => affineAnimFrom(sc<unknown[]>(n))) : gDummySpriteAffineAnimTable) as SpriteTemplate["affineAnims"],
+    callback,
+  };
+}
 
 const symbols = [
   "gBirchBagGrass_Gfx", "gBirchBagGrass_Pal", "gBirchBagTilemap", "gBirchGrassTilemap", "gPokeballSelection_Gfx", "sPokeballSelection_Pal",
@@ -146,14 +162,13 @@ function CB2_ChooseStarter(): void {
   const taskId = tasks.create(Task_StarterChoose, 0);
   tasks.data(taskId)[tStarterSelection] = 1;
 
-  const callbacks = { SpriteCB_SelectionHand, SpriteCB_Pokeball, SpriteCB_StarterPokemon };
   const coords = sc<number[][]>("sPokeballCoords");
   // Create hand sprite
-  let spriteId = CreateSprite(templateFrom(sc<CSpriteTemplate>("sSpriteTemplate_Hand"), callbacks), 120, 56, 2);
+  let spriteId = CreateSprite(templateOf("sSpriteTemplate_Hand", SpriteCB_SelectionHand), 120, 56, 2);
   gSprites[spriteId]!.data[0] = taskId;
   // Create three Poké Ball sprites
   for (let ballId = 0; ballId < 3; ballId++) {
-    spriteId = CreateSprite(templateFrom(sc<CSpriteTemplate>("sSpriteTemplate_Pokeball"), callbacks), coords[ballId]![0]!, coords[ballId]![1]!, 2);
+    spriteId = CreateSprite(templateOf("sSpriteTemplate_Pokeball", SpriteCB_Pokeball), coords[ballId]![0]!, coords[ballId]![1]!, 2);
     gSprites[spriteId]!.data[sTaskId] = taskId;
     gSprites[spriteId]!.data[sBallId] = ballId;
   }
@@ -188,11 +203,11 @@ function Task_HandleStarterChooseInput(taskId: number): void {
     ClearStarterLabel();
     const coords = sc<number[][]>("sPokeballCoords");
     // Create white circle background
-    let spriteId = CreateSprite(templateFrom(sc<CSpriteTemplate>("sSpriteTemplate_StarterCircle"), { SpriteCB_StarterPokemon }), coords[selection]![0]!, coords[selection]![1]!, 1);
+    let spriteId = CreateSprite(templateOf("sSpriteTemplate_StarterCircle", SpriteCB_StarterPokemon), coords[selection]![0]!, coords[selection]![1]!, 1);
     data[tCircleSpriteId] = spriteId;
     // Create Pokémon sprite
     spriteId = CreatePokemonFrontSprite(GetStarterPokemon(data[tStarterSelection]!), coords[selection]![0]!, coords[selection]![1]!);
-    gSprites[spriteId]!.affineAnims = [affineAnimFrom({ $sym: "sAffineAnim_StarterPokemon" })];
+    gSprites[spriteId]!.affineAnims = [affineAnimFrom(sc<unknown[]>("sAffineAnim_StarterPokemon"))];
     gSprites[spriteId]!.callback = SpriteCB_StarterPokemon;
     data[tPkmnSpriteId] = spriteId;
     tasks.setFunc(taskId, Task_WaitForStarterSprite);
