@@ -266,8 +266,8 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | `field_camera.c` | 572 | 10/29 | `core/field/overworld.ts`, `overworldCredits.ts` | field/overworld.ts + fieldmap.ts + tileRenderer.ts + doors.ts + battle/transition.ts: el seguimiento/paneo del jugador está conectado; el viewport Canvas recompone los metatiles desde FieldMap y omite el ring buffer BG/VRAM, doors.ts dibuja el overlay y las transiciones usan una captura de pantalla. Cámara de créditos en overworldCredits.ts; MoveCameraAndRedrawMap está unused en C |  |
 | `mini_printf.c` | 355 | 0/8 |  | depuración de GBA |  |
 | `m4a_tables.c` | 308 | — | `core/audio/sound.ts` | exportador (audio) |  |
-| `data.c` | 305 | — |  | exportador (data) |  |
-| `load_save.c` | 298 | 4/21 | `loadSave.ts` | save.ts (formato propio) |  |
+| `data.c` | 305 | — | `core/trainerPokemonSprites.ts` | exportador (data) |  |
+| `load_save.c` | 298 | 4/21 | `loadSave.ts`, `save.ts` | save.ts (formato propio) |  |
 | `agb_flash.c` | 297 | 0/15 |  | save.ts (localStorage) |  |
 | `isagbprn.c` | 265 | 0/16 |  | depuración de GBA |  |
 | `save_failed_screen.c` | 228 | 0/14 |  | game.ts/save.ts: el error de localStorage ya muestra el texto de guardado fallido; reparación física de sectores Flash no aplica al navegador |  |
