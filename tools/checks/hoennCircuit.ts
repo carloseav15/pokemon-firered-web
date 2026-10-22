@@ -183,6 +183,12 @@ resetViewerSessionInitialized();
 initializeRegionalSession("hoenn", () => {});
 console.log("PREPARED: Kanto trainer (Torchic Lv 7, ¥3000, FLAG_BADGE01_GET) saved, then a new Hoenn bank");
 
+if (process.argv.includes('--mossdeep')) {
+  const { runMossdeepWarpChecks } = await import('./emeraldMossdeepWarp.ts');
+  await runMossdeepWarpChecks(engine, pump);
+  process.exit(0);
+}
+
 // ---------------------------------------------------------------- 1. map entry + NPC + sign
 const oldale = facingNav("MAP_OLDALE_TOWN", 16, 12, "north");
 const entry = await engine.enterMap(oldale);

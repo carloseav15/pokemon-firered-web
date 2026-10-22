@@ -444,32 +444,6 @@ export class SootopolisGymIceTracker {
   }
 }
 
-/** Remaining Mossdeep teleporter adaptation. Rotating tiles now use the Emerald engine. */
-export const MOSSDEEP_GYM_WARPS: Record<string, { x: number; y: number }> = {
-  "3,28": { x: 1, y: 23 },
-  "1,23": { x: 3, y: 28 },
-  "7,18": { x: 8, y: 12 },
-  "8,12": { x: 7, y: 18 },
-  "9,18": { x: 23, y: 20 },
-  "23,20": { x: 9, y: 18 },
-  "1,33": { x: 20, y: 24 },
-  "20,24": { x: 1, y: 33 },
-  "11,3": { x: 11, y: 35 },
-  "11,35": { x: 11, y: 3 },
-  "13,32": { x: 21, y: 10 },
-  "21,10": { x: 13, y: 32 },
-  "21,6": { x: 6, y: 35 }, // Return to entrance
-};
-
-export class MossdeepGymTracker {
-  /** Remaining teleport adaptation only; floor switches run Emerald scripts in the engine. */
-  onWarpStep(x: number, y: number): { isWarp: boolean; warpDestination?: { x: number; y: number }; sound?: number } {
-    const warp = MOSSDEEP_GYM_WARPS[`${x},${y}`];
-    return warp ? { isWarp: true, warpDestination: warp, sound: EmeraldConstants.SE_WARP_IN } : { isWarp: false };
-  }
-
-}
-
 /**
  * Ash Grass mechanics in Route 113 & Lavaridge (field_tasks.c: AshGrassPerStepCallback).
  * Walking over ash-covered grass cleans it, leaving normal green grass, producing

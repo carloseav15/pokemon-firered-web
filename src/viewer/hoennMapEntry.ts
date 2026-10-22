@@ -33,6 +33,8 @@ export type HoennMapEntryReport = {
 export type HoennMapEntryHooks = {
   /** CB2_ContinueSavedGame keeps saved templates and skips warp-only temp resets/ON_TRANSITION. */
   continuing?: boolean;
+  /** overworld.c SKIP_OBJECT_EVENT_LOAD: warp keeps modified templates, but still resets TEMP/runs ON_TRANSITION. */
+  preservedTemplates?: MapObjectTemplate[];
   /** A map script changed a metatile of the entered map (map-local coordinates). */
   onSetMetatile?: (mapId: string, x: number, y: number, metatile: number) => void;
 };
@@ -59,7 +61,7 @@ export async function runEmeraldMapEntry(game: Game, nav: NavigationSave, hooks:
   const ow = game.overworld;
   // Keep template movementType independent of the live object's movementType: the rotating
   // puzzle changes the former while its held face action changes only the live facing.
-  const savedTemplates = hooks.continuing ? save.objectEventTemplates : undefined;
+  const savedTemplates = hooks.continuing ? save.objectEventTemplates : hooks.preservedTemplates;
   if (hooks.continuing && rom.mapNum(nav.mapId) !== ((save.location.mapGroup << 8) | save.location.mapNum))
     throw Error('Continue map does not match the saved Hoenn location');
   syncViewerLocation(nav);

@@ -3,6 +3,7 @@
 // the ScrCmd_ names so COMMANDS can be indexed directly by the ROM's
 // gScriptCmdTable symbol names (rom.scriptMeta.commands).
 
+import { mossdeepGymWarp } from '../../games/emerald/mossdeepGymWarp';
 import { ScrCmd_braillemessage as EmeraldBrailleMessage, ScrCmd_closebraillemessage } from '../../games/emerald/brailleMessage';
 import { BufferContestName, GetTrainerClassNameFromId, GetTrainerNameFromId, CopyItemNameHandlePlural } from "../../games/emerald/scriptText";
 import { RotatingTilePuzzle } from "../../games/emerald/rotatingTilePuzzle";
@@ -266,6 +267,9 @@ function ScrCmd_fadeinbgm(ctx: ScriptRunner): boolean {
   return false;
 }
 function ScrCmd_warp(ctx: ScriptRunner): boolean { readWarp(ctx); ctx.ow.DoWarp(); ctx.ow.resetInitialPlayerAvatarState(); return true; }
+function ScrCmd_warpmossdeepgym(ctx: ScriptRunner): boolean {
+  readWarp(ctx); mossdeepGymWarp(ctx.ow).DoMossdeepGymWarp(); ctx.ow.resetInitialPlayerAvatarState(); return true;
+}
 function ScrCmd_warpsilent(ctx: ScriptRunner): boolean { readWarp(ctx); ctx.ow.DoDiveWarp(); ctx.ow.resetInitialPlayerAvatarState(); return true; }
 function ScrCmd_warpdoor(ctx: ScriptRunner): boolean { readWarp(ctx); ctx.ow.DoDoorWarp(); ctx.ow.resetInitialPlayerAvatarState(); return true; }
 function ScrCmd_warphole(ctx: ScriptRunner): boolean {
@@ -749,7 +753,7 @@ export const COMMANDS: Record<string, ScriptCommand> = {
   ScrCmd_waitstate, ScrCmd_delay, ScrCmd_setflag, ScrCmd_clearflag, ScrCmd_checkflag, ScrCmd_initclock,
   ScrCmd_dotimebasedevents, ScrCmd_gettime, ScrCmd_playse, ScrCmd_waitse, ScrCmd_playfanfare, ScrCmd_waitfanfare,
   ScrCmd_playbgm, ScrCmd_savebgm, ScrCmd_fadedefaultbgm, ScrCmd_fadenewbgm, ScrCmd_fadeoutbgm, ScrCmd_fadeinbgm,
-  ScrCmd_warp, ScrCmd_warpsilent, ScrCmd_warpdoor, ScrCmd_warphole, ScrCmd_warpteleport, ScrCmd_warpspinenter,
+  ScrCmd_warp, ScrCmd_warpmossdeepgym, ScrCmd_warpsilent, ScrCmd_warpdoor, ScrCmd_warphole, ScrCmd_warpteleport, ScrCmd_warpspinenter,
   ScrCmd_setwarp, ScrCmd_setdynamicwarp, ScrCmd_setdivewarp, ScrCmd_setholewarp, ScrCmd_setescapewarp,
   ScrCmd_getplayerxy, ScrCmd_getpartysize, ScrCmd_additem, ScrCmd_removeitem, ScrCmd_checkitemspace, ScrCmd_checkitem,
   ScrCmd_checkitemtype, ScrCmd_addpcitem, ScrCmd_checkpcitem, ScrCmd_adddecoration, ScrCmd_removedecoration,

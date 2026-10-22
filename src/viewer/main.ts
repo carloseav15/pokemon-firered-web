@@ -56,7 +56,6 @@ import {
   METATILE_SootopolisGym_Ice_Broken,
   METATILE_SootopolisGym_Ice_Cracked,
   METATILE_SootopolisGym_Stairs,
-  MossdeepGymTracker,
   HoennAshTracker,
   getShoalTide,
   getShoalCaveTideDestination,
@@ -193,7 +192,6 @@ let changeNavigationWorld: (mapId: string) => Promise<void>;
 const hoennBikeTracker = new HoennBikeSpeedTracker();
 const hoennAcroBikeTracker = new HoennAcroBikeTracker();
 const sootopolisGymTracker = new SootopolisGymIceTracker();
-const mossdeepGymTracker = new MossdeepGymTracker();
 const hoennAshTracker = new HoennAshTracker();
 const fortreeGymTracker = new FortreeGymRotatingGateTracker();
 const mauvilleGymTracker = new MauvilleGymLaserTracker();
@@ -298,8 +296,9 @@ async function continueViewerSession(): Promise<void> {
   applyViewerObjects(savedViewerObjects(nav.mapId));
   const info = index.maps[nav.mapId]!;
   navigationWarps.restore(nav.dynamic);
+  playerDir = nav.direction;
   await startExploration(info.x+nav.x, info.y+nav.y);
-  playerDir = nav.direction; updatePlayerDisplay(); writeHash();
+  updatePlayerDisplay(); writeHash();
 }
 
 /** The engine moved the player (white-out): continue from its new map and tile. */
@@ -314,8 +313,10 @@ async function relocateViewer(nav: NavigationSave): Promise<void> {
       await changeNavigationWorld(nav.mapId);
       const info = index.maps[nav.mapId]!;
       navigationWarps.restore(nav.dynamic);
+      playerDir = nav.direction;
       await startExploration(info.x + nav.x, info.y + nav.y);
-      playerDir = nav.direction; updatePlayerDisplay(); writeHash();
+      updatePlayerDisplay(); writeHash();
+      blockedArrival = `${playerX},${playerY}`;
       enteredMapId = nav.mapId;
       if (HOENN) void enterHoennMap(nav).catch(error => console.error("Hoenn map entry after relocation", error));
       else void engineInteraction?.enterMap(nav).catch(error => console.error("Map entry after relocation", error));
@@ -1412,9 +1413,12 @@ async function continueHoennSession(): Promise<void> {
   const info = index.maps[nav.mapId];
   if (!info) throw Error(`Saved map ${nav.mapId} is not in the Hoenn index`);
   navigationWarps.restore(nav.dynamic);
+  // startExploration's first display update enters the map using navigationSnapshot.
+  // Install saved facing before that snapshot can overwrite the live regional fields.
+  playerDir = nav.direction;
   await startExploration(info.x + nav.x, info.y + nav.y);
   await pendingMapEntry;
-  playerDir = nav.direction; updatePlayerDisplay(); writeHash();
+  updatePlayerDisplay(); writeHash();
 }
 
 /**
@@ -2179,21 +2183,6 @@ function processPlayerStep(): void {
             }
           }
 
-          // Mossdeep Gym Puzzle
-          if (curMap === "MAP_MOSSDEEP_CITY_GYM") {
-            const mossResult = mossdeepGymTracker.onWarpStep(locX, locY);
-            if (mossResult.isWarp && mossResult.warpDestination) {
-              if (mossResult.sound) audioController.playSE(mossResult.sound);
-              const destX = hit ? hit[1].x + mossResult.warpDestination.x : mossResult.warpDestination.x;
-              const destY = hit ? hit[1].y + mossResult.warpDestination.y : mossResult.warpDestination.y;
-              playerX = destX;
-              playerY = destY;
-              playerVisualX = (destX - minX) * TILE;
-              playerVisualY = (destY - minY) * TILE;
-              updatePlayerDisplay();
-            }
-          }
-
           // Mauville Gym Electric Laser Barriers
           if (curMap === "MAP_MAUVILLE_CITY_GYM") {
             const mauvilleResult = mauvilleGymTracker.onStep(locX, locY);
@@ -2580,6 +2569,13 @@ function tryNavigationWarp(phase: "input" | "front" | "step", direction: Directi
   const warpId = warpAt(header, point.x - info.x, point.y - info.y, playerElevation);
   if (warpId < 0) return false;
   const behavior = worldGrid.behaviorAt(point.x, point.y);
+  if (HOENN && engineInteraction && phase === 'step' && MBEmerald.MetatileBehavior_IsMossdeepGymWarp(behavior)) {
+    isStepping = true;
+    void engineInteraction.tryMossdeepWarp(navigationSnapshot(), warpId)
+      .catch(error => console.error('Emerald Mossdeep warp', error))
+      .finally(() => { isStepping = false; });
+    return true;
+  }
   let active = phase === "front" ? isWarpDoorBehavior(behavior)
     : phase === "input" ? inputWarpBehavior(behavior, direction) : stepWarpBehavior(behavior);
   if (!active && phase === "step" && navigationMap !== null && warpId >= 0) {
@@ -3573,8 +3569,9 @@ function setupUi(): void {
         applyViewerObjects(savedViewerObjects(nav.mapId));
         const info = index.maps[nav.mapId]!;
         navigationWarps.restore(nav.dynamic);
+        playerDir = nav.direction;
         await startExploration(info.x + nav.x, info.y + nav.y);
-        playerDir = nav.direction; updatePlayerDisplay(); writeHash();
+        updatePlayerDisplay(); writeHash();
       } else {
         const startMap = JOHTO ? index.maps["MAP_NEW_BARK_TOWN"] : index.maps["MAP_LITTLEROOT_TOWN"];
         if (startMap) {
@@ -4057,8 +4054,8 @@ build()
         const destination = ferryDestination(HOENN ? "hoenn" : "kanto");
         const map = index.maps[destination.mapId];
         if (!map) throw Error("The ferry destination is unavailable");
-        await startExploration(map.x + destination.x, map.y + destination.y);
         playerDir = destination.direction;
+        await startExploration(map.x + destination.x, map.y + destination.y);
         updatePlayerDisplay();
         await pendingMapEntry;
         if (!saveCurrentSession()) throw Error("Unable to save the ferry arrival");

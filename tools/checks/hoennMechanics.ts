@@ -21,7 +21,6 @@ import {
   METATILE_SootopolisGym_Ice_Broken,
   METATILE_SootopolisGym_Ice_Cracked,
   METATILE_SootopolisGym_Stairs,
-  MossdeepGymTracker,
   HoennAshTracker,
   METATILE_Fallarbor_AshGrass,
   METATILE_Fallarbor_NormalGrass,
@@ -248,20 +247,7 @@ assert.equal(METATILE_SootopolisGym_Ice_Broken, 518);
 assert.equal(METATILE_SootopolisGym_Ice_Cracked, 526);
 assert.equal(METATILE_SootopolisGym_Stairs, 519);
 
-// 6. Mossdeep Gym (Algaria) Rotating Tile Puzzle & Teleporters
-const mossdeepGym = new MossdeepGymTracker();
-
-// Teleporters (warps)
-const warp1 = mossdeepGym.onWarpStep(3, 28);
-assert.equal(warp1.isWarp, true);
-assert.deepEqual(warp1.warpDestination, { x: 1, y: 23 });
-
-const warpReturn = mossdeepGym.onWarpStep(21, 6);
-assert.equal(warpReturn.isWarp, true);
-assert.deepEqual(warpReturn.warpDestination, { x: 6, y: 35 });
-
-// Floor switches belong to the source engine; no duplicate adaptation on those cells.
-assert.equal(mossdeepGym.onWarpStep(2, 21).isWarp, false);
+// 6. Mossdeep floor/return warps use the source engine (check:emerald-mossdeep-warp).
 
 // 7. Volcanic Ash Grass (Route 113 & Lavaridge)
 const ashTracker = new HoennAshTracker();

@@ -1,6 +1,10 @@
 // Native viewer presentation of the existing Game/Overworld runtime. NPC bytecode,
 // menus and transactions run unchanged. Only UI windows and interaction sprites
 // are projected onto the current viewer map; no second field view is displayed.
+import { dummyWarp } from '@core/field/overworld';
+import { installMossdeepGymWarp, mossdeepGymWarp } from '../games/emerald/mossdeepGymWarp';
+import * as EMB from '../games/emerald/generated/metatileBehavior';
+import type { WarpData } from '@game/save';
 import { Game, FRAME_MS } from '@game/game';
 import { joy } from '@core/gba/input';
 import { loadFieldFx } from '@core/field/fieldEffects';
@@ -121,6 +125,7 @@ export class EngineInteraction {
     installBattleHost(this.game);
     if (isEmeraldData()) {
       const game = this.game;
+      installMossdeepGymWarp(game.overworld, (destination, preserve) => this.loadEmeraldMossdeepWarp(destination, preserve));
       game.whiteOutRecovery = () => {
         // CB2_WhiteOut: after 120 frames, stop music and dispatch Emerald recovery.
         game.setCallbacks(null, null);
@@ -516,6 +521,58 @@ export class EngineInteraction {
       if (!started) this.root.dataset.loading = 'false';
     }
   }
+  /** Emerald TryStartWarpEventScript's Mossdeep branch, before the generic viewer warp. */
+  async tryMossdeepWarp(nav: NavigationSave, warpId: number): Promise<void> {
+    if (this.busy) return;
+    await (this.loading ??= this.initialize());
+    const ow = this.game!.overworld;
+    syncViewerLocation(nav);
+    if (this.wildMap !== nav.mapId) { await this.prepareObjects(nav); this.wildMap = nav.mapId; }
+    const warp = ow.header.warps[warpId];
+    const behavior = ow.map.behaviorAt(nav.x + MAP_OFFSET, nav.y + MAP_OFFSET);
+    if (!warp || !EMB.MetatileBehavior_IsMossdeepGymWarp(behavior)) throw Error('Invalid Emerald Mossdeep warp event');
+    const map = rom.mapNum(warp.destMap);
+    ow.objects.MoveObjectEventToMapCoords(ow.player.object, nav.x + MAP_OFFSET, nav.y + MAP_OFFSET);
+    ow.objects.turn(ow.player.object, save.facing);
+    ow.SetCameraToTrackPlayer();
+    ow.SetWarpDestinationToMapWarp(map >>> 8, map & 0xff, warp.destWarpId);
+    ow.updateEscapeWarp(nav.x + MAP_OFFSET, nav.y + MAP_OFFSET);
+    await this.run(nav, 0, true, () => mossdeepGymWarp(ow).DoMossdeepGymWarp(), true);
+  }
+
+  /** Async replacement of WarpIntoMap + CB2_LoadMap, restricted to source Mossdeep warps. */
+  private async loadEmeraldMossdeepWarp(destination: WarpData, preserve: boolean): Promise<void> {
+    const game = this.game!, ow = game.overworld;
+    const templates = preserve ? save.objectEventTemplates?.map(t => ({ ...t })) : undefined;
+    const mapId = rom.mapIdByNum((destination.mapGroup << 8) | destination.mapNum);
+    if (!mapId) throw Error('Unknown Emerald Mossdeep warp map');
+    const header = await rom.loadMap(mapId);
+    const target = destination.warpId >= 0 ? header.warps[destination.warpId] : destination;
+    if (!target || target.x < 0 || target.y < 0) throw Error('Invalid Emerald Mossdeep warp destination');
+    // Mossdeep floor/return tiles use GetAdjustedInitialDirection's default DIR_SOUTH.
+    const nav: NavigationSave = { mapId, x: target.x, y: target.y, direction: 'south', dynamic: null };
+    // ApplyCurrentWarp's temporary warp fields; syncViewerLocation commits the
+    // destination once the asynchronous map/renderer boundary is ready below.
+    ow.lastUsedWarp = { ...save.location };
+    ow.fixedDiveWarp = dummyWarp();
+    ow.fixedHoleWarp = dummyWarp();
+    this.observedObjects.clear();
+    await this.hooks.relocate(nav);
+    await runEmeraldMapEntry(game, nav, { onSetMetatile: this.hooks.onSetMetatile, preservedTemplates: templates });
+    await this.prepareObjects(nav, true);
+    this.interactionMapId = this.objectMapId = this.wildMap = mapId;
+    this.localId = 0;
+    this.initialSprites = new Set(ow.sprites.sprites);
+    RestartWildEncounterImmunitySteps();
+    ow.tryRunOnWarpIntoMapScript();
+    ow.tryRunOnFrameMapScript();
+    this.observeObjects();
+    this.hooks.syncObjects([...this.observedObjects.values()]);
+    paletteFade.fill(RGB_BLACK);
+    this.recoveredNavigation = nav;
+    // The source FieldCB_MossdeepGymWarpExit now starts its fade and unlock task.
+  }
+
   /** Viewer bridge for Emerald's WarpIntoMap + FieldCB_WarpExitFadeFromBlack.
    * Its outdoor last-heal warp must never pass through FireRed's healer-selection script. */
   private async recoverEmeraldWhiteOut(destination: typeof save.lastHealLocation): Promise<void> {
