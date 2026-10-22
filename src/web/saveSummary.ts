@@ -1,5 +1,5 @@
 // Extracción y análisis de la partida guardada para el Hub de Pokémon Odyssey.
-import type { SaveData } from "@game/save";
+import type { WorldSaveData } from "../viewer/regionSave";
 
 export interface ParsedSaveSummary {
   exists: boolean;
@@ -65,7 +65,7 @@ export async function loadSaveSummary(): Promise<ParsedSaveSummary> {
 
   try {
     // Match the engine/session preference without writing or migrating either save.
-    let parsed: (Partial<SaveData> & { viewerNavigation?: { mapId?: string } }) | undefined;
+    let parsed: Partial<WorldSaveData> | undefined;
     let continueUrl = "/play.html?fr=continue";
     for (const key of ["firered-save-v1", "firered-viewer-game-v1"]) {
       const raw = localStorage.getItem(key);
@@ -73,10 +73,14 @@ export async function loadSaveSummary(): Promise<ParsedSaveSummary> {
       try {
         const candidate = JSON.parse(raw);
         if (candidate?.version !== 2 || !Array.isArray(candidate.playerName) || !candidate.playerName.length) continue;
-        parsed = candidate;
         if (key === "firered-viewer-game-v1" || candidate.viewerNavigation) {
           continueUrl = "/world.html#modo=explore";
         }
+        if (candidate.world?.version === 2 && candidate.world.activeRegion === "hoenn") {
+          if (!candidate.world.regions?.hoenn?.viewerNavigation) continue;
+          continueUrl = "/world.html?region=hoenn&continue=1#modo=explore";
+        }
+        parsed = candidate;
         break;
       } catch { /* A corrupt entry must not hide a valid fallback save. */ }
     }
@@ -114,7 +118,9 @@ export async function loadSaveSummary(): Promise<ParsedSaveSummary> {
     const hasPokedex = ((flags[2053 >> 3] ?? 0) & (1 << (2053 & 7))) !== 0; // FLAG_SYS_POKEDEX_GET
 
     // Ubicación
-    const locationName = getMapFriendlyName(parsed.viewerNavigation?.mapId);
+    const navigation = parsed.world?.activeRegion === "hoenn"
+      ? parsed.world.regions.hoenn?.viewerNavigation : parsed.viewerNavigation;
+    const locationName = getMapFriendlyName(navigation?.mapId);
 
     // Tiempo de juego
     const totalMinutes = Math.floor((parsed.playTimeFrames ?? 0) / 3600);

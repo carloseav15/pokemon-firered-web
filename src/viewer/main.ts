@@ -1,3 +1,4 @@
+import { ferryDestination, ferryUrl } from "./regionTravel";
 import { ViewerObjectSpawns, cloneElement } from "./data/objectSpawns";
 import { readViewerTemplateState, savedViewerObjects, storeViewerObjects, type ViewerObjectState } from "./objectState";
 import { initializeViewerSession, initDefinitiveViewerSession, saveViewerSession, viewerCheckpoint, initializeRegionalSession, continueRegionalSession, type NavigationSave } from "./session";
@@ -259,6 +260,20 @@ function navigationSnapshot(): NavigationSave {
   if (!found) throw Error("Player is outside the map");
   return { mapId: found[0], x: playerX-found[1].x, y: playerY-found[1].y,
     direction: playerDir, dynamic: navigationWarps.returnAddress };
+}
+/** Shared by the menu and ferry: capture the departing map before serializing its bank. */
+function saveCurrentSession(): boolean {
+  if (JOHTO) return false;
+  const nav = navigationSnapshot();
+  storeViewerObjects(nav.mapId, readViewerMapObjects(nav.mapId));
+  setRegionSessionFlags(HOENN ? "hoenn" : "kanto", state.eventFlags);
+  return saveViewerSession(nav);
+}
+function sailTo(region: "kanto" | "hoenn"): void {
+  try {
+    if (!saveCurrentSession()) throw Error("Unable to save your game. Please try again before sailing.");
+    location.assign(ferryUrl(region));
+  } catch (error) { dialogManager.show("Unable to sail", [String(error)]); }
 }
 function pauseInteraction(active: boolean): void {
   keysDown.clear(); playerRunning = false;
@@ -782,8 +797,9 @@ function updatePlayerDisplay(): void {
         if (mapTitle) mapPopup?.show(mapTitle, theme);
       }
     }
-    if (!HOENN && !JOHTO) void engineInteraction?.enterMap(navigationSnapshot()).catch(error => console.error("Map entry", error));
-    else if (HOENN) void enterHoennMap(navigationSnapshot()).catch(error => console.error("Hoenn map entry", error));
+    if (!HOENN && !JOHTO) pendingMapEntry = (engineInteraction?.enterMap(navigationSnapshot()) ?? Promise.resolve()).then(() => {});
+    else if (HOENN) pendingMapEntry = enterHoennMap(navigationSnapshot());
+    void pendingMapEntry.catch(error => console.error("Map entry", error));
   }
   updateEntitiesView();
   checkCurrentMapMusic();
@@ -799,6 +815,7 @@ async function enterHoennMap(nav: NavigationSave): Promise<void> {
   updateEntitiesView();
 }
 
+let pendingMapEntry: Promise<void> = Promise.resolve();
 let enteredMapId = "";
 let lastOutdoorNav: NavigationSave | null = null;
 const objectSpawns=new ViewerObjectSpawns();
@@ -1123,7 +1140,7 @@ function interactWithEntity(ent: LiveEntity): void {
               label: "🚢 Sail to Hoenn!",
               primary: true,
               action: () => {
-                location.href = "/world.html?region=hoenn&mapa=MAP_SLATEPORT_CITY&modo=explore";
+                sailTo("hoenn");
               },
             },
             {
@@ -1147,7 +1164,7 @@ function interactWithEntity(ent: LiveEntity): void {
               label: "🚢 Return to Kanto!",
               primary: true,
               action: () => {
-                location.href = "/world.html?region=kanto&mapa=MAP_VERMILION_CITY&modo=explore";
+                sailTo("kanto");
               },
             },
             {
@@ -3102,6 +3119,21 @@ async function build(): Promise<void> {
     const data = contextData ?? (streaming ? new Rom() : rom);
     const layout = layoutsByMap.get(id) ?? await data.loadLayout(info.layout);
     if (!mapHeaders.has(id)) mapHeaders.set(id, await data.loadMap(id));
+    // The atlas index omits ordinary static NPCs. Hoenn interactions need the exported objects;
+    // Kanto additionally exposes its source port sailor for the adapted unified-world ferry.
+    if (streaming && !JOHTO && (HOENN || id === "MAP_VERMILION_CITY")) {
+      const elements = elementsByMap.get(id) ?? [];
+      for (const object of mapHeaders.get(id)!.objects) {
+        if (object.clone || (!HOENN && object.scriptName !== "VermilionCity_EventScript_FerrySailor")) continue;
+        let element = elements.find(e => e.localId === object.localId);
+        if (!element) { element = cloneElement(id, object); elements.push(element); }
+        if (!entityManager.entities.some(e => e.element.map === id && e.element.localId === object.localId)) {
+          const dir: Direction = element.direction === "up" ? "north" : element.direction === "left" ? "west" : element.direction === "right" ? "east" : "south";
+          entityManager.addEntity(element, info.x + object.x, info.y + object.y, dir);
+        }
+      }
+      elementsByMap.set(id, elements);
+    }
     if(streaming&&!HOENN&&!JOHTO){
       const header=mapHeaders.get(id)!;
       for(const entry of header.objects){
@@ -3516,14 +3548,7 @@ function setupUi(): void {
   weatherOverlay = new WeatherOverlay(document.body);
   explorationUi = new ExplorationUi({
     region: JOHTO ? "johto" : HOENN ? "hoenn" : "kanto",
-    save: () => {
-      // Johto has no progress bank yet: saving there would write its navigation into the Kanto save.
-      if (JOHTO) return false;
-      const nav = navigationSnapshot();
-      storeViewerObjects(nav.mapId, readViewerMapObjects(nav.mapId));
-      setRegionSessionFlags(HOENN ? "hoenn" : "kanto", state.eventFlags);
-      return saveViewerSession(nav);
-    },
+    save: saveCurrentSession,
     continue: () => JOHTO ? Promise.reject(Error("Saving is not available in Johto yet")) : HOENN ? continueHoennSession() : continueViewerSession(),
     newGame: async () => {
       if (!HOENN && !JOHTO) {
@@ -4014,7 +4039,23 @@ build()
       else void interiorViewer.open(startMapId);
     }
     if (startExplore) {
-      if (!HOENN && !JOHTO) {
+      if (!JOHTO && queryParams.get("ferry") === "1") {
+        // ADAPTATION: regional ferry arrivals, separate from either game's original ships.
+        const destination = ferryDestination(HOENN ? "hoenn" : "kanto");
+        const map = index.maps[destination.mapId];
+        if (!map) throw Error("The ferry destination is unavailable");
+        await startExploration(map.x + destination.x, map.y + destination.y);
+        playerDir = destination.direction;
+        updatePlayerDisplay();
+        await pendingMapEntry;
+        if (!saveCurrentSession()) throw Error("Unable to save the ferry arrival");
+        const arrived = new URL(location.href);
+        arrived.searchParams.delete("ferry");
+        history.replaceState(null, "", arrived);
+        writeHash();
+      } else if (HOENN && queryParams.get("continue") === "1") {
+        await continueHoennSession();
+      } else if (!HOENN && !JOHTO) {
         const explicitExternalMap = startMapId && startMapId !== "MAP_PALLET_TOWN_PLAYERS_HOUSE_2F";
         await initializeViewerSession(index.initialFlags, {
           forceTemporary: !!explicitExternalMap,
@@ -4033,7 +4074,8 @@ build()
       } else {
         const valid = startPlayer && startPlayer.x >= minX && startPlayer.y >= minY
           && startPlayer.x < minX + index.world.width && startPlayer.y < minY + index.world.height;
-        await startExploration(valid ? startPlayer!.x : undefined, valid ? startPlayer!.y : undefined);
+        if (HOENN && !startPlayer && !startMapId && viewerCheckpoint()) await continueHoennSession();
+        else await startExploration(valid ? startPlayer!.x : undefined, valid ? startPlayer!.y : undefined);
       }
     }
     document.body.removeAttribute("aria-busy");
