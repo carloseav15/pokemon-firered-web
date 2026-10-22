@@ -52,11 +52,19 @@ Kanto conserva su regresión Chromium PASS. El check focal compara 120 frames,
 división impar, flags/clima fuente, una sola recolocación y estados de
 `UpdateCyclingRoadState` (dependencia de ON_RESUME de Ruta 110).
 
-Siguiente: inicializar correctamente `lastHealLocation` de un banco Hoenn nuevo,
-que hoy hereda un warp inválido FireRed hasta el primer Centro. Ese caso no queda
-validado por la derrota posterior a curar en Slateport. Quedan otros recorridos,
-reto Cycling Road completo (warp previo/música/reloj/colisiones), resto de comandos/
-specials, paridad audiovisual (respaldo FireRed), móvil y producción.
+`627fafc9` resuelve además la derrota previa al primer Centro: warp fuente de
+Slateport (19,20) para el viajero del ferry adaptado, reparación del warp vacío
+heredado y conservación de respawns registrados. Emerald inicia en la casa elegida
+durante la salida del camión; su S.S. Tidal fija Slateport al desembarcar. Aplicar
+este último destino al viajero Kanto es una adaptación explícita, sin conceder
+historia. Chromium PASS de derrota natural sin entrar en Centros, guardar/Home
+Continue antes y después, y regreso Kanto aislado; solo entrenador `lab-done`
+nivel 5 con salud original colocado junto al ferry PREPARED, sin escrituras durante
+el recorrido. `check:region-save` cubre también reparación antigua y respawn Kanto.
+
+Siguiente: contratos Emerald fuera del circuito y cotejo audiovisual. Quedan otros
+recorridos, reto Cycling Road completo (warp previo/música/reloj/colisiones), resto
+de comandos/specials, paridad audiovisual (respaldo FireRed), móvil y producción.
 La auditoría inicial de abajo describe el punto de partida; sus carencias resueltas
 por estas entregas se detallan en TAREAS-FINALES §0, sin cerrar cobertura general.
 
@@ -98,7 +106,7 @@ por estas entregas se detallan en TAREAS-FINALES §0, sin cerrar cobertura gener
    → comprar/curar → guardar → continuar. Kanto como referencia; Johto con fuente
    fijada; Hoenn tiene circuito mínimo conectado y probado (`76a49c81`, `8aba7d5d`), con combate FireRed y recursos de respaldo identificados.
 8. [~] Unir viajes regionales con una sola sesión: ida, vuelta, derrota y continuar
-   conservan posición, equipo, dinero y progreso; sin reinicios ni estados ficticios. Ferry ida/vuelta, guardar/Continue y recarga Kanto–Hoenn pasan en Chromium (`8aba7d5d`, PREPARED); derrota tras visitar el Centro Hoenn pasa en `299ece60`; primera visita sin Centro y Johto pendientes.
+   conservan posición, equipo, dinero y progreso; sin reinicios ni estados ficticios. Ferry ida/vuelta, guardar/Continue y recarga Kanto–Hoenn pasan en Chromium (`8aba7d5d`, PREPARED); derrota tras visitar el Centro Hoenn pasa en `299ece60`; primera visita sin Centro comprobada en `627fafc9`; Johto pendiente.
 9. [ ] Completar sistemas regionales, historia y gimnasios sobre ese contrato.
    Sustituir cinemáticas adaptadas por eventos fuente y revisar gráficos/audio con
    comparación focalizada. Resolver divergencias de combate antes de depender de él.
@@ -268,7 +276,7 @@ Orden concreto actualizado (descompone puntos 4, 6 y 7 sin borrar sus pendientes
 1. [x] Diseñar IDs regionales y persistencia: equipo/dinero globales, progreso y navegación
    con juego/región, compatibilidad del save existente. Hecho en `6e2d62a9` para
    flags/vars/navegación Kanto–Hoenn (prueba de almacenamiento PREPARED). Ferry ida/vuelta y guardar/Continue en navegador comprobados en `8aba7d5d`
-   (entrenador PREPARED); `299ece60` añade recorrido continuo Slateport/Ruta 110 y derrota después del Centro. Primer respawn sin Centro y recorrido extenso pendientes.
+   (entrenador PREPARED); `299ece60` añade recorrido continuo Slateport/Ruta 110 y derrota después del Centro. Primer respawn sin Centro comprobado en `627fafc9`; recorrido extenso pendiente.
 2. [~] Cerrar los módulos del contrato Emerald detectados por el núcleo.
    `67d14da8` conecta save y entrada de mapa; `76a49c81` conecta objetos, textos,
    ON_WARP_INTO/ON_FRAME y dependencias del circuito mínimo en EngineInteraction.
