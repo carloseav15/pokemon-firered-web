@@ -2,7 +2,7 @@
 // Installed on the engine with setGameSpecials while Emerald content runs (EngineInteraction).
 // Each function keeps its C source file and name.
 import { GetSetPokedexFlag } from "@core/pokemon/mon_extra";
-import { GetMonData, GetMonEVCount, SetMonData } from "@core/pokemon/mon";
+import { GetMonData, GetMonEVCount, GetNature, SetMonData } from "@core/pokemon/mon";
 import { cdata } from "@core/hw/assets";
 import { rom } from "@core/rom";
 import { GetPlayerTrainerId } from "@core/pokemon/pokemon";
@@ -27,6 +27,7 @@ import { gLocalTime } from "./clock";
 import { PlayerFaceTrainerAfterBattle } from "./trainerSee";
 import * as Berry from "./berry";
 import * as BerryPowder from "./berryPowder";
+import { RotatingGate_InitPuzzle, RotatingGate_InitPuzzleAndGraphics } from "./rotatingGate";
 import { ChooseStarter, GetStarterPokemon } from "./starterChoose";
 import { ScriptGetPokedexInfo, ShowPokedexRatingMessage } from "./birchPc";
 
@@ -450,6 +451,61 @@ function ChangePokemonNickname(ctx: ScriptRunner): void { ctx.ow.game.ChangePoke
 function ChangeBoxPokemonNickname(ctx: ScriptRunner): void { ctx.ow.game.ChangeBoxPokemonNickname(); }
 
 
+/** pokeblock.c GetPokeblockData fields PBLOCK_SPICY..PBLOCK_SOUR (FLAVOR_COUNT of them) */
+type Pokeblock = { color: number; spicy: number; dry: number; sweet: number; bitter: number; sour: number; feel: number };
+const FLAVOR_COUNT = 5;
+
+/** pokeblock.c PokeblockGetGain */
+function PokeblockGetGain(nature: number, pokeblock: Pokeblock): number {
+  const table = cdata<number[]>("em:pokeblock", "gPokeblockFlavorCompatibilityTable");
+  const flavors = [pokeblock.spicy, pokeblock.dry, pokeblock.sweet, pokeblock.bitter, pokeblock.sour];
+  let totalGain = 0;
+  for (let flavor = 0; flavor < FLAVOR_COUNT; flavor++) {
+    const curGain = flavors[flavor]!;
+    if (curGain > 0) totalGain += curGain * table[FLAVOR_COUNT * nature + flavor]!;
+  }
+  return totalGain;
+}
+
+/** pokeblock.c CopyMonFavoritePokeblockName: the first favourite Pokéblock the nature gains from (gPokeblockNames[i + 1]). */
+function CopyMonFavoritePokeblockName(nature: number): number[] | null {
+  const favorites = cdata<Pokeblock[]>("em:pokeblock", "sFavoritePokeblocksTable");
+  const names = cdata<Array<number | { $sym: string }>>("em:pokeblock", "gPokeblockNames");
+  for (let i = 0; i < FLAVOR_COUNT; i++) {
+    if (PokeblockGetGain(nature, favorites[i]!) > 0) {
+      const name = names[i + 1] as { $sym: string };
+      return Array.from(rom.text(name.$sym));
+    }
+  }
+  return null;
+}
+
+/** field_specials.c GetPokeblockNameByMonNature: returns whether a name was copied, the name goes to gStringVar1. */
+function GetPokeblockNameByMonNature(): number {
+  const name = CopyMonFavoritePokeblockName(GetNature(save.party[GetLeadMonIndex()]!));
+  if (!name) return 0;
+  stringVars.var1 = Uint8Array.from(name);
+  return 1;
+}
+
+/** secret_base.c CheckPlayerHasSecretBase: the player's base is always secretBases[0]. */
+function CheckPlayerHasSecretBase(): void {
+  varSet(SV.RESULT, save.secretBases?.[0]?.secretBaseId ? 1 : 0);
+}
+
+/** region_map.c GetMapName for a region map section below MAPSEC_NONE (padLength 0): gRegionMapEntries[id].name.
+ * MAPSEC_SECRET_BASE names the current base (secret_base.c GetSecretBaseName), which needs the secret base records. */
+function GetMapName(regionMapId: number): Uint8Array {
+  if (regionMapId === EM.MAPSEC_SECRET_BASE) throw Error("GetMapName: secret_base.c GetSecretBaseName is not ported");
+  if (regionMapId < EM.MAPSEC_NONE) return rom.regionMapName(regionMapId);
+  return Uint8Array.from([...new Array(18).fill(0x00), EOS]); // StringFill(dest, CHAR_SPACE, 18)
+}
+
+/** field_specials.c GetSecretBaseNearbyMapName */
+function GetSecretBaseNearbyMapName(): void {
+  stringVars.var1 = GetMapName(varGet(EM.VAR_SECRET_BASE_MAP));
+}
+
 /** field_specials.c GetPlayerBigGuyGirlString */
 function GetPlayerBigGuyGirlString(): void {
   stringVars.var1 = rom.text(save.playerGender === EM.MALE ? "gText_BigGuy" : "gText_BigGirl");
@@ -571,6 +627,7 @@ export const EMERALD_SPECIALS = {
   ChooseStarter: (ctx: ScriptRunner) => ChooseStarter(ctx.ow.game),
   GetPlayerBigGuyGirlString, GetRivalSonDaughterString, GetWeekCount, IsStarterInParty, IsTrainerRegistered,
   ResetHealLocationFromDewford, InitBirchState, EnableNationalPokedex, SetUnlockedPokedexFlags, BufferMonNickname,
+  RotatingGate_InitPuzzle, RotatingGate_InitPuzzleAndGraphics, GetPokeblockNameByMonNature, CheckPlayerHasSecretBase, GetSecretBaseNearbyMapName,
   PetalburgGymSlideOpenRoomDoors, PetalburgGymUnlockRoomDoors, TurnOffTVScreen, TurnOnTVScreen, LeadMonHasEffortRibbon,
   GiveLeadMonEffortRibbon, ChangePokemonNickname, ChangeBoxPokemonNickname, ScriptGetPokedexInfo, ShowPokedexRatingMessage,
   HasEnoughBerryPowder: BerryPowder.HasEnoughBerryPowder, TakeBerryPowder: BerryPowder.TakeBerryPowder,

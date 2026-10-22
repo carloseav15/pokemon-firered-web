@@ -34,7 +34,7 @@ const storage = new Map<string, string>();
 setDataRoot("/emerald");
 rom.charmap = JSON.parse(readFileSync("public/emerald/charmap.json", "utf8"));
 await rom.load();
-await loadCData("em:battle_setup", "em:starter_choose", "pokemon", "fonts", "text_printer", "text", "strings");
+await loadCData("em:battle_setup", "em:starter_choose", "em:pokeblock", "pokemon", "fonts", "text_printer", "text", "strings");
 
 const decomp = process.env.POKEEMERALD ? resolve(process.env.POKEEMERALD) : resolve(process.cwd(), "../refs-src/pokeemerald");
 assert.ok(existsSync(resolve(decomp, "src/field_specials.c")), `pokeemerald source not found at ${decomp}`);
@@ -158,6 +158,27 @@ for (const [count, label] of [[9, "LessThan10"], [10, "LessThan20"], [199, "Less
   varSet(SV.x8004, count); call("ShowPokedexRatingMessage");
   assert.deepEqual(Array.from(shown.pop()!), Array.from(rom.text(`gBirchDexRatingText_${label}`)), `rating ${count}`);
 }
+
+// pokeblock.c CopyMonFavoritePokeblockName through field_specials.c GetPokeblockNameByMonNature (nature = personality % 25):
+// Hardy is neutral, Lonely (+Atk -Def) likes Spicy (red), Bold (+Def -Atk) likes Sour (yellow) -- the Bulbapedia flavor chart.
+{
+  const lead = mon(EM.SPECIES_TORCHIC);
+  save.party = [lead];
+  for (const [nature, label] of [[0, null], [1, "gText_RedPokeblock"], [5, "gText_YellowPokeblock"]] as const) {
+    lead.personality = nature; // PREPARED: personality % 25 is the nature
+    stringVars.var1 = Uint8Array.of(0xff);
+    const found = call("GetPokeblockNameByMonNature");
+    if (label === null) { assert.equal(found, 0, "neutral nature has no favourite"); assert.equal(stringVars.var1[0], 0xff); }
+    else { assert.equal(found, 1); assert.deepEqual(Array.from(stringVars.var1), Array.from(rom.text(label))); }
+  }
+}
+
+// secret_base.c CheckPlayerHasSecretBase / field_specials.c GetSecretBaseNearbyMapName (region_map.c GetMapName)
+varSet(SV.RESULT, 7); // PREPARED: differs from both results
+call("CheckPlayerHasSecretBase"); assert.equal(varGet(SV.RESULT), 0, "no base recorded");
+save.secretBases = [{ secretBaseId: 12 }]; call("CheckPlayerHasSecretBase"); assert.equal(varGet(SV.RESULT), 1);
+varSet(EM.VAR_SECRET_BASE_MAP, EM.MAPSEC_ROUTE_104); /* PREPARED */ call("GetSecretBaseNearbyMapName");
+assert.deepEqual(Array.from(stringVars.var1), Array.from(rom.regionMapName(EM.MAPSEC_ROUTE_104)));
 
 // field_specials.c PCTurnOnEffect / PCTurnOffEffect on the exported Oldale Pokémon Center map
 await enter("MAP_OLDALE_TOWN_POKEMON_CENTER_1F");

@@ -8,6 +8,7 @@ import { readFileSync, existsSync } from "node:fs";
 import { Game } from "../../src/games/firered/game.ts";
 import { newSaveData, setSave } from "../../src/games/firered/save.ts";
 import { rom, setDataRoot } from "../../src/core/rom.ts";
+import { loadCData } from "../../src/core/hw/assets.ts";
 import { enterKanto } from "../../src/viewer/regionSave.ts";
 import { initializeRegionalSession, resetViewerSessionInitialized } from "../../src/viewer/session.ts";
 import { runEmeraldMapEntry } from "../../src/viewer/hoennMapEntry.ts";
@@ -21,12 +22,13 @@ const storage = new Map<string, string>();
 setDataRoot("/emerald");
 rom.charmap = JSON.parse(readFileSync("public/emerald/charmap.json", "utf8"));
 await rom.load();
+await loadCData("em:rotating_gate", "em:starter_choose", "em:pokeblock", "em:battle_setup"); // the Emerald tables the engine preloads (engineInteraction.initialize)
 const args = process.argv.slice(2);
 const all = args.includes("--all");
 const CIRCUIT = ["MAP_LITTLEROOT_TOWN", "MAP_OLDALE_TOWN", "MAP_ROUTE101", "MAP_ROUTE102", "MAP_ROUTE103", "MAP_SLATEPORT_CITY", "MAP_ROUTE110", "MAP_MOSSDEEP_CITY", "MAP_SS_TIDAL"];
 const prefixes = all ? [] : args.length ? args : CIRCUIT;
-/** Stops accepted for the circuit: link-scope scripts and the unported rotating gate puzzle of Trick House 6. */
-const KNOWN = [/ValidateSavedWonderCard in CableClub_OnTransition/, /RotatingGate_InitPuzzle in Route110_TrickHousePuzzle6_OnTransition/];
+/** Stops accepted for the circuit: link-scope scripts. */
+const KNOWN = [/ValidateSavedWonderCard in CableClub_OnTransition/];
 const maps = (JSON.parse(readFileSync("public/emerald/maps.json", "utf8")).maps as Record<string, unknown> | string[]);
 const ids = Array.isArray(maps) ? maps : Object.keys(maps);
 const canvas = { width: 240, height: 160, getContext: () => ({}) } as unknown as HTMLCanvasElement;
@@ -52,4 +54,4 @@ console.log(`entered ${entered} maps, ${[...failures.values()].reduce((n, v) => 
 for (const [message, list] of [...failures].sort((a, b) => b[1].length - a[1].length)) console.log(`${list.length}\t${message}\n\t${list.slice(0, 6).join(", ")}${list.length > 6 ? ", …" : ""}`);
 const unexpected = [...failures.keys()].filter(message => !KNOWN.some(known => known.test(message)));
 if (!all && unexpected.length) { console.error(`unexpected map-entry stops: ${unexpected.length}`); process.exit(1); }
-if (!all) console.log(`check:emerald-map-entries PASS: circuit maps entered; only the listed link/rotating-gate stops remain (PREPARED: a fresh Hoenn bank per sweep, no walking)`);
+if (!all) console.log(`check:emerald-map-entries PASS: circuit maps entered; only the listed link stops remain (PREPARED: a fresh Hoenn bank per sweep, no walking)`);

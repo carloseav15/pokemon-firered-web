@@ -128,6 +128,7 @@
     "check:principal-map-data": "python3 tools/checks/principal_map_data.py",
     "sprites:spritecollab": "python3 tools/viewer/spritecollab.py",
     "check:emerald-field-specials": "esbuild tools/checks/emeraldFieldSpecials.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/emeraldFieldSpecials.mjs && node .decomp-build/checks/emeraldFieldSpecials.mjs",
+    "check:emerald-rotating-gate": "esbuild tools/checks/emeraldRotatingGate.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/emeraldRotatingGate.mjs && node .decomp-build/checks/emeraldRotatingGate.mjs",
     "check:emerald-script-text": "esbuild tools/checks/emeraldScriptText.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/emeraldScriptText.mjs && node .decomp-build/checks/emeraldScriptText.mjs",
     "check:emerald-script-contracts": "esbuild tools/checks/emeraldScriptContracts.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/emeraldScriptContracts.mjs && node .decomp-build/checks/emeraldScriptContracts.mjs",
     "check:emerald-regional-movement": "esbuild tools/checks/emeraldRegionalMovement.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/emeraldRegionalMovement.mjs && node .decomp-build/checks/emeraldRegionalMovement.mjs",

@@ -191,6 +191,8 @@ export type SaveData = {
   facing: number;
   weather?: number;
   weatherCycleStage?: number;
+  /** SaveBlock1.flashLevel (pokeemerald overworld.c SetDefaultFlashLevel; the FireRed engine keeps the level in Overworld.flashLevel). */
+  flashLevel?: number;
   nationalDexMagic?: number;
   nationalDexRseMagic?: number;
   objectEvents?: ObjectEventSave[];
@@ -203,6 +205,8 @@ export type SaveData = {
   berryTrees?: BerryTree[];
   /** load_save.c SaveBlock1.playerPartyCount / playerParty, filled by SavePlayerParty (Emerald scripts, global trainer data). */
   playerPartySave?: { count: number; party: Pokemon[] };
+  /** global.h SaveBlock1.secretBases (Emerald): the player's base is [0]; only the id is represented until secret_base.c is ported. */
+  secretBases?: Array<{ secretBaseId: number }>;
   /** SaveBlock2.lastBerryTreeUpdate (struct Time). */
   lastBerryTreeUpdate?: { days: number; hours: number; minutes: number; seconds: number };
   trainerRematches?: number[];

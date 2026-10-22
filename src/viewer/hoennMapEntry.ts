@@ -4,11 +4,12 @@
 // The live save carries the Hoenn progress bank and the Hoenn field fields (regionSave.ts), so the
 // VM's flag/var writes and the location it reads are Hoenn's own.
 //
-// Not run here (viewer handles or not yet bridged): CheckLeftFriendsSecretBase, TrySetMapSaveWarpStatus,
-// TryUpdateRandomTrainerRematches, UpdatePerDay (the rest of DoTimeBasedEvents, see games/emerald/clock.ts),
-// SetSavedWeatherFromCurrMapHeader, ChooseAmbientCrySpecies, SetDefaultFlashLevel,
-// roamer updates, Battle Pyramid/Trainer Hill maps, TV screens and secret
-// bases. RestartWildEncounterImmunitySteps is the caller's (EngineInteraction.enterMap). The
+// Not run here (viewer handles or not yet bridged): CheckLeftFriendsSecretBase, TrySetMapSaveWarpStatus
+// (the viewer saves its own position), TryUpdateRandomTrainerRematches (needs five badges: IsRematchStepCounterMaxed,
+// and the step counter is not incremented either), UpdatePerDay (the rest of DoTimeBasedEvents, see
+// games/emerald/clock.ts), ChooseAmbientCrySpecies (the viewer's audio controller picks its own ambient cry),
+// UpdateLocationHistoryForRoamer / RoamerMoveToOtherLocationSet (Emerald's roamer.c is not ported), Battle
+// Pyramid/Trainer Hill maps, UpdateTVScreensOnMap and InitSecretBaseAppearance (tv.c / secret_base.c). RestartWildEncounterImmunitySteps is the caller's (EngineInteraction.enterMap). The
 // ON_WARP_INTO_MAP_TABLE / ON_FRAME_TABLE scripts run afterwards, once the map's object events exist
 // (EngineInteraction.enterMap).
 import type { Game } from '@game/game';
@@ -57,6 +58,20 @@ export function bindEmeraldEventData(): void {
 
 export const scriptLabel = (ptr: number): string | null => ptr ? rom.labelAt(ptr) ?? `0x${ptr.toString(16)}` : null;
 
+/** field_screen_effect.c gMaxFlashLevel: ARRAY_COUNT(sFlashLevelToRadius) - 1 with the nine Emerald radii { 200, 72, 64, 56, 48, 40, 32, 24, 0 }. */
+const gMaxFlashLevel = 8;
+
+/** overworld.c SetDefaultFlashLevel (Emerald: gMapHeader.cave is the map.json `requires_flash`; the flash starts one level
+ * below gMaxFlashLevel, or at level 1 once FLAG_SYS_USE_FLASH is set). SaveBlock1.flashLevel and the engine's own copy. */
+function SetDefaultFlashLevel(ow: Game['overworld']): void {
+  let flashLevel: number;
+  if (!ow.header.requiresFlash) flashLevel = 0;
+  else if (EmSave.FlagGet(EM.FLAG_SYS_USE_FLASH)) flashLevel = 1;
+  else flashLevel = gMaxFlashLevel - 1;
+  save.flashLevel = flashLevel;
+  ow.flashLevel = flashLevel;
+}
+
 /**
  * LoadMapFromWarp's event-data steps and InitMap's ON_LOAD for `nav.mapId` on Emerald data.
  * Continue follows CB2_ContinueSavedGame instead: keep templates/TEMP data and run ON_LOAD,
@@ -93,7 +108,9 @@ export async function runEmeraldMapEntry(game: Game, nav: NavigationSave, hooks:
   if (hooks.continuing) ow.savedMusic = save.savedMusic ?? 0;
   else {
     EmSave.ClearTempFieldEventData();
+    game.weather.SetSavedWeatherFromCurrMapHeader(header.weather);
     if (isMapTypeOutdoors(header.mapType)) EmSave.FlagClear(EM.FLAG_SYS_USE_FLASH);
+    SetDefaultFlashLevel(ow);
     ow.Overworld_ClearSavedMusic();
     ow.RunOnTransitionMapScript();
   }

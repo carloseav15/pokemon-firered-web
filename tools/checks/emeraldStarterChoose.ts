@@ -63,5 +63,5 @@ export async function runStarterChecks(engine: EngineInteraction, pump: Pump): P
   assert.equal(varGet(EM.VAR_BIRCH_LAB_STATE), 2);
   assert.equal(flagGet(EM.FLAG_HIDE_ROUTE_101_BIRCH_STARTERS_BAG), true);
   assert.equal(save.gameStats[EM.GAME_STAT_WILD_BATTLES] ?? 0, 1, 'CB2_StartFirstBattle counted the wild battle');
-  console.log(`starter: Route101_EventScript_BirchsBag → ChooseStarter (${sceneSeen.length} screen tasks) → Mudkip Lv 5 → first battle → script end (${frames} frames); PREPARED trainer/state`);
+  console.log(`check:emerald-starter-choose PASS: Route101_EventScript_BirchsBag → ChooseStarter (${sceneSeen.length} screen tasks) → Mudkip Lv 5 → first battle → script end (${frames} frames); PREPARED trainer/state`);
 }

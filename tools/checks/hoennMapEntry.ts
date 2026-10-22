@@ -79,6 +79,25 @@ assert.equal(report.load, null, "Littleroot has no ON_LOAD script");
 const littleroot = rom.mapNum("MAP_LITTLEROOT_TOWN");
 assert.deepEqual(save.location, { mapGroup: littleroot >> 8, mapNum: littleroot & 0xff, warpId: -1, x: 10, y: 10 });
 
+// LoadMapFromWarp: SetSavedWeatherFromCurrMapHeader (Littleroot: WEATHER_SUNNY in its map.json) and SetDefaultFlashLevel
+// (an outdoor map is not a cave: level 0); a cave that requires Flash starts at gMaxFlashLevel - 1, or at 1 with FLAG_SYS_USE_FLASH.
+assert.equal(save.weather, EM.WEATHER_SUNNY, "SetSavedWeatherFromCurrMapHeader");
+assert.equal(save.flashLevel, 0, "SetDefaultFlashLevel outdoors");
+{
+  const game = new Game(canvas);
+  const caveId = "MAP_GRANITE_CAVE_B1F";
+  const cave = await rom.loadMap(caveId);
+  assert.equal(cave.requiresFlash, true, "the exported cave map requires Flash (map.json requires_flash)");
+  const caveNav = { mapId: caveId, x: 1, y: 1, direction: "south" as const, dynamic: null };
+  await runEmeraldMapEntry(game, caveNav);
+  assert.equal(save.flashLevel, 7, "gMaxFlashLevel (8) - 1 in a dark cave");
+  assert.equal(game.overworld.flashLevel, 7);
+  flagSet(EM.FLAG_SYS_USE_FLASH); // PREPARED: Flash was used
+  await runEmeraldMapEntry(game, caveNav);
+  // LoadMapFromWarp clears FLAG_SYS_USE_FLASH only on outdoor maps: the flag survives the cave-to-cave warp
+  assert.equal(save.flashLevel, 1, "SetDefaultFlashLevel with FLAG_SYS_USE_FLASH");
+}
+
 // Save in Hoenn, then continue: the effect lives in the Hoenn bank only.
 assert.equal(saveViewerSession(nav), true);
 const after = stored();
