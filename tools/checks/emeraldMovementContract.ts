@@ -9,7 +9,7 @@ import { EMERALD_SHARED_MOVEMENT_ACTIONS, EMERALD_REGIONAL_MOVEMENT_ACTIONS } fr
 import { emeraldMovement, translateEmeraldMovementAction } from '../../src/games/emerald/rotatingTileMovement.ts';
 import * as EM from '../../src/games/emerald/generated/constants.ts';
 import * as FR from '../../src/games/firered/generated/constants.ts';
-import type { ObjectEvent } from '../../src/core/field/objectEvents.ts';
+import { DIR_EAST, DIR_NORTH, DIR_SOUTH, DIR_WEST, initialMovementTypeFacingDirection, type ObjectEvent } from '../../src/core/field/objectEvents.ts';
 import type { Overworld } from '../../src/core/field/overworld.ts';
 function host() {
  const object={heldMovementActive:false,localId:1} as ObjectEvent, seen:number[]=[];
@@ -47,5 +47,13 @@ internal.driver.ScriptMovement_MoveObjects(internal.driver.GetMoveObjectsTaskId(
 setDataRoot('/fr');const fr=host();rom.scripts=Uint8Array.from([FR.MOVEMENT_ACTION_WALK_FAST_DOWN,FR.MOVEMENT_ACTION_STEP_END]);
 fr.driver.start(fr.object,ROM_BASE);fr.driver.ScriptMovement_MoveObjects(fr.driver.GetMoveObjectsTaskId());
 assert.deepEqual(fr.seen,[FR.MOVEMENT_ACTION_WALK_FAST_DOWN]);
+// Movement types 77..80 are WALK_SLOWLY_IN_PLACE_* only in Emerald data; FireRed keeps RAISE_HAND_*/WANDER_AROUND_SLOWER.
+setDataRoot('/emerald');
+assert.deepEqual([EM.MOVEMENT_TYPE_WALK_SLOWLY_IN_PLACE_DOWN,EM.MOVEMENT_TYPE_WALK_SLOWLY_IN_PLACE_UP,EM.MOVEMENT_TYPE_WALK_SLOWLY_IN_PLACE_LEFT,EM.MOVEMENT_TYPE_WALK_SLOWLY_IN_PLACE_RIGHT].map(initialMovementTypeFacingDirection),[DIR_SOUTH,DIR_NORTH,DIR_WEST,DIR_EAST]);
+setDataRoot('/fr');
+assert.deepEqual([77,78,79,80].map(initialMovementTypeFacingDirection),[DIR_SOUTH,DIR_SOUTH,DIR_SOUTH,DIR_SOUTH]);
+// EM WALK_SLOW_* is FireRed's WALK_SLOWER_* (UpdateWalkSlowAnim moves every other frame in pokeemerald).
+assert.equal(translateEmeraldMovementAction(EM.MOVEMENT_ACTION_WALK_SLOW_DOWN),FR.MOVEMENT_ACTION_WALK_SLOWER_DOWN);
+assert.equal(translateEmeraldMovementAction(EM.MOVEMENT_ACTION_FACE_PLAYER),FR.MOVEMENT_ACTION_FACE_PLAYER);
 assert.ok(shared.some(([e,f])=>e!==f),'fixture must exercise divergent numeric IDs');
 console.log(`PASS movement boundary: ${shared.length} source-compared action IDs; ${rejected} missing regional bodies rejected before scheduling; internal/FireRed regressions (PREPARED; not action parity)`);

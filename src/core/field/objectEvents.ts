@@ -8,7 +8,7 @@ import * as C from "@game/generated/constants";
 import { cdata, symName, type SymRef } from "../hw/assets";
 import { Sprite, type FrameImage } from "../gba/sprite";
 import { random } from "../random";
-import { DATA_ROOT, rom, type AnimCmd, type MapObjectTemplate } from "../rom";
+import { DATA_ROOT, isEmeraldData, rom, type AnimCmd, type MapObjectTemplate } from "../rom";
 import { GetAcroEndWheelieDirectionAnimNum, GetAcroWheelieDirectionAnimNum, GetAcroWheeliePedalDirectionAnimNum, GetCopyDirection, GetFaceDirectionAnimNum, GetJumpSpecialDirectionAnimNum, GetJumpY, GetMoveDirectionAnimNum, GetMoveDirectionFastAnimNum, GetMoveDirectionFasterAnimNum, GetMoveDirectionFastestAnimNum, GetRunningDirectionAnimNum, GetSpinDirectionAnimNum } from "@game/generated/eventObjectAnims";
 import { flagGet, flagSet, varGet } from "@game/save";
 import { gQuestLogPlaybackState, QL_GetPlaybackState, QuestLogRecordNPCStep } from "@game/questLogEvents";
@@ -102,8 +102,20 @@ const INITIAL_FACING: Record<number, number> = {};
     [0x40, 1], [0x41, 2], [0x42, 3], [0x43, 4], [0x44, 1], [0x45, 2], [0x46, 3], [0x47, 4], [0x48, 1], [0x49, 2], [0x4a, 3], [0x4b, 4], [0x4c, 1], [0x4d, 1], [0x4e, 1], [0x4f, 1], [0x50, 1]];
   for (const [t, d] of rest) INITIAL_FACING[t] = d;
 }
+/**
+ * pokeemerald numbers movement types like pokefirered up to MOVEMENT_TYPE_INVISIBLE (76), and its
+ * 68..75 JOG/RUN_IN_PLACE types run the same actions as FireRed's WALK_IN_PLACE_FAST/JOG_IN_PLACE
+ * (GetWalkInPlaceFast/FasterMovementAction). Only 77..80 differ: Emerald's WALK_SLOWLY_IN_PLACE_
+ * DOWN/UP/LEFT/RIGHT take the FireRed slots of RAISE_HAND_AND_STOP..WANDER_AROUND_SLOWER.
+ */
+const EMERALD_WALK_SLOWLY_IN_PLACE_FIRST = 77, EMERALD_WALK_SLOWLY_IN_PLACE_LAST = 80;
+function isEmeraldWalkSlowlyInPlace(movementType: number): boolean {
+  return isEmeraldData() && movementType >= EMERALD_WALK_SLOWLY_IN_PLACE_FIRST && movementType <= EMERALD_WALK_SLOWLY_IN_PLACE_LAST;
+}
 export function initialMovementTypeFacingDirection(movementType: number): number {
-  return INITIAL_FACING[movementType & 0xff] ?? DIR_SOUTH;
+  movementType &= 0xff;
+  if (isEmeraldWalkSlowlyInPlace(movementType)) return [DIR_SOUTH, DIR_NORTH, DIR_WEST, DIR_EAST][movementType - EMERALD_WALK_SLOWLY_IN_PLACE_FIRST]!;
+  return INITIAL_FACING[movementType] ?? DIR_SOUTH;
 }
 
 // WALK_SEQUENCE types 0x1D..0x34: directions + the index/axis shortcut rule.
@@ -759,6 +771,7 @@ const MOVEMENT_TYPE_STEPS: Readonly<Record<string, readonly string[]>> = {
   MovementType_CopyPlayerInGrass: ["MovementType_CopyPlayer_Step0", "MovementType_CopyPlayerInGrass_Step1", "MovementType_CopyPlayer_Step2"],
   MovementType_WalkInPlace: ["MovementType_WalkInPlace_Step0", "MovementType_MoveInPlace_Step1"],
   MovementType_WalkInPlaceFast: ["MovementType_WalkInPlaceFast_Step0", "MovementType_MoveInPlace_Step1"],
+  MovementType_WalkSlowlyInPlace: ["MovementType_WalkSlowlyInPlace_Step0", "MovementType_MoveInPlace_Step1"],
   MovementType_JogInPlace: ["MovementType_JogInPlace_Step0", "MovementType_MoveInPlace_Step1"],
   MovementType_Invisible: ["MovementType_Invisible_Step0", "MovementType_Invisible_Step1", "MovementType_Invisible_Step2"],
   MovementType_Buried: ["MovementType_Buried_Step0"],
@@ -1144,7 +1157,7 @@ export class ObjectEvents {
     object.previousCoords = { x, y };
     object.currentElevation = template.elevation;
     object.previousElevation = template.elevation;
-    const facing = INITIAL_FACING[template.movementType] ?? DIR_SOUTH;
+    const facing = initialMovementTypeFacingDirection(template.movementType);
     object.facingDirection = facing;
     object.movementDirection = facing;
     object.previousMovementDirection = facing;
@@ -1877,6 +1890,16 @@ export class ObjectEvents {
     }
   }
 
+  /** FreezeObjectEventsExceptTwo (pokeemerald event_object_movement.c): both are u8 object slots. */
+  FreezeObjectEventsExceptTwo(objectEventId1: number, objectEventId2: number): void {
+    objectEventId1 &= 0xff;
+    objectEventId2 &= 0xff;
+    for (let i = 0; i < OBJECT_EVENTS_COUNT; i++) {
+      const object = this.objects[i];
+      if (i !== objectEventId1 && i !== objectEventId2 && object?.active && !object.isPlayer) this.FreezeObjectEvent(object);
+    }
+  }
+
   /** UnfreezeObjectEvent (event_object_movement.c). */
   UnfreezeObjectEvent(object: ObjectEvent): void {
     if (!object.active || !object.frozen) return;
@@ -1890,16 +1913,6 @@ export class ObjectEvents {
     for (let i = 0; i < OBJECT_EVENTS_COUNT; i++) {
       const object = this.objects[i];
       if (object?.active) this.UnfreezeObjectEvent(object);
-  /** FreezeObjectEventsExceptTwo (pokeemerald event_object_movement.c): both are u8 object slots. */
-  FreezeObjectEventsExceptTwo(objectEventId1: number, objectEventId2: number): void {
-    objectEventId1 &= 0xff;
-    objectEventId2 &= 0xff;
-    for (let i = 0; i < OBJECT_EVENTS_COUNT; i++) {
-      const object = this.objects[i];
-      if (i !== objectEventId1 && i !== objectEventId2 && object?.active && !object.isPlayer) this.FreezeObjectEvent(object);
-    }
-  }
-
     }
   }
 
@@ -2208,7 +2221,7 @@ export class ObjectEvents {
    * run their own body directly), so movementTypeBranch below covers them too.
    */
   private movementTypeCallback(object: ObjectEvent): boolean {
-    const name = MOVEMENT_TYPE_CALLBACKS[object.movementType];
+    const name = isEmeraldWalkSlowlyInPlace(object.movementType) ? "MovementType_WalkSlowlyInPlace" : MOVEMENT_TYPE_CALLBACKS[object.movementType];
     if (!name) return false;
     if (object.movementType === rom.constants.MOVEMENT_TYPE_BURIED) return this.MovementType_Buried_Callback(object, object.sprite);
     if (object.movementType === rom.constants.MOVEMENT_TYPE_RAISE_HAND_AND_STOP) return this.MovementType_RaiseHandAndStop_Callback(object, object.sprite);
@@ -2463,8 +2476,21 @@ export class ObjectEvents {
       return false;
     }
 
-    // Walking/jogging in place (MovementType_WalkInPlace / WalkInPlaceFast / JogInPlace, Step0 + MoveInPlace_Step1)
-    if (type >= c.MOVEMENT_TYPE_WALK_IN_PLACE_DOWN && type <= c.MOVEMENT_TYPE_JOG_IN_PLACE_RIGHT) {
+    // MovementType_WalkSlowlyInPlace (pokeemerald): the same Step0 + MoveInPlace_Step1 with GetWalkInPlaceSlowMovementAction.
+    if (isEmeraldWalkSlowlyInPlace(type)) {
+      if (step === 0) {
+        this.ClearObjectEventMovement(object);
+        this.ObjectEventSetSingleMovement(object, actionWalkInPlaceSlow(object.facingDirection));
+        s.data[1] = 1;
+        return true;
+      }
+      if (this.ObjectEventExecSingleMovementAction(object)) s.data[1] = 0;
+      return false;
+    }
+
+    // Walking/jogging in place (MovementType_WalkInPlace / WalkInPlaceFast / JogInPlace, Step0 + MoveInPlace_Step1).
+    // The last type of the family is JOG_IN_PLACE_RIGHT in pokefirered and RUN_IN_PLACE_RIGHT in pokeemerald.
+    if (type >= c.MOVEMENT_TYPE_WALK_IN_PLACE_DOWN && type <= (c.MOVEMENT_TYPE_RUN_IN_PLACE_RIGHT ?? c.MOVEMENT_TYPE_JOG_IN_PLACE_RIGHT)) {
       const group = Math.floor((type - c.MOVEMENT_TYPE_WALK_IN_PLACE_DOWN) / 4);
       if (step === 0) {
         // The C walks in place toward the object's current facingDirection, and Step0 returns TRUE so Step1 runs now.
@@ -3161,7 +3187,7 @@ export class ObjectEvents {
       return false;
     }
     if (id === 0x5a) {
-      this.faceDirection(object, INITIAL_FACING[object.movementType] ?? DIR_SOUTH);
+      this.faceDirection(object, initialMovementTypeFacingDirection(object.movementType));
       return true;
     }
     if (id === 0x5b) {
@@ -3880,6 +3906,7 @@ export class ObjectEvents {
   private MovementType_MoveInPlace_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
   private MovementType_WalkInPlaceFast_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
   private MovementType_JogInPlace_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
+  private MovementType_WalkSlowlyInPlace_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
   private MovementType_Invisible_Step0(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
   private MovementType_Invisible_Step1(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }
   private MovementType_Invisible_Step2(object: ObjectEvent, sprite: Sprite): boolean { return this.movementTypeBranch(object); }

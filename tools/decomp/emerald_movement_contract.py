@@ -31,7 +31,10 @@ def normalize(body):
     body = body.replace('sprite->sActionFuncId', 'sprite->data[2]').replace('sprite->sDirection', 'sprite->data[3]')
     body = re.sub(r'\bTRUE\b', '1', body)
     body = re.sub(r'\bFALSE\b', '0', body)
-    return re.sub(r'\s+', '', body)
+    body = re.sub(r'\s+', '', body)
+    # `if (...) { one statement; }` and `if (...) one statement;` are the same control flow.
+    # Only a brace pair holding exactly one statement without nested blocks is unwrapped.
+    return re.sub(r'(\bif\((?:[^(){};]|\((?:[^(){};]|\([^(){};]*\))*\))*\))\{([^{};]*;)\}', r'\1\2', body)
 
 
 def read_source(root):
@@ -54,10 +57,62 @@ def read_source(root):
     return funcs, actions, callbacks
 
 
+# Helpers called (transitively) by action callbacks whose source text differs between the decomps.
+# Each was read against both bodies: the difference is a sprite-data macro name (sDirection/tDirection,
+# sTimer/tStepNo, sDistance/tDirection...), a cast, ARRAY_COUNT/NELEMS, TRUE/1, braces, a renamed
+# parameter or table, or the Emerald-only animation lock in InitNpcForMovement (ported by
+# games/emerald/rotatingTileMovement.ts and honored by the shared InitNpcForMovement).
+# A differing helper outside this set rejects every action that reaches it.
+REVIEWED_HELPER_DIFFERENCES = frozenset([
+    'SetObjectEventDirection', 'GetStepAnimTable', 'SetJumpSpriteData', 'MoveCoordsInDirection',
+    'UpdateJumpAnim', 'InitJump', 'StartFieldEffectForObjectEvent', 'NpcTakeStep',
+    'SetSpriteDataForNormalStep', 'InitNpcForMovement', 'InitMovementNormal', 'GetOppositeDirection',
+    'GetDirectionToFace', 'SetMovementDelay', 'WaitForMovementDelay', 'GetAcroWheelieDirectionAnimNum',
+    'GetAcroWheeliePedalDirectionAnimNum', 'GetAcroEndWheelieDirectionAnimNum',
+])
+
+# Emerald-only helper reached from InitNpcForMovement; ported with its allocation state in
+# games/emerald/rotatingTileMovement.ts (FindLockedObjectEventIndex), so it does not block reuse.
+REVIEWED_EMERALD_ONLY_HELPERS = frozenset(['FindLockedObjectEventIndex'])
+
+# pokeemerald's WalkSlow* helpers move every other frame, which pokefirered names WalkSlower*
+# (UpdateWalkSlowerAnim: `!(timer & 1)`); pokefirered's own WalkSlow* uses a three-frame cycle.
+# Bodies read in both sources: Emerald InitWalkSlow/UpdateWalkSlow(Anim)/SetWalkSlowSpriteData
+# equal FireRed InitWalkSlower/UpdateWalkSlower(Anim)/SetWalkSlowerSpriteData.
+REVIEWED_ACTION_REMAPS = {
+    f'MOVEMENT_ACTION_WALK_SLOW_{d}': f'MOVEMENT_ACTION_WALK_SLOWER_{d}' for d in ('DOWN', 'UP', 'LEFT', 'RIGHT')
+}
+
+
+def callees(body, funcs):
+    return set(re.findall(r'\b(\w+)\s*\(', body)) & set(funcs)
+
+
+def reachable(name, funcs, seen):
+    if name in seen: return seen
+    seen.add(name)
+    for callee in callees(funcs[name], funcs): reachable(callee, funcs, seen)
+    return seen
+
+
+def helper_difference(bodies, emerald, firered):
+    """First transitive helper (not a MovementAction_ callback) whose normalized body differs, or None."""
+    ef, ff = emerald[0], firered[0]
+    seen = set()
+    for body in bodies: reachable(body, ef, seen)
+    for helper in sorted(seen):
+        if helper.startswith('MovementAction_') or helper in REVIEWED_HELPER_DIFFERENCES: continue
+        if helper in REVIEWED_EMERALD_ONLY_HELPERS: continue
+        if helper not in ff: return f'{helper} has no FireRed body'
+        if normalize(ef[helper]) != normalize(ff[helper]): return f'unreviewed helper difference {helper}'
+    return None
+
+
 def compare_action(action, emerald, firered, em_constants, fr_constants):
     # Same callback text still cannot reuse a known incompatible regional helper.
     if action == 'MOVEMENT_ACTION_RESTORE_ANIMATION':
         return 'GetObjectEventGraphicsInfo requires Emerald bounds and Mauville old-man variants'
+    if action in REVIEWED_ACTION_REMAPS: return None
     ef, ea, ec = emerald
     ff, fa, fc = firered
     if action not in fa: return 'no FireRed action'
@@ -70,7 +125,7 @@ def compare_action(action, emerald, firered, em_constants, fr_constants):
         for token in set(re.findall(r'\b[A-Z][A-Z_0-9]+\b', ef[e])):
             if token in em_constants and token in fr_constants and em_constants[token] != fr_constants[token]:
                 return f'different target constant {token}'
-    return None
+    return helper_difference(left, emerald, firered)
 
 
 def generate():
@@ -90,7 +145,7 @@ def generate():
         "import * as EM from './constants';", "import * as FR from '../../firered/generated/constants';",
         'export const EMERALD_SHARED_MOVEMENT_ACTIONS = new Map<number, number>([',
     ]
-    lines += [f'  [EM.{a}, FR.{a}],' for a, _ in accepted]
+    lines += [f'  [EM.{a}, FR.{REVIEWED_ACTION_REMAPS.get(a, a)}],' for a, _ in accepted]
     lines += ['  [EM.MOVEMENT_ACTION_STEP_END, FR.MOVEMENT_ACTION_STEP_END],', ']);',
               '// These source actions require a regional implementation; never dispatch their raw byte as FireRed.',
               'export const EMERALD_REGIONAL_MOVEMENT_ACTIONS = new Map<number, string>([']
@@ -117,6 +172,19 @@ def check_rejections():
     reordered = copy.deepcopy(emerald)
     reordered[2][reordered[1][action]].reverse()
     assert compare_action(action, reordered, firered, emc, frc).startswith('different bodies')
+    # A transitively reached helper that differs and was not reviewed rejects the action;
+    # a reviewed difference keeps it accepted.
+    drifted = copy.deepcopy(emerald)
+    drifted[0]['ShiftObjectEventCoords'] += ' x++;'
+    assert compare_action(action, drifted, firered, emc, frc) == 'unreviewed helper difference ShiftObjectEventCoords'
+    assert 'SetObjectEventDirection' in REVIEWED_HELPER_DIFFERENCES
+    reviewed = copy.deepcopy(emerald)
+    reviewed[0]['SetObjectEventDirection'] += ' x++;'
+    assert compare_action(action, reviewed, firered, emc, frc) is None
+    assert compare_action('MOVEMENT_ACTION_WALK_SLOW_DOWN', emerald, firered, emc, frc) is None
+    # Brace unwrapping stays limited to a single statement.
+    assert normalize('if(a){x;y;}') != normalize('if(a)x;y;')
+    assert normalize('if(a){x;}') == normalize('if(a)x;')
     assert 'DIR_EAST' in emc and 'DIR_EAST' in frc
     assert compare_action(action, emerald, firered, {**emc, 'DIR_EAST': -1}, frc) == 'different target constant DIR_EAST'
 
