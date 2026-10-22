@@ -5,9 +5,9 @@
 // VM's flag/var writes and the location it reads are Hoenn's own.
 //
 // Not run here (viewer handles or not yet bridged): CheckLeftFriendsSecretBase, TrySetMapSaveWarpStatus,
-// ResetCyclingRoadChallengeData, TryUpdateRandomTrainerRematches, DoTimeBasedEvents,
+// TryUpdateRandomTrainerRematches, DoTimeBasedEvents,
 // SetSavedWeatherFromCurrMapHeader, ChooseAmbientCrySpecies, SetDefaultFlashLevel,
-// Overworld_ClearSavedMusic, roamer updates, Battle Pyramid/Trainer Hill maps, TV screens and secret
+// roamer updates, Battle Pyramid/Trainer Hill maps, TV screens and secret
 // bases. RestartWildEncounterImmunitySteps is the caller's (EngineInteraction.enterMap). The
 // ON_WARP_INTO_MAP_TABLE / ON_FRAME_TABLE scripts run afterwards, once the map's object events exist
 // (EngineInteraction.enterMap).
@@ -15,7 +15,8 @@ import type { Game } from '@game/game';
 import { save } from '@game/save';
 import { rom, type MapObjectTemplate } from '@core/rom';
 import { MAP_OFFSET } from '@core/field/fieldmap';
-import { isMapTypeOutdoors, MAP_SCRIPT_ON_LOAD, MAP_SCRIPT_ON_TRANSITION } from '@core/field/overworld';
+import { dummyWarp, isMapTypeOutdoors, MAP_SCRIPT_ON_LOAD, MAP_SCRIPT_ON_RESUME, MAP_SCRIPT_ON_TRANSITION } from '@core/field/overworld';
+import { ResetCyclingRoadChallengeData } from '../games/emerald/cyclingRoad';
 import * as EmSave from '../games/emerald/save';
 import * as EM from '../games/emerald/generated/constants';
 import { liveWorldRegion } from './regionSave';
@@ -35,6 +36,8 @@ export type HoennMapEntryHooks = {
   continuing?: boolean;
   /** overworld.c SKIP_OBJECT_EVENT_LOAD: warp keeps modified templates, but still resets TEMP/runs ON_TRANSITION. */
   preservedTemplates?: MapObjectTemplate[];
+  /** The caller already set gLastUsedWarp (the Mossdeep warp applies its own ApplyCurrentWarp). */
+  keepLastUsedWarp?: boolean;
   /** A map script changed a metatile of the entered map (map-local coordinates). */
   onSetMetatile?: (mapId: string, x: number, y: number, metatile: number) => void;
 };
@@ -64,15 +67,23 @@ export async function runEmeraldMapEntry(game: Game, nav: NavigationSave, hooks:
   const savedTemplates = hooks.continuing ? save.objectEventTemplates : hooks.preservedTemplates;
   if (hooks.continuing && rom.mapNum(nav.mapId) !== ((save.location.mapGroup << 8) | save.location.mapNum))
     throw Error('Continue map does not match the saved Hoenn location');
+  // ApplyCurrentWarp: gLastUsedWarp is the location being left; Continue starts from a cleared one.
+  if (hooks.continuing) ow.lastUsedWarp = dummyWarp();
+  else if (!hooks.keepLastUsedWarp) ow.lastUsedWarp = { ...save.location };
   syncViewerLocation(nav);
   // LoadCurrentMapData + LoadObjEventTemplatesFromHeader
   await ow.prepareViewerMapScripts(nav.mapId, savedTemplates);
   const header = ow.header;
   // LoadMapFromWarp: ClearTempFieldEventData, FLAG_SYS_USE_FLASH, RunOnTransitionMapScript
   const transition = hooks.continuing ? null : scriptLabel(ow.MapHeaderGetScriptTable(MAP_SCRIPT_ON_TRANSITION));
-  if (!hooks.continuing) {
+  // UpdateMiscOverworldStates (Continue) / LoadMapFromWarp: ResetCyclingRoadChallengeData; the saved
+  // music is cleared before ON_TRANSITION (savebgm) and restored from the save on Continue.
+  ResetCyclingRoadChallengeData();
+  if (hooks.continuing) ow.savedMusic = save.savedMusic ?? 0;
+  else {
     EmSave.ClearTempFieldEventData();
     if (isMapTypeOutdoors(header.mapType)) EmSave.FlagClear(EM.FLAG_SYS_USE_FLASH);
+    ow.Overworld_ClearSavedMusic();
     ow.RunOnTransitionMapScript();
   }
   // InitMap: InitMapLayoutData, then RunOnLoadMapScript (metatile changes go to the viewer).
@@ -80,6 +91,11 @@ export async function runEmeraldMapEntry(game: Game, nav: NavigationSave, hooks:
   ow.map.onChange = (x, y) => hooks.onSetMetatile?.(header.id, x - MAP_OFFSET, y - MAP_OFFSET, ow.map.metatileIdAt(x, y));
   const load = scriptLabel(ow.MapHeaderGetScriptTable(MAP_SCRIPT_ON_LOAD));
   try { ow.RunOnLoadMapScript(); } finally { ow.map.onChange = undefined; }
+  // ResumeMap: ON_RESUME (Route 110's UpdateCyclingRoadState). ADAPTATION: CableClub_OnResume only runs
+  // `special InitUnionRoom`, the wireless Union Room task, which belongs to the link scope excluded
+  // from the single-player goal (AGENTS.md, 2026-09-27); Pokémon Centers must still be enterable.
+  if (scriptLabel(ow.MapHeaderGetScriptTable(MAP_SCRIPT_ON_RESUME)) !== 'CableClub_OnResume') ow.RunOnResumeMapScript();
+  save.savedMusic = ow.savedMusic;
   const base = new Map(header.objects.filter((o): o is MapObjectTemplate => !o.clone).map(o => [o.localId, o]));
   const changedTemplates = ow.objects.templates.filter(t => {
     const b = base.get(t.localId);

@@ -6,7 +6,7 @@ import { ReadMail } from "./mailView";
 import { DoEasyChatScreen } from "../easyChat2";
 import { GetMailDataForMon } from "@core/pokemon/mail";
 import { decode, expandPlaceholders, intToDecimal, STR_CONV_MODE_LEFT_ALIGN } from "@core/gba/charmap";
-import { rom } from "@core/rom";
+import { isEmeraldData, rom } from "@core/rom";
 import { flagClear, flagSet, save, varGet, varSet } from "../save";
 import { GetCoins, ItemId_GetFieldFunc, itemInfo, itemName } from "@core/pokemon/items";
 import { trySetUpFieldMove } from "./fieldMoveMenu";
@@ -376,7 +376,8 @@ export function FieldUseFunc_Bike(game: Game, route: {
   const ow = game.overworld;
   const { x, y } = PlayerGetDestCoords();
   const behavior = ow.map.behaviorAt(x, y);
-  if (flagGet(C.FLAG_SYS_ON_CYCLING_ROAD) || MB.MetatileBehavior_IsVerticalRail(behavior) || MB.MetatileBehavior_IsHorizontalRail(behavior)
+  // item_use.c ItemUseOutOfBattle_Bike: pokeemerald tests FLAG_SYS_CYCLING_ROAD (its own flag id).
+  if (flagGet(isEmeraldData() ? rom.constants.FLAG_SYS_CYCLING_ROAD! : C.FLAG_SYS_ON_CYCLING_ROAD) || MB.MetatileBehavior_IsVerticalRail(behavior) || MB.MetatileBehavior_IsHorizontalRail(behavior)
     || MB.MetatileBehavior_IsIsolatedVerticalRail(behavior) || MB.MetatileBehavior_IsIsolatedHorizontalRail(behavior)) {
     route.cantDismount();
   } else if (ow.header.allowCycling && !ow.player.IsBikingDisallowedByPlayer()) {

@@ -34,6 +34,7 @@ import { SurfSupport } from "./render/surf";
 import type { MapHeader, MapObjectTemplate, TilesetData } from "@core/rom";
 import { NavigationWarps, warpAt, stepWarpBehavior, inputWarpBehavior, isWarpDoorBehavior, warpArrivalDirection, type WarpAddress } from "./navigation";
 import { Rom, rom, setDataRoot } from "@core/rom";
+import { decode } from "@core/gba/charmap";
 import { TileRenderer } from "@core/field/tileRenderer";
 import { TilesetAnimator } from "@core/field/tilesetAnimator";
 import { MAP_OFFSET, ExtractMetatileAttribute, METATILE_ATTRIBUTE_BEHAVIOR, NUM_METATILES_IN_PRIMARY, SetTilesetProfile } from "@core/field/fieldmap";
@@ -97,6 +98,7 @@ import { setupMinimap, type MinimapController } from "./ui/minimap";
 import { setupPopovers } from "./ui/popover";
 import { getPlayerSpriteSheet, gfxInfoOf, fallbackGfx, type Direction, loadHoennGfx, spriteFolderOf } from "./render/sprites";
 import { viewerClock, bindViewerClockVisibility } from "./clock";
+import { Bike_TryAdvanceCyclingRoadCollisions, SetCyclingRoadFrameCounter } from "../games/emerald/cyclingRoad";
 import { ViewerFieldEffects } from "./fieldEffects";
 import { installFieldFxRenderer } from "./render/fieldFx";
 import { EntityManager, type LiveEntity } from "./render/entities";
@@ -121,6 +123,7 @@ const isHoennParam = queryParams.get("game") === "emerald" || queryParams.get("r
 const isHnsParam = queryParams.get("game") === "hns" || queryParams.get("region") === "johto" || queryParams.get("region") === "hns";
 const GAME: ViewerGame = isHnsParam ? "hns" : isHoennParam ? "emerald" : "firered";
 const HOENN = isHoennParam;
+if (HOENN) SetCyclingRoadFrameCounter(() => viewerClock.tick);
 const JOHTO = isHnsParam;
 const GAME_NAME = JOHTO ? "Johto" : HOENN ? "Hoenn" : "Kanto";
 if (HOENN) {
@@ -658,7 +661,7 @@ function checkCurrentMapMusic(): void {
     const canOverride = section !== "MAPSEC_KANTO_VICTORY_ROAD" && section !== "MAPSEC_ROUTE_23" && section !== "MAPSEC_INDIGO_PLATEAU";
     const musicChoice = (m.music && m.music > 0) ? m.music : (m.musicName || m.music);
     audioController.setPlayerOnWater(playerActive && playerMode === "surf");
-    audioController.updateMap(mapId, musicChoice, playerActive ? playerMode : undefined, canOverride);
+    audioController.updateMap(mapId, musicChoice, playerActive ? playerMode : undefined, canOverride, HOENN ? gameSave.savedMusic : 0);
   }
 }
 
@@ -1593,6 +1596,11 @@ function toggleBike(): void {
   if (elevatorBusy || fallPreventStep || warpBusy || isStepping || playerMode === "surf") return;
   const mapId = findMapAt(playerX,playerY)?.[0];
   if (mapId && mapHeaders.get(mapId)?.allowCycling === false) return;
+  // item_use.c ItemUseOutOfBattle_Bike: FLAG_SYS_CYCLING_ROAD keeps the rider on the bike.
+  if (HOENN && flagGet(EmeraldConstants.FLAG_SYS_CYCLING_ROAD)) {
+    dialogManager.show("Bike", [decode(rom.text("gText_CantDismountBike"))]);
+    return;
+  }
   if (HOENN && playerMode === "bike") {
     if (state.bikeType === "mach") {
       state.bikeType = "acro";
@@ -2459,6 +2467,8 @@ function processPlayerStep(): void {
       if (tryPushBoulder(frontEnt, playerDir)) return;
     }
     if (!isStepping) {
+      // bike.c GetBikeCollisionAt: a blocked bike step counts as a Cycling Road collision.
+      if (HOENN && playerMode === "bike") Bike_TryAdvanceCyclingRoadCollisions();
       isStepping = true;
       playerMoving = true;
       stepRunning = false;
@@ -3512,6 +3522,7 @@ function setupUi(): void {
       if(canvas.parentElement!==content)content.append(canvas);
     },
     relocate: nav => relocateViewer(nav),
+    onSavedMusic: () => checkCurrentMapMusic(),
     mapOrigin: mapId=>index.maps[mapId],
     readObjects: readViewerMapObjects,
     syncObjects: states => {

@@ -108,6 +108,10 @@ export class TrainerSee {
   gApproachingTrainerObjectEventIds: number[] = [];
   gNoOfApproachingTrainers = 0;
   gApproachingTrainerId = 0;
+  /** gTrainerApproachedPlayer / gWhichTrainerToFaceAfterBattle (pokeemerald trainer_see.c, battle_setup.c);
+   * the single-trainer approach always faces trainer 0. */
+  gTrainerApproachedPlayer = false;
+  gWhichTrainerToFaceAfterBattle = 0;
   private approachTaskSteps = new Map<number, (taskId: number) => void>();
   private revealTrainerTaskByObject = new WeakMap<ObjectEvent, number>();
   private revealTrainerTasks = new Map<number, {trainer: ObjectEvent; ashPuffId?: number}>();
@@ -364,8 +368,9 @@ export class TrainerSee {
     this.gApproachingTrainerId = 0;
     for (const trainer of ow.objects.list) {
       if (trainer.trainerType !== C.TRAINER_TYPE_NORMAL && trainer.trainerType !== C.TRAINER_TYPE_BURIED) continue;
-      if (this.CheckTrainer(trainer, ow.player.object.currentCoords.x, ow.player.object.currentCoords.y)) return true;
+      if (this.CheckTrainer(trainer, ow.player.object.currentCoords.x, ow.player.object.currentCoords.y)) return this.gTrainerApproachedPlayer = true;
     }
+    this.gTrainerApproachedPlayer = false;
     return false;
   }
   /** GetCurrentApproachingTrainerObjectEventId (pokeemerald trainer_see.c). */

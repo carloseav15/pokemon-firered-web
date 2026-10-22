@@ -89,6 +89,8 @@ function selected(ctx: ScriptRunner) {
 
 // Movement script driver shared by applymovement/waitmovement.
 let movingNpcId = 0;
+/** SetMovingNpcId (pokeemerald scrcmd.c). */
+export function SetMovingNpcId(npcId: number): void { movingNpcId = npcId & 0xffff; }
 let pauseCounter = 0;
 let fieldEffectScriptId = 0;
 let addressOffset = 0;

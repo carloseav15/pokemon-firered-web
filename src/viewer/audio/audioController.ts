@@ -86,7 +86,7 @@ export class ViewerAudioController {
    * Updates map BGM and checks whether vehicle (bike / surf) overrides map music.
    * overworld.c:1037-1046, overworld.c:1193-1201
    */
-  updateMap(mapId: string, defaultMusicId?: number | string, vehicle?: "walk" | "bike" | "surf", canOverride: boolean = true): void {
+  updateMap(mapId: string, defaultMusicId?: number | string, vehicle?: "walk" | "bike" | "surf", canOverride: boolean = true, savedMusic = 0): void {
     const mapChanged = this.currentMapId !== mapId;
     this.currentMapId = mapId;
 
@@ -101,7 +101,9 @@ export class ViewerAudioController {
     this.currentMapMusicId = targetMusicId;
 
     let targetMusic = this.currentMapMusicId;
-    if (canOverride) {
+    // Overworld_PlaySpecialMapMusic: the saved music (savebgm) replaces the map's music.
+    if (savedMusic > 0) targetMusic = savedMusic;
+    else if (canOverride) {
       if (vehicle === "surf") {
         targetMusic = this.isHoenn ? 365 : C.MUS_SURF;
       } else if (vehicle === "bike") {

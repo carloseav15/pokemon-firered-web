@@ -59,6 +59,8 @@ type Hooks = {
   setVehicle?: (vehicle: 'walk' | 'bike' | 'surf') => void;
   onSetMetatile?: (mapId: string, x: number, y: number, metatile: number) => void;
   onBattleStart?: () => Promise<void> | void;
+  /** Overworld_SetSavedMusic/savebgm changed the music the field should play. */
+  onSavedMusic?: () => void;
 };
 export class EngineInteraction {
   private interactionMapId = '';
@@ -105,7 +107,7 @@ export class EngineInteraction {
     await loadFieldFx();
     // Emerald content (Hoenn): its fonts.c width tables and text-window graphics (FireRed fallbacks
     // for the engine's own window frames are recorded by hw/assets).
-    await Promise.all([preloadFieldAssets(), loadTrig(), loadCData('text_printer', 'text', 'wild_encounter', 'berry', ...(isEmeraldData() ? ['fonts', 'text_window_graphics', 'strings', 'item_icon'] : [])),
+    await Promise.all([preloadFieldAssets(), loadTrig(), loadCData('text_printer', 'text', 'wild_encounter', 'berry', ...(isEmeraldData() ? ['fonts', 'text_window_graphics', 'strings', 'item_icon', 'em:battle_setup'] : [])),
       preloadPacks(['graphics_fonts', 'graphics_help_system', 'graphics_quest_log', ...(isEmeraldData() ? ['graphics_text_window'] : [])])]);
     // Wild encounters and trainer battles run the source battle scene.
     await Promise.all([preloadBattleAssets(), sound.loadCryData(), preloadEggHatch()]);
@@ -235,6 +237,7 @@ export class EngineInteraction {
     this.close();
     this.wildMap = '';
     if (!this.game) return;
+    if (isEmeraldData()) { save.savedMusic = this.game.overworld.savedMusic; this.hooks.onSavedMusic?.(); }
     const player = this.game.overworld.player;
     const isSurfing = (player.flags & PLAYER_AVATAR_FLAG_SURFING) !== 0;
     const isBiking = (player.flags & (PLAYER_AVATAR_FLAG_MACH_BIKE | PLAYER_AVATAR_FLAG_ACRO_BIKE)) !== 0;
@@ -564,7 +567,7 @@ export class EngineInteraction {
     ow.fixedHoleWarp = dummyWarp();
     this.observedObjects.clear();
     await this.hooks.relocate(nav);
-    await runEmeraldMapEntry(game, nav, { onSetMetatile: this.hooks.onSetMetatile, preservedTemplates: templates });
+    await runEmeraldMapEntry(game, nav, { onSetMetatile: this.hooks.onSetMetatile, preservedTemplates: templates, keepLastUsedWarp: true });
     await this.prepareObjects(nav, true);
     this.interactionMapId = this.objectMapId = this.wildMap = mapId;
     this.localId = 0;
@@ -621,6 +624,7 @@ export class EngineInteraction {
       await (this.loading ??= this.initialize());
       const ow = this.game!.overworld;
       const report = await runEmeraldMapEntry(this.game!, nav, { onSetMetatile: this.hooks.onSetMetatile, continuing });
+      this.hooks.onSavedMusic?.();
       RestartWildEncounterImmunitySteps();
       await this.prepareObjects(nav, true);
       this.wildMap = nav.mapId;

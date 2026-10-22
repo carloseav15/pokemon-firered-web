@@ -2,7 +2,9 @@
 // Camouflage / Secret Power / Nature Power environment) from the tile the player stands on. Used by
 // the FireRed battle engine's battleHost while Emerald content runs (EngineInteraction).
 import type { Game } from "@game/game";
-import { save } from "@game/save";
+import { cdata } from "@core/hw/assets";
+import type { ScriptRunner } from "@core/script/context";
+import { flagGet, save } from "@game/save";
 import * as EM from "./generated/constants";
 import * as EMB from "./generated/metatileBehavior";
 
@@ -46,4 +48,44 @@ export function BattleSetup_GetEnvironmentId(game: Game): number {
   if (save.location.mapGroup === (EM.MAP_ROUTE113 >> 8) && save.location.mapNum === (EM.MAP_ROUTE113 & 0xff)) return EM.BATTLE_ENVIRONMENT_SAND;
   if (save.weather === EM.WEATHER_SANDSTORM) return EM.BATTLE_ENVIRONMENT_SAND;
   return EM.BATTLE_ENVIRONMENT_PLAIN;
+}
+
+/** battle_setup.c gRematchTable (cdata "battle_setup"). */
+type RematchTrainer = { trainerIds: number[]; mapGroup: number; mapNum: number };
+const gRematchTable = (): RematchTrainer[] => cdata<RematchTrainer[]>("em:battle_setup", "gRematchTable");
+
+/** battle_setup.c HasTrainerBeenFought */
+function HasTrainerBeenFought(trainerId: number): boolean {
+  return flagGet(EM.TRAINER_FLAGS_START + (trainerId & 0xffff));
+}
+
+/** battle_setup.c FirstBattleTrainerIdToRematchTableId */
+function FirstBattleTrainerIdToRematchTableId(table: RematchTrainer[], trainerId: number): number {
+  for (let i = 0; i < EM.REMATCH_TABLE_ENTRIES; i++)
+    if (table[i]!.trainerIds[0] === trainerId) return i;
+  return -1;
+}
+
+/** battle_setup.c IsFirstTrainerIdReadyForRematch; trainerRematches is the Hoenn bank's SaveBlock1 array. */
+function IsFirstTrainerIdReadyForRematch(table: RematchTrainer[], firstBattleTrainerId: number): boolean {
+  const tableId = FirstBattleTrainerIdToRematchTableId(table, firstBattleTrainerId);
+  if (tableId === -1) return false;
+  if (tableId >= EM.MAX_REMATCH_ENTRIES) return false;
+  if ((save.trainerRematches?.[tableId] ?? 0) === 0) return false;
+  return true;
+}
+
+/** battle_setup.c WasSecondRematchWon */
+function WasSecondRematchWon(table: RematchTrainer[], firstBattleTrainerId: number): boolean {
+  const tableId = FirstBattleTrainerIdToRematchTableId(table, firstBattleTrainerId);
+  if (tableId === -1) return false;
+  if (!HasTrainerBeenFought(table[tableId]!.trainerIds[1]!)) return false;
+  return true;
+}
+
+/** battle_setup.c ShouldTryRematchBattle; gTrainerBattleOpponent_A is the engine's opponentA. */
+export function ShouldTryRematchBattle(ctx: ScriptRunner): number {
+  const opponentA = ctx.ow.game.battleSetup.opponentA;
+  if (IsFirstTrainerIdReadyForRematch(gRematchTable(), opponentA)) return 1;
+  return WasSecondRematchWon(gRematchTable(), opponentA) ? 1 : 0;
 }

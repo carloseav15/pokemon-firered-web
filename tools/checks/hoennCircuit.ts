@@ -364,7 +364,7 @@ const again = await engine.enterMap(resumed);
 assert.equal(again?.transition, "OldaleTown_OnTransition");
 
 // Route110 ON_RESUME special: compare all state branches, including the exact source-map guard.
-const { UpdateCyclingRoadState } = await import("../../src/games/emerald/specials.ts");
+const { UpdateCyclingRoadState } = await import("../../src/games/emerald/cyclingRoad.ts");
 const northEntrance = EM.MAP_ROUTE110_SEASIDE_CYCLING_ROAD_NORTH_ENTRANCE;
 for (const fromNorth of [false, true]) for (const challengeState of [0, 1, 2, 3, 4]) {
   game.overworld.lastUsedWarp = { mapGroup: northEntrance >>> 8, mapNum: (northEntrance & 0xff) + (fromNorth ? 0 : 1), warpId: -1, x: 1, y: 1 }; // PREPARED origin
@@ -376,6 +376,32 @@ for (const fromNorth of [false, true]) for (const challengeState of [0, 1, 2, 3,
   assert.equal(game.overworld.savedMusic, reset ? EM.MUS_DUMMY : EM.MUS_CYCLING);
 }
 console.log("PREPARED cycling origins/states: UpdateCyclingRoadState guard and reset branches PASS");
+
+// Cycling Road entry on the real map-entry path: the north entrance's ON_TRANSITION restarts a finished
+// challenge, Route 110's ON_TRANSITION saves the cycling music, ON_RESUME keeps the state after the north
+// entrance warp and ON_FRAME begins the challenge; coming back from another map resets it.
+const cyclingRoad = await import("../../src/games/emerald/cyclingRoad.ts");
+let cyclingFrames = 0;
+cyclingRoad.SetCyclingRoadFrameCounter(() => cyclingFrames);
+varSet(EM.VAR_CYCLING_CHALLENGE_STATE, 3); // PREPARED: a rider who finished a previous run
+await engine.enterMap(facingNav("MAP_ROUTE110_SEASIDE_CYCLING_ROAD_NORTH_ENTRANCE", 4, 4, "south"));
+assert.equal(varGet(EM.VAR_CYCLING_CHALLENGE_STATE), 1, "north entrance OnTransition: RestartChallenge");
+await engine.enterMap(facingNav("MAP_ROUTE110", 10, 10, "south"));
+assert.equal(game.overworld.lastUsedWarp.mapNum, EM.MAP_ROUTE110_SEASIDE_CYCLING_ROAD_NORTH_ENTRANCE & 0xff, "gLastUsedWarp is the map left");
+assert.equal(live().savedMusic, EM.MUS_CYCLING, "Route110_OnTransition: savebgm MUS_CYCLING");
+assert.equal(engine.open, true, "Route110_OnFrame started");
+cyclingFrames = 1000;
+await pump(600, tap(A_BUTTON));
+assert.equal(engine.open, false, "Route110_EventScript_BeginCylcingRoadChallenge finished");
+assert.equal(varGet(EM.VAR_CYCLING_CHALLENGE_STATE), 2, "ON_RESUME kept the state after the north entrance; ON_FRAME set 2");
+assert.equal(cyclingRoad.IsBikeCyclingChallengeActive(), true, "Special_BeginCyclingRoadChallenge");
+await engine.enterMap(facingNav("MAP_MAUVILLE_CITY", 10, 10, "south"));
+assert.equal(cyclingRoad.IsBikeCyclingChallengeActive(), false, "ResetCyclingRoadChallengeData on map load");
+assert.equal(live().savedMusic, 0, "Overworld_ClearSavedMusic on map load");
+await engine.enterMap(facingNav("MAP_ROUTE110", 10, 10, "south"));
+assert.equal(varGet(EM.VAR_CYCLING_CHALLENGE_STATE), 0, "ON_RESUME from another map: UpdateCyclingRoadState resets state 2");
+console.log("Cycling Road: north-entrance restart, saved music, ON_FRAME begin, ON_RESUME reset PASS (PREPARED rider state 3, frame counter)");
+await engine.enterMap(saveNav); // back in Oldale for the white-out section
 
 // ---------------------------------------------------------------- 6. Emerald white-out recovery (PREPARED scheduler preconditions)
 // The browser job covers a real defeat; here we isolate the 120-frame dispatch and source rules.

@@ -13,6 +13,9 @@ import * as FR from "@game/generated/constants";
 import { flagClear, flagGet, flagSet, GetGameStat, save, SV, varGet, varSet } from "@game/save";
 import * as EM from "./generated/constants";
 import { save as emSave } from "./save";
+import { FinishCyclingRoadChallenge, GetPlayerAvatarBike, GetRecordedCyclingRoadResults, Special_BeginCyclingRoadChallenge, UpdateCyclingRoadState } from "./cyclingRoad";
+import { ShouldTryRematchBattle } from "./battleSetup";
+import { PlayerFaceTrainerAfterBattle } from "./trainerSee";
 
 /** pokedex.c HasAllHoennMons: -2 excludes Jirachi and Deoxys. HoennToNationalOrder is the core port of
  * pokemon.c (sHoennToNationalOrder has the same values in pokeemerald and pokefirered). */
@@ -51,18 +54,6 @@ export function CountPlayerTrainerStars(): number {
 export function PlayerNotAtTrainerHillEntrance(): number {
   if (save.location.mapGroup === (EM.MAP_TRAINER_HILL_ENTRANCE >> 8) && save.location.mapNum === (EM.MAP_TRAINER_HILL_ENTRANCE & 0xff)) return 0;
   return 1;
-}
-
-/** field_specials.c UpdateCyclingRoadState: ON_RESUME of Route 110. */
-export function UpdateCyclingRoadState(ctx: ScriptRunner): void {
-  const last = ctx.ow.lastUsedWarp;
-  if (last.mapNum === (EM.MAP_ROUTE110_SEASIDE_CYCLING_ROAD_NORTH_ENTRANCE & 0xff)
-    && last.mapGroup === (EM.MAP_ROUTE110_SEASIDE_CYCLING_ROAD_NORTH_ENTRANCE >>> 8)) return;
-  const state = varGet(EM.VAR_CYCLING_CHALLENGE_STATE);
-  if (state === 2 || state === 3) {
-    varSet(EM.VAR_CYCLING_CHALLENGE_STATE, 0);
-    ctx.ow.Overworld_SetSavedMusic(EM.MUS_DUMMY);
-  }
 }
 
 // GetMonData fields are the ids of the engine's own constants (@game), not Emerald's.
@@ -212,6 +203,8 @@ function Task_ShakeCamera(ctx: ScriptRunner, taskId: number): void {
 
 export const EMERALD_SPECIALS = {
   CountPlayerTrainerStars, PlayerNotAtTrainerHillEntrance, UpdateCyclingRoadState,
+  Special_BeginCyclingRoadChallenge, FinishCyclingRoadChallenge, GetRecordedCyclingRoadResults, GetPlayerAvatarBike,
+  ShouldTryRematchBattle, PlayerFaceTrainerAfterBattle,
   FoundBlackGlasses, ScriptGetPartyMonSpecies, ResetSSTidalFlag, SetSSTidalFlag, StorePlayerCoordsInVars,
   ResetTrickHouseNuggetFlag, SetTrickHouseNuggetFlag,
   FoundAbandonedShipRoom1Key: () => FoundAbandonedShipRoomKey(EM.FLAG_HIDDEN_ITEM_ABANDONED_SHIP_RM_1_KEY),

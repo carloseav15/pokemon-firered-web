@@ -17,6 +17,7 @@ const cdataLoads = new Map<string, Promise<void>>();
 // FireRed export instead of failing; each one is recorded in incbinFallbacks so the borrowed
 // FireRed presentation stays identifiable. Emerald symbols always win when both exist.
 const FALLBACK_PREFIX = "fr:";
+const EMERALD_PREFIX = "em:";
 export const incbinFallbacks = new Set<string>();
 let fallbackIndex: IncbinIndex | undefined;
 
@@ -127,13 +128,15 @@ export async function loadCData(...files: string[]): Promise<void> {
     if (!p) {
       // "fr:<file>" names the FireRed file explicitly, next to another game's file of the same name.
       const explicitFr = file.startsWith(FALLBACK_PREFIX);
-      const root = explicitFr ? "/fr" : DATA_ROOT === "/hns" ? "/emerald" : DATA_ROOT === "/emerald" && isFireRedEngineCData(file) ? "/fr" : DATA_ROOT;
+      // "em:<file>" names pokeemerald's file next to the FireRed engine's file of the same name (battle_setup).
+      const explicitEm = file.startsWith(EMERALD_PREFIX);
+      const root = explicitFr ? "/fr" : explicitEm ? "/emerald" : DATA_ROOT === "/hns" ? "/emerald" : DATA_ROOT === "/emerald" && isFireRedEngineCData(file) ? "/fr" : DATA_ROOT;
       if (root !== DATA_ROOT && DATA_ROOT === "/emerald") fallbackCDataFiles.add(file);
       // A dev server answers a missing file with its HTML page (200): that is a missing file too.
       const found = (r: Response) => r.ok && !(r.headers.get("content-type") ?? "").includes("text/html");
-      p = fetch(`${root}/cdata/${explicitFr ? file.slice(FALLBACK_PREFIX.length) : file}.json`).then(async (r) => {
+      p = fetch(`${root}/cdata/${explicitFr ? file.slice(FALLBACK_PREFIX.length) : explicitEm ? file.slice(EMERALD_PREFIX.length) : file}.json`).then(async (r) => {
         if (!found(r)) {
-          if (root !== "/fr") {
+          if (root !== "/fr" && !explicitEm) {
             const fallback = await fetch(`/fr/cdata/${file}.json`);
             if (found(fallback)) {
               const json = await fallback.json();
