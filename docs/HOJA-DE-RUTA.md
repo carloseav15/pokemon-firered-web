@@ -42,8 +42,21 @@ Entrenador y posiciones de cada parada PREPARED: no acredita caminar todo el
 circuito ni campañas. `check:region-save`, `check:hoenn-map-entry` y
 `check:hoenn-circuit` PASS; tipos/honesty/build y navegación web existentes PASS.
 
-Quedan derrota/respawn regional, recorridos continuos, resto de comandos/specials,
-paridad audiovisual (ventanas y combate con respaldo FireRed), móvil y producción.
+`299ece60` comprueba además el recorrido continuo Kanto → Slateport → Centro →
+tienda → Ruta 110 (victoria y derrota natural) → ferry → Kanto. Solo el entrenador
+inicial junto al ferry es PREPARED; sin escrituras de estado entre paradas. Guardar/
+Home Continue conserva posición, equipo, bolsa, dinero y progreso; no hubo comandos
+sin implementar durante el circuito. La derrota aplica las reglas de Emerald
+(mitad del dinero, equipo curado, warp exterior del Centro visitado); la recuperación
+Kanto conserva su regresión Chromium PASS. El check focal compara 120 frames,
+división impar, flags/clima fuente, una sola recolocación y estados de
+`UpdateCyclingRoadState` (dependencia de ON_RESUME de Ruta 110).
+
+Siguiente: inicializar correctamente `lastHealLocation` de un banco Hoenn nuevo,
+que hoy hereda un warp inválido FireRed hasta el primer Centro. Ese caso no queda
+validado por la derrota posterior a curar en Slateport. Quedan otros recorridos,
+reto Cycling Road completo (warp previo/música/reloj/colisiones), resto de comandos/
+specials, paridad audiovisual (respaldo FireRed), móvil y producción.
 La auditoría inicial de abajo describe el punto de partida; sus carencias resueltas
 por estas entregas se detallan en TAREAS-FINALES §0, sin cerrar cobertura general.
 
@@ -85,7 +98,7 @@ por estas entregas se detallan en TAREAS-FINALES §0, sin cerrar cobertura gener
    → comprar/curar → guardar → continuar. Kanto como referencia; Johto con fuente
    fijada; Hoenn tiene circuito mínimo conectado y probado (`76a49c81`, `8aba7d5d`), con combate FireRed y recursos de respaldo identificados.
 8. [~] Unir viajes regionales con una sola sesión: ida, vuelta, derrota y continuar
-   conservan posición, equipo, dinero y progreso; sin reinicios ni estados ficticios. Ferry ida/vuelta, guardar/Continue y recarga Kanto–Hoenn pasan en Chromium (`8aba7d5d`, PREPARED); derrota y Johto pendientes.
+   conservan posición, equipo, dinero y progreso; sin reinicios ni estados ficticios. Ferry ida/vuelta, guardar/Continue y recarga Kanto–Hoenn pasan en Chromium (`8aba7d5d`, PREPARED); derrota tras visitar el Centro Hoenn pasa en `299ece60`; primera visita sin Centro y Johto pendientes.
 9. [ ] Completar sistemas regionales, historia y gimnasios sobre ese contrato.
    Sustituir cinemáticas adaptadas por eventos fuente y revisar gráficos/audio con
    comparación focalizada. Resolver divergencias de combate antes de depender de él.
@@ -255,7 +268,7 @@ Orden concreto actualizado (descompone puntos 4, 6 y 7 sin borrar sus pendientes
 1. [x] Diseñar IDs regionales y persistencia: equipo/dinero globales, progreso y navegación
    con juego/región, compatibilidad del save existente. Hecho en `6e2d62a9` para
    flags/vars/navegación Kanto–Hoenn (prueba de almacenamiento PREPARED). Ferry ida/vuelta y guardar/Continue en navegador comprobados en `8aba7d5d`
-   (entrenador PREPARED; derrota/respawn y recorrido extenso pendientes).
+   (entrenador PREPARED); `299ece60` añade recorrido continuo Slateport/Ruta 110 y derrota después del Centro. Primer respawn sin Centro y recorrido extenso pendientes.
 2. [~] Cerrar los módulos del contrato Emerald detectados por el núcleo.
    `67d14da8` conecta save y entrada de mapa; `76a49c81` conecta objetos, textos,
    ON_WARP_INTO/ON_FRAME y dependencias del circuito mínimo en EngineInteraction.
@@ -266,7 +279,7 @@ Orden concreto actualizado (descompone puntos 4, 6 y 7 sin borrar sus pendientes
    tienda, guardado y continuar. Cada subsistema debe usar sus datos y condiciones
    originales; retirar la adaptación sustituida cuando el camino fuente esté activo.
    Circuito mínimo Oldale/Ruta 101 hecho en `76a49c81` y comprobado en Chromium
-   en `8aba7d5d` con posiciones PREPARED. Falta recorrido continuo y cotejo audiovisual.
+   en `8aba7d5d` con posiciones PREPARED. `299ece60` añade circuito continuo Slateport/Ruta 110 y derrota natural (solo entrenador inicial PREPARED). Falta cotejo audiovisual y demás recorridos.
 4. Con el coste y contrato comunes ya comprobados, decidir Crystal o HeartGold y
    continuar sus extracciones. Mantener HnS y cinemáticas adaptadas identificados.
 
