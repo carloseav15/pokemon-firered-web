@@ -108,7 +108,7 @@ export class EngineInteraction {
     await loadFieldFx();
     // Emerald content (Hoenn): its fonts.c width tables and text-window graphics (FireRed fallbacks
     // for the engine's own window frames are recorded by hw/assets).
-    await Promise.all([preloadFieldAssets(), loadTrig(), loadCData('text_printer', 'text', 'wild_encounter', 'berry', ...(isEmeraldData() ? ['fonts', 'text_window_graphics', 'strings', 'item_icon', 'em:battle_setup', 'em:starter_choose', 'em:pokedex', 'em:pokeblock', 'em:rotating_gate'] : [])),
+    await Promise.all([preloadFieldAssets(), loadTrig(), loadCData('text_printer', 'text', 'wild_encounter', 'berry', ...(isEmeraldData() ? ['fonts', 'text_window_graphics', 'strings', 'item_icon', 'em:battle_setup', 'em:starter_choose', 'em:pokedex', 'em:pokeblock', 'em:rotating_gate', 'em:field_specials'] : [])),
       preloadPacks(['graphics_fonts', 'graphics_help_system', 'graphics_quest_log', ...(isEmeraldData() ? ['graphics_text_window'] : [])])]);
     // Wild encounters and trainer battles run the source battle scene.
     await Promise.all([preloadBattleAssets(), sound.loadCryData(), preloadEggHatch(), ...(isEmeraldData() ? [preloadStarterChoose()] : [])]);

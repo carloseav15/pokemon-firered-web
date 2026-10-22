@@ -28,6 +28,7 @@ import { gLocalTime } from "./clock";
 import { PlayerFaceTrainerAfterBattle } from "./trainerSee";
 import * as Berry from "./berry";
 import * as BerryPowder from "./berryPowder";
+import { ScrollableMultichoice_TryReturnToList, ShowScrollableMultichoice } from "./scrollableMultichoice";
 import { RotatingGate_InitPuzzle, RotatingGate_InitPuzzleAndGraphics } from "./rotatingGate";
 import { ChooseStarter, GetStarterPokemon } from "./starterChoose";
 import { ScriptGetPokedexInfo, ShowPokedexRatingMessage } from "./birchPc";
@@ -643,7 +644,7 @@ export const EMERALD_SPECIALS = {
   ChooseStarter: (ctx: ScriptRunner) => ChooseStarter(ctx.ow.game),
   GetPlayerBigGuyGirlString, GetRivalSonDaughterString, GetWeekCount, IsStarterInParty, IsTrainerRegistered,
   ResetHealLocationFromDewford, InitBirchState, EnableNationalPokedex, SetUnlockedPokedexFlags, BufferMonNickname,
-  RotatingGate_InitPuzzle, RotatingGate_InitPuzzleAndGraphics, LoadWallyZigzagoon, ShouldShowBoxWasFullMessage, GetPCBoxToSendMon,
+  ShowScrollableMultichoice, ScrollableMultichoice_TryReturnToList, RotatingGate_InitPuzzle, RotatingGate_InitPuzzleAndGraphics, LoadWallyZigzagoon, ShouldShowBoxWasFullMessage, GetPCBoxToSendMon,
   GetPokeblockNameByMonNature, CheckPlayerHasSecretBase, GetSecretBaseNearbyMapName,
   PetalburgGymSlideOpenRoomDoors, PetalburgGymUnlockRoomDoors, TurnOffTVScreen, TurnOnTVScreen, LeadMonHasEffortRibbon,
   GiveLeadMonEffortRibbon, ChangePokemonNickname, ChangeBoxPokemonNickname, ScriptGetPokedexInfo, ShowPokedexRatingMessage,

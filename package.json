@@ -135,6 +135,7 @@
     "check:emerald-movement-contract": "python3 tools/decomp/emerald_movement_contract.py --check && esbuild tools/checks/emeraldMovementContract.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/emeraldMovementContract.mjs && node .decomp-build/checks/emeraldMovementContract.mjs",
     "check:emerald-starter-choose": "esbuild tools/checks/hoennCircuit.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/hoennCircuit.mjs && node .decomp-build/checks/hoennCircuit.mjs --starter",
     "check:emerald-pc-script": "esbuild tools/checks/hoennCircuit.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/hoennCircuit.mjs && node .decomp-build/checks/hoennCircuit.mjs --pc",
+    "check:emerald-powder-vendor": "esbuild tools/checks/hoennCircuit.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/hoennCircuit.mjs && node .decomp-build/checks/hoennCircuit.mjs --powder",
     "check:emerald-mossdeep-warp": "esbuild tools/checks/hoennCircuit.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/hoennCircuit.mjs && node .decomp-build/checks/hoennCircuit.mjs --mossdeep"
   },
   "devDependencies": {

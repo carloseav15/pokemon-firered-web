@@ -409,8 +409,8 @@ export function CreatePCMenuWindow(): void {
 }
 
 /** pokeemerald script_menu.c MAX_MULTICHOICE_WIDTH / ConvertPixelWidthToTileWidth */
-const MAX_MULTICHOICE_WIDTH = 28;
-function ConvertPixelWidthToTileWidth(width: number): number {
+export const MAX_MULTICHOICE_WIDTH = 28;
+export function ConvertPixelWidthToTileWidth(width: number): number {
   return Math.trunc((width + 9) / 8) + 1 > MAX_MULTICHOICE_WIDTH ? MAX_MULTICHOICE_WIDTH : Math.trunc((width + 9) / 8) + 1;
 }
 
