@@ -2663,7 +2663,8 @@ export class ObjectEvents {
     sprite.data[2] = 1;
   }
 
-  private initNpcForMovement(object: ObjectEvent, direction: number, speed: number, sprite = object.sprite): void {
+  /** InitNpcForMovement (event_object_movement.c); shared with games/emerald/regionalMovement.ts. */
+  initNpcForMovement(object: ObjectEvent, direction: number, speed: number, sprite = object.sprite): void {
     this.setDirection(object, direction);
     const [dx, dy] = DIRECTION_VECTORS[direction];
     this.shiftCoords(object, object.currentCoords.x + dx, object.currentCoords.y + dy);
@@ -2686,7 +2687,8 @@ export class ObjectEvents {
     this.setStepAnimHandleAlternation(object, runAnim(object.facingDirection));
   }
 
-  private initMovementNormal(object: ObjectEvent, direction: number, speed: number): void {
+  /** InitMovementNormal (event_object_movement.c). */
+  initMovementNormal(object: ObjectEvent, direction: number, speed: number): void {
     this.initNpcForMovement(object, direction, speed);
     const anim = [moveAnim, moveFastAnim, moveFastAnim, moveFasterAnim, moveFastestAnim][speed](object.facingDirection);
     this.setStepAnimHandleAlternation(object, anim);
@@ -2738,7 +2740,8 @@ export class ObjectEvents {
     return s.data[5] >= steps.length;
   }
 
-  private updateMovementNormal(object: ObjectEvent): boolean {
+  /** UpdateMovementNormal (event_object_movement.c). */
+  updateMovementNormal(object: ObjectEvent): boolean {
     if (this.npcTakeStep(object)) {
       this.shiftStill(object);
       object.triggerGroundEffectsOnStop = true;

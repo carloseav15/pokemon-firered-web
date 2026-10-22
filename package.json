@@ -125,6 +125,7 @@
     "sprites:spritecollab": "python3 tools/viewer/spritecollab.py",
     "check:emerald-script-text": "esbuild tools/checks/emeraldScriptText.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/emeraldScriptText.mjs && node .decomp-build/checks/emeraldScriptText.mjs",
     "check:emerald-script-contracts": "esbuild tools/checks/emeraldScriptContracts.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/emeraldScriptContracts.mjs && node .decomp-build/checks/emeraldScriptContracts.mjs",
+    "check:emerald-regional-movement": "esbuild tools/checks/emeraldRegionalMovement.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/emeraldRegionalMovement.mjs && node .decomp-build/checks/emeraldRegionalMovement.mjs",
     "check:emerald-movement-contract": "python3 tools/decomp/emerald_movement_contract.py --check && esbuild tools/checks/emeraldMovementContract.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/emeraldMovementContract.mjs && node .decomp-build/checks/emeraldMovementContract.mjs",
     "check:emerald-mossdeep-warp": "esbuild tools/checks/hoennCircuit.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/hoennCircuit.mjs && node .decomp-build/checks/hoennCircuit.mjs --mossdeep"
   },

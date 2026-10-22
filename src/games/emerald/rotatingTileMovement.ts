@@ -8,6 +8,7 @@ import * as C from './generated/constants';
 import { rom } from '@core/rom';
 import { EMERALD_SHARED_MOVEMENT_ACTIONS, EMERALD_REGIONAL_MOVEMENT_ACTIONS } from './generated/movementContract';
 import * as FR from '../firered/generated/constants';
+import { EMERALD_REGIONAL_IMPLEMENTED_ACTIONS, EmeraldRegionalMovement, emeraldInternalActionId } from './regionalMovement';
 
 // Internal action namespace, never written into Emerald bytecode or interpreted as a GBA ID.
 const LOCK_ANIM = 0x100 + C.MOVEMENT_ACTION_LOCK_ANIM;
@@ -35,7 +36,8 @@ export function emeraldMovement(ow: Overworld): EmeraldRotatingTileMovement {
 
 /** Regional byte -> shared action. A missing body is an error, never a numeric alias. */
 export function translateEmeraldMovementAction(action: number): number {
-  const translated = EMERALD_SHARED_MOVEMENT_ACTIONS.get(action) ?? ROTATING_TILE_ACTIONS.get(action);
+  const translated = EMERALD_SHARED_MOVEMENT_ACTIONS.get(action) ?? ROTATING_TILE_ACTIONS.get(action)
+    ?? (EMERALD_REGIONAL_IMPLEMENTED_ACTIONS.includes(action) ? emeraldInternalActionId(action) : undefined);
   if (translated === undefined) throw Error(`Unsupported Emerald movement ${action}: ${EMERALD_REGIONAL_MOVEMENT_ACTIONS.get(action) ?? 'unknown source action'}`);
   return translated;
 }
@@ -51,7 +53,9 @@ export function validateEmeraldMovementScript(ptr: number): void {
 
 export class EmeraldRotatingTileMovement {
   private sLockedAnimObjectEvents: { localIds: number[]; count: number } | null = null;
+  private readonly regional: EmeraldRegionalMovement;
   constructor(private readonly ow: Overworld) {
+    this.regional = new EmeraldRegionalMovement(ow);
     ow.objects.isExternalMovementAnimationLocked = object => this.sLockedAnimObjectEvents !== null
       && this.FindLockedObjectEventIndex(object) !== C.OBJECT_EVENTS_COUNT;
     ow.objects.externalMovementActions.set(LOCK_ANIM, object => this.lockAction(object));

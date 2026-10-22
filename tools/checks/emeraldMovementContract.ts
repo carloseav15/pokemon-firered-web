@@ -7,6 +7,7 @@ import { tasks } from '../../src/core/gba/tasks.ts';
 import { ScriptMovement } from '../../src/core/script/movement.ts';
 import { EMERALD_SHARED_MOVEMENT_ACTIONS, EMERALD_REGIONAL_MOVEMENT_ACTIONS } from '../../src/games/emerald/generated/movementContract.ts';
 import { emeraldMovement, translateEmeraldMovementAction } from '../../src/games/emerald/rotatingTileMovement.ts';
+import { EMERALD_REGIONAL_IMPLEMENTED_ACTIONS } from '../../src/games/emerald/regionalMovement.ts';
 import * as EM from '../../src/games/emerald/generated/constants.ts';
 import * as FR from '../../src/games/firered/generated/constants.ts';
 import { DIR_EAST, DIR_NORTH, DIR_SOUTH, DIR_WEST, initialMovementTypeFacingDirection, type ObjectEvent } from '../../src/core/field/objectEvents.ts';
@@ -29,10 +30,12 @@ assert.deepEqual(a.seen,shared.map(([,id])=>id));assert.equal(a.frozen(),1);
 assert.equal(a.driver.GetMovementScript(0),ROM_BASE+shared.length);
 assert.equal(a.driver.isFinished(a.object),true);
 assert.equal(emeraldMovement(a.ow),emeraldMovement(a.ow));
+// Regional actions with a body (regionalMovement.ts) translate to internal IDs; the rest are rejected.
+for(const id of EMERALD_REGIONAL_IMPLEMENTED_ACTIONS)assert.equal(translateEmeraldMovementAction(id),0x100+id);
 // Reject a missing regional body anywhere in the script, before even the first valid action runs.
 let rejected=0;
 for(const [id,reason] of EMERALD_REGIONAL_MOVEMENT_ACTIONS){
- if(id===EM.MOVEMENT_ACTION_LOCK_ANIM||id===EM.MOVEMENT_ACTION_UNLOCK_ANIM)continue;
+ if(id===EM.MOVEMENT_ACTION_LOCK_ANIM||id===EM.MOVEMENT_ACTION_UNLOCK_ANIM||EMERALD_REGIONAL_IMPLEMENTED_ACTIONS.includes(id))continue;
  const h=host();rom.scripts=Uint8Array.from([EM.MOVEMENT_ACTION_WALK_NORMAL_RIGHT,id,EM.MOVEMENT_ACTION_STEP_END]);
  assert.throws(()=>h.driver.start(h.object,ROM_BASE),/Unsupported Emerald movement/);
  assert.equal(h.driver.GetMoveObjectsTaskId(),255,reason);assert.deepEqual(h.seen,[]);rejected++;

@@ -25,19 +25,56 @@ def strip_comments(text):
     return re.sub(r'/\*.*?\*/|//[^\n]*', '', text, flags=re.S)
 
 
+def numeric_constants(root):
+    """MOVE_SPEED_* (enum in event_object_movement.c) and DISPLAY_HEIGHT (gba/defines.h) of one decomp."""
+    source = strip_comments((root / 'src/event_object_movement.c').read_text())
+    enum = re.search(r'enum\s*\{([^}]*MOVE_SPEED_NORMAL[^}]*)\}', source)[1]
+    values = {name: i for i, name in enumerate(re.findall(r'\b(MOVE_SPEED_\w+)', enum))}
+    values['DISPLAY_HEIGHT'] = int(re.search(r'#define\s+DISPLAY_HEIGHT\s+(\d+)', (root / 'include/gba/defines.h').read_text())[1])
+    return values
+
+
+# Literal substitution is valid only for values equal in both decomps (checked in generate()).
+SHARED_NUMERIC_CONSTANTS = {}
+
+# pokeemerald's WalkSlow* helpers are pokefirered's WalkSlower* (see REVIEWED_ACTION_REMAPS); a
+# callback that names them is the same body as the FireRed callback naming the WalkSlower* form.
+EMERALD_TO_FIRERED_HELPER_NAMES = {
+    'InitWalkSlow': 'InitWalkSlower', 'UpdateWalkSlow': 'UpdateWalkSlower',
+    'InitNpcForWalkSlow': 'InitNpcForWalkSlower', 'UpdateWalkSlowAnim': 'UpdateWalkSlowerAnim',
+    'SetWalkSlowSpriteData': 'SetWalkSlowerSpriteData',
+}
+
+
+def rename_emerald_helpers(body):
+    return re.sub(r'\b(%s)\b' % '|'.join(EMERALD_TO_FIRERED_HELPER_NAMES), lambda m: EMERALD_TO_FIRERED_HELPER_NAMES[m[1]], body)
+
+
 def normalize(body):
     # event_object_movement.c defines sActionFuncId/data[2] and sDirection/data[3].
     # TRUE/FALSE are 1/0 in both targets. No control-flow or helper calls rewritten.
     body = body.replace('sprite->sActionFuncId', 'sprite->data[2]').replace('sprite->sDirection', 'sprite->data[3]')
+    for name, value in SHARED_NUMERIC_CONSTANTS.items(): body = re.sub(r'\b%s\b' % name, str(value), body)
     body = re.sub(r'\bTRUE\b', '1', body)
     body = re.sub(r'\bFALSE\b', '0', body)
     body = re.sub(r'\s+', '', body)
+    # `!x` and `x==0` for the sprite's y2 offset (MovementAction_FlyDown_Step1).
+    body = body.replace('if(!sprite->y2)', 'if(sprite->y2==0)')
     # `if (...) { one statement; }` and `if (...) one statement;` are the same control flow.
     # Only a brace pair holding exactly one statement without nested blocks is unwrapped.
     return re.sub(r'(\bif\((?:[^(){};]|\((?:[^(){};]|\([^(){};]*\))*\))*\))\{([^{};]*;)\}', r'\1\2', body)
 
 
-def read_source(root):
+# Sprite-data macros #defined only around these functions (read in both sources):
+# pokeemerald sTimer=data[4], sNumSteps=data[5], sDirection=data[3]; pokefirered tDirection=data[3],
+# tDelay=data[4], tStepNo=data[5] (event_object_movement.c, around SetWalkSlow*SpriteData).
+SCOPED_DATA_MACROS = {
+    'emerald': (('SetWalkSlowSpriteData', 'UpdateWalkSlowAnim'), {'sTimer': 'data[4]', 'sNumSteps': 'data[5]'}),
+    'firered': (('SetWalkSlowerSpriteData', 'UpdateWalkSlowerAnim'), {'tDirection': 'data[3]', 'tDelay': 'data[4]', 'tStepNo': 'data[5]'}),
+}
+
+
+def read_source(root, kind):
     source = strip_comments((root / 'src/event_object_movement.c').read_text())
     funcs = {}
     for match in re.finditer(r'^\w[^\n;]*?\b(\w+)\([^;]*?\)\s*\{', source, re.M):
@@ -48,6 +85,9 @@ def read_source(root):
             elif source[end] == '}': depth -= 1
             end += 1
         funcs[match[1]] = source[start:end]
+    names, macros = SCOPED_DATA_MACROS[kind]
+    for name in names:
+        for macro, expansion in macros.items(): funcs[name] = re.sub(r'\b%s\b' % macro, expansion, funcs[name])
     tables = strip_comments((root / 'src/data/object_events/movement_action_func_tables.h').read_text())
     actions = dict(re.findall(r'\[(MOVEMENT_ACTION_\w+)\]\s*=\s*(\w+MovementActionFuncs_\w+)', tables))
     callbacks = {}
@@ -103,8 +143,9 @@ def helper_difference(bodies, emerald, firered):
     for helper in sorted(seen):
         if helper.startswith('MovementAction_') or helper in REVIEWED_HELPER_DIFFERENCES: continue
         if helper in REVIEWED_EMERALD_ONLY_HELPERS: continue
-        if helper not in ff: return f'{helper} has no FireRed body'
-        if normalize(ef[helper]) != normalize(ff[helper]): return f'unreviewed helper difference {helper}'
+        counterpart = EMERALD_TO_FIRERED_HELPER_NAMES.get(helper, helper)
+        if counterpart not in ff: return f'{helper} has no FireRed body'
+        if normalize(rename_emerald_helpers(ef[helper])) != normalize(ff[counterpart]): return f'unreviewed helper difference {helper}'
     return None
 
 
@@ -121,15 +162,23 @@ def compare_action(action, emerald, firered, em_constants, fr_constants):
     if len(left) != len(right): return 'different callback count'
     for e, f in zip(left, right):
         if e not in ef or f not in ff: return f'unresolved body {e}/{f}'
-        if normalize(ef[e]) != normalize(ff[f]): return f'different bodies {e}/{f}'
+        if normalize(rename_emerald_helpers(ef[e])) != normalize(ff[f]): return f'different bodies {e}/{f}'
         for token in set(re.findall(r'\b[A-Z][A-Z_0-9]+\b', ef[e])):
             if token in em_constants and token in fr_constants and em_constants[token] != fr_constants[token]:
                 return f'different target constant {token}'
     return helper_difference(left, emerald, firered)
 
 
+def load_shared_constants():
+    left, right = numeric_constants(EM), numeric_constants(FR)
+    assert left == right, f'MOVE_SPEED_*/DISPLAY_HEIGHT differ between decomps: {left} vs {right}'
+    SHARED_NUMERIC_CONSTANTS.clear()
+    SHARED_NUMERIC_CONSTANTS.update(left)
+
+
 def generate():
-    emerald, firered = read_source(EM), read_source(FR)
+    load_shared_constants()
+    emerald, firered = read_source(EM, 'emerald'), read_source(FR, 'firered')
     emc = read_json(ROOT / 'public/emerald/constants.json')
     frc = read_json(ROOT / 'public/fr/constants.json')
     accepted, rejected = [], []
@@ -158,7 +207,8 @@ def check_rejections():
     # Mutated source inputs, never mutated generated output: no fallback can
     # silently accept a changed body, callback ordering, or GBA target constant.
     import copy
-    emerald, firered = read_source(EM), read_source(FR)
+    load_shared_constants()
+    emerald, firered = read_source(EM, 'emerald'), read_source(FR, 'firered')
     emc = read_json(ROOT / 'public/emerald/constants.json')
     frc = read_json(ROOT / 'public/fr/constants.json')
     action = 'MOVEMENT_ACTION_FACE_RIGHT'
@@ -182,6 +232,22 @@ def check_rejections():
     reviewed[0]['SetObjectEventDirection'] += ' x++;'
     assert compare_action(action, reviewed, firered, emc, frc) is None
     assert compare_action('MOVEMENT_ACTION_WALK_SLOW_DOWN', emerald, firered, emc, frc) is None
+    # Sprite-data macros, MOVE_SPEED_* and renamed WalkSlow helpers are reviewed, not guessed.
+    pop = 'MOVEMENT_ACTION_ACRO_POP_WHEELIE_MOVE_DOWN'
+    assert compare_action(pop, emerald, firered, emc, frc) is None
+    assert compare_action('MOVEMENT_ACTION_FLY_DOWN', emerald, firered, emc, frc) is None
+    assert compare_action('MOVEMENT_ACTION_WALK_DOWN_AFFINE', emerald, firered, emc, frc) is None
+    speed = copy.deepcopy(emerald)
+    pop_body = emerald[2][emerald[1][pop]][0]
+    speed[0][pop_body] = speed[0][pop_body].replace(', 1)', ', 2)')
+    assert compare_action(pop, speed, firered, emc, frc).startswith('different bodies')
+    saved = dict(SHARED_NUMERIC_CONSTANTS)
+    SHARED_NUMERIC_CONSTANTS['MOVE_SPEED_FAST_1'] = 2
+    assert compare_action(pop, emerald, firered, emc, frc).startswith('different bodies')
+    SHARED_NUMERIC_CONSTANTS.update(saved)
+    renamed = copy.deepcopy(emerald)
+    renamed[0]['UpdateWalkSlowAnim'] += ' x++;'
+    assert compare_action('MOVEMENT_ACTION_WALK_DOWN_AFFINE', renamed, firered, emc, frc) == 'unreviewed helper difference UpdateWalkSlowAnim'
     # Brace unwrapping stays limited to a single statement.
     assert normalize('if(a){x;y;}') != normalize('if(a)x;y;')
     assert normalize('if(a){x;}') == normalize('if(a)x;')
