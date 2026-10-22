@@ -79,7 +79,7 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | `easy_chat_3.c` | 2316 | 92/92 | `easyChat2.ts`, `easyChat3.ts` |  |  |
 | `battle_anim_special.c` | 2304 | 81/81 | `core/battle/anims/special.ts`, `core/battle/gfx_sfx_util.ts`, `core/battle/interface.ts` … |  |  |
 | `battle_controller_oak_old_man.c` | 2293 | 107/107 | `battle/controller_oak_old_man.ts` |  |  |
-| `scrcmd.c` | 2264 | 224/224 | `core/field/messageBox.ts`, `core/script/commands.ts`, `core/script/eventObjectLock.ts` |  |  |
+| `scrcmd.c` | 2264 | 224/224 | `core/field/messageBox.ts`, `core/hw/palette.ts`, `core/script/commands.ts` … |  |  |
 | `battle_interface.c` | 2240 | 52/52 | `core/battle/interface.ts`, `core/battle/util.ts` |  |  |
 | `oak_speech.c` | 2186 | 64/64 | `oakSpeech.ts`, `startup.ts` |  |  |
 | `field_player_avatar.c` | 2168 | 176/176 | `core/field/escalatorWarp.ts`, `core/field/fieldEffects.ts`, `core/field/fieldmap.ts` … |  |  |
