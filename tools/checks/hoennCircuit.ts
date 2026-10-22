@@ -424,6 +424,17 @@ assert.deepEqual(kanto.vars, kantoBefore.vars, "no Hoenn var reached Kanto");
 assert.deepEqual(kanto.location, kantoBefore.location);
 console.log("save/continue: Hoenn bank (field, flags, vars) restored; Kanto flags, vars, location and respawn unchanged; party, money and bag shared");
 
+// PetalburgCity_Gym `setorcopyvar VAR_TRAINER_BATTLE_OPPONENT_A, TRAINER_NORMAN_1` (0x8015 aliases
+// gTrainerBattleOpponent_A; the FireRed special-var table has no slot for it) run through the command itself.
+{
+  const { G } = await import("../../src/core/battle/globals.ts");
+  const { COMMANDS } = await import("../../src/core/script/commands.ts");
+  assert.ok(saveModule.specialVarAliases.has(EM.VAR_TRAINER_BATTLE_OPPONENT_A), "the Hoenn engine installs the alias");
+  const operands = [EM.VAR_TRAINER_BATTLE_OPPONENT_A, EM.TRAINER_NORMAN_1];
+  COMMANDS.ScrCmd_setorcopyvar!({ ScriptReadHalfword: () => operands.shift()! } as never);
+  assert.equal(G.gTrainerBattleOpponent_A, EM.TRAINER_NORMAN_1);
+}
+
 console.log("incbin fallbacks:", [...incbinFallbacks].sort().join(", "));
 console.log("cdata fallbacks:", [...cdataFallbacks].sort().join(", "));
 console.log("text fallbacks:", [...textFallbacks].sort().join(", "));

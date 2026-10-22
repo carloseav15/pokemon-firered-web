@@ -468,9 +468,15 @@ export const SV = {
   LAST_TALKED: 0x800f, MON_BOX_ID: 0x8010, MON_BOX_POS: 0x8011, TEXT_COLOR: 0x8012, PREV_TEXT_COLOR: 0x8013, x8014: 0x8014,
 };
 
+/** Special vars past this table's 0x8014 that another game's content defines as an alias of a
+ * global (pokeemerald VAR_TRAINER_BATTLE_OPPONENT_A = 0x8015, gTrainerBattleOpponent_A). */
+export const specialVarAliases = new Map<number, { get: () => number; set: (value: number) => void }>();
+
 export function varGet(id: number): number {
   if (id < VARS_START) return id;
   if (id < SPECIAL_VARS_START) return save.vars[id - VARS_START] ?? 0;
+  const alias = specialVarAliases.get(id);
+  if (alias) return alias.get();
   const index = id - SPECIAL_VARS_START;
   if (index < specialVars.length) return specialVars[index];
   return id;
@@ -480,6 +486,11 @@ export function varSet(id: number, value: number): boolean {
   if (id < VARS_START) return false;
   if (id < SPECIAL_VARS_START) {
     save.vars[id - VARS_START] = value & 0xffff;
+    return true;
+  }
+  const alias = specialVarAliases.get(id);
+  if (alias) {
+    alias.set(value & 0xffff);
     return true;
   }
   const index = id - SPECIAL_VARS_START;

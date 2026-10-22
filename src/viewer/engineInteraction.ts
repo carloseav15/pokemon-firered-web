@@ -14,14 +14,15 @@ import { DATA_ROOT, isEmeraldData, rom } from '@core/rom';
 import { loadTrig } from '@core/hw/trig';
 import { gWindows } from '@core/hw/window';
 import { GetBgTilemapBuffer } from '@core/hw/bg';
-import { flagClear, incrementGameStat, save, SV, varGet, varSet } from '@game/save';
+import { flagClear, incrementGameStat, save, specialVarAliases, SV, varGet, varSet } from '@game/save';
 import * as MB from '@game/generated/metatileBehavior';
 import * as C from '@game/generated/constants';
 import type { Sprite } from '@core/gba/sprite';
 import { paletteFade, RGB_BLACK } from '@core/gba/fade';
 import { tasks } from '@core/gba/tasks';
 import { gMain } from '@core/hw/runtime';
-import { gBattlerControllerFuncs } from '@core/battle/globals';
+import { G, gBattlerControllerFuncs } from '@core/battle/globals';
+import * as EM from '../games/emerald/generated/constants';
 import { installBattleHost } from '@core/battle/host';
 import { preloadBattleAssets } from '@game/battle/preload';
 import { preloadEggHatch } from '@game/eggHatch';
@@ -145,9 +146,12 @@ export class EngineInteraction {
       };
       setEmeraldWildEncounterGame(game);
       setGameSpecials(EMERALD_SPECIALS, FIRERED_SPECIALS_SHARED_WITH_EMERALD);
+      // event_data.c gSpecialVars[0x15]: VAR_TRAINER_BATTLE_OPPONENT_A aliases gTrainerBattleOpponent_A.
+      specialVarAliases.set(EM.VAR_TRAINER_BATTLE_OPPONENT_A, { get: () => G.gTrainerBattleOpponent_A, set: value => { G.gTrainerBattleOpponent_A = value; } });
       battleHost.environmentId = () => BattleSetup_GetEnvironmentId(game);
     } else {
       setGameSpecials({});
+      specialVarAliases.clear();
     }
     joy.attach(); joy.setExternalInputEnabled(false);
   }
