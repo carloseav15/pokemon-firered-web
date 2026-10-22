@@ -120,7 +120,7 @@ Enlace e inalámbrico queda fuera del total principal (decisión del usuario, 20
 | `shop.c` | 1145 | 60/60 | `buyMenuHelpers.ts`, `shop.ts` |  |  |
 | `trainer_tower.c` | 1095 | 43/43 | `script/specials.ts`, `trainerTower.ts` |  |  |
 | `battle_anim_psychic.c` | 1090 | 26/26 | `core/battle/anims/psychic.ts` |  |  |
-| `battle_setup.c` | 1070 | 66/66 | `core/battle/battleSetup.ts`, `core/battle/host.ts`, `battle/ext.ts` … |  |  |
+| `battle_setup.c` | 1070 | 66/66 | `core/battle/battleSetup.ts`, `core/battle/host.ts`, `core/field/trainerSee.ts` … |  |  |
 | `battle_gfx_sfx_util.c` | 1061 | 48/48 | `core/battle/gfx_sfx_util.ts`, `core/battle/globals.ts`, `battle/bg.ts` |  |  |
 | `metatile_behavior.c` | 1039 | 115/115 | `core/field/fieldEffectHelpers.ts`, `core/field/fieldmap.ts`, `generated/metatileBehavior.ts` |  |  |
 | `berry.c` | 1028 | 9/9 | `core/pokemon/berry.ts`, `save.ts`, `script/specials.ts` |  |  |
