@@ -30,10 +30,11 @@ export class MossdeepGymWarp {
   get skipsObjectEventLoad(): boolean { return (this.sObjectEventLoadFlag & C.SKIP_OBJECT_EVENT_LOAD) !== 0; }
 
   DoMossdeepGymWarp(): void {
-    // All source callers are this gym. The shared task's Mirage Tower cleanup
-    // returns immediately here (its first map guard is Route 111); no tower effect
-    // is substituted or implemented by this gym-specific integration.
-    if (this.ow.header.id !== 'MAP_MOSSDEEP_CITY_GYM' || this.ow.header.weather !== C.WEATHER_NONE) throw Error('Mossdeep warp outside its source caller map');
+    // field_control_avatar.c calls this for any MB_MOSSDEEP_GYM_WARP tile: the Mossdeep gym and
+    // Trick House Puzzle 7 (every map that uses it has WEATHER_NONE). The shared task's Mirage Tower
+    // cleanup returns immediately outside Route 111 (its first map guard); no tower effect is
+    // substituted or implemented by this integration.
+    if (this.ow.header.id === 'MAP_ROUTE111' || this.ow.header.weather !== C.WEATHER_NONE) throw Error('Mossdeep warp outside its source caller maps');
     this.SetObjectEventLoadFlag(C.SKIP_OBJECT_EVENT_LOAD);
     this.ow.LockPlayerFieldControls();
     SaveObjectEvents(this.ow.sprites);

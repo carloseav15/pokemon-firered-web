@@ -17,7 +17,8 @@ import * as EMB from '../../src/games/emerald/generated/metatileBehavior.ts';
 type Pump = (frames:number,input?:(frame:number)=>number,done?:()=>boolean)=>Promise<number>;
 export async function runMossdeepWarpChecks(engine:EngineInteraction,pump:Pump):Promise<void> {
  const mapId='MAP_MOSSDEEP_CITY_GYM';
- const nav=(x:number,y:number):NavigationSave=>({mapId,x,y,direction:'south',dynamic:null});
+ const navOn=(map:string)=>(x:number,y:number):NavigationSave=>({mapId:map,x,y,direction:'south',dynamic:null});
+ const nav=navOn(mapId);
  const errors:unknown[][]=[],baseError=console.error;
  console.error=(...args:unknown[])=>{errors.push(args);baseError(...args);};
  try {
@@ -64,8 +65,41 @@ export async function runMossdeepWarpChecks(engine:EngineInteraction,pump:Pump):
   assert.deepEqual({party:save.party,bag:save.bag,money:save.money},shared);
   assert.deepEqual(errors,[],'no script/warp failure can count as success');
   compareSourceCallbacks(ow);
+  await trickHousePuzzle7(engine,pump,navOn,errors);
   console.log(`PASS Mossdeep: real source switch, ${count} source pads + exported return command, template/facing/shared-state preservation (PREPARED cells; no browser or full walk)`);
  } finally {console.error=baseError;}
+}
+
+// field_control_avatar.c calls DoMossdeepGymWarp for every MB_MOSSDEEP_GYM_WARP tile: Trick House Puzzle 7 shares it.
+// PREPARED entry tile and source pad cells; the yellow button is a real coord event, the warp pairs come from map.json.
+async function trickHousePuzzle7(engine:EngineInteraction,pump:Pump,navOn:(map:string)=>(x:number,y:number)=>NavigationSave,errors:unknown[][]):Promise<void> {
+ const mapId='MAP_ROUTE110_TRICK_HOUSE_PUZZLE7',nav=navOn(mapId);
+ await engine.enterMap(nav(0,21));
+ const game=(engine as unknown as {game:Game}).game,ow=game.overworld;
+ const templates=()=>ow.objects.templates.map(t=>[t.localId,t.x,t.y,t.movementType,t.elevation]);
+ const original=templates();
+ const root=process.env.POKEEMERALD??'../refs-src/pokeemerald';
+ const source=JSON.parse(readFileSync(resolve(root,'data/maps/Route110_TrickHousePuzzle7/map.json'),'utf8'));
+ const yellow=source.coord_events.find((e:{script:string})=>e.script.endsWith('YellowButton'));assert.ok(yellow);
+ assert.equal(await engine.tryEmeraldStep(nav(yellow.x,yellow.y),'walk'),true);
+ await pump(500);assert.equal(engine.open,false);
+ const changed=templates();assert.notDeepEqual(changed,original,'the yellow button must move its arrow-tile objects');
+ const shared={party:structuredClone(save.party),bag:structuredClone(save.bag),money:save.money};
+ let count=0;
+ for(const [i,warp] of ow.header.warps.entries()){
+  if(warp.destMap!==mapId)continue;
+  assert.equal(EMB.MetatileBehavior_IsMossdeepGymWarp(ow.map.behaviorAt(warp.x+7,warp.y+7)),true,`pad ${i}`);
+  const expected=source.warp_events[Number(source.warp_events[i].dest_warp_id)];
+  await engine.tryMossdeepWarp(nav(warp.x,warp.y),i);
+  await pump(500);assert.equal(engine.open,false,`pad ${i} must return controls`);
+  assert.deepEqual([save.location.x,save.location.y],[expected.x,expected.y],`source pad ${i}`);
+  assert.deepEqual(templates(),changed,`pad ${i} retains the moved objects`);
+  assert.equal(ow.controlsLocked,false);count++;
+ }
+ assert.equal(count,source.warp_events.filter((w:{dest_map:string})=>w.dest_map===mapId).length);
+ assert.deepEqual({party:save.party,bag:save.bag,money:save.money},shared);
+ assert.deepEqual(errors,[],'no script/warp failure can count as success');
+ console.log(`PASS Trick House Puzzle 7: real yellow button, ${count} source teleport pads through the shared Mossdeep warp, retained objects and shared state (PREPARED entry/pad cells)`);
 }
 
 // Original C entry/exit bodies are the oracle for their ordered calls. Peripheral
