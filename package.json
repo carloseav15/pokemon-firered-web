@@ -124,7 +124,8 @@
     "check:principal-map-data": "python3 tools/checks/principal_map_data.py",
     "sprites:spritecollab": "python3 tools/viewer/spritecollab.py",
     "check:emerald-script-text": "esbuild tools/checks/emeraldScriptText.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/emeraldScriptText.mjs && node .decomp-build/checks/emeraldScriptText.mjs",
-    "check:emerald-script-contracts": "esbuild tools/checks/emeraldScriptContracts.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/emeraldScriptContracts.mjs && node .decomp-build/checks/emeraldScriptContracts.mjs"
+    "check:emerald-script-contracts": "esbuild tools/checks/emeraldScriptContracts.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/emeraldScriptContracts.mjs && node .decomp-build/checks/emeraldScriptContracts.mjs",
+    "check:emerald-movement-contract": "python3 tools/decomp/emerald_movement_contract.py --check && esbuild tools/checks/emeraldMovementContract.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/emeraldMovementContract.mjs && node .decomp-build/checks/emeraldMovementContract.mjs"
   },
   "devDependencies": {
     "playwright": "^1.63.0",

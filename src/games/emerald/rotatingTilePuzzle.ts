@@ -4,7 +4,7 @@ import type { Overworld } from '@core/field/overworld';
 import { MAP_OFFSET, MapGridGetMetatileIdAt } from '@core/field/fieldmap';
 import { rom } from '@core/rom';
 import * as C from './generated/constants';
-import { EmeraldRotatingTileMovement } from './rotatingTileMovement';
+import { EmeraldRotatingTileMovement, emeraldMovement } from './rotatingTileMovement';
 
 const sMovement_ShiftRight = [C.MOVEMENT_ACTION_LOCK_ANIM, C.MOVEMENT_ACTION_WALK_NORMAL_RIGHT, C.MOVEMENT_ACTION_UNLOCK_ANIM, C.MOVEMENT_ACTION_STEP_END];
 const sMovement_ShiftDown = [C.MOVEMENT_ACTION_LOCK_ANIM, C.MOVEMENT_ACTION_WALK_NORMAL_DOWN, C.MOVEMENT_ACTION_UNLOCK_ANIM, C.MOVEMENT_ACTION_STEP_END];
@@ -22,7 +22,7 @@ type Puzzle = { objects: { eventTemplateId: number; prevPuzzleTileNum: number }[
 export class RotatingTilePuzzle {
   private sRotatingTilePuzzle: Puzzle | null = null;
   private readonly movement: EmeraldRotatingTileMovement;
-  constructor(private readonly ow: Overworld) { this.movement = new EmeraldRotatingTileMovement(ow); }
+  constructor(private readonly ow: Overworld) { this.movement = emeraldMovement(ow); }
 
   InitRotatingTilePuzzle(isTrickHouse: number): void {
     this.sRotatingTilePuzzle ??= { objects: [], isTrickHouse: 0 };

@@ -2,7 +2,8 @@
 // slots; each slot maps one object-event id to a byte-script pointer and finished bit.
 
 import { tasks } from "../gba/tasks";
-import { rom } from "../rom";
+import { rom, isEmeraldData } from "../rom";
+import { emeraldMovement, translateEmeraldMovementAction, validateEmeraldMovementScript } from "../../games/emerald/rotatingTileMovement";
 import { MOVEMENT_ACTION_STEP_END, type ObjectEvent } from "../field/objectEvents";
 import type { Overworld } from "../field/overworld";
 import * as C from "@game/generated/constants";
@@ -36,6 +37,10 @@ export class ScriptMovement {
   /** ScriptMovement_StartObjectMovementScript for scripts addressed by ROM pointer. */
   start(object: ObjectEvent | undefined, ptr: number): boolean {
     if (!object) return true;
+    if (ptr && isEmeraldData()) {
+      validateEmeraldMovementScript(ptr);
+      emeraldMovement(this.ow);
+    }
     if (this.GetMoveObjectsTaskId() === 0xff) this.ScriptMovement_StartMoveObjects(50);
     return this.ScriptMovement_TryAddNewMovement(this.GetMoveObjectsTaskId(), this.ow.objects.indexOf(object), ptr);
   }
@@ -191,7 +196,10 @@ export class ScriptMovement {
     const object = this.ow.objects.objects[objectId];
     if (!entry || !object || entry.objectId !== objectId) return;
     if (object.heldMovementActive && !this.ow.objects.ObjectEventClearHeldMovementIfFinished(object)) return;
-    const next = entry.bytes ? (entry.bytes[entry.ptr] ?? MOVEMENT_ACTION_STEP_END) : rom.u8(movementScript);
+    const raw = entry.bytes ? (entry.bytes[entry.ptr] ?? MOVEMENT_ACTION_STEP_END) : rom.u8(movementScript);
+    // In-memory scripts already use the internal action namespace (e.g. rotating tiles).
+    // Only source ROM bytecode crosses the Emerald -> FireRed boundary here.
+    const next = !entry.bytes && isEmeraldData() ? translateEmeraldMovementAction(raw) : raw;
     if (next === MOVEMENT_ACTION_STEP_END) {
       this.SetMovementScriptFinished(taskId, moveScriptId);
       this.ow.objects.freeze(object);

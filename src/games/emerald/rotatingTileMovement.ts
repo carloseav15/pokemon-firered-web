@@ -6,6 +6,7 @@ import type { Overworld } from '@core/field/overworld';
 import { type ObjectEvent } from '@core/field/objectEvents';
 import * as C from './generated/constants';
 import { rom } from '@core/rom';
+import { EMERALD_SHARED_MOVEMENT_ACTIONS, EMERALD_REGIONAL_MOVEMENT_ACTIONS } from './generated/movementContract';
 import * as FR from '../firered/generated/constants';
 
 // Internal action namespace, never written into Emerald bytecode or interpreted as a GBA ID.
@@ -24,9 +25,35 @@ export const ROTATING_TILE_ACTIONS = new Map<number, number>([
   [C.MOVEMENT_ACTION_STEP_END, FR.MOVEMENT_ACTION_STEP_END],
 ]);
 
+// One source animation-lock allocation per Overworld, shared by puzzle and ROM scripts.
+const movementInstances = new WeakMap<Overworld, EmeraldRotatingTileMovement>();
+export function emeraldMovement(ow: Overworld): EmeraldRotatingTileMovement {
+  let movement = movementInstances.get(ow);
+  if (!movement) { movement = new EmeraldRotatingTileMovement(ow); movementInstances.set(ow, movement); }
+  return movement;
+}
+
+/** Regional byte -> shared action. A missing body is an error, never a numeric alias. */
+export function translateEmeraldMovementAction(action: number): number {
+  const translated = EMERALD_SHARED_MOVEMENT_ACTIONS.get(action) ?? ROTATING_TILE_ACTIONS.get(action);
+  if (translated === undefined) throw Error(`Unsupported Emerald movement ${action}: ${EMERALD_REGIONAL_MOVEMENT_ACTIONS.get(action) ?? 'unknown source action'}`);
+  return translated;
+}
+
+/** Preflight the complete source script before scheduling any movement. */
+export function validateEmeraldMovementScript(ptr: number): void {
+  for (;;) {
+    const action = rom.u8(ptr++);
+    translateEmeraldMovementAction(action);
+    if (action === C.MOVEMENT_ACTION_STEP_END) return;
+  }
+}
+
 export class EmeraldRotatingTileMovement {
   private sLockedAnimObjectEvents: { localIds: number[]; count: number } | null = null;
   constructor(private readonly ow: Overworld) {
+    ow.objects.isExternalMovementAnimationLocked = object => this.sLockedAnimObjectEvents !== null
+      && this.FindLockedObjectEventIndex(object) !== C.OBJECT_EVENTS_COUNT;
     ow.objects.externalMovementActions.set(LOCK_ANIM, object => this.lockAction(object));
     ow.objects.externalMovementActions.set(UNLOCK_ANIM, object => this.unlockAction(object));
   }

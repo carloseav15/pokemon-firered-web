@@ -2632,7 +2632,7 @@ export class ObjectEvents {
     const [dx, dy] = DIRECTION_VECTORS[direction];
     this.shiftCoords(object, object.currentCoords.x + dx, object.currentCoords.y + dy);
     this.SetSpriteDataForNormalStep(sprite, direction, speed);
-    sprite.animPaused = false;
+    sprite.animPaused = this.isExternalMovementAnimationLocked?.(object) ?? false;
     object.triggerGroundEffectsOnMove = true;
     sprite.data[2] = 1;
   }
@@ -2992,6 +2992,8 @@ export class ObjectEvents {
   /** Internal actions supplied by another game's adapter use IDs above the byte range.
    * Source ROM bytes remain interpreted by their own adapter before reaching this table. */
   readonly externalMovementActions = new Map<number, (object: ObjectEvent) => boolean>();
+  /** Regional InitNpcForMovement animation-lock lookup (Emerald's source allocation). */
+  isExternalMovementAnimationLocked?: (object: ObjectEvent) => boolean;
 
   execAction(object: ObjectEvent): boolean {
     const id = object.movementActionId;

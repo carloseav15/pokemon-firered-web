@@ -240,7 +240,7 @@ console.log(`PASS: 9 exported coordinate scripts; ${moved} source object displac
 // Compare the complete animation-lock allocation family to its original C bodies as well.
 const movementSource=readFileSync(resolve(decomp,'src/event_object_movement.c'),'utf8');
 function cFunction(name:string):string {
- const match=new RegExp(`(?:u8|bool8) ${name}\\([^;]*?\\)\\n\\{`).exec(movementSource);assert.ok(match,name);
+ const match=new RegExp(`(?:u8|bool8|void) ${name}\\([^;]*?\\)\\n\\{`).exec(movementSource);assert.ok(match,name);
  const start=match.index;let at=start+match[0].length,depth=1;
  while(depth&&at<movementSource.length){const c=movementSource[at++];if(c==='{')depth++;else if(c==='}')depth--;}
  return movementSource.slice(start,at);
@@ -250,30 +250,35 @@ const lockShim=`
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-typedef uint8_t u8;typedef uint8_t bool8;typedef uint32_t bool32;
+typedef uint8_t u8;typedef int16_t s16;typedef uint8_t bool8;typedef uint32_t bool32;
 #define FALSE 0
 #define TRUE 1
 #define OBJECT_EVENTS_COUNT 16
 #define LOCALID_NONE 0
 #define AllocZeroed(n) calloc(1,n)
 #define FREE_AND_SET_NULL(p) do{free(p);p=NULL;}while(0)
-struct ObjectEvent{u8 localId,inanimate,facingDirectionLocked,graphicsId;};
+struct ObjectEvent{u8 localId,inanimate,facingDirectionLocked,graphicsId,triggerGroundEffectsOnMove;struct{s16 x,y;}currentCoords;};
 struct Sprite{u8 sActionFuncId,animPaused;};
 struct LockedAnimObjectEvents{u8 localIds[16];u8 count;}*sLockedAnimObjectEvents=NULL;
 struct{u8 inanimate;}info;
 void *unused;
 #define GetObjectEventGraphicsInfo(id) (&info)
 u8 FindLockedObjectEventIndex(struct ObjectEvent *);
+void SetObjectEventDirection(struct ObjectEvent *o,u8 direction){}
+void MoveCoords(u8 direction,s16 *x,s16 *y){}
+void ShiftObjectEventCoords(struct ObjectEvent *o,s16 x,s16 y){}
+void SetSpriteDataForNormalStep(struct Sprite *s,u8 direction,u8 speed){}
 `;
 const lockMain=`
 int main(void){struct ObjectEvent objects[18]={0};struct Sprite sprites[18]={0};int action,id,anim;
 for(int i=0;i<18;i++){objects[i].localId=i+1;sprites[i].animPaused=1;}
 while(scanf("%d%d%d",&action,&id,&anim)==3){info.inanimate=anim;struct ObjectEvent *o=&objects[id];struct Sprite *s=&sprites[id];
 if(action==0)MovementAction_LockAnim_Step0(o,s);else MovementAction_UnlockAnim_Step0(o,s);
-printf("%d %d %d %d %d %d\\n",o->inanimate,o->facingDirectionLocked,s->animPaused,s->sActionFuncId,sLockedAnimObjectEvents?sLockedAnimObjectEvents->count:0,sLockedAnimObjectEvents?FindLockedObjectEventIndex(o):16);
+printf("%d %d %d %d %d %d ",o->inanimate,o->facingDirectionLocked,s->animPaused,s->sActionFuncId,sLockedAnimObjectEvents?sLockedAnimObjectEvents->count:0,sLockedAnimObjectEvents?FindLockedObjectEventIndex(o):16);
+InitNpcForMovement(o,s,4,0);printf("%d\\n",s->animPaused);
 }}
 `;
-writeFileSync(`${dir}/lock.c`,lockShim+['MovementAction_LockAnim_Step0','MovementAction_UnlockAnim_Step0','FindLockedObjectEventIndex'].map(cFunction).join('\n')+lockMain);
+writeFileSync(`${dir}/lock.c`,lockShim+['MovementAction_LockAnim_Step0','MovementAction_UnlockAnim_Step0','FindLockedObjectEventIndex','InitNpcForMovement'].map(cFunction).join('\n')+lockMain);
 const lockCompile=spawnSync('cc',['-std=c99',`${dir}/lock.c`,'-o',`${dir}/lock`],{encoding:'utf8'});assert.equal(lockCompile.status,0,lockCompile.stderr);
 const { EmeraldRotatingTileMovement }=await import('../../src/games/emerald/rotatingTileMovement.ts');
 const gfxIds=Object.entries(rom.objects.gfx).filter(([id])=>Number(id)<C.NUM_OBJ_EVENT_GFX).map(([id])=>Number(id));
@@ -296,6 +301,13 @@ for(let i=0;i<actions.length;i++){
  // Inspect allocation only in the oracle harness, not in product state.
  const allocation=(locker as unknown as {sLockedAnimObjectEvents:{localIds:number[];count:number}|null}).sLockedAnimObjectEvents;
  const index=allocation?locker.FindLockedObjectEventIndex(object as unknown as import('../../src/core/field/objectEvents.ts').ObjectEvent):16;
- assert.deepEqual([Number(object.inanimate),Number(object.facingDirectionLocked),Number(object.sprite.animPaused),object.sprite.data[2],allocation?.count??0,index],expectedLocks[i],`animation lock C case ${i}`);
+ assert.deepEqual([Number(object.inanimate),Number(object.facingDirectionLocked),Number(object.sprite.animPaused),object.sprite.data[2],allocation?.count??0,index],expectedLocks[i]!.slice(0,6),`animation lock C case ${i}`);
+ const { ObjectEvents }=await import('../../src/core/field/objectEvents.ts');
+ const helperHost=Object.create(ObjectEvents.prototype);
+ helperHost.isExternalMovementAnimationLocked=lockHost.objects.isExternalMovementAnimationLocked;
+ const moving=object as unknown as import('../../src/core/field/objectEvents.ts').ObjectEvent;
+ Object.assign(moving,{currentCoords:{x:20,y:20},previousCoords:{x:20,y:20},facingDirection:1,movementDirection:1});
+ helperHost.initNpcForMovement(moving,C.DIR_EAST,0);
+ assert.equal(Number(moving.sprite.animPaused),expectedLocks[i]![6],`InitNpcForMovement animation lock C case ${i}`);
 }
 console.log(`original animation-lock C comparison PASS: ${actions.length} PREPARED allocation/duplicate/overflow/reuse/unlock operations`);
