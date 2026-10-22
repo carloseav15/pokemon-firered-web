@@ -88,7 +88,7 @@ export async function runSkyPillarRayquazaCinematic(host: CinematicHost): Promis
     }
 
     // 5. Message dialogue
-    await host.dialog.show("Pilar Celeste", ["The legendary RAYQUAZA has awakened and rises into the sky!"]);
+    await host.dialog.show("Sky Pillar", ["The legendary RAYQUAZA has awakened and rises into the sky!"]);
   } finally {
     host.lockControls(false);
   }
@@ -109,7 +109,7 @@ export async function runCaveOfOriginRumbleCinematic(host: CinematicHost): Promi
     host.audio.playMonCry(383, 30, 100); // SPECIES_GROUDON
     await new Promise((r) => setTimeout(r, 500));
 
-    await host.dialog.show("Cueva Origen", [
+    await host.dialog.show("Cave of Origin", [
       "The earth and underground waters rumble with echoes of Groudon and Kyogre!",
     ]);
   } finally {
@@ -149,7 +149,7 @@ export async function runSootopolisClashCinematic(host: CinematicHost): Promise<
     if (kyogre?.el) kyogre.el.style.transform = "";
     if (groudon?.el) groudon.el.style.transform = "";
 
-    await host.dialog.show("Arrecife of Sootopolis", [
+    await host.dialog.show("Sootopolis City", [
       "Groudon and Kyogre collide in a violent cataclysm of fire and flood!",
       "Only Rayquaza, the guardian of the skies, can calm their fury.",
     ]);

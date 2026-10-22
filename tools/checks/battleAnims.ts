@@ -20,6 +20,7 @@ const root = process.cwd() + '/public';
   const buf = readFileSync(path);
   return {
     ok: true,
+    headers: { get: (_: string) => null },
     json: async () => JSON.parse(buf.toString('utf8')),
     arrayBuffer: async () => buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength),
     text: async () => buf.toString('utf8'),
