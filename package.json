@@ -122,7 +122,8 @@
     "check:common-map-data": "python3 tools/checks/common_map_data.py",
     "maps:principal": "python3 tools/viewer/principal_world.py",
     "check:principal-map-data": "python3 tools/checks/principal_map_data.py",
-    "sprites:spritecollab": "python3 tools/viewer/spritecollab.py"
+    "sprites:spritecollab": "python3 tools/viewer/spritecollab.py",
+    "check:emerald-script-text": "esbuild tools/checks/emeraldScriptText.ts --bundle --platform=node --format=esm --log-level=warning --outfile=.decomp-build/checks/emeraldScriptText.mjs && node .decomp-build/checks/emeraldScriptText.mjs"
   },
   "devDependencies": {
     "playwright": "^1.63.0",

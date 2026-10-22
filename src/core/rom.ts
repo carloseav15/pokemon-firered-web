@@ -232,7 +232,7 @@ export class Rom {
   eggMoves!: number[];
   hmMoves!: number[];
   tmhmMoves!: number[];
-  scriptMenu!: { multichoice: Record<string, string[]>; stdStrings: string[]; textColors: number[] };
+  scriptMenu!: { multichoice: Record<string, string[]>; stdStrings: string[]; textColors: number[]; contestNames?: string[]; decorationNames?: string[]; berryNames?: string[] };
   statStageRatios!: Array<[number, number]>;
   moves!: MoveInfo[];
   abilities!: Array<{ name: string; description: string }>;

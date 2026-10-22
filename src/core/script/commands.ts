@@ -3,15 +3,16 @@
 // the ScrCmd_ names so COMMANDS can be indexed directly by the ROM's
 // gScriptCmdTable symbol names (rom.scriptMeta.commands).
 
+import { BufferContestName, GetTrainerClassNameFromId, GetTrainerNameFromId, CopyItemNameHandlePlural } from "../../games/emerald/scriptText";
 import { RotatingTilePuzzle } from "../../games/emerald/rotatingTilePuzzle";
 import { FONT_BRAILLE, GetStringWidth } from "../gba/font";
 import * as C from "@game/generated/constants";
 import { sound } from "../audio/sound";
-import { concat, copy, countDigits, encode, intToDecimal, length, stringVars, STR_CONV_MODE_LEFT_ALIGN, EOS } from "../gba/charmap";
+import { concat, copy, countDigits, encode, expandPlaceholders, intToDecimal, length, stringVars, STR_CONV_MODE_LEFT_ALIGN, EOS } from "../gba/charmap";
 import { paletteFade } from "../gba/fade";
 import { A_BUTTON, B_BUTTON, DPAD_DOWN, DPAD_LEFT, DPAD_RIGHT, DPAD_UP, JOY_HELD, JOY_NEW, L_BUTTON, R_BUTTON, SELECT_BUTTON, START_BUTTON } from "../gba/input";
 import { tasks } from "../gba/tasks";
-import { b64, RAM_SCRIPT_BASE, rom, type MapHeader } from "../rom";
+import { b64, isEmeraldData, RAM_SCRIPT_BASE, rom, type MapHeader } from "../rom";
 import { random } from "../random";
 import { flagClear, flagGet, flagSet, GetGameStat, incrementGameStat, save, SV, varGet, varSet } from "@game/save";
 import { MAP_OFFSET, MapGridSetMetatileIdAt, MAPGRID_COLLISION_MASK } from "../field/fieldmap";
@@ -544,6 +545,7 @@ function ScrCmd_bufferitemnameplural(ctx: ScriptRunner): boolean {
   const i = ctx.readByte();
   const item = varGet(ctx.ScriptReadHalfword());
   const quantity = varGet(ctx.ScriptReadHalfword());
+  if (isEmeraldData()) { stringVarSet(i, CopyItemNameHandlePlural(item, quantity)); return false; }
   let name = items.itemName(item);
   const c = rom.constants;
   if (item === c.ITEM_POKE_BALL && quantity >= 2) name = concat(name, encode("S"));
@@ -554,7 +556,29 @@ function ScrCmd_bufferitemnameplural(ctx: ScriptRunner): boolean {
   stringVarSet(i, name);
   return false;
 }
-function ScrCmd_bufferdecorationname(ctx: ScriptRunner): boolean { ctx.readByte(); ctx.ScriptReadHalfword(); return false; }
+function ScrCmd_bufferdecorationname(ctx: ScriptRunner): boolean {
+  const i = ctx.readByte();
+  const decor = varGet(ctx.ScriptReadHalfword());
+  // Emerald scrcmd.c: gDecorations[decorId].name. FireRed has an empty command body.
+  if (isEmeraldData()) stringVarSet(i, b64(rom.scriptMenu.decorationNames![decor]));
+  return false;
+}
+function ScrCmd_buffercontestname(ctx: ScriptRunner): boolean {
+  const i = ctx.readByte();
+  stringVarSet(i, BufferContestName(varGet(ctx.ScriptReadHalfword())));
+  return false;
+}
+function ScrCmd_buffertrainerclassname(ctx: ScriptRunner): boolean {
+  const i = ctx.readByte();
+  // Despite the C local variable's name, the argument is a trainer ID, not a class ID.
+  stringVarSet(i, GetTrainerClassNameFromId(varGet(ctx.ScriptReadHalfword())));
+  return false;
+}
+function ScrCmd_buffertrainername(ctx: ScriptRunner): boolean {
+  const i = ctx.readByte();
+  stringVarSet(i, GetTrainerNameFromId(varGet(ctx.ScriptReadHalfword())));
+  return false;
+}
 function ScrCmd_buffermovename(ctx: ScriptRunner): boolean { const i = ctx.readByte(); stringVarSet(i, b64(rom.moves[varGet(ctx.ScriptReadHalfword())]?.name ?? rom.moves[0].name)); return false; }
 function ScrCmd_buffernumberstring(ctx: ScriptRunner): boolean { const i = ctx.readByte(); const n = varGet(ctx.ScriptReadHalfword()); stringVarSet(i, intToDecimal(n, STR_CONV_MODE_LEFT_ALIGN, countDigits(n))); return false; }
 function ScrCmd_bufferstdstring(ctx: ScriptRunner): boolean {
@@ -565,7 +589,7 @@ function ScrCmd_bufferstdstring(ctx: ScriptRunner): boolean {
   return false;
 }
 function ScrCmd_bufferstring(ctx: ScriptRunner): boolean { const i = ctx.readByte(); stringVarSet(i, rom.stringAt(ctx.ScriptReadWord())); return false; }
-function ScrCmd_vbuffermessage(ctx: ScriptRunner): boolean { stringVars.var4 = rom.stringAt(ctx.ScriptReadWord() - addressOffset); return false; }
+function ScrCmd_vbuffermessage(ctx: ScriptRunner): boolean { stringVars.var4 = expandPlaceholders(rom.stringAt(ctx.ScriptReadWord() - addressOffset)); return false; }
 function ScrCmd_vbufferstring(ctx: ScriptRunner): boolean { const i = ctx.readByte(); stringVarSet(i, rom.stringAt(ctx.ScriptReadWord() - addressOffset)); return false; }
 // scrcmd.c ScrCmd_bufferboxname copies GetBoxNamePtr, including custom names.
 function ScrCmd_bufferboxname(ctx: ScriptRunner): boolean {
@@ -740,7 +764,8 @@ export const COMMANDS: Record<string, ScriptCommand> = {
   ScrCmd_getbraillestringwidth, ScrCmd_vmessage, ScrCmd_bufferspeciesname, ScrCmd_bufferleadmonspeciesname,
   ScrCmd_bufferpartymonnick, ScrCmd_bufferitemname, ScrCmd_bufferitemnameplural, ScrCmd_bufferdecorationname,
   ScrCmd_buffermovename, ScrCmd_buffernumberstring, ScrCmd_bufferstdstring, ScrCmd_bufferstring,
-  ScrCmd_vbuffermessage, ScrCmd_vbufferstring, ScrCmd_bufferboxname, ScrCmd_givemon, ScrCmd_giveegg,
+  ScrCmd_vbuffermessage, ScrCmd_vbufferstring, ScrCmd_bufferboxname,
+  ScrCmd_buffercontestname, ScrCmd_buffertrainerclassname, ScrCmd_buffertrainername, ScrCmd_givemon, ScrCmd_giveegg,
   ScrCmd_setmonmove, ScrCmd_checkpartymove, ScrCmd_addmoney, ScrCmd_removemoney, ScrCmd_checkmoney,
   ScrCmd_showmoneybox, ScrCmd_hidemoneybox, ScrCmd_updatemoneybox, ScrCmd_showcoinsbox, ScrCmd_hidecoinsbox,
   ScrCmd_updatecoinsbox, ScrCmd_checkcoins, ScrCmd_addcoins, ScrCmd_removecoins,

@@ -506,8 +506,50 @@ def export_script_menu(constants):
         if key in constants:
             multichoice[constants[key]] = lists.get(list_name, [])
     if GAME != "firered":
-        # pokeemerald has neither gStdStringPtrs nor the NPC text colour table (dynamic_placeholder_text_util.c).
-        return {"multichoice": multichoice, "stdStrings": None, "textColors": None}
+        # Emerald uses gStdStrings (not FireRed's gStdStringPtrs). Preserve designated IDs.
+        def symbol_table(path, name, prefix):
+            body = extract_definition(path, name)
+            contents = body[body.index("{") + 1:body.rindex("}")]
+            contents = re.sub(r"/\*.*?\*/|//[^\n]*", "", contents, flags=re.S)
+            entries = []
+            for entry in contents.split(","):
+                if not entry.strip():
+                    continue
+                match = re.fullmatch(rf"\s*\[({prefix}\w+)\]\s*=\s*(\w+)\s*", entry)
+                if not match:
+                    raise RuntimeError(f"unsupported string entry: {path}:{name}: {entry.strip()}")
+                entries.append(match.groups())
+            if not entries:
+                raise RuntimeError(f"unsupported or empty string table: {path}:{name}")
+            values = {constants[key]: value for key, value in entries}
+            if len(values) != len(entries):
+                raise RuntimeError(f"duplicate string index: {path}:{name}")
+            if set(values) != set(range(max(values) + 1)):
+                raise RuntimeError(f"non-contiguous string table: {path}:{name}")
+            return [values[i] for i in range(len(values))]
+
+        std = symbol_table(SRC / "data/script_menu.h", "gStdStrings", "STDSTRING_")
+        contests = symbol_table(SRC / "data/lilycove_lady.h", "sContestNames", "CONTEST_CATEGORY_")
+        decorations_src = (SRC / "data/decoration/header.h").read_text()
+        decorations = {}
+        for key, body in re.findall(r"\[(DECOR_\w+)\]\s*=\s*\{(.*?)\n\s*\},?", decorations_src, flags=re.S):
+            name = re.search(r'\.name\s*=\s*_\("([^"\n]*)"\)', body)
+            if not name:
+                raise RuntimeError(f"unsupported decoration name: {key}")
+            decorations[constants[key]] = name.group(1)
+        if set(decorations) != set(range(constants["NUM_DECORATIONS"] + 1)):
+            raise RuntimeError("incomplete Emerald decoration names")
+        berries = {}
+        for key, body in re.findall(r"\[([^\]]+)\]\s*=\s*\{(.*?)\n\s*\},?", extract_definition(SRC / "berry.c", "gBerries"), flags=re.S):
+            name = re.search(r'\.name\s*=\s*_\("([^"\n]*)"\)', body)
+            if not name:
+                raise RuntimeError(f"unsupported berry name: {key}")
+            berries[_eval_c(key, constants)] = name.group(1)
+        if set(berries) != set(range(constants["LAST_BERRY_INDEX"] - constants["FIRST_BERRY_INDEX"] + 1)):
+            raise RuntimeError("incomplete Emerald berry names")
+        return {"multichoice": multichoice, "stdStrings": std, "textColors": None,
+                "contestNames": contests, "decorationNames": encode_strings([decorations[i] for i in range(len(decorations))]),
+                "berryNames": encode_strings([berries[i] for i in range(len(berries))])}
     std = re.search(r"gStdStringPtrs\[\]\s*=\s*\{(.*?)\};", text, flags=re.S).group(1)
     std_strings = {}
     for key, value in re.findall(r"\[(STDSTRING_\w+)\]\s*=\s*(\w+)", std):
