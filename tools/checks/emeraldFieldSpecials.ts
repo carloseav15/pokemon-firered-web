@@ -144,6 +144,27 @@ save.berryPowder = 120; varSet(SV.x8004, 121);
 assert.equal(call("HasEnoughBerryPowder"), 0); assert.equal(call("TakeBerryPowder"), 0); assert.equal(save.berryPowder, 120);
 varSet(SV.x8004, 120); assert.equal(call("HasEnoughBerryPowder"), 1); assert.equal(call("TakeBerryPowder"), 1); assert.equal(save.berryPowder, 0);
 
+// field_specials.c LoadWallyZigzagoon: slot 0 only (the rest of the party is the SavePlayerParty'd one the script restores later)
+save.party = [mon(EM.SPECIES_TORCHIC, 12), mon(EM.SPECIES_WURMPLE, 4)];
+call("LoadWallyZigzagoon");
+assert.deepEqual([save.party.length, save.party[0]!.species, save.party[0]!.level, save.party[0]!.abilityNum, ...save.party[0]!.moves], [2, EM.SPECIES_ZIGZAGOON, 7, 1, EM.MOVE_TACKLE, 0, 0, 0]);
+assert.equal(save.party[1]!.species, EM.SPECIES_WURMPLE);
+
+// field_specials.c ShouldShowBoxWasFullMessage / GetPCBoxToSendMon: the message shows once for a transfer to another box
+{
+  const { SetPCBoxToSendMon } = await import("../../src/core/pokemon/storage.ts");
+  save.currentBox = 0;
+  varSet(EM.VAR_PC_BOX_TO_SEND_MON, 3); // PREPARED: the monster was sent to box 3
+  assert.equal(call("ShouldShowBoxWasFullMessage"), 1);
+  assert.equal(flagGet(EM.FLAG_SHOWN_BOX_WAS_FULL_MESSAGE), true);
+  assert.equal(call("ShouldShowBoxWasFullMessage"), 0, "only once until the destination box changes");
+  flagClear(EM.FLAG_SHOWN_BOX_WAS_FULL_MESSAGE); // PREPARED
+  varSet(EM.VAR_PC_BOX_TO_SEND_MON, 0); // PREPARED: it went to the current box
+  assert.equal(call("ShouldShowBoxWasFullMessage"), 0);
+  SetPCBoxToSendMon(5);
+  assert.equal(call("GetPCBoxToSendMon"), 5);
+}
+
 // birch_pc.c ScriptGetPokedexInfo / ShowPokedexRatingMessage: counts through the Hoenn dex order
 const { GetSetPokedexFlag } = await import("../../src/core/pokemon/mon_extra.ts");
 const { HoennToNationalOrder } = await import("../../src/core/pokemon/pokemon.ts");

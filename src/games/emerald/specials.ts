@@ -3,10 +3,11 @@
 // Each function keeps its C source file and name.
 import { GetSetPokedexFlag } from "@core/pokemon/mon_extra";
 import { GetMonData, GetMonEVCount, GetNature, SetMonData } from "@core/pokemon/mon";
+import { GetPCBoxToSendMon as GetPCBoxToSendMon_, shouldShowBoxWasFullMessage } from "@core/pokemon/storage";
 import { cdata } from "@core/hw/assets";
 import { rom } from "@core/rom";
 import { GetPlayerTrainerId } from "@core/pokemon/pokemon";
-import { GetLeadMonIndex, HoennToNationalOrder } from "@core/pokemon/pokemon";
+import { createMon, GetLeadMonIndex, HoennToNationalOrder } from "@core/pokemon/pokemon";
 import { StringGet_Nickname } from "@core/gba/charmap";
 import { EOS } from "@core/gba/charmap";
 import { stringVars } from "@core/gba/stringBuffers";
@@ -506,6 +507,21 @@ function GetSecretBaseNearbyMapName(): void {
   stringVars.var1 = GetMapName(varGet(EM.VAR_SECRET_BASE_MAP));
 }
 
+/** field_specials.c LoadWallyZigzagoon: party slot 0 becomes Wally's level 7 Zigzagoon (second ability, only Tackle). SavePlayerParty ran first. */
+function LoadWallyZigzagoon(): void {
+  save.party[0] = createMon(EM.SPECIES_ZIGZAGOON, 7);
+  SetMonData(save.party[0], FR.MON_DATA_ABILITY_NUM, 1);
+  SetMonData(save.party[0], FR.MON_DATA_MOVE1, EM.MOVE_TACKLE);
+  SetMonData(save.party[0], FR.MON_DATA_MOVE2, EM.MOVE_NONE);
+  SetMonData(save.party[0], FR.MON_DATA_MOVE3, EM.MOVE_NONE);
+  SetMonData(save.party[0], FR.MON_DATA_MOVE4, EM.MOVE_NONE);
+}
+
+/** field_specials.c ShouldShowBoxWasFullMessage and GetPCBoxToSendMon (EQUIVALENCE/wrappers): the engine's storage keeps the
+ * same sPCBoxToSendMon / VAR_PC_BOX_TO_SEND_MON / FLAG_SHOWN_BOX_WAS_FULL_MESSAGE state, resolved through the Emerald constants. */
+function ShouldShowBoxWasFullMessage(): number { return shouldShowBoxWasFullMessage() ? 1 : 0; }
+function GetPCBoxToSendMon(): number { return GetPCBoxToSendMon_(); }
+
 /** field_specials.c GetPlayerBigGuyGirlString */
 function GetPlayerBigGuyGirlString(): void {
   stringVars.var1 = rom.text(save.playerGender === EM.MALE ? "gText_BigGuy" : "gText_BigGirl");
@@ -627,7 +643,8 @@ export const EMERALD_SPECIALS = {
   ChooseStarter: (ctx: ScriptRunner) => ChooseStarter(ctx.ow.game),
   GetPlayerBigGuyGirlString, GetRivalSonDaughterString, GetWeekCount, IsStarterInParty, IsTrainerRegistered,
   ResetHealLocationFromDewford, InitBirchState, EnableNationalPokedex, SetUnlockedPokedexFlags, BufferMonNickname,
-  RotatingGate_InitPuzzle, RotatingGate_InitPuzzleAndGraphics, GetPokeblockNameByMonNature, CheckPlayerHasSecretBase, GetSecretBaseNearbyMapName,
+  RotatingGate_InitPuzzle, RotatingGate_InitPuzzleAndGraphics, LoadWallyZigzagoon, ShouldShowBoxWasFullMessage, GetPCBoxToSendMon,
+  GetPokeblockNameByMonNature, CheckPlayerHasSecretBase, GetSecretBaseNearbyMapName,
   PetalburgGymSlideOpenRoomDoors, PetalburgGymUnlockRoomDoors, TurnOffTVScreen, TurnOnTVScreen, LeadMonHasEffortRibbon,
   GiveLeadMonEffortRibbon, ChangePokemonNickname, ChangeBoxPokemonNickname, ScriptGetPokedexInfo, ShowPokedexRatingMessage,
   HasEnoughBerryPowder: BerryPowder.HasEnoughBerryPowder, TakeBerryPowder: BerryPowder.TakeBerryPowder,
