@@ -70,7 +70,14 @@ teletransportes adaptados conservados. Comparación con C: 1.447 casos de puzzle
 35 desplazamientos de plantillas y esperas PASS sin render; RedButton de Trick House
 es Unused, no un décimo interruptor alcanzable. Guardar/Continue del puzzle,
 recorrido visual/colisiones y teletransportes fuente siguen pendientes. La traducción
-de movimientos cubre solo esta familia; quedan 13 comandos Emerald ausentes.
+de movimientos cubre solo esta familia; tras esa tanda quedaban 13 comandos Emerald ausentes.
+
+`f8321b31` conecta la familia de buffers de texto: entrenador, concurso y decoración,
+textos estándar fuente y plurales Emerald; corrige la expansión de texto virtual.
+4.112 casos PREPARED contra cuerpos C y cuatro prefijos de scripts exportados PASS,
+sin render ni validación completa de Match Call/concursos/decoraciones. Restan diez
+comandos ausentes. Mossdeep requiere conservar plantillas y conectar el warp al
+puente del visor; sus teletransportes adaptados siguen pendientes de sustitución.
 
 Siguiente: contratos Emerald fuera del circuito y cotejo audiovisual. Quedan otros
 recorridos, reto Cycling Road completo (warp previo/música/reloj/colisiones), resto
