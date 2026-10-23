@@ -354,6 +354,14 @@ def main() -> int:
                 facing = FACING_BY_MOVEMENT.get(to_int(obj.get("movementType", 0), -1))
                 if facing:
                     el["direction"] = facing
+            if layer in ("npc", "npc_condicional"):
+                # Sin movementType el visor aplicaba su paseo aleatorio heuristico a objetos que el C deja quietos
+                # (la mochila de Birch caminaba por la Ruta 101).
+                mtype = to_int(obj.get("movementType", 0), 0)
+                el["movementType"] = mtype
+                facing = FACING_BY_MOVEMENT.get(mtype)
+                if facing:
+                    el["direction"] = facing
             elements.append(el)
         # activadores y puertas: nombres simbolicos del decomp
         if dm:

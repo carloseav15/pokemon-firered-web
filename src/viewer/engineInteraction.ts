@@ -325,7 +325,8 @@ export class EngineInteraction {
       cbName.includes('TeachyTv') ||
       cbName.includes('SeaGallop') ||
       cbName.includes('MoveRelearner') ||
-      cbName.includes('Pokedex')
+      cbName.includes('Pokedex') ||
+      cbName.includes('StarterChoose')
     );
   }
   private present(): void {
